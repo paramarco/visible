@@ -40,4 +40,8 @@
     <feature name="InAppBrowser">
         <param name="android-package" value="org.apache.cordova.inappbrowser.InAppBrowser" />
     </feature>
+    <feature name="interface2AllJoyn">
+    	<param name="android-package" value="com.instaltic.alljoyn.interface2AllJoyn" />
+    <param name="onload" value="true" />
+</feature>
 </widget>
