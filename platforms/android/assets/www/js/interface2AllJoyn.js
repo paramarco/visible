@@ -24,5 +24,5 @@
 										"echo",
 										[str]
 									);
-					}//END makeCall
+					};//END makeCall
 }// END class

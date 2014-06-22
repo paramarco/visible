@@ -46,8 +46,8 @@ var app = {
 
         console.log('Received Event: ' + id);
         
-        var pruebaInterfaz = new interface2AllJoyn();
-        pruebaInterfaz.makeCall("hoooooooooooollllllllllllllaaaaaaaaa");
+        //var pruebaInterfaz = new interface2AllJoyn();
+        //pruebaInterfaz.makeCall("hoooooooooooollllllllllllllaaaaaaaaa");
 
 
     }
