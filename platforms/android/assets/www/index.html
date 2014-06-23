@@ -23,51 +23,186 @@
         <meta name="format-detection" content="telephone=no" />
         <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <link rel="stylesheet" type="text/css" href="css/index.css" />
-        <link href="css/style.css" rel="stylesheet" type="text/css"/>
-        <meta name="msapplication-tap-highlight" content="no" />
+        <link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
+        <link rel="stylesheet" type="text/css" href="css/jquery.mobile.icons.min.css" />
+		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
+		
         <title>Hello World</title>
     </head>
-    <body>
-	    <ul>
-	      <a href="#use"><li id="tabUseButton">Join</li></a>
-	      <a href="#host"><li id="tabHostButton">Start</li></a>
-	    </ul>
-	    
-	    <div id="tabUse" class="tab">
-	      <a name="use"></a>
-	      <form name="joinChannel">
-	        <label>Channel:</label>
-	        <select name="channelNames" disabled="disabled">
-	          <option>Searching...</option>
-	        </select>
-	        <button id="joinChannelButton" disabled="disabled">Join</button>
-	      </form>
-	      <form name="message">
-	        <input name="text" placeholder="Enter message here" onkeypress="return onKeyPress(event);"></input>
-	      </form>
-	      <ol id="log">
-	      </ol>
-	    </div>
-	    
-	    <div id="tabHost" class="tab">
-	      <a name="host"></a>
-	      <form name="setChannel">
-	        <label>Channel:</label>
-	        <input name="channelName" placeholder="Enter name"></input>
-	        <button id="startChannelButton">Start</button>
-	      </form>
-	    </div>
 
-        <script type="text/javascript" src="cordova.js"></script>
-        <script type="text/javascript" src="js/index.js"></script>
-        <script type="text/javascript" src="js/interface2AllJoyn.js"></script>
+	<body>
+		<div data-role="page" data-theme="a">
+			<div data-role="header" data-position="inline">							
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a"><a href="#mypanel" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-b"></div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-e"><a href="#mypanel" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#mypanel" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
+			  </div>
+			</div><!-- /header -->
+			<div data-role="content" data-theme="a">
+				<h1>Who is visible</h1>
+				
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<!--<li data-role="list-divider"><h1>Who is visible</h1></li> -->
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase"  data-icon="plus" ></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+				</ul>
+				<ul data-role="listview" data-inset="true" data-divider-theme="b">
+					<li data-role="list-divider">off line</li>
+
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Wolfgang Amadeus Phoenix</h2>
+						<p>Phoenix</p></a>
+					</li>
+				</ul>
+			</div><!-- /content -->
+			<div data-role="panel" id="mypanel" data-display="overlay">
+			    <div class="ui-grid-solo">
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			    </div>
+			</div><!-- /panel -->
+		</div>
+
+		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
         
-        <script type="text/javascript" src="js/alljoyn_init.js"></script>
-	    <script type="text/javascript" src="js/alljoyn.js"></script>
-	    <script type="text/javascript" src="js/chat.js"></script>
-        <script type="text/javascript">
-            app.initialize();
-        </script>
+
     </body>
 </html>
