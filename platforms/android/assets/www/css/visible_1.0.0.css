@@ -31,6 +31,9 @@ button,
 .ui-icon-myapp-settings {
 	background: url("./icons-png/arrow-l-white.png") no-repeat rgba(0, 0, 0, 0.4) !important;
 }
+
+#map-page, #map-canvas {    width: 100%; height: 40%; padding: 0; 		}
+
 legend,
 .ui-input-text input,
 .ui-input-search input {

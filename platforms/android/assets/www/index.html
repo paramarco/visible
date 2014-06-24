@@ -31,14 +31,14 @@
     </head>
 
 	<body>
-		<div data-role="page" data-theme="a">
-			<div data-role="header" data-position="inline">							
+		<div data-role="page" data-theme="a" id="one">
+			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
 			    <div class="ui-block-a"><a href="#mypanel" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
-			    <div class="ui-block-e"><a href="#mypanel" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-			    <div class="ui-block-e"><a href="#mypanel" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
 			  </div>
 			</div><!-- /header -->
 			<div data-role="content" data-theme="a">
@@ -198,10 +198,122 @@
 			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
 			    </div>
 			</div><!-- /panel -->
-		</div>
+		</div><!-- /page 1-->
+		
+		<div data-role="page" id="map-page" data-url="map-page" >
+			<div data-role="header"  data-position="fixed" >							
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a"><a href="#mypanel2" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-b"></div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
+			  </div>
+			</div><!-- /header -->
+			
+				<div role="main" id="map-canvas" >
+		        <!-- map loads here... -->
+		    	</div>
+				
+			<div data-role="content" data-theme="a">
+				<ul data-role="listview" data-inset="true" data-divider-theme="b">
 
-		<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Broken Bells</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+										<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Warning</h2>
+						<p>Hot Chip</p></a>
+					</li>
+
+				</ul>
+
+				
+			</div><!-- /content -->
+			<div data-role="panel" id="mypanel2" data-display="overlay">
+			    <div class="ui-grid-solo">
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			    </div>
+			</div><!-- /panel -->
+		</div>
+				<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+		    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
+		     <script>
+		     
+ $(window).scroll(function(){
+       $("#map-canvas").css({"top": ($(window).scrollTop()) + "px"});
+        
+     
+    });
+		     
+			/*
+			 * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
+			 * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
+			 */
+			//$( document ).on( "pageinit", "#map-page", function() {
+			    var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434);  // Default to Hollywood, CA when no geolocation support
+			    if ( navigator.geolocation ) {
+			        function success(pos) {
+			            // Location found, show map with these coordinates
+			            drawMap(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
+			        }
+			        function fail(error) {
+			            drawMap(defaultLatLng);  // Failed to find location, show default map
+			        }
+			        // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
+			        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
+			    } else {
+			        drawMap(defaultLatLng);  // No geolocation support, show default map
+			    }
+			    function drawMap(latlng) {
+			        var myOptions = {
+			            zoom: 10,
+			            center: latlng,
+			            mapTypeId: google.maps.MapTypeId.ROADMAP
+			        };
+			        var map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
+			        // Add an overlay to the map of current lat/lng
+			        var marker = new google.maps.Marker({
+			            position: latlng,
+			            map: map,
+			            title: "Greetings!"
+			        });
+			    }
+			//});
+				
+			</script>
+
         
 
     </body>
