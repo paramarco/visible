@@ -23,12 +23,14 @@
         <meta name="format-detection" content="telephone=no" />
         <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
+          <link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
+<!--		<link rel="stylesheet" type="text/css" href="css/visible_1.0.0.min.css" />-->
+
         <link rel="stylesheet" type="text/css" href="css/jquery.mobile.icons.min.css" />
 		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
 		<link href="http://fonts.googleapis.com/css?family=PT+Sans:400,700" media="screen" rel="stylesheet" type="text/css" />
 		<link href="css/application.css" media="all" rel="stylesheet" type="text/css" />
-
+   		<link rel="stylesheet" href="css/intlTelInput.css">
 		
         <title>Hello World</title>
     </head>
@@ -201,7 +203,53 @@
 			</div><!-- /panel -->
 		</div><!-- /page manageVisibles-->
 
-
+		<div data-role="page" data-theme="a" id="createGroup">
+			<div data-role="header" data-position="fixed">							
+			  	<div class="ui-grid-solo">
+			       <div class="ui-block-a">
+			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
+			       	<strong>group</strong>			       	
+			       </div>			     
+	    		</div>
+			</div><!-- /header -->
+			<div data-role="content" data-theme="a">							
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<li>
+						<img src="img/logo.png" />
+                        <input type="text" name="groupName" id="groupName" value="" placeholder="Name of the group">
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>pepito</h2>
+						<p>Broken Bells</p></a>
+						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>fulanito</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Sutanito</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Ian</h2>
+						<p>Hot Chip</p></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Maria</h2>
+						<p>Hot Chip</p></a>
+					</li>
+				</ul>
+			</div><!-- /content -->
+			<div data-role="footer" data-theme="a" data-position="fixed">
+				<button id="createGroupButton" class="ui-btn ui-corner-all" >Create Group</button>
+			</div><!-- /footer -->
+		</div><!-- /page createGroup-->
 		
 		
 		<div data-role="page" data-theme="a" id="profile">
@@ -239,34 +287,23 @@
 					<div data-role="fieldcontain">
                         <label for="textarea-12">I work on:</label>
                         <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
+                         
 					</div>
-					
+					<div data-role="fieldcontain">
+						<label for="mobile-number">my telephone number:</label>
+						<input id="mobile-number" name="mobile-number" type="tel" placeholder="e.g. +1 702 123 4567">
+					</div>   
 					
 				</form>
 					</li>
 				</ul>
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel-profile" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" >mi perfil</div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			    </div>
-			</div><!-- /panel -->
 		</div><!-- /page profile-->
-		
-		
-		
-		
-		
 		
 		<div data-role="page" id="map-page" data-url="map-page">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#mypanel2" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
@@ -313,14 +350,12 @@
 					</li>
 				</ul>
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel2" data-display="overlay">
+			<div data-role="panel" id="mypanel-map-page" data-display="overlay">
 			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><a href="#profile"><img src="img/logo.png" ></a>mi perfil</div>
+			      <div class="ui-block-a"  align="center" ><a href="#createGroup"><img src="img/logo.png" ></a>crear un grupo</div>
+			      <div class="ui-block-a"  align="center" ><a href="#manageVisibles"><img src="img/logo.png" ></a>gestionar mis visibles</div>
+			      <div class="ui-block-a"  align="center" ><a href="#activateAccount"><img src="img/logo.png" ></a>activar cuenta</div>
 			    </div>
 			</div><!-- /panel -->
 		</div><!-- /page map-page-->
@@ -527,11 +562,14 @@
 			</div><!-- /panel -->
 		</div><!-- /page chat-page-->		
 		
-		
-		
-				<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+			<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+			<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
 		    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
+		    		    
+	        <script src="js/intlTelInput.min.js"></script>
+		    <script>
+		      $("#mobile-number").intlTelInput();
+		    </script>
 		     <script>
    
 			/*
