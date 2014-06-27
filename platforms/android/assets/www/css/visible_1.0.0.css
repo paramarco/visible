@@ -1,18 +1,10 @@
 /*!
 * jQuery Mobile 1.4.2
-* Git HEAD hash: 9d9a42a27d0c693e8b5569c3a10d771916af5045 <> Date: Fri Feb 28 2014 17:32:01 UTC
-* http://jquerymobile.com
-*
 * Copyright 2010, 2014 jQuery Foundation, Inc. and other contributors
 * Released under the MIT license.
 * http://jquery.org/license
-*
-*/
-
-
-/* Globals */
-/* Font
 -----------------------------------------------------------------------------------------------------------*/
+
 html {
 	font-size: 100%;
 }
@@ -31,8 +23,6 @@ button,
 .ui-icon-myapp-settings {
 	background: url("./icons-png/arrow-l-white.png") no-repeat rgba(0, 0, 0, 0.4) !important;
 }
-
-#map-page, #map-canvas {    width: 100%; height: 40%; padding: 0; 		}
 
 legend,
 .ui-input-text input,
