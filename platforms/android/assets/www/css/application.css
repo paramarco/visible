@@ -6,8 +6,11 @@
  * -------------------------------------------------------
  */
  
-#map-page, #map-canvas {    width: 100%; height: 40%; padding: 0; 		}
+/*#map-page, #map-canvas { position : fixed;   width: 100%; height: 40%; padding: 0; 		}*/
+#map-page, #map-canvas { width: 100%; height: 40%; padding: 0; }
 #createGroupButton{ background: #ffffff; } 
+#mypanel {background: #FF9720;}
+#mypanel-map-page {background: #FF9720;}
 
 .activity
 {
