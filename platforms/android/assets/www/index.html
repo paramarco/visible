@@ -23,17 +23,55 @@
         <meta name="format-detection" content="telephone=no" />
         <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-        <link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
-        <link rel="stylesheet" type="text/css" href="css/jquery.mobile.icons.min.css" />
-		<link rel="stylesheet" href="http://code.jquery.com/mobile/1.4.2/jquery.mobile.structure-1.4.2.min.css" />
-		<link href="http://fonts.googleapis.com/css?family=PT+Sans:400,700" media="screen" rel="stylesheet" type="text/css" />
-		<link href="css/application.css" media="all" rel="stylesheet" type="text/css" />
+       	<link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
+		<!--	<link rel="stylesheet" type="text/css" href="css/visible_1.0.0.min.css" />-->
 
+        <link rel="stylesheet" type="text/css" href="css/jquery.mobile.icons.min.css" />
+		<link rel="stylesheet" href="css/jquery.mobile.structure-1.4.2.min.css" />
+		<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=PT+Sans:400,700" media="screen"  />
+		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
+   		<link rel="stylesheet" href="css/intlTelInput.css">
 		
-        <title>Hello World</title>
+        <title>Visible</title>
     </head>
 
 	<body>
+		<div data-role="page" data-theme="a" id="visibleFirstTime">
+			<div data-role="header" data-position="fixed">
+			  	<div class="ui-grid-solo">
+			       <div class="ui-block-a">
+			       	<a href="#" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a>		       	
+			       	<strong>Visible for the first time</strong>			       	
+			       </div>			     
+	    		</div>
+			</div><!-- /header -->
+			<div data-role="content" data-theme="a">							
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<li>
+						<img src="img/logo.png" />	
+						<form>
+							<div data-role="fieldcontain">
+		                         <label for="text-12">Name:</label>
+		                         <input type="text" name="text-12" id="text-12" value="">
+							</div>							
+						</form>
+					</li>
+					
+				</ul>
+				<div data-role="fieldcontain" align="center">
+						<label for="mobile-number">my telephone number:</label>
+						<input id="mobile-number" name="mobile-number" type="tel" placeholder="e.g. +1 702 123 4567">
+				</div>   
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<li>
+						<a href="#one">
+							<h2 align="center" >I want to be visible!</h2>
+						</a>											
+					</li>
+				</ul>
+			</div><!-- /content  -->			
+		</div><!-- /page profile-->
+	
 		<div data-role="page" data-theme="a" id="one">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
@@ -49,84 +87,75 @@
 				
 				<ul data-role="listview" data-inset="true" data-divider-theme="a">
 					<li><a href="#chat-page">
-						<img src="img/logo.png" />
+						<img src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" />
 						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p></a>
-						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+						<p>is around you...</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
 
 					</li>
 					<li><a href="#chat-page">
-						<img src="img/logo.png" />
-						<h2>fulanito</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="img/logo.png" />
+						<img src="https://secure.gravatar.com/avatar/9908d2ca5936aea6c4e5ce09404ffbaa" />
 						<h2>Sutanito</h2>
+						<p>is around you...</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+
+					</li>
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" />
+						<h2>Ian</h2>
+						<p>is around you...</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/a0e1c0eacfecf9743bec4ebd6bdcd6f5" />
+						<h2>Pepito</h2>
 						<p>Hot Chip</p></a>
 					</li>
 					<li><a href="#chat-page">
-						<img src="img/logo.png" />
+						<img src="https://secure.gravatar.com/avatar/aee8b5f6253c3190ea5fef63a1568def" />
 						<h2>Ian</h2>
 						<p>Hot Chip</p></a>
 					</li>
 					<li><a href="#chat-page">
-						<img src="img/logo.png" />
+						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
 						<h2>Maria</h2>
 						<p>Hot Chip</p></a>
 					</li>
 					<li><a href="#chat-page">
 						<img src="img/logo.png" />
-						<h2>Maria</h2>
-						<p>Hot Chip</p></a>
-					</li>
-				</ul>
-				<ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li data-role="list-divider">off line</li>
-
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>pepito</h2>
-						<p>Broken Bells</p></a>
-						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>fulanito</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Sutanito</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Ian</h2>
-						<p>Hot Chip</p></a>
-					</li>
-										<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Maria</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Maria</h2>
+						<h2>Apache</h2>
 						<p>Hot Chip</p></a>
 					</li>
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><a href="#profile"><img src="img/logo.png" ></a>mi perfil</div>
-			      <div class="ui-block-a"  align="center" ><a href="#createGroup"><img src="img/logo.png" ></a>crear un grupo</div>
-			      <div class="ui-block-a"  align="center" ><a href="#manageVisibles"><img src="img/logo.png" ></a>gestionar mis visibles</div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			    </div>
+				    <ul data-role="listview" data-inset="true" data-divider-theme="b">
+						<li data-icon="gear">
+							<a href="#profile">
+								<img src="img/profile_black_195x195.png" >
+								<h2>Profile</h2>								
+							</a>
+						</li>
+						<li data-icon="gear">
+							<a href="#createGroup" >							
+								<img src="img/group_black_195x195.png" >
+								<h2>Groups</h2>
+							</a>
+						</li>
+						<li data-icon="gear">
+							<a href="#manageVisibles" >							
+								<img src="img/visibles_black_195x195.png" >
+								<h2>Visibles</h2>
+							</a>
+						</li>
+
+						<li data-icon="gear">
+							<a href="#activateAccount" >							
+								<img src="img/account_black_195x195.png" >
+								<h2>Account</h2>
+							</a>
+						</li>
+					</ul>
 			</div><!-- /panel -->
 		</div><!-- /page 1-->
 
@@ -194,14 +223,69 @@
 			      <div class="ui-block-a"  align="center" ><a href="#profile"><img src="img/logo.png" ></a>mi perfil</div>
 			      <div class="ui-block-a"  align="center" ><a href="#createGroup"><img src="img/logo.png" ></a>crear un grupo</div>
 			      <div class="ui-block-a"  align="center" ><a href="#manageVisibles"><img src="img/logo.png" ></a>gestionar mis visibles</div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
+			      <div class="ui-block-a"  align="center" ><a href="#activateAccount"><img src="img/logo.png" ></a>activar cuenta</div>
+
 			    </div>
 			</div><!-- /panel -->
 		</div><!-- /page manageVisibles-->
 
-
+		<div data-role="page" data-theme="a" id="createGroup">
+			<div data-role="header" data-position="fixed">							
+			  	<div class="ui-grid-solo">
+			       <div class="ui-block-a">
+			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
+			       	<strong>group</strong>			       	
+			       </div>			     
+	    		</div>
+			</div><!-- /header -->
+			<div data-role="content" data-theme="a">							
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<li>
+						<img src="img/logo.png" />
+                        <input type="text" name="groupName" id="groupName" value="" placeholder="Name of the group">
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>pepito</h2>
+						<p>Broken Bells</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>fulanito</h2>
+						<p>Hot Chip</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Sutanito</h2>
+						<p>Hot Chip</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Ian</h2>
+						<p>Hot Chip</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
+						<h2>Maria</h2>
+						<p>Hot Chic</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+					<li><a href="#">
+						<img src="img/logo.png" />
+						<h2>Menganito</h2>
+						<p>Hot Chip</p></a>
+						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
+					</li>
+				</ul>
+			</div><!-- /content -->
+			<div data-role="footer" data-position="fixed" data-position="fixed">
+				<button id="createGroupButton" class="ui-btn ui-corner-all" >Create Group</button>
+			</div><!-- /footer -->
+		</div><!-- /page createGroup-->
 		
 		
 		<div data-role="page" data-theme="a" id="profile">
@@ -218,55 +302,41 @@
 					<!--<li data-role="list-divider"><h1>Who is visible</h1></li> -->
 					<li>
 						<img src="img/logo.png" />
-						<h2>pepito</h2>
-						<p>Broken Bells</p>			
-						<form>
-					<div data-role="fieldcontain">
-                         <label for="text-12">Nick Name:</label>
-                         <input type="text" name="text-12" id="text-12" value="">
-					</div>
-				
-					<div data-role="fieldcontain">
-                         <label for="text-13">Status:</label>
-                         <input type="text" data-clear-btn="true" name="text-13" id="text-13" value="">
-					</div>
-				
-					<div data-role="fieldcontain">
-                        <label for="textarea-12">I like to:</label>
-                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
-					</div>
-					
-					<div data-role="fieldcontain">
-                        <label for="textarea-12">I work on:</label>
-                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
-					</div>
-					
-					
-				</form>
+	
+							<div data-role="fieldcontain">
+		                         <label for="text-12">Name:</label>
+		                         <input type="text" name="text-12" id="text-12" value="">
+							</div>
+						
+							<div data-role="fieldcontain">
+		                         <label for="text-13">Status:</label>
+		                         <input type="text" data-clear-btn="true" name="text-13" id="text-13" value="">
+							</div>
+						
+							<div data-role="fieldcontain">
+		                        <label for="textarea-12">I like to:</label>
+		                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
+							</div>
+							
+							<div data-role="fieldcontain">
+		                        <label for="textarea-12">I work on:</label>
+		                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
+		                         
+							</div>							
 					</li>
+					
 				</ul>
+				<div data-role="fieldcontain">
+						<label for="myprofile-mobile-number">my telephone number:</label>
+						<input id="myprofile-mobile-number" name="myprofile-mobile-number" type="tel" placeholder="e.g. +1 702 123 4567">
+				</div>   
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel-profile" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" >mi perfil</div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			    </div>
-			</div><!-- /panel -->
 		</div><!-- /page profile-->
-		
-		
-		
-		
-		
 		
 		<div data-role="page" id="map-page" data-url="map-page">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#mypanel2" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
@@ -280,48 +350,67 @@
 				
 			<div data-role="content" data-theme="a">
 				<ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li><a href="#">
-						<img src="img/logo.png" />
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" />
 						<h2>pepito</h2>
 						<p>Broken Bells</p></a>
-						<a href="#purchase" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
 					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/9908d2ca5936aea6c4e5ce09404ffbaa" />
 						<h2>fulanito</h2>
-						<p>Hot Chip</p></a>
+						<p>Hot Chic
+						</p></a>
 					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" />
 						<h2>Sutanito</h2>
 						<p>Hot Chip</p></a>
 					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/a0e1c0eacfecf9743bec4ebd6bdcd6f5" />
 						<h2>Ian</h2>
 						<p>Hot Chip</p></a>
 					</li>
-										<li><a href="#">
+					<li><a href="#chat-page">
 						<img src="img/logo.png" />
-						<h2>Maria</h2>
+						<h2>Apache</h2>
 						<p>Hot Chip</p></a>
 					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
+					<li><a href="#chat-page">
+						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
 						<h2>Maria</h2>
 						<p>Hot Chip</p></a>
 					</li>
 				</ul>
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel2" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			    </div>
+			<div data-role="panel" id="mypanel-map-page" data-display="overlay">
+				    <ul data-role="listview" data-inset="true" data-divider-theme="b">
+						<li data-icon="gear">
+							<a href="#profile">
+								<img src="img/profile_black_195x195.png" >
+								<h2>Profile</h2>								
+							</a>
+						</li>
+						<li data-icon="gear">
+							<a href="#createGroup" >							
+								<img src="img/group_black_195x195.png" >
+								<h2>Groups</h2>
+							</a>
+						</li>
+						<li data-icon="gear">
+							<a href="#manageVisibles" >							
+								<img src="img/visibles_black_195x195.png" >
+								<h2>Visibles</h2>
+							</a>
+						</li>
+
+						<li data-icon="gear">
+							<a href="#activateAccount" >							
+								<img src="img/account_black_195x195.png" >
+								<h2>Account</h2>
+							</a>
+						</li>
+					</ul>
 			</div><!-- /panel -->
 		</div><!-- /page map-page-->
 		
@@ -331,7 +420,7 @@
 			       <div class="ui-block-a">
 			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>
 			       	<a href="#one" data-role="button" class="ui-nodisc-icon icon-list">
-			       		<img src="img/logo_icon.png" alt="lists" class="button ui-li-icon ui-corner-none ">
+			       		<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="button ui-li-icon ui-corner-none ">
 			       	</a>
 			       	<strong>Fulanito o nombre de grupo</strong>
 			       	
@@ -367,7 +456,7 @@
 					  		<a target="_blank" href="http://img.diytrade.com/cdimg/1456476/32322505/0/1366351312/2013_new_Sexy_Silicone_Bust_Self-adhesive_Front_Closure_backless_Strapless_Bra.jpg">
 					    		<img class="image-embed" src="img/logo.png">
 					  		</a>
-					  	<div class="name">fuckkkkkk</div>
+					  	<div class="name">click her to see the bra...</div>
 						</div>
 					  </span>					
 					</div>				
@@ -390,7 +479,7 @@
 					  <span class="user">Kandan bot</span>
 					
 					  <span class="content">
-					    luciomor uploaded <a href="/system/attachments/files/000/000/022/original/1374148_665127126840542_2021776746_n.jpg?1399414798">1374148_665127126840542_2021776746_n.jpg</a>
+					    luciomor uploaded <a href="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636?s=30&amp;d=identicon">1374148_665127126840542_2021776746_n.jpg</a>
 					  </span>
 					</div>				
 				</div>
@@ -419,15 +508,7 @@
 				  </span>
 				
 				  <span class="content">
-				    <pre class="pastie">  <a target="_blank" class="pastie-link" href="/channels/5/activities/1870">View pastie</a>
-				  <br>&lt;article&gt;
-				        		&lt;header&gt;
-				        			&lt;h2&gt;Blog Post Title #1&lt;/h2&gt;
-				        			&lt;p&gt;Posted on: &lt;time datetime="2014-05-12" pubdate&gt;12 May 2014&lt;/time&gt;&lt;/p&gt;
-				        		&lt;/header&gt;
-				                &lt;figure&gt;
-				             ...
-				</pre>
+"Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 				  </span>
 				
 				</div>
@@ -442,12 +523,7 @@
 				  </span>
 				
 				  <span class="content">
-				    <pre class="pastie">  <a target="_blank" class="pastie-link" href="/channels/5/activities/1871">View pastie</a>
-				  <br>&lt;!DOCTYPE html&gt;
-				&lt;!--[if lt IE 7]&gt;      &lt;html class="no-js lt-ie9 lt-ie8 lt-ie7"&gt; &lt;![endif]--&gt;
-				&lt;!--[if IE 7]&gt;         &lt;html class="no-js lt-ie9 lt-ie8"&gt; &lt;![endif]--&gt;
-				&lt;!--[if IE 8]&gt;         &lt;html class="no-js lt-ie9"&gt; ...
-				</pre>
+				   "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 				  </span>
 				
 				</div>
@@ -515,23 +591,16 @@
 					<button class="post">Post</button>
 				</div>				
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel-chat-page" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			      <div class="ui-block-a"  align="center" ><img src="img/logo.png" ></div>
-			    </div>
-			</div><!-- /panel -->
 		</div><!-- /page chat-page-->		
 		
-		
-		
-				<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-		<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+			<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+			<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
 		    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
+		    		    
+	        <script src="js/intlTelInput.min.js"></script>
+		    <script>
+		      $("#mobile-number").intlTelInput();
+		    </script>
 		     <script>
    
 			/*
