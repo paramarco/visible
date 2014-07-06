@@ -1,13 +1,16 @@
 var express			= require('express'),
 	app				= express(),
 	server			= require('http').createServer(app),
-	io 				= require("socket.io").listen(server), //TODO use SecureWebSockets instead
+	io 				= require("socket.io").listen(server), 
 	uuid			= require('node-uuid'),
 	_ 				= require('underscore')._ ,
 	Room			= require('./lib/Group.js'),
 	Client			= require('./lib/Client.js'),
-	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js');
-	PostMan			= require('./lib/PostMan.js');
+	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
+	PostMan			= require('./lib/PostMan.js'),
+	Message			= require('./lib/Message.js');
+	
+//TODO use SecureWebSockets instead
 //DEBUG			##################
 var util = require('util');
 //DEBUG END		##################
@@ -54,10 +57,9 @@ io.sockets.on("connection", function (socket) {
 		if (isKnowClient && client != null) { //given it isKnowClient
 			client.socketid = null;   
 		} else { 					//TODO  send report to administrator	
-			console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');
+			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');console.log("DEBUG :::  %j ", client);
 		}				 
-		
-		console.log('DEBUG :::  Got disconnect!');	console.log("DEBUG :::  %j ", client);
+		console.log('DEBUG :::  Got disconnect!');		
 	});
    
 	socket.on("joinserver", function(data) {
@@ -83,54 +85,31 @@ io.sockets.on("connection", function (socket) {
 			postMan.sendMessageHeaders(client);				
 			
 						
-		} else {	//TODO  send report to administrator
-			console.log('DEBUG :::i do not like it');	console.log("DEBUG ::: joinServerParameters: %j, socket : %s  ", joinServerParameters );//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );			
+		} else {	//TODO  send report to administrator			
+			console.log('DEBUG ::: disconnecting the socket');	console.log("DEBUG ::: joinServerParameters: %j", joinServerParameters );//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
+			socket.disconnect();			
 		}
 	});
 
 	
 	socket.on("messagetoserver", function(msg) {
-		//process.exit(1);
-		var re = /^[w]:.*:/;
-		var whisper = re.test(msg);
-		var whisperStr = msg.split(":");
-		var found = false;
-		if (whisper) {
-			var whisperTo = whisperStr[1];
-			var keys = Object.keys(people);
-			if (keys.length != 0) {
-				for (var i = 0; i<keys.length; i++) {
-					if (people[keys[i]].name === whisperTo) {
-						var whisperId = keys[i];
-						found = true;
-						if (socket.id === whisperId) { //can't whisper to ourselves
-							socket.emit("update", "You can't whisper to yourself.");
-						}
-						break;
-					} 
-				}
-			}
-			if (found && socket.id !== whisperId) {
-				var whisperTo = whisperStr[1];
-				var whisperMsg = whisperStr[2];
-				socket.emit("whisper", {name: "You"}, whisperMsg);
-				io.sockets.socket(whisperId).emit("whisper", people[socket.id], whisperMsg);
-			} else {
-				socket.emit("update", "Can't find " + whisperTo);
-			}
-		} else {
-			if (io.sockets.manager.roomClients[socket.id]['/'+socket.room] !== undefined ) {
-				io.sockets.in(socket.room).emit("chat", people[socket.id], msg);
-				socket.emit("isTyping", false);
-				if (_.size(chatHistory[socket.room]) > 10) {
-					chatHistory[socket.room].splice(0,1);
-				} else {
-					chatHistory[socket.room].push(people[socket.id].name + ": " + msg);
-				}
-		    	} else {
-				socket.emit("update", "Please connect to a room.");
-		    	}
-		}
+		if (postMan.isMessageWellFormatted(msg) == false) return;	//PostMan verifies receiver & sender & everything else is correct.check socket.id too
+	
+		var message = new Message(msg);
+		var isClientReceiverOnline = false;
+		//XEP-0184: Message Delivery Receipts
+		socket.emit("MessageDeliveryReceipt", message.msgID, message.md5sum);
+		
+		var ClientReceiver = _.find(listOfClients, function(client) {	if (client.publicClientID === message.to && client.socketid != null   )
+																			return isClientReceiverOnline = true;	 
+																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
+					
+		if ( isClientReceiverOnline ){
+ 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", message);		
+ 		}else {
+ 			postMan.archiveMessage(message);
+ 		}		
+
 	});
 
 

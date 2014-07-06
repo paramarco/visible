@@ -5,8 +5,15 @@ function PostMan() {
 PostMan.prototype.sendMessageHeaders = function(client) {
 
 };
+//TODO to implement check to format
+PostMan.prototype.isMessageWellFormatted = function(msg) {
+  //var isformatted = false;
+  var isformatted = true;
+  return isformatted;
+};
 
-PostMan.prototype.XXXXX = function(XXX) {
+//TODO to implement Message Storage
+PostMan.prototype.archiveMessage = function(msg) {
 
 };
 

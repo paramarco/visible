@@ -3,8 +3,9 @@ function Client(token, publicClientID, socketid) {
   this.publicClientID = publicClientID;
   this.socketid = socketid;
   this.location = { lat : "", lon : ""};
+  this.memberSince = new Date();
 };
-
+//TODO to finish
 Client.prototype.updateLocation = function(location) {
   if (this.isLocationWellFormatted(location) == true) {
     this.location = location;
