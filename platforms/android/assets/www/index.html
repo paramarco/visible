@@ -595,6 +595,8 @@
 		
 			<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
 			<script src="http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js"></script>
+			<script src="js/socket.io.js"></script>  
+
 		    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
 		    		    
 	        <script src="js/intlTelInput.min.js"></script>
@@ -602,6 +604,14 @@
 		      $("#mobile-number").intlTelInput();
 		    </script>
 		     <script>
+		     $(document).ready(function() {
+				  var socket = io.connect("127.0.0.1:3000");
+				  var joinServerParameters = { 	"token": 'xxx1' , 
+				  								"publicClientID": "marco",	
+				  								"location" : { "lat" : "sds", "lon" : "sds"}
+			  								};
+				  socket.emit('joinserver', JSON.stringify(joinServerParameters));
+			  });
    
 			/*
 			 * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
