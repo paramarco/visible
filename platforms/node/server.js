@@ -77,6 +77,7 @@ io.sockets.on("connection", function (socket) {
 													}); //TODO sort the listOfClients by publicClientID thus the search is faster
 		}					
 		if (isKnowClient && client != null){ //given it isKnowClient:
+			console.log('DEBUG ::: it isKnowClient:....');
 			client.socketid = socket.id;
 			client.updateLocation(joinServerParameters.location); 
 			//TODO XEP-0080: User Location:: distribute its Location to its "Visible"s
@@ -93,22 +94,25 @@ io.sockets.on("connection", function (socket) {
 
 	
 	socket.on("messagetoserver", function(msg) {
-		if (postMan.isMessageWellFormatted(msg) == false) return;	//PostMan verifies receiver & sender & everything else is correct.check socket.id too
-	
-		var message = new Message(msg);
+		var message = new Message(msg);		
+		if (message.isWellFormatted == false) return;	//PostMan verifies everything is correct.check socket.id too and fill Message with msg
+			
 		var isClientReceiverOnline = false;
 		//XEP-0184: Message Delivery Receipts
-		socket.emit("MessageDeliveryReceipt", message.msgID, message.md5sum);
+		socket.emit("MessageDeliveryReceipt", message.msgID,message.md5sum);
 		
 		var ClientReceiver = _.find(listOfClients, function(client) {	if (client.publicClientID === message.to && client.socketid != null   )
 																			return isClientReceiverOnline = true;	 
 																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
 					
 		if ( isClientReceiverOnline ){
- 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", message);		
+			console.log('DEBUG ::: ClientReceiver is Online');
+ 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
  		}else {
+ 			console.log('DEBUG ::: ClientReceiver is offline');
  			postMan.archiveMessage(message);
- 		}		
+ 		}
+ 				
 
 	});
 
