@@ -2,10 +2,10 @@
 <widget id="com.instaltic.visible" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>visible</name>
     <description>
-        A sample Apache Cordova application that responds to the deviceready event.
+       visible
     </description>
-    <author email="dev@cordova.apache.org" href="http://cordova.io">
-        Apache Cordova Team
+    <author email="marco.vereda@instaltic.com" href="http://www.instaltic.com">
+        Marco Vereda Manchego
     </author>
     <content src="index.html" />
     <access origin="*" />

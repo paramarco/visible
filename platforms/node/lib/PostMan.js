@@ -13,5 +13,16 @@ PostMan.prototype.archiveMessage = function(msg) {
 
 };
 
+//TODO #4 check if this new message makes the Buffer of sender/receiver become full
+PostMan.prototype.isPostBoxFull= function(message) {
+	//get from the message the sender and receiver
+	var isPostBoxFull = false;
+	
+	return isPostBoxFull;
+
+};
+
+
+
 
 module.exports = PostMan;

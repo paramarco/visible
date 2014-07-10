@@ -1,0 +1,15 @@
+#######################################################################################################################
+#
+#                 TO DO List   																							
+#
+#######################################################################################################################
+
+TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
+
+TODO #2  send report to administrator when something non usual or out of logic happens
+
+TODO #3.1 implement check inputMsg isMessageWellFormatted, if so flag isWellFormatted is true
+
+TODO #3.2 implement check size of inputMsg as a Protection mechanism  
+
+TODO #4 check if this new message makes the Buffer of sender/receiver become full

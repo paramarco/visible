@@ -8,10 +8,13 @@ function Message(msg) {
 	this.isWellFormatted = this.isMessageWellFormatted(msg);
 
 };
-//TODO to implement check to format var message = new Message(msg);
+//TODO #3.1 implement check inputMsg isMessageWellFormatted, if so flag isWellFormatted is true
+//TODO #3.2 implement check size of inputMsg as a Protection mechanism  
 Message.prototype.isMessageWellFormatted = function(inputMsg) {
   //var isformatted = false;
     var isformatted = true;
+    if (inputMsg.istoobig) isformatted = false; 
+    
 	try {    msg =	JSON.parse(inputMsg);	} 
 	catch (ex) {	isformatted =  false;	}
   	this.to = msg.to;
@@ -22,10 +25,5 @@ Message.prototype.isMessageWellFormatted = function(inputMsg) {
 
   return isformatted;
 };
-//TODO
-Message.prototype.YYY = function(YYY) {
-	
-};
-
 
 module.exports = Message;

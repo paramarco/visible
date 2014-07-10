@@ -10,7 +10,7 @@ var express			= require('express'),
 	PostMan			= require('./lib/PostMan.js'),
 	Message			= require('./lib/Message.js');
 	
-//TODO use SecureWebSockets instead
+//TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
 //DEBUG			##################
 var util = require('util');
 //DEBUG END		##################
@@ -56,7 +56,7 @@ io.sockets.on("connection", function (socket) {
 		client = _.find(listOfClients, function(key) {	if (key.socketid == socket.id ){	return isKnowClient = true;	} });									
 		if (isKnowClient && client != null) { //given it isKnowClient
 			client.socketid = null;   
-		} else { 					//TODO  send report to administrator	
+		} else { 					//TODO #2  send report to administrator	when something non usual or out of logic happens
 			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');console.log("DEBUG :::  %j ", client);
 		}				 
 		console.log('DEBUG :::  Got disconnect!');		
@@ -86,7 +86,7 @@ io.sockets.on("connection", function (socket) {
 			postMan.sendMessageHeaders(client);				
 			
 						
-		} else {	//TODO  send report to administrator			
+		} else {	//TODO #2  send report to administrator	when something non usual or out of logic happens			
 			console.log('DEBUG ::: disconnecting the socket');	console.log("DEBUG ::: joinServerParameters: %j", joinServerParameters );//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
 			socket.disconnect();			
 		}
@@ -94,13 +94,15 @@ io.sockets.on("connection", function (socket) {
 
 	
 	socket.on("messagetoserver", function(msg) {
-		var message = new Message(msg);		
-		if (message.isWellFormatted == false) return;	//PostMan verifies everything is correct.check socket.id too and fill Message with msg
+		var message = new Message(msg);						//Message checks if msg is well Formatted, if so flag isWellFormatted is true		
+		if (message.isWellFormatted == false) return;		
+		if (postMan.isPostBoxFull(message) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
 			
-		var isClientReceiverOnline = false;
+		
 		//XEP-0184: Message Delivery Receipts
 		socket.emit("MessageDeliveryReceipt", message.msgID,message.md5sum);
 		
+		var isClientReceiverOnline = false;
 		var ClientReceiver = _.find(listOfClients, function(client) {	if (client.publicClientID === message.to && client.socketid != null   )
 																			return isClientReceiverOnline = true;	 
 																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
