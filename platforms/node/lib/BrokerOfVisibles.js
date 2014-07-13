@@ -1,7 +1,7 @@
 function BrokerOfVisibles() {
 
 };
-//the Aim is to implement something like XEP-0080: User Location TODO
+//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 BrokerOfVisibles.prototype.distributeLocationOf = function(client) {
 
 };

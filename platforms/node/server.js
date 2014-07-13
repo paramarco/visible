@@ -11,6 +11,9 @@ var express			= require('express'),
 	Message			= require('./lib/Message.js');
 	
 //TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
+//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
+//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
+
 //DEBUG			##################
 var util = require('util');
 //DEBUG END		##################
@@ -79,10 +82,11 @@ io.sockets.on("connection", function (socket) {
 		if (isKnowClient && client != null){ //given it isKnowClient:
 			console.log('DEBUG ::: it isKnowClient:....');
 			client.socketid = socket.id;
+			
 			client.updateLocation(joinServerParameters.location); 
-			//TODO XEP-0080: User Location:: distribute its Location to its "Visible"s
+			//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 			brokerOfVisibles.distributeLocationOf(client);
-			//TODO XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client
+			//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 			postMan.sendMessageHeaders(client);				
 			
 						
@@ -112,7 +116,7 @@ io.sockets.on("connection", function (socket) {
  			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
  		}else {
  			console.log('DEBUG ::: ClientReceiver is offline');
- 			postMan.archiveMessage(message);
+ 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
  		}
  				
 

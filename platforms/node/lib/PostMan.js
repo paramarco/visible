@@ -1,14 +1,13 @@
 function PostMan() {
 
 };
-//TODO XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client
-//emits ServerReplytoDiscoveryHeaders
+//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 PostMan.prototype.sendMessageHeaders = function(client) {
 
 };
 
 
-//TODO to implement Message Storage
+//TODO #5 save the message in the Buffer
 PostMan.prototype.archiveMessage = function(msg) {
 
 };
