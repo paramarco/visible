@@ -46,10 +46,35 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 	
 };
 
+PostMan.prototype.getMessageRetrievalParameters = function(input) {
+	try {    retrievalParameters =	JSON.parse(input);	} 
+	catch (ex) {	retrievalParameters = null;	}
+	
+	if (typeof retrievalParameters.msgID !== 'string' || 
+		typeof retrievalParameters.md5sum !== 'string' ||
+		typeof retrievalParameters.size !== 'number' ) {	retrievalParameters = null; }
+	
+	if (Object.keys(retrievalParameters).length != 3) {	retrievalParameters = null;	}
+
+	return retrievalParameters; 	
+};
+
+//TODO #16 get the message from database
+//inputRequestMessage = { msgID , md5sum , size}
+PostMan.prototype.getMessageFromArchive = function(retrievalParameters) {
+  var message = null;
+  message = _.find(listOfMessages, function(key) {	if (key.msgID == retrievalParameters.msgID && 	
+														key.md5sum  == retrievalParameters.md5sum &&
+														key.size == retrievalParameters.size   )
+														//key.to == socket.id->clientID... 
+														return true;	 
+													});   
+  return message;
+};
 
 //TODO #5 save the message in the Buffer
 PostMan.prototype.archiveMessage = function(msg) {
-
+	listOfMessages.push(msg);
 };
 
 //TODO #4 check if this new message makes the Buffer of sender/receiver become full

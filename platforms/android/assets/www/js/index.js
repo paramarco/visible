@@ -67,7 +67,7 @@ $(document).ready(function() {
   
   //TODO #14 get the data of joinServerParameters from local DB
   var joinServerParameters = { 	"token": 'xxx' , 
-  								"publicClientID": "marco",	
+  								"publicClientID": "Maria",	
   								"location" : { "lat" : "40.34555", "lon" : "3.44333"}
 							};
 
@@ -98,7 +98,7 @@ $(document).ready(function() {
 	
 	
   var message2send = new Message();
-  message2send.to = 'marco';
+  message2send.to = 'Maria';
   message2send.from = 'marco';
   message2send.messageBody = 'only text at the moment';
   message2send.assignMsgID();
@@ -135,10 +135,13 @@ $(document).ready(function() {
   		try {    listOfHeaders =	JSON.parse(inputListOfHeaders);	} 
 		catch (ex) {	isformatted =  false; return;	}		
 		
+		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
-				socket.emit('requestMessage', JSON.stringify(message2request));	
+				socket.emit('messageRetrieval', JSON.stringify(	{	msgID :  message2request.msgID,
+																	md5sum : message2request.md5sum,
+																	size : message2request.size	}	));		
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							

@@ -46,4 +46,6 @@ TODO #14 get the data of joinServerParameters from local DB
 
 TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 
+TODO #16 get the message from database
+
 
