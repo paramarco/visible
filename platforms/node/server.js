@@ -122,25 +122,15 @@ io.sockets.on("connection", function (socket) {
  			console.log('DEBUG ::: ClientReceiver is offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
  		}
- 				
-
 	});
 	
-	
-	socket.on("requestMessage", function(inputRequestMessage) {
-//		var message = new Message(msg);						//Message checks if msg is well Formatted, if so flag isWellFormatted is true		
-//		if (message.isWellFormatted == false) return;		
-//		if (postMan.isRequest(inputRequestMessage) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
+	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
+	socket.on("messageRetrieval", function(input) {		
+		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
+		if (retrievalParameters == null) return;
 					
-		if ( isClientReceiverOnline ){
-			console.log('DEBUG ::: ClientReceiver is Online');
- 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
- 		}else {
- 			console.log('DEBUG ::: ClientReceiver is offline');
- 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
- 		}
- 				
-
+		var message = postMan.getMessageFromArchive(retrievalParameters);		
+		if (message != null){	socket.emit("messageFromServer", JSON.stringify(message));	}
 	});
 
 });

@@ -79,22 +79,52 @@ $(document).ready(function() {
   socket.emit('joinserver', JSON.stringify(joinServerParameters));  
   
   //TODO class Message to another file
-  function Message() {
-		this.to = "" ;
-		this.from= "" ; 
-		this.messageBody = "" ;
-		this.msgID = null ;
-		this.md5sum	= null ;
-		//TODO
-		this.assignMsgID = function(){
-			this.msgID = 'asduhasd67asdi87asd7asd';
-		};
-		//TODO
-		this.assignmd5sum = function(){
-			this.md5sum = '82734973294872398472394';
-		};
-		
-	};
+function Message() {
+	this.to = "" ;
+	this.from= "" ; 
+	this.messageBody = "" ;
+	this.msgID = null ;
+	this.md5sum	= null ;
+};
+	//TODO
+Message.prototype.assignMsgID = function(){
+	this.msgID = 'asduhasd67asdi87asd7asd';
+};
+//TODO
+Message.prototype.assignmd5sum = function(){
+	this.md5sum = '82734973294872398472394';
+};
+
+  //TODO class Message to another file
+function Unwrapper() {
+};
+
+Unwrapper.prototype.getMessageFromServer = function(input) {
+	try {    messageFromServer =	JSON.parse(input);	} 
+	catch (ex) {	message  = null;	}
+	
+	if (typeof messageFromServer.to !== 'string' ||
+		typeof messageFromServer.from !== 'string' ||
+		typeof messageFromServer.messageBody  !== 'string' ||
+		typeof messageFromServer.msgID !== 'string' || 
+		typeof messageFromServer.md5sum !== 'string' ||
+		typeof messageFromServer.isWellFormatted !== 'boolean' ||
+		typeof messageFromServer.size !== 'number' ) {	message= null; }
+	
+	if (Object.keys(messageFromServer).length != 7) {	message = null;	}
+	
+	  var message = new Message();
+	  message.to = messageFromServer.to;
+	  message.from = messageFromServer.from;
+	  message.messageBody = messageFromServer.messageBody;
+	  message.msgID = messageFromServer.msgID;
+	  message.md5sum = messageFromServer.md5sum;
+	  message.size = messageFromServer.size;
+
+	return message; 	
+};
+
+ var unWrapper = new Unwrapper();	
 	
 	
   var message2send = new Message();
@@ -120,12 +150,11 @@ $(document).ready(function() {
   //TODO #12.1 display in the corresponding chat conversation, 
   //TODO #12.2  store in Local database
   socket.on("messageFromServer", function(inputMsg) {
-  		var isformatted = true;
-  		var msg;
-  		try {    msg =	JSON.parse(inputMsg);	} 
-		catch (ex) {	isformatted =  false; return;	}
+  		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
+  		if (messageFromServer != null) {
+  			  console.log('DEBUG ::: messageFromServer:' + JSON.stringify(messageFromServer));
+  		}
 		
-		console.log('DEBUG ::: messageFromServer triggered here it is:' + JSON.stringify(msg) );
   });
 	//TODO #13.1 headers come with size of the message get the smallest first, 
   	//TODO #13.2  start a loop requesting a message one by one 
@@ -135,20 +164,19 @@ $(document).ready(function() {
   		try {    listOfHeaders =	JSON.parse(inputListOfHeaders);	} 
 		catch (ex) {	isformatted =  false; return;	}		
 		
+		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
-				socket.emit('requestMessage', JSON.stringify(message2request));	
+				socket.emit('messageRetrieval', JSON.stringify(	{	msgID :  message2request.msgID,
+																	md5sum : message2request.md5sum,
+																	size : message2request.size	}	));		
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
 		},8000); // loop requesting for a message every 8 seconds
        
-  	console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered' + JSON.stringify(listOfHeaders));
-	  });
-
-	  
-	  
+	  });	  
 });
    
 			/*
