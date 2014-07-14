@@ -18,6 +18,8 @@ TODO #5 save the message in the Buffer
 
 TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 
+TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}]; 
+
 TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchases
 
 TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar 
@@ -42,6 +44,6 @@ TODO #13.2  start a loop requesting a message one by one
 
 TODO #14 get the data of joinServerParameters from local DB
 
-
+TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 
 

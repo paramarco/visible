@@ -34,16 +34,20 @@ io.set("log level", 1);
 //DEBUG END		##################
 
 //GLOBALS
-var listOfClients = []; //array of Client.js
+var listOfClients = []; //array of Client.js (DB)
+					
 var brokerOfVisibles = new BrokerOfVisibles();
-var postMan = new PostMan();
+var postMan = new PostMan(io);
 
 //DEBUG temporary variables just for testing Performances
- 
+/* 
 for (var i = 0 ; i<10000000; i++){
 	var newClient = new Client ("x23xx","Fernando",null);
 	listOfClients.push(newClient);	
 }
+*/
+var newClient = new Client ("x23xx","Fernando",null);
+listOfClients.push(newClient);
 var newClient = new Client ("xxx","marco",null);
 listOfClients.push(newClient); 
 
@@ -121,6 +125,22 @@ io.sockets.on("connection", function (socket) {
  				
 
 	});
+	
+	
+	socket.on("requestMessage", function(inputRequestMessage) {
+//		var message = new Message(msg);						//Message checks if msg is well Formatted, if so flag isWellFormatted is true		
+//		if (message.isWellFormatted == false) return;		
+//		if (postMan.isRequest(inputRequestMessage) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
+					
+		if ( isClientReceiverOnline ){
+			console.log('DEBUG ::: ClientReceiver is Online');
+ 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
+ 		}else {
+ 			console.log('DEBUG ::: ClientReceiver is offline');
+ 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
+ 		}
+ 				
 
+	});
 
 });

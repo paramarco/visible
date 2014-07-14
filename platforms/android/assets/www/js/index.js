@@ -60,7 +60,9 @@ $("#mobile-number").intlTelInput();
 
 
 $(document).ready(function() {
-	
+  
+  //functions to trigger periodically:
+  //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
   var socket = io.connect("127.0.0.1:3000");
   
   //TODO #14 get the data of joinServerParameters from local DB
@@ -68,11 +70,13 @@ $(document).ready(function() {
   								"publicClientID": "marco",	
   								"location" : { "lat" : "40.34555", "lon" : "3.44333"}
 							};
-	for (var i = 0 ; i<10; i++){
-		  socket.emit('joinserver', JSON.stringify(joinServerParameters));
-	}						
 
-  
+//DEBUG
+//	for (var i = 0 ; i<10; i++){
+//		  socket.emit('joinserver', JSON.stringify(joinServerParameters));
+//	}						
+//END DEBUG
+  socket.emit('joinserver', JSON.stringify(joinServerParameters));  
   
   //TODO class Message to another file
   function Message() {
@@ -106,9 +110,6 @@ $(document).ready(function() {
   //TODO #10.2 displayed in the corresponding chat conversation
   socket.emit('messagetoserver', JSON.stringify(message2send));
   
-  //TODO 	functions to trigger periodically:
-  //		1)ask server for the status of those messages without the corresponding MessageDeliveryReceipt
-  
   
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
   //TODO #11.2 store in Local database
@@ -128,8 +129,22 @@ $(document).ready(function() {
   });
 	//TODO #13.1 headers come with size of the message get the smallest first, 
   	//TODO #13.2  start a loop requesting a message one by one 
-  socket.on("ServerReplytoDiscoveryHeaders", function(msg) {
-  	console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered');
+  socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
+ 		var isformatted = true;
+  		var listOfHeaders;
+  		try {    listOfHeaders =	JSON.parse(inputListOfHeaders);	} 
+		catch (ex) {	isformatted =  false; return;	}		
+		
+		var loopRequestingMessages = setInterval(function(){
+			if (listOfHeaders.length > 0){
+				var message2request = listOfHeaders.pop();
+				socket.emit('requestMessage', JSON.stringify(message2request));	
+			}else {				
+				clearInterval(loopRequestingMessages);				
+			}							
+		},8000); // loop requesting for a message every 8 seconds
+       
+  	console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered' + JSON.stringify(listOfHeaders));
 	  });
 
 	  

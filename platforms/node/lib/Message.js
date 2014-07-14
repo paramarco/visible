@@ -6,7 +6,7 @@ function Message(msg) {
 	this.msgID; 
 	this.md5sum;
 	this.isWellFormatted = this.isMessageWellFormatted(msg);
-
+	this.size;
 };
 //TODO #3.1 implement check inputMsg isMessageWellFormatted, if so flag isWellFormatted is true
 //TODO #3.2 implement check size of inputMsg as a Protection mechanism  
