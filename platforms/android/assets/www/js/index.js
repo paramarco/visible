@@ -67,7 +67,7 @@ $(document).ready(function() {
   
   //TODO #14 get the data of joinServerParameters from local DB
   var joinServerParameters = { 	"token": 'xxx' , 
-  								"publicClientID": "marco",	
+  								"publicClientID": "Maria",	
   								"location" : { "lat" : "40.34555", "lon" : "3.44333"}
 							};
 
@@ -128,7 +128,7 @@ Unwrapper.prototype.getMessageFromServer = function(input) {
 	
 	
   var message2send = new Message();
-  message2send.to = 'marco';
+  message2send.to = 'Maria';
   message2send.from = 'marco';
   message2send.messageBody = 'only text at the moment';
   message2send.assignMsgID();
