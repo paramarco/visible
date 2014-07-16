@@ -48,4 +48,4 @@ TODO #15 ask server for the status of those messages without the corresponding M
 
 TODO #16 get the message from database
 
-
+TODO #17 security limit to global

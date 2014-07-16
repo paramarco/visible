@@ -32,12 +32,21 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 	// messageHeaders = [{ msgID , md5sum , size}]; 
 	//messageHeaders = [];
 	var thereAreMessages = false;
-	var messageHeaders = _.filter(	listOfMessages,
+	var messageList = _.filter(	listOfMessages,
 									function(key) {	if (key.to == client.publicClientID)
-														return thereAreMessages = true;	 
+														return thereAreMessages = true;	
 													});
+	
+	var messageHeaders = [];
 	if (thereAreMessages){
-		console.log("DEBUG ::: thereAreMessages true");
+		for(var i = 0; i < messageList.length; i++){
+			messageHeaders.push(	{	msgID : messageList[i].msgID,
+										md5sum : messageList[i].md5sum,
+										size :messageList[i].size	}
+								);  
+		} 
+
+		console.log("DEBUG ::: thereAreMessages true:" + JSON.stringify(messageHeaders));
 		this.io.sockets.socket(client.socketid).emit("ServerReplytoDiscoveryHeaders", 
 											JSON.stringify(messageHeaders));	
 	}else{
