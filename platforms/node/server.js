@@ -108,8 +108,7 @@ io.sockets.on("connection", function (socket) {
 			
 		
 		//XEP-0184: Message Delivery Receipts
-		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
-		socket.emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt) );
+		socket.emit("MessageDeliveryReceipt", message.msgID,message.md5sum);
 		
 		var isClientReceiverOnline = false;
 		var ClientReceiver = _.find(listOfClients, function(client) {	if (client.publicClientID === message.to && client.socketid != null   )
