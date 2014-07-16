@@ -1,0 +1,51 @@
+#######################################################################################################################
+#
+#                 TO DO List   																							
+#
+#######################################################################################################################
+
+TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
+
+TODO #2  send report to administrator when something non usual or out of logic happens
+
+TODO #3.1 implement check inputMsg isMessageWellFormatted, if so flag isWellFormatted is true
+
+TODO #3.2 implement check size of inputMsg as a Protection mechanism  
+
+TODO #4 check if this new message makes the Buffer of sender/receiver become full
+
+TODO #5 save the message in the Buffer
+
+TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+
+TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}]; 
+
+TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchases
+
+TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar 
+
+TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
+
+TODO #10.1 message must be store in local DB 
+
+TODO #10.2 displayed in the corresponding chat conversation
+
+TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
+
+TODO #11.2 store in Local database
+
+TODO #12.1 display in the corresponding chat conversation, 
+
+TODO #12.2  store in Local database
+
+TODO #13.1 headers come with size of the message get the smallest first, 
+
+TODO #13.2  start a loop requesting a message one by one 
+
+TODO #14 get the data of joinServerParameters from local DB
+
+TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
+
+TODO #16 get the message from database
+
+
