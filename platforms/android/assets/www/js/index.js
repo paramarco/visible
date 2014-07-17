@@ -56,20 +56,40 @@ var app = {
 */
 
   //TODO class Message to another file
-function Message() {
-	this.to = "" ;
-	this.from= "" ; 
-	this.messageBody = "" ;
-	this.msgID = null ;
-	this.md5sum	= null ;
+function Message(input) {
+	this.to = input.to;
+	this.from = input.from;
+	this.messageBody = input.messageBody;
+	this.msgID = "" ;
+	this.md5sum = "" ;
+	this.size = 0 ;
+	this.path2Attachment = null; 
+/*
+	if (Object.keys(input).length == 3 ) {
+		this.msgID = this.assignMsgID();
+		this.md5sum = this.assignmd5sum();
+		this.size = this.calculateSize();
+		this.path2Attachment = null;
+	}
+	if (Object.keys(input).length == 7){
+		this.msgID = input.msgID;
+		this.md5sum = input.md5sum ;
+		this.size = input.size;
+		this.path2Attachment = input.path2Attachment;
+	}
+	*/
 };
-	//TODO
+//TODO
 Message.prototype.assignMsgID = function(){
 	this.msgID = 'asduhasd67asdi87asd7asd';
 };
 //TODO
 Message.prototype.assignmd5sum = function(){
 	this.md5sum = '82734973294872398472394';
+};
+//TODO
+Message.prototype.calculateSize = function(){
+	this.size = 0;
 };
 //END Class Message
 
@@ -85,17 +105,10 @@ Unwrapper.prototype.getMessageFromServer = function(input) {
 			typeof messageFromServer.messageBody  !== 'string' ||
 			typeof messageFromServer.msgID !== 'string' || 
 			typeof messageFromServer.md5sum !== 'string' ||
-			typeof messageFromServer.isWellFormatted !== 'boolean' ||
 			typeof messageFromServer.size !== 'number' ||
 			Object.keys(messageFromServer).length != 7 ) {	return null;	}
 		
-		var message = new Message();
-		message.to = messageFromServer.to;
-		message.from = messageFromServer.from;
-		message.messageBody = messageFromServer.messageBody;
-		message.msgID = messageFromServer.msgID;
-		message.md5sum = messageFromServer.md5sum;
-		message.size = messageFromServer.size;
+		var message = new Message(messageFromServer);
 	
 		return message; 	
 	} 
@@ -152,9 +165,9 @@ $(document).ready(function() {
 	var socket = io.connect("127.0.0.1:3000");
   
   //TODO #14 get the data of joinServerParameters from local DB
-	var joinServerParameters = { 	"token": 'xxx' , 
-  									"publicClientID": "marco",	
-  									"location" : { "lat" : "40.34555", "lon" : "3.44333"}
+	var joinServerParameters = { 	token: 'xxx' , 
+  									publicClientID: "marco",	
+  									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
 	socket.emit('joinserver', JSON.stringify(joinServerParameters));  
@@ -163,12 +176,11 @@ $(document).ready(function() {
 	var unWrapper = new Unwrapper();	
   //TODO #10.1 message must be store in local DB 
   //TODO #10.2 displayed in the corresponding chat conversation
-	var message2send = new Message();
-	message2send.to = 'Maria';
-	message2send.from = 'marco';
-	message2send.messageBody = 'only text at the moment';
-	message2send.assignMsgID();
-	message2send.assignmd5sum();
+	var message2send = new Message(	{ 	to : "Anne", 
+										from : "marco" , 
+										messageBody : "only text at the moment"	}
+									);
+	
 	console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 	
 	socket.emit('messagetoserver', JSON.stringify(message2send));
@@ -194,7 +206,7 @@ $(document).ready(function() {
   		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
   		
-  		 console.log('DEBUG ::: messageFromServer trigered : ' + JSON.stringify(messageFromServer));
+  		 console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
 		
   });//END messageFromServer
@@ -203,7 +215,8 @@ $(document).ready(function() {
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
   		if (listOfHeaders == null) { return; }  		
-  		
+
+		console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered : ' + JSON.stringify(listOfHeaders));  		
  		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){

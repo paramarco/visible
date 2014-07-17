@@ -46,7 +46,9 @@ for (var i = 0 ; i<10000000; i++){
 	listOfClients.push(newClient);	
 }
 */
-var newClient = new Client ("x23xx","Fernando",null);
+var newClient = new Client ("ZZZZZZ","Anne",null);
+listOfClients.push(newClient);
+var newClient = new Client ("yyyyyy","Maria",null);
 listOfClients.push(newClient);
 var newClient = new Client ("xxx","marco",null);
 listOfClients.push(newClient); 
@@ -66,46 +68,45 @@ io.sockets.on("connection", function (socket) {
 		} else { 					//TODO #2  send report to administrator	when something non usual or out of logic happens
 			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');console.log("DEBUG :::  %j ", client);
 		}				 
-		console.log('DEBUG :::  Got disconnect!');		
+		console.log('DEBUG :::  disconnect triggered :: Got disconnect!');		
 	});
    
-	socket.on("joinserver", function(data) {
+	socket.on("joinserver", function(input) {
+		 
 		var isKnowClient = false;	
 		var client = null;		
-		var joinServerParameters;
-		
-		try {    joinServerParameters =	JSON.parse(data);	} 
-		catch (ex) {	joinServerParameters =  null;	}
-	    
-	    if (joinServerParameters != null){					
-			client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
-																key.publicClientID  == joinServerParameters.publicClientID )
-																return isKnowClient = true;	 
-													}); //TODO sort the listOfClients by publicClientID thus the search is faster
-		}					
+		var joinServerParameters = postMan.getJoinServerParameters(input);
+	    if ( joinServerParameters == null ){ return;}					
+	
+		client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
+															key.publicClientID  == joinServerParameters.publicClientID )
+															return isKnowClient = true;	 
+												}); //TODO sort the listOfClients by publicClientID thus the search is faster
+						
 		if (isKnowClient && client != null){ //given it isKnowClient:
-			console.log('DEBUG ::: it isKnowClient:....');
+			console.log('DEBUG ::: joinserver triggered :: it isKnowClient....');
 			client.socketid = socket.id;
 			
 			client.updateLocation(joinServerParameters.location); 
 			//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 			brokerOfVisibles.distributeLocationOf(client);
 			//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-			postMan.sendMessageHeaders(client);				
-			
+			postMan.sendMessageHeaders(client);			
 						
-		} else {	//TODO #2  send report to administrator	when something non usual or out of logic happens			
-			console.log('DEBUG ::: disconnecting the socket');	console.log("DEBUG ::: joinServerParameters: %j", joinServerParameters );//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
+		} else {	
+			//TODO #2  send report to administrator	when something non usual or out of logic happens			
+			console.log("DEBUG ::: joinServerParameters: %j", joinServerParameters );
+			//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
 			socket.disconnect();			
 		}
 	});
 
 	
 	socket.on("messagetoserver", function(msg) {
-		var message = new Message(msg);						//Message checks if msg is well Formatted, if so flag isWellFormatted is true		
-		if (message.isWellFormatted == false) return;		
+		var message = postMan.getMessage(msg);
+		if ( message == null) return;		
 		if (postMan.isPostBoxFull(message) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
-			
+		console.log('DEBUG ::: messagetoserver trigered :: ');	
 		
 		//XEP-0184: Message Delivery Receipts
 		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
@@ -117,10 +118,10 @@ io.sockets.on("connection", function (socket) {
 																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
 					
 		if ( isClientReceiverOnline ){
-			console.log('DEBUG ::: ClientReceiver is Online');
+			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
  			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
  		}else {
- 			console.log('DEBUG ::: ClientReceiver is offline');
+ 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
  		}
 	});
@@ -129,9 +130,10 @@ io.sockets.on("connection", function (socket) {
 	socket.on("messageRetrieval", function(input) {		
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
 		if (retrievalParameters == null) return;
-					
+		
 		var message = postMan.getMessageFromArchive(retrievalParameters);		
 		if (message != null){	socket.emit("messageFromServer", JSON.stringify(message));	}
+		console.log('DEBUG ::: messageRetrieval trigered :: ');
 	});
 
 });
