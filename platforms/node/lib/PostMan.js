@@ -1,22 +1,23 @@
 var	_ = require('underscore')._ ;
+var Message	= require('./Message.js');
 
 var listOfMessages = []; //array of Message.js (DB)
 
 listOfMessages.push(  { to : "marco",
-						from : "marco",
-						messageBody : "caca",
+						from : "Anne",
+						messageBody : "Lorem ipsum dolor sit amet",
 						msgID : "1",
-						md5sum : "12345",
-						isWellFormatted : true,
-						size : 1212	}
+						md5sum : "edfefeeeeaeeb5e23323",
+						size : 1212,
+						path2Attachment : null	}
 					);
 listOfMessages.push(  { to : "marco",
-						from : "maria",
-						messageBody : "caca2",
+						from : "Maria",
+						messageBody : "Lorem ipsum dolor sit amet",
 						msgID : "2",
-						md5sum : "12345",
-						isWellFormatted : true,
-						size : 123213	}
+						md5sum : "edfefeeeeaeeb5e23323",
+						size : 123213,
+						path2Attachment : null	}
 					);
 
 //class definition
@@ -32,21 +33,46 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 	// messageHeaders = [{ msgID , md5sum , size}]; 
 	//messageHeaders = [];
 	var thereAreMessages = false;
-	var messageHeaders = _.filter(	listOfMessages,
+	var messageList = _.filter(	listOfMessages,
 									function(key) {	if (key.to == client.publicClientID)
-														return thereAreMessages = true;	 
+														return thereAreMessages = true;	
 													});
+	
+	var messageHeaders = [];
 	if (thereAreMessages){
-		console.log("DEBUG ::: thereAreMessages true");
+		for(var i = 0; i < messageList.length; i++){
+			messageHeaders.push(	{	msgID : messageList[i].msgID,
+										md5sum : messageList[i].md5sum,
+										size :messageList[i].size	}
+								);  
+		} 
+
 		this.io.sockets.socket(client.socketid).emit("ServerReplytoDiscoveryHeaders", 
 											JSON.stringify(messageHeaders));	
 	}else{
-		console.log("DEBUG ::: thereAreMessages false");
+		
 	}
 	
 };
 
+PostMan.prototype.getJoinServerParameters = function(input) {
+	var joinParameters  = null;
+	try {   joinParameters =	JSON.parse(input);	} 
+	catch (ex) {	joinParameters = null;	}
+	
+	if (typeof joinParameters.token !== 'string' || 
+		typeof joinParameters.publicClientID !== 'string' ||
+		typeof joinParameters.location.lat  !== 'string' ||
+		typeof joinParameters.location.lon  !== 'string' ) {	joinParameters= null; }
+	
+	if (Object.keys(joinParameters).length != 3) {	joinParameters = null;	}
+
+	return joinParameters; 	
+};
+
+
 PostMan.prototype.getMessageRetrievalParameters = function(input) {
+	var retrievalParameters = null;
 	try {    retrievalParameters =	JSON.parse(input);	} 
 	catch (ex) {	retrievalParameters = null;	}
 	
@@ -84,6 +110,25 @@ PostMan.prototype.isPostBoxFull= function(message) {
 	
 	return isPostBoxFull;
 
+};
+PostMan.prototype.getMessage = function(input) {
+	var inputMessage = null;
+	try {    
+		inputMessage =	JSON.parse(input);	 
+	
+		if (typeof inputMessage.to !== 'string' || 
+			typeof inputMessage.from !== 'string' ||
+			typeof inputMessage.messageBody !== 'string' || 
+			typeof inputMessage.msgID !== 'string' || 
+			typeof inputMessage.md5sum !== 'string' ||  
+			typeof inputMessage.size !== 'number' ||
+			Object.keys(inputMessage).length != 7 ) 	{	return null; 	}
+		
+		var message = new Message(inputMessage);	
+		
+		return message;
+	}
+	catch (ex) {	return null;	} 	
 };
 
 
