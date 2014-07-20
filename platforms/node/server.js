@@ -91,7 +91,9 @@ io.sockets.on("connection", function (socket) {
 			//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 			brokerOfVisibles.distributeLocationOf(client);
 			//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-			postMan.sendMessageHeaders(client);			
+			postMan.sendMessageHeaders(client);	
+			postMan.sendMessageACKs(client);	
+					
 						
 		} else {	
 			//TODO #2  send report to administrator	when something non usual or out of logic happens			
@@ -109,7 +111,7 @@ io.sockets.on("connection", function (socket) {
 			
 		
 		//XEP-0184: Message Delivery Receipts
-		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
+		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer", to : message.to};
 		socket.emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt) );
 		
 		var isClientReceiverOnline = false;
@@ -139,32 +141,30 @@ io.sockets.on("connection", function (socket) {
 		var messageACKparameters = postMan.getDeliveryACK(input);		
 		if (messageACKparameters == null) return;
 					
-		//var message = postMan.getMessageFromArchive(retrievalParameters);		
-		if (messageACKparameters != null){
-			//XEP-0184: Message Delivery Receipts
-			var isClientSerderOnline = false;
-			var ClientSender = _.find(	listOfClients, 
-										function(client) {	
-											if (client.publicClientID === messageACKparameters.from &&  
-												client.socketid != null   )
-													return isClientSerderOnline  = true;	 
-										}	); //TODO sort the listOfClients by publicClientID thus the search is faster
-						
-			if ( isClientReceiverOnline ){
-				console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
-	 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
-	 		}else {
-	 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
-	 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
-	 		}
+		var isClientSerderOnline = false;
+		var ClientSender = _.find(	listOfClients, 
+									function(client) {	
+										if (client.publicClientID === messageACKparameters.from &&  
+											client.socketid != null   )
+												return isClientSerderOnline  = true;	 
+									}	); //TODO sort the listOfClients by publicClientID thus the search is faster
+									
+		//XEP-0184: Message Delivery Receipts			
+		if ( isClientSerderOnline ){				
+			var deliveryReceipt = { msgID : messageACKparameters.msgID, 
+									md5sum : messageACKparameters.md5sum, 
+									typeOfACK : "ACKfromAddressee",
+									to : messageACKparameters.to 	};
+									
+ 			io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt));
+ 			
+ 			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
+ 					
+ 		}else {
+ 			postMan.archiveACK(messageACKparameters);
+ 			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender offline, MessageDeliveryReceipt archived');
 
-
-			
-			var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
-			socket.emit("MessageDeliveryReceipt", );
-			io.sockets.socket(client.socketid).emit("MessageDeliveryReceipt", 
-													JSON.stringify(deliveryReceipt) );
-		}
+ 		}
 		
 	});
 	

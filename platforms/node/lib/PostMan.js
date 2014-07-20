@@ -2,6 +2,8 @@ var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 
 var listOfMessages = []; //array of Message.js (DB)
+var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
+
 
 listOfMessages.push(  { to : "marco",
 						from : "Anne",
@@ -19,6 +21,13 @@ listOfMessages.push(  { to : "marco",
 						size : 123213,
 						path2Attachment : null	}
 					);
+					
+listOfACKs.push({ 	msgID : "3", 
+					md5sum : "asdasdasdasdasdasd", 
+					from : "marco",
+					to : 'Anne' 	});					
+					
+					
 
 //class definition
 function PostMan(io) {
@@ -144,6 +153,37 @@ PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {
 	}
 	catch (ex) {	return null;	}	
 };
+
+PostMan.prototype.archiveACK = function(messageACKparameters) {	
+	listOfACKs.push(messageACKparameters);
+};
+
+PostMan.prototype.sendMessageACKs = function(client) {
+
+	var thereAreACKs = false;
+	var listOfACKStoNotify = _.filter(	listOfACKs,
+								function(key) {	if (key.from == client.publicClientID)
+														return thereAreACKs = true;	
+												});
+	
+	if (thereAreACKs){
+		for(var i = 0; i < listOfACKStoNotify.length; i++){
+			var deliveryReceipt = { msgID : listOfACKStoNotify[i].msgID, 
+									md5sum : listOfACKStoNotify[i].md5sum, 
+									typeOfACK : "ACKfromAddressee",
+									to : listOfACKStoNotify[i].to 	};
+											
+ 			this.io.sockets.socket(client.socketid).emit(	"MessageDeliveryReceipt", 
+															JSON.stringify(deliveryReceipt));
+		}
+	
+	}else{
+		
+	}
+	
+};
+
+
 
 
 module.exports = PostMan;

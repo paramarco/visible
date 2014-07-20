@@ -143,8 +143,9 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 		
 		if (typeof deliveryReceipt.msgID !== 'string' || 
 			typeof deliveryReceipt.md5sum !== 'string' ||
-			typeof deliveryReceipt.typeOfACK !== 'number'||
-			Object.keys(deliveryReceipt).length != 3  ) {	return null;}
+			typeof deliveryReceipt.typeOfACK !== 'string'||
+			typeof deliveryReceipt.to !== 'string'||
+			Object.keys(deliveryReceipt).length != 4  ) {	return null;}
 		
 		return deliveryReceipt; 
 	}
@@ -178,8 +179,8 @@ $(document).ready(function() {
 	var unWrapper = new Unwrapper();	
   //TODO #10.1 message must be store in local DB 
   //TODO #10.2 displayed in the corresponding chat conversation
-	var message2send = new Message(	{ 	to : "Anne", 
-										from : "marco" , 
+	var message2send = new Message(	{ 	to : "marco", 
+										from : "Anne" , 
 										messageBody : "only text at the moment"	}
 									);
 		
@@ -199,7 +200,7 @@ $(document).ready(function() {
 		}
 		if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
 		}
-		console.log('DEBUG ::: MessageDeliveryReceipt triggered msgID: ' + msgID +' md5sum  :' + md5sum + "ACK from:" + deliveryReceipt.typeOfACK );
+		console.log('DEBUG ::: MessageDeliveryReceipt triggered msgID: ' + deliveryReceipt.msgID +' md5sum  :' + deliveryReceipt.md5sum + "ACK from:" + deliveryReceipt.typeOfACK + "  message to > " + deliveryReceipt.to  );
   		
 	});
   
@@ -208,12 +209,15 @@ $(document).ready(function() {
   socket.on("messageFromServer", function(inputMsg) {
   		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
+  		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
+
+  		
   		var messageACK = {	to : messageFromServer.to, 
   							from : messageFromServer.from,
   							msgID : messageFromServer.msgID, 
   							md5sum : messageFromServer.md5sum	};
   		socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
-  		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageACK));
+  		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		
 		
   });//END messageFromServer
