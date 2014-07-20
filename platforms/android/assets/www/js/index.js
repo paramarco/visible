@@ -64,20 +64,22 @@ function Message(input) {
 	this.md5sum = "" ;
 	this.size = 0 ;
 	this.path2Attachment = null; 
-/*
-	if (Object.keys(input).length == 3 ) {
-		this.msgID = this.assignMsgID();
-		this.md5sum = this.assignmd5sum();
-		this.size = this.calculateSize();
-		this.path2Attachment = null;
+
+	switch (Object.keys(input).length )	{
+		case 3 :
+			this.assignMsgID();
+			this.assignmd5sum();
+			this.calculateSize();
+			this.path2Attachment = null;
+			break;
+		case 7 :			
+			this.msgID = input.msgID;
+			this.md5sum = input.md5sum ;
+			this.size = input.size;
+			this.path2Attachment = input.path2Attachment;
+			break;
+		default:	return null;	
 	}
-	if (Object.keys(input).length == 7){
-		this.msgID = input.msgID;
-		this.md5sum = input.md5sum ;
-		this.size = input.size;
-		this.path2Attachment = input.path2Attachment;
-	}
-	*/
 };
 //TODO
 Message.prototype.assignMsgID = function(){
@@ -180,10 +182,11 @@ $(document).ready(function() {
 										from : "marco" , 
 										messageBody : "only text at the moment"	}
 									);
-	
-	console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
-	
-	socket.emit('messagetoserver', JSON.stringify(message2send));
+		
+	if (message2send != null){
+		socket.emit('messagetoserver', JSON.stringify(message2send));
+		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
+	}
   
   
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
@@ -205,8 +208,12 @@ $(document).ready(function() {
   socket.on("messageFromServer", function(inputMsg) {
   		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
-  		
-  		 console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
+  		var messageACK = {	to : messageFromServer.to, 
+  							from : messageFromServer.from,
+  							msgID : messageFromServer.msgID, 
+  							md5sum : messageFromServer.md5sum	};
+  		socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
+  		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageACK));
   		
 		
   });//END messageFromServer

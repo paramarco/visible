@@ -115,7 +115,6 @@ PostMan.prototype.getMessage = function(input) {
 	var inputMessage = null;
 	try {    
 		inputMessage =	JSON.parse(input);	 
-	
 		if (typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.messageBody !== 'string' || 
@@ -123,7 +122,7 @@ PostMan.prototype.getMessage = function(input) {
 			typeof inputMessage.md5sum !== 'string' ||  
 			typeof inputMessage.size !== 'number' ||
 			Object.keys(inputMessage).length != 7 ) 	{	return null; 	}
-		
+
 		var message = new Message(inputMessage);	
 		
 		return message;
@@ -131,7 +130,20 @@ PostMan.prototype.getMessage = function(input) {
 	catch (ex) {	return null;	} 	
 };
 
-
+PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {	
+	try {    
+		var deliveryACK = JSON.parse(inputDeliveryACK);
+		
+		if (typeof deliveryACK.msgID !== 'string' || 
+			typeof deliveryACK.md5sum !== 'string' ||
+			typeof deliveryACK.to !== 'string' ||
+			typeof deliveryACK.from !== 'string' ||
+			Object.keys(deliveryACK).length != 4  ) {	return null;}
+		
+		return deliveryACK; 
+	}
+	catch (ex) {	return null;	}	
+};
 
 
 module.exports = PostMan;

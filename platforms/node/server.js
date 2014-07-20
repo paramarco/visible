@@ -68,7 +68,7 @@ io.sockets.on("connection", function (socket) {
 		} else { 					//TODO #2  send report to administrator	when something non usual or out of logic happens
 			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');console.log("DEBUG :::  %j ", client);
 		}				 
-		console.log('DEBUG :::  disconnect triggered :: Got disconnect!');		
+		console.log('DEBUG :::  Got disconnect!');		
 	});
    
 	socket.on("joinserver", function(input) {
@@ -106,7 +106,7 @@ io.sockets.on("connection", function (socket) {
 		var message = postMan.getMessage(msg);
 		if ( message == null) return;		
 		if (postMan.isPostBoxFull(message) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
-		console.log('DEBUG ::: messagetoserver trigered :: ');	
+			
 		
 		//XEP-0184: Message Delivery Receipts
 		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
@@ -121,7 +121,7 @@ io.sockets.on("connection", function (socket) {
 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
  			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
  		}else {
- 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is offline');
+ 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
  		}
 	});
@@ -130,10 +130,44 @@ io.sockets.on("connection", function (socket) {
 	socket.on("messageRetrieval", function(input) {		
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
 		if (retrievalParameters == null) return;
-		
+					
 		var message = postMan.getMessageFromArchive(retrievalParameters);		
 		if (message != null){	socket.emit("messageFromServer", JSON.stringify(message));	}
-		console.log('DEBUG ::: messageRetrieval trigered :: ');
 	});
+
+	socket.on("MessageDeliveryACK", function(input) {		
+		var messageACKparameters = postMan.getDeliveryACK(input);		
+		if (messageACKparameters == null) return;
+					
+		//var message = postMan.getMessageFromArchive(retrievalParameters);		
+		if (messageACKparameters != null){
+			//XEP-0184: Message Delivery Receipts
+			var isClientSerderOnline = false;
+			var ClientSender = _.find(	listOfClients, 
+										function(client) {	
+											if (client.publicClientID === messageACKparameters.from &&  
+												client.socketid != null   )
+													return isClientSerderOnline  = true;	 
+										}	); //TODO sort the listOfClients by publicClientID thus the search is faster
+						
+			if ( isClientReceiverOnline ){
+				console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
+	 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
+	 		}else {
+	 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
+	 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
+	 		}
+
+
+			
+			var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer"};
+			socket.emit("MessageDeliveryReceipt", );
+			io.sockets.socket(client.socketid).emit("MessageDeliveryReceipt", 
+													JSON.stringify(deliveryReceipt) );
+		}
+		
+	});
+	
+	
 
 });
