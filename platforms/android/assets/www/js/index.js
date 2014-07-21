@@ -64,20 +64,22 @@ function Message(input) {
 	this.md5sum = "" ;
 	this.size = 0 ;
 	this.path2Attachment = null; 
-/*
-	if (Object.keys(input).length == 3 ) {
-		this.msgID = this.assignMsgID();
-		this.md5sum = this.assignmd5sum();
-		this.size = this.calculateSize();
-		this.path2Attachment = null;
+
+	switch (Object.keys(input).length )	{
+		case 3 :
+			this.assignMsgID();
+			this.assignmd5sum();
+			this.calculateSize();
+			this.path2Attachment = null;
+			break;
+		case 7 :			
+			this.msgID = input.msgID;
+			this.md5sum = input.md5sum ;
+			this.size = input.size;
+			this.path2Attachment = input.path2Attachment;
+			break;
+		default:	return null;	
 	}
-	if (Object.keys(input).length == 7){
-		this.msgID = input.msgID;
-		this.md5sum = input.md5sum ;
-		this.size = input.size;
-		this.path2Attachment = input.path2Attachment;
-	}
-	*/
 };
 //TODO
 Message.prototype.assignMsgID = function(){
@@ -141,8 +143,9 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 		
 		if (typeof deliveryReceipt.msgID !== 'string' || 
 			typeof deliveryReceipt.md5sum !== 'string' ||
-			typeof deliveryReceipt.typeOfACK !== 'number'||
-			Object.keys(deliveryReceipt).length != 3  ) {	return null;}
+			typeof deliveryReceipt.typeOfACK !== 'string'||
+			typeof deliveryReceipt.to !== 'string'||
+			Object.keys(deliveryReceipt).length != 4  ) {	return null;}
 		
 		return deliveryReceipt; 
 	}
@@ -165,8 +168,8 @@ $(document).ready(function() {
 	var socket = io.connect("127.0.0.1:3000");
   
   //TODO #14 get the data of joinServerParameters from local DB
-	var joinServerParameters = { 	token: 'xxx' , 
-  									publicClientID: "marco",	
+	var joinServerParameters = { 	token: 'ZZZZZZ' , 
+  									publicClientID: "Anne",	
   									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
@@ -174,16 +177,6 @@ $(document).ready(function() {
   
 
 	var unWrapper = new Unwrapper();	
-  //TODO #10.1 message must be store in local DB 
-  //TODO #10.2 displayed in the corresponding chat conversation
-	var message2send = new Message(	{ 	to : "Anne", 
-										from : "marco" , 
-										messageBody : "only text at the moment"	}
-									);
-	
-	console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
-	
-	socket.emit('messagetoserver', JSON.stringify(message2send));
   
   
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
@@ -196,7 +189,7 @@ $(document).ready(function() {
 		}
 		if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
 		}
-		console.log('DEBUG ::: MessageDeliveryReceipt triggered msgID: ' + msgID +' md5sum  :' + md5sum + "ACK from:" + deliveryReceipt.typeOfACK );
+		console.log('DEBUG ::: MessageDeliveryReceipt triggered msgID: ' + deliveryReceipt.msgID +' md5sum  :' + deliveryReceipt.md5sum + " typeOfACK:" + deliveryReceipt.typeOfACK + "  message to > " + deliveryReceipt.to  );
   		
 	});
   
@@ -205,8 +198,44 @@ $(document).ready(function() {
   socket.on("messageFromServer", function(inputMsg) {
   		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
+  		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
-  		 console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
+  		
+/*  	var newFriend = document.createElement('li');
+		newFriend.id = 'friend' + i;			
+		newFriend.setAttribute('class','thumb selectable arrow');
+		newFriend.setAttribute('onclick','router_to_sculpture_settings(' + listOfFiles[i].id + ');');
+
+
+		var newFriend_img = document.createElement('img');
+		newFriend_img.id = 'friend_img' + i;
+		newFriend_img.src = "img/play.png";
+
+		var newFriend_small = document.createElement('small');
+		newFriend_small.id = 'friend_small' + i;
+		newFriend_small.innerHTML = listOfFiles[i].date;
+
+		var newFriend_strong = document.createElement('strong');
+		newFriend_strong.id = 'friend_strong' + i;
+		newFriend_strong.innerHTML = GLOBALS.Literals.recorded_on ;
+
+
+		document.getElementById('list_gallery').appendChild(newFriend);
+		document.getElementById(newFriend.id).appendChild(newFriend_img);
+    	document.getElementById(newFriend.id).appendChild(newFriend_strong);
+		document.getElementById(newFriend.id).appendChild(newFriend_small);
+*/  		
+  		
+  		
+  		
+  		
+  		
+  		var messageACK = {	to : messageFromServer.to, 
+  							from : messageFromServer.from,
+  							msgID : messageFromServer.msgID, 
+  							md5sum : messageFromServer.md5sum	};
+  		socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
+  		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		
 		
   });//END messageFromServer
@@ -230,6 +259,28 @@ $(document).ready(function() {
 		},8000); // loop requesting for a message every 8 seconds
        
 	  });//END ServerReplytoDiscoveryHeaders	  
+
+	$("#chat-input-button").click(function() {
+	//TODO #10.1 message must be store in local DB 
+	//TODO #10.2 displayed in the corresponding chat conversation
+		
+		var message2send = new Message(	{ 	to : "Anne", 
+											from : "marco" , 
+											messageBody : $("#chat-input").val()	}
+										);
+	
+		if (message2send != null){
+			socket.emit('messagetoserver', JSON.stringify(message2send));
+			console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
+		}
+  
+	
+	});
+
+
+
+
+
 });//END $(document).ready()
 
 

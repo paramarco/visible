@@ -5,18 +5,26 @@ function Message(input) {
 	this.to = input.to;
 	this.from = input.from;
 	this.messageBody = input.messageBody;
+	this.msgID = "" ;
+	this.md5sum = "" ;
+	this.size = 0 ;
+	this.path2Attachment = null; 
 
-	if (Object.keys(input).length == 3 ) {
-		this.msgID = this.assignMsgID();
-		this.md5sum = this.assignmd5sum();
-		this.size = this.calculateSize();
-		this.path2Attachment = null;
-	}else {
-		this.msgID = input.msgID;
-		this.md5sum = input.md5sum ;
-		this.size = input.size;
-		this.path2Attachment = input.path2Attachment;
-	}
+	switch (Object.keys(input).length )	{
+		case 3 :
+			this.assignMsgID();
+			this.assignmd5sum();
+			this.calculateSize();
+			this.path2Attachment = null;
+			break;
+		case 7 :			
+			this.msgID = input.msgID;
+			this.md5sum = input.md5sum ;
+			this.size = input.size;
+			this.path2Attachment = input.path2Attachment;
+			break;
+		default:	return null;	
+	}	
 };
 //TODO
 Message.prototype.assignMsgID = function(){
@@ -28,6 +36,7 @@ Message.prototype.assignmd5sum = function(){
 };
 //TODO
 Message.prototype.calculateSize = function(){
-	this.msgID = 'asduhasd67asdi87asd7asd';
+	this.size = 0;
 };
+
 module.exports = Message;
