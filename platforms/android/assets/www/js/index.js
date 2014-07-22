@@ -159,6 +159,79 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 
 //END Class UnWrapper
 
+function GUI() {
+};
+
+
+GUI.prototype.sanitize = function(html) {
+	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+	
+	var tagOrComment = new RegExp(
+	    '<(?:'
+	    // Comment body.
+	    + '!--(?:(?:-*[^->])*--+|-?)'
+	    // Special "raw text" elements whose content should be elided.
+	    + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+	    + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+	    // Regular name
+	    + '|/?[a-z]'
+	    + tagBody
+	    + ')>',
+	    'gi');
+	
+	var oldHtml;
+	do {
+		oldHtml = html;
+		html = html.replace(tagOrComment, '');
+	} while (html !== oldHtml);
+	return html.replace(/</g, '&lt;');
+}
+
+
+GUI.prototype.insertMessageInConversation = function(message) {
+
+	var i = message.getMsgID();
+	var newActivity = document.createElement('div');
+	newActivity.id = 'activity' + i;			
+	newActivity.setAttribute('class','activity');
+	
+	//TODO get the time of transmission
+	//TODO store it
+	var newPosted_at = document.createElement('span');
+	newPosted_at.setAttribute('class','posted_at');
+	newPosted_at.innerHTML = new Date().toLocaleString();
+	
+	//TODO get the Avatar photo of the clientID
+	//TODO store it	
+	var newAvatar = document.createElement('img');
+	newAvatar.setAttribute('class','avatar');
+	newAvatar.src = "img/logo.png";
+
+	var newReadable = document.createElement('div');
+	newReadable.id = 'activity-readable' + i  ;
+	newReadable.setAttribute('class','readable');
+	
+	//TODO get the nick name of the from clientID
+	//TODO store it
+	var newUser = document.createElement('span');
+	newUser.setAttribute('class','user');
+	newUser.innerHTML = message.from;
+	
+	var newContent = document.createElement('span');
+	newContent.setAttribute('class','content');
+	newContent.innerHTML = this.sanitize(message.messageBody);
+	
+	document.getElementById('chat-page-content').appendChild(newActivity);
+	document.getElementById(newActivity.id).appendChild(newPosted_at);
+	document.getElementById(newActivity.id).appendChild(newAvatar);
+	document.getElementById(newActivity.id).appendChild(newReadable);
+	document.getElementById(newReadable.id).appendChild(newUser);
+	document.getElementById(newReadable.id).appendChild(newContent);
+	
+};
+
+
+
 
 // hooks selector with library "intlTelInput" for the telephone form
 $("#mobile-number").intlTelInput();
@@ -171,14 +244,15 @@ $(document).ready(function() {
 	var socket = io.connect("127.0.0.1:3000");
   
   //TODO #14 get the data of joinServerParameters from local DB
-	var joinServerParameters = { 	token: 'ZZZZZZ' , 
-  									publicClientID: "Anne",	
+	var joinServerParameters = { 	token: 'xxx' , 
+  									publicClientID: "marco",	
   									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
 	socket.emit('joinserver', JSON.stringify(joinServerParameters));  
   
-
+	var gui = new GUI();
+	
 	var unWrapper = new Unwrapper();	
   
   
@@ -246,42 +320,7 @@ $(document).ready(function() {
 			socket.emit('messagetoserver', JSON.stringify(message2send));
 			console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 		}
-		
-		//TODO get the activity class static number i
-		var i = message2send.getMsgID();
- 		var newActivity = document.createElement('div');
-		newActivity.id = 'activity' + i;			
-		newActivity.setAttribute('class','activity');
-		
-		var newPosted_at = document.createElement('span');
-		newPosted_at.setAttribute('class','posted_at');
-		newPosted_at.innerHTML = "7 hours ago";
-		
-		var newAvatar = document.createElement('img');
-		newAvatar.setAttribute('class','avatar');
-		newAvatar.src = "img/logo.png";
-
-		var newReadable = document.createElement('div');
-		newReadable.id = 'activity-readable' + i  ;
-		newReadable.setAttribute('class','readable');
-		
-		var newUser = document.createElement('span');
-		newUser.setAttribute('class','user');
-		newUser.innerHTML = "Maria";
-		
-		var newContent = document.createElement('span');
-		newContent.setAttribute('class','content');
-		newContent.innerHTML = $("#chat-input").val();
-		
-		document.getElementById('chat-page-content').appendChild(newActivity);
-		document.getElementById(newActivity.id).appendChild(newPosted_at);
-    		document.getElementById(newActivity.id).appendChild(newAvatar);
-		document.getElementById(newActivity.id).appendChild(newReadable);
-		document.getElementById(newReadable.id).appendChild(newUser);
-  		document.getElementById(newReadable.id).appendChild(newContent);
-
-  
-	
+		gui.insertMessageInConversation(message2send);
 	});
 
 
