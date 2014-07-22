@@ -147,7 +147,7 @@ io.sockets.on("connection", function (socket) {
 										if (client.publicClientID === messageACKparameters.from &&  
 											client.socketid != null   )
 												return isClientSerderOnline  = true;	 
-									}	); //TODO sort the listOfClients by publicClientID thus the search is faster
+									}	);  //TODO sort the listOfClients by publicClientID thus the search is faster
 									
 		//XEP-0184: Message Delivery Receipts			
 		if ( isClientSerderOnline ){				

@@ -83,7 +83,10 @@ function Message(input) {
 };
 //TODO
 Message.prototype.assignMsgID = function(){
-	this.msgID = 'asduhasd67asdi87asd7asd';
+	this.msgID = 'asduhasd67asdi87asd7asd' +  Math.random().toString();
+};
+Message.prototype.getMsgID = function(){
+	return this.msgID;
 };
 //TODO
 Message.prototype.assignmd5sum = function(){
@@ -200,36 +203,6 @@ $(document).ready(function() {
   		if (messageFromServer == null) { return; }
   		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
-  		
-/*  	var newFriend = document.createElement('li');
-		newFriend.id = 'friend' + i;			
-		newFriend.setAttribute('class','thumb selectable arrow');
-		newFriend.setAttribute('onclick','router_to_sculpture_settings(' + listOfFiles[i].id + ');');
-
-
-		var newFriend_img = document.createElement('img');
-		newFriend_img.id = 'friend_img' + i;
-		newFriend_img.src = "img/play.png";
-
-		var newFriend_small = document.createElement('small');
-		newFriend_small.id = 'friend_small' + i;
-		newFriend_small.innerHTML = listOfFiles[i].date;
-
-		var newFriend_strong = document.createElement('strong');
-		newFriend_strong.id = 'friend_strong' + i;
-		newFriend_strong.innerHTML = GLOBALS.Literals.recorded_on ;
-
-
-		document.getElementById('list_gallery').appendChild(newFriend);
-		document.getElementById(newFriend.id).appendChild(newFriend_img);
-    	document.getElementById(newFriend.id).appendChild(newFriend_strong);
-		document.getElementById(newFriend.id).appendChild(newFriend_small);
-*/  		
-  		
-  		
-  		
-  		
-  		
   		var messageACK = {	to : messageFromServer.to, 
   							from : messageFromServer.from,
   							msgID : messageFromServer.msgID, 
@@ -273,6 +246,40 @@ $(document).ready(function() {
 			socket.emit('messagetoserver', JSON.stringify(message2send));
 			console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 		}
+		
+		//TODO get the activity class static number i
+		var i = message2send.getMsgID();
+ 		var newActivity = document.createElement('div');
+		newActivity.id = 'activity' + i;			
+		newActivity.setAttribute('class','activity');
+		
+		var newPosted_at = document.createElement('span');
+		newPosted_at.setAttribute('class','posted_at');
+		newPosted_at.innerHTML = "7 hours ago";
+		
+		var newAvatar = document.createElement('img');
+		newAvatar.setAttribute('class','avatar');
+		newAvatar.src = "img/logo.png";
+
+		var newReadable = document.createElement('div');
+		newReadable.id = 'activity-readable' + i  ;
+		newReadable.setAttribute('class','readable');
+		
+		var newUser = document.createElement('span');
+		newUser.setAttribute('class','user');
+		newUser.innerHTML = "Maria";
+		
+		var newContent = document.createElement('span');
+		newContent.setAttribute('class','content');
+		newContent.innerHTML = $("#chat-input").val();
+		
+		document.getElementById('chat-page-content').appendChild(newActivity);
+		document.getElementById(newActivity.id).appendChild(newPosted_at);
+    		document.getElementById(newActivity.id).appendChild(newAvatar);
+		document.getElementById(newActivity.id).appendChild(newReadable);
+		document.getElementById(newReadable.id).appendChild(newUser);
+  		document.getElementById(newReadable.id).appendChild(newContent);
+
   
 	
 	});
