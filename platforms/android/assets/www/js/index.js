@@ -81,20 +81,30 @@ function Message(input) {
 		default:	return null;	
 	}
 };
-//TODO
-Message.prototype.assignMsgID = function(){
-	this.msgID = 'asduhasd67asdi87asd7asd' +  Math.random().toString();
+// http://www.ietf.org/rfc/rfc4122.txt
+Message.prototype.assignMsgID = function () {
+    var s = [];
+    var hexDigits = "0123456789abcdef";
+    for (var i = 0; i < 23; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = "-";
+
+    this.msgID = s.join("");
 };
+
 Message.prototype.getMsgID = function(){
 	return this.msgID;
 };
 //TODO
 Message.prototype.assignmd5sum = function(){
-	this.md5sum = '82734973294872398472394';
+	this.md5sum = window.md5(this.from + this.to + this.messageBody);
 };
-//TODO
+//TODO add the size of attachments
 Message.prototype.calculateSize = function(){
-	this.size = 0;
+	this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
 };
 //END Class Message
 
@@ -185,7 +195,7 @@ GUI.prototype.sanitize = function(html) {
 		html = html.replace(tagOrComment, '');
 	} while (html !== oldHtml);
 	return html.replace(/</g, '&lt;');
-}
+};
 
 
 GUI.prototype.insertMessageInConversation = function(message) {
@@ -229,6 +239,8 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	document.getElementById(newReadable.id).appendChild(newContent);
 	
 	$.mobile.silentScroll($(document).height());
+	
+
 };
 
 
@@ -285,6 +297,7 @@ $(document).ready(function() {
   		socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		
+		gui.insertMessageInConversation(messageFromServer);  		
 		
   });//END messageFromServer
 	//TODO #13.1 headers come with size of the message get the smallest first, 
@@ -311,10 +324,13 @@ $(document).ready(function() {
 	$("#chat-input-button").click(function() {
 	//TODO #10.1 message must be store in local DB 
 	//TODO #10.2 displayed in the corresponding chat conversation
+	//TODO get the clientsID
+		var textMessage = $("#chat-input").val();
+		if (textMessage == '') {	return;	}
 		
 		var message2send = new Message(	{ 	to : "Anne", 
 											from : "marco" , 
-											messageBody : $("#chat-input").val()	}
+											messageBody : gui.sanitize(textMessage) }
 										);
 	
 		if (message2send != null){

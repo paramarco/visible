@@ -57,12 +57,15 @@
 	font-weight: bold;
 	margin-bottom: 4px;
 	width: 100%;
+
 }
 .activity .readable .content
 {
 	color: #797d7f;
 	float: left;
 	font-size: 14px;
+	overflow: hidden; 
+	text-overflow: ellipsis;
 }
 .activity .readable .content .image-preview,.activity .readable .content .youtube-preview
 {
