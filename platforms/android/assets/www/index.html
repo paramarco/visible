@@ -429,9 +429,8 @@
 			     
 	    		</div>
 			</div><!-- /header -->
-			<div id="chat-page-content" data-role="content" data-theme="a">
-
-
+		<!--  	<div  data-role="content" data-theme="a">  -->
+			<div id="chat-page-content" role="main" class="ui-content">
 
 				<div class="pagination">
 					<i class="icon-spinner icon-spin icon-2x"></i>Loading previous messages
@@ -587,11 +586,13 @@
 					</div>				
 				</div>
 
+			</div><!-- /content -->
+			<div data-role="footer" data-position="fixed" data-position="fixed">
 				<div class="chatbox">
 					<textarea id="chat-input" class="chat-input"></textarea>
 					<button id="chat-input-button" class="post">Post</button>
-				</div>				
-			</div><!-- /content -->
+				</div>
+			</div><!-- /footer -->
 		</div><!-- /page chat-page-->		
 		
 		<script src="js/jquery-1.10.2.min.js"></script>

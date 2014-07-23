@@ -228,6 +228,7 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	document.getElementById(newReadable.id).appendChild(newUser);
 	document.getElementById(newReadable.id).appendChild(newContent);
 	
+	$.mobile.silentScroll($(document).height());
 };
 
 
@@ -321,6 +322,7 @@ $(document).ready(function() {
 			console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 		}
 		gui.insertMessageInConversation(message2send);
+		document.getElementById('chat-input').value='';
 	});
 
 
@@ -329,8 +331,12 @@ $(document).ready(function() {
 
 });//END $(document).ready()
 
+$(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
+	$.mobile.silentScroll($(document).height());
+	
+});
 
-   
+
 /*
  * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
  * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
