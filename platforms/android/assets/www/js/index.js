@@ -239,7 +239,6 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	document.getElementById(newReadable.id).appendChild(newContent);
 	
 	$.mobile.silentScroll($(document).height());
-	
 
 };
 
