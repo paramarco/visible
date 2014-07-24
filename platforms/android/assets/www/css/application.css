@@ -20,6 +20,15 @@
 	min-height: 50px;
 	position: relative;
 	zoom: 1;
+	-ms-word-break: break-all;
+     word-break: break-all;
+
+     /* Non standard for webkit */
+     word-break: break-word;
+
+	-webkit-hyphens: auto;
+   	-moz-hyphens: auto;
+    hyphens: auto;
 }
 .activity:before,.activity:after
 {
@@ -64,8 +73,7 @@
 	color: #797d7f;
 	float: left;
 	font-size: 14px;
-	overflow: hidden; 
-	text-overflow: ellipsis;
+	word-wrap: break-word;
 }
 .activity .readable .content .image-preview,.activity .readable .content .youtube-preview
 {

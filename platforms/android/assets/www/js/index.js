@@ -63,7 +63,9 @@ function Message(input) {
 	this.msgID = "" ;
 	this.md5sum = "" ;
 	this.size = 0 ;
-	this.path2Attachment = null; 
+	this.path2Attachment = null;
+	this.timeStamp = new Date();
+	this.markedAsRead = false; 
 
 	switch (Object.keys(input).length )	{
 		case 3 :
@@ -121,7 +123,7 @@ Unwrapper.prototype.getMessageFromServer = function(input) {
 			typeof messageFromServer.msgID !== 'string' || 
 			typeof messageFromServer.md5sum !== 'string' ||
 			typeof messageFromServer.size !== 'number' ||
-			Object.keys(messageFromServer).length != 7 ) {	return null;	}
+			Object.keys(messageFromServer).length != 8 ) {	return null;	}
 		
 		var message = new Message(messageFromServer);
 	
@@ -209,7 +211,7 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	//TODO store it
 	var newPosted_at = document.createElement('span');
 	newPosted_at.setAttribute('class','posted_at');
-	newPosted_at.innerHTML = new Date().toLocaleString();
+	newPosted_at.innerHTML = message.timeStamp.toLocaleString();
 	
 	//TODO get the Avatar photo of the clientID
 	//TODO store it	
@@ -239,7 +241,6 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	document.getElementById(newReadable.id).appendChild(newContent);
 	
 	$.mobile.silentScroll($(document).height());
-	
 
 };
 

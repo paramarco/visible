@@ -8,7 +8,8 @@ function Message(input) {
 	this.msgID = "" ;
 	this.md5sum = "" ;
 	this.size = 0 ;
-	this.path2Attachment = null; 
+	this.path2Attachment = null;
+	this.timeStamp = new Date(); 
 
 	switch (Object.keys(input).length )	{
 		case 3 :
