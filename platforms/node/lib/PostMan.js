@@ -11,7 +11,8 @@ listOfMessages.push(  { to : "marco",
 						msgID : "1",
 						md5sum : "edfefeeeeaeeb5e23323",
 						size : 1212,
-						path2Attachment : null	}
+						path2Attachment : null,
+						timeStamp : new Date()	}
 					);
 listOfMessages.push(  { to : "marco",
 						from : "Maria",
@@ -19,7 +20,8 @@ listOfMessages.push(  { to : "marco",
 						msgID : "2",
 						md5sum : "edfefeeeeaeeb5e23323",
 						size : 123213,
-						path2Attachment : null	}
+						path2Attachment : null,
+						timeStamp : new Date()	}
 					);
 					
 listOfACKs.push({ 	msgID : "3", 
@@ -130,7 +132,7 @@ PostMan.prototype.getMessage = function(input) {
 			typeof inputMessage.msgID !== 'string' || 
 			typeof inputMessage.md5sum !== 'string' ||  
 			typeof inputMessage.size !== 'number' ||
-			Object.keys(inputMessage).length != 7 ) 	{	return null; 	}
+			Object.keys(inputMessage).length != 8 ) 	{	return null; 	}
 
 		var message = new Message(inputMessage);	
 		
