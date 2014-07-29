@@ -74,13 +74,12 @@ function Message(input) {
 			this.calculateSize();
 			this.path2Attachment = null;
 			break;
-		case 7 :			
+		default:	
 			this.msgID = input.msgID;
 			this.md5sum = input.md5sum ;
 			this.size = input.size;
 			this.path2Attachment = input.path2Attachment;
-			break;
-		default:	return null;	
+			break;			
 	}
 };
 // http://www.ietf.org/rfc/rfc4122.txt
@@ -251,14 +250,25 @@ GUI.prototype.insertMessageInConversation = function(message) {
 $("#mobile-number").intlTelInput();
 
 
-$(document).ready(function() {
-  
+
+
+var gui = new GUI();
+
+var unWrapper = new Unwrapper();
+
+$.post('/login', { username: "",    password: ""  }).done(function (result) {    connect_socket(result.token);  });
+
+
+function connect_socket (token) {    
   //functions to trigger periodically:
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
-//	var socket = io.connect("127.0.0.1:3000");
-//	var socket = io.connect('https://127.0.0.1:3000',{secure: true, port:3000});
-		var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
-  
+
+//	var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
+	console.log('DEBUG ::: connect_socket triggered token: ' + token );
+
+	var socket = io.connect('https://127.0.0.1:8080' , {query: 'token=' + token	});
+	
+
   //TODO #14 get the data of joinServerParameters from local DB
 	var joinServerParameters = { 	token: 'xxx' , 
   									publicClientID: "marco",	
@@ -267,9 +277,7 @@ $(document).ready(function() {
 
 	socket.emit('joinserver', JSON.stringify(joinServerParameters));  
   
-	var gui = new GUI();
 	
-	var unWrapper = new Unwrapper();	
   
   
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
@@ -304,13 +312,13 @@ $(document).ready(function() {
 		
   });//END messageFromServer
 	//TODO #13.1 headers come with size of the message get the smallest first, 
-  	//TODO #13.2  start a loop requesting a message one by one 
+	//TODO #13.2  start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
-  		if (listOfHeaders == null) { return; }  		
-
+		if (listOfHeaders == null) { return; }  		
+	
 		console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered : ' + JSON.stringify(listOfHeaders));  		
- 		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
+		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
@@ -321,8 +329,13 @@ $(document).ready(function() {
 				clearInterval(loopRequestingMessages);				
 			}							
 		},8000); // loop requesting for a message every 8 seconds
-       
+	   
 	  });//END ServerReplytoDiscoveryHeaders	  
+
+}//END of connect_socket	
+	
+	
+$(document).ready(function() {	
 
 	$("#chat-input-button").click(function() {
 	//TODO #10.1 message must be store in local DB 

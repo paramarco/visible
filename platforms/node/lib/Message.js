@@ -18,13 +18,12 @@ function Message(input) {
 			this.calculateSize();
 			this.path2Attachment = null;
 			break;
-		case 7 :			
+		default:			
 			this.msgID = input.msgID;
 			this.md5sum = input.md5sum ;
 			this.size = input.size;
 			this.path2Attachment = input.path2Attachment;
-			break;
-		default:	return null;	
+			break;				
 	}	
 };
 //TODO

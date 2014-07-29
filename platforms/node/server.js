@@ -1,21 +1,15 @@
-/* var express			= require('express'),
-	app				= express(),
-	server			= require('http').createServer(app);
-*/
-	
 var fs = require('fs');
 var https = require('https');
 var express = require('express');
 var app = express();
-
-
+var cors = require('cors');
 
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
 var credentials = {key: privateKey, cert: certificate, requestCert: false};
 
+app.use(cors());
 
-// your express configuration here
 app.configure(function() {
 	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
   	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
@@ -35,6 +29,16 @@ var	io 				= require("socket.io").listen(server),
 	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
 	PostMan			= require('./lib/PostMan.js'),
 	Message			= require('./lib/Message.js');
+
+app.post('/login', function (req, res) {
+
+// TODO: validate the user agaisnt postgress
+// we are sending the profile in the token
+  var token = "XXX";
+
+  res.json({token: token});
+});
+
 	
 //TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
@@ -72,6 +76,11 @@ var newClient = new Client ("xxx","marco",null);
 listOfClients.push(newClient); 
 
 //DEBUG END		##################					 					 					 	  
+
+io.use(function(socket, next){
+		  if (socket.request.headers.query) return next();
+		  next(new Error('Authentication error'));
+		});
 
 io.sockets.on("connection", function (socket) {
 	

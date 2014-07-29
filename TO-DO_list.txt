@@ -49,3 +49,7 @@ TODO #15 ask server for the status of those messages without the corresponding M
 TODO #16 get the message from database
 
 TODO #17 security limit to global
+
+TODO #18 update to http://socket.io/download/ in the client side and server site https://www.npmjs.org/package/socket.io
+
+TODO #19 enable CORS  https://www.npmjs.org/package/cors
