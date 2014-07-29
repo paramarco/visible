@@ -1,7 +1,33 @@
-var express			= require('express'),
+/* var express			= require('express'),
 	app				= express(),
-	server			= require('http').createServer(app),
-	io 				= require("socket.io").listen(server), 
+	server			= require('http').createServer(app);
+*/
+	
+var fs = require('fs');
+var https = require('https');
+var express = require('express');
+var app = express();
+
+
+
+var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
+var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
+var credentials = {key: privateKey, cert: certificate, requestCert: false};
+
+
+// your express configuration here
+app.configure(function() {
+	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
+  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
+});
+
+var server = https.createServer(credentials, app);
+server.listen(	app.get('port'),
+					app.get('ipaddr'), 
+					function(){	console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));	}
+			);
+			
+var	io 				= require("socket.io").listen(server), 
 	uuid			= require('node-uuid'),
 	_ 				= require('underscore')._ ,
 	Room			= require('./lib/Group.js'),
@@ -18,16 +44,8 @@ var express			= require('express'),
 var util = require('util');
 //DEBUG END		##################
 
+			
 
-app.configure(function() {
-	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 3000);
-  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
-});
-
-server.listen(	app.get('port'), 
-				app.get('ipaddr'), 
-				function(){	console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));}
-			);
 
 //DEBUG			##################
 io.set("log level", 1);

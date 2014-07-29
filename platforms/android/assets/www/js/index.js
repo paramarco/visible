@@ -255,7 +255,9 @@ $(document).ready(function() {
   
   //functions to trigger periodically:
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
-	var socket = io.connect("127.0.0.1:3000");
+//	var socket = io.connect("127.0.0.1:3000");
+//	var socket = io.connect('https://127.0.0.1:3000',{secure: true, port:3000});
+		var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
   
   //TODO #14 get the data of joinServerParameters from local DB
 	var joinServerParameters = { 	token: 'xxx' , 
