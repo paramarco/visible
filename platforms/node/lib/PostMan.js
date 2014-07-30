@@ -57,9 +57,8 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 										size :messageList[i].size	}
 								);  
 		} 
-
-		this.io.sockets.socket(client.socketid).emit("ServerReplytoDiscoveryHeaders", 
-											JSON.stringify(messageHeaders));	
+		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", 
+											JSON.stringify(messageHeaders));
 	}else{
 		
 	}
@@ -175,7 +174,7 @@ PostMan.prototype.sendMessageACKs = function(client) {
 									typeOfACK : "ACKfromAddressee",
 									to : listOfACKStoNotify[i].to 	};
 											
- 			this.io.sockets.socket(client.socketid).emit(	"MessageDeliveryReceipt", 
+			this.io.sockets.to(client.socketid).emit(	"MessageDeliveryReceipt", 
 															JSON.stringify(deliveryReceipt));
 		}
 	

@@ -11,7 +11,7 @@ var credentials = {key: privateKey, cert: certificate, requestCert: false};
 app.use(cors());
 
 app.configure(function() {
-	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
+	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
   	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
 });
 
@@ -34,7 +34,7 @@ app.post('/login', function (req, res) {
 
 // TODO: validate the user agaisnt postgress
 // we are sending the profile in the token
-  var token = "XXX";
+  var token = "xxx";
 
   res.json({token: token});
 });
@@ -51,9 +51,6 @@ var util = require('util');
 			
 
 
-//DEBUG			##################
-io.set("log level", 1);
-//DEBUG END		##################
 
 //GLOBALS
 var listOfClients = []; //array of Client.js (DB)
@@ -78,11 +75,48 @@ listOfClients.push(newClient);
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
-		  if (socket.request.headers.query) return next();
-		  next(new Error('Authentication error'));
-		});
+  var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+  if (joinServerParameters.token == "xxx" ){
+	next();	
+  	return;  
+  } else {
+  	//next(new Error('Authentication error'));
+	console.log('DEBUG :::  Got disconnect in auth..!');		
+  	return ;	
+  }
+  
+});
 
 io.sockets.on("connection", function (socket) {
+	
+	var isKnowClient = false;	
+	var client = null;		
+	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+	if ( joinServerParameters == null ){ return;}					
+
+	client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
+														key.publicClientID  == joinServerParameters.publicClientID )
+														return isKnowClient = true;	 
+											}); //TODO sort the listOfClients by publicClientID thus the search is faster
+					
+	if (isKnowClient && client != null){ //given it isKnowClient:
+		console.log('DEBUG ::: connection event triggered :: it isKnowClient....');
+		client.socketid = socket.id;
+		
+		client.updateLocation(joinServerParameters.location); 
+		//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
+		brokerOfVisibles.distributeLocationOf(client);
+		//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+		postMan.sendMessageHeaders(client);	
+		postMan.sendMessageACKs(client);	
+				
+					
+	} else {	
+		//TODO #2  send report to administrator	when something non usual or out of logic happens			
+		console.log("DEBUG ::: connection: %j", joinServerParameters );
+		//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
+		socket.disconnect();			
+	}
 	
 	socket.on('disconnect', function() {
 		
@@ -100,34 +134,7 @@ io.sockets.on("connection", function (socket) {
    
 	socket.on("joinserver", function(input) {
 		 
-		var isKnowClient = false;	
-		var client = null;		
-		var joinServerParameters = postMan.getJoinServerParameters(input);
-	    if ( joinServerParameters == null ){ return;}					
-	
-		client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
-															key.publicClientID  == joinServerParameters.publicClientID )
-															return isKnowClient = true;	 
-												}); //TODO sort the listOfClients by publicClientID thus the search is faster
-						
-		if (isKnowClient && client != null){ //given it isKnowClient:
-			console.log('DEBUG ::: joinserver triggered :: it isKnowClient....');
-			client.socketid = socket.id;
-			
-			client.updateLocation(joinServerParameters.location); 
-			//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
-			brokerOfVisibles.distributeLocationOf(client);
-			//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-			postMan.sendMessageHeaders(client);	
-			postMan.sendMessageACKs(client);	
-					
-						
-		} else {	
-			//TODO #2  send report to administrator	when something non usual or out of logic happens			
-			console.log("DEBUG ::: joinServerParameters: %j", joinServerParameters );
-			//console.log("DEBUG ::: socket : %s " + util.inspect(socket, false, null) );
-			socket.disconnect();			
-		}
+
 	});
 
 	

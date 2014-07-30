@@ -256,26 +256,28 @@ var gui = new GUI();
 
 var unWrapper = new Unwrapper();
 
-$.post('/login', { username: "",    password: ""  }).done(function (result) {    connect_socket(result.token);  });
+$.post('https://127.0.0.1:8090/login', { username: "",    password: ""  }).done(function (result) {    connect_socket(result.token);  });
 
 
-function connect_socket (token) {    
+function connect_socket (mytoken) {    
   //functions to trigger periodically:
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 
-//	var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
-	console.log('DEBUG ::: connect_socket triggered token: ' + token );
-
-	var socket = io.connect('https://127.0.0.1:8080' , {query: 'token=' + token	});
+	//var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
+	console.log('DEBUG ::: connect_socket triggered token: ' + mytoken );
 	
-
-  //TODO #14 get the data of joinServerParameters from local DB
-	var joinServerParameters = { 	token: 'xxx' , 
+	var joinServerParameters = { 	token: mytoken , 
   									publicClientID: "marco",	
   									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
-	socket.emit('joinserver', JSON.stringify(joinServerParameters));  
+	var socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'joinServerParameters=' + JSON.stringify(joinServerParameters)	});
+	
+
+  //TODO #14 get the data of joinServerParameters from local DB
+	
+
+	//socket.emit('joinserver', JSON.stringify(joinServerParameters));  
   
 	
   
