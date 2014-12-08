@@ -1,22 +1,4 @@
 <!DOCTYPE html>
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-     KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
 <html>
     <head>
         <meta charset="utf-8" />
@@ -65,7 +47,7 @@
 				</div>   
 				<ul data-role="listview" data-inset="true" data-divider-theme="a">
 					<li>
-						<a href="#one">
+						<a href="#MainPage">
 							<h2 align="center" >I want to be visible!</h2>
 						</a>											
 					</li>
@@ -73,20 +55,21 @@
 			</div><!-- /content  -->			
 		</div><!-- /page profile-->
 	
-		<div data-role="page" data-theme="a" id="one">
+		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
 			    <div class="ui-block-a"><a href="#mypanel" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
-			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
 			    <div class="ui-block-e"><a href="#map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
 			  </div>
 			</div><!-- /header -->
 			<div data-role="content" data-theme="a">
                 <input type="search" name="search-5" id="search-5" value="" placeholder="who is visible?">				
 				
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">
+				<!--
 					<li><a href="#chat-page">
 						<img src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" />
 						<h2>Fulanito de tal</h2>
@@ -127,6 +110,7 @@
 						<h2>Apache</h2>
 						<p>Hot Chip</p></a>
 					</li>
+					-->
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel" data-display="overlay">
@@ -340,7 +324,7 @@
 			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
-			    <div class="ui-block-e"><a href="#one" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
 			    <div class="ui-block-e"><a href="#map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
 			  </div>
 			</div><!-- /header -->
@@ -419,9 +403,12 @@
 			<div data-role="header" data-position="fixed">							
 			  	<div class="ui-grid-solo">
 			       <div class="ui-block-a">
-			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>
-			       	<a href="#one" data-role="button" class="ui-nodisc-icon icon-list">
-			       		<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="button ui-li-icon ui-corner-none ">
+			       	<!-- <a onclick='$("body").pagecontainer("change", "#MainPage"); ' data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a> -->
+					<a onclick="$('body').pagecontainer('change', '#MainPage');"  
+						data-role="button" class="icon-list" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>
+
+			       	<a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list">
+			       		<img id="imgOfChat-page-header" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="button ui-li-icon ui-corner-none ">
 			       	</a>
 			       	<strong>Fulanito o nombre de grupo</strong>
 			       	
@@ -432,11 +419,11 @@
 		<!--  	<div  data-role="content" data-theme="a">  -->
 			<div id="chat-page-content" role="main" class="ui-content">
 
-				<div class="pagination">
+		<!--		<div class="pagination">
 					<i class="icon-spinner icon-spin icon-2x"></i>Loading previous messages
 				</div>
-	
-				<div class="activity" id="activity-5150">
+		-->
+	<!--			<div class="activity" id="activity-5150">
 					<span class="posted_at">7 hours ago</span>
 					<img class="avatar" src="img/logo.png">
 					<div class="readable">
@@ -585,7 +572,7 @@
 					
 					</div>				
 				</div>
-
+-->
 			</div><!-- /content -->
 			<div data-role="footer" data-position="fixed" data-position="fixed">
 				<div class="chatbox">

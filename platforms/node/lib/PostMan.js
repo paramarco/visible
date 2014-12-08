@@ -23,6 +23,19 @@ listOfMessages.push(  { to : "marco",
 						path2Attachment : null,
 						timeStamp : new Date()	}
 					);
+
+listOfMessages.push(  { to : "marco",
+						from : "Maria",
+						messageBody : "Lorem ipsum dolor sit amet",
+						msgID : "4",
+						md5sum : "edfefeeeeaeeb5e23323",
+						size : 123213,
+						path2Attachment : null,
+						timeStamp : new Date()	}
+					);
+
+
+
 					
 listOfACKs.push({ 	msgID : "3", 
 					md5sum : "asdasdasdasdasdasd", 
@@ -57,8 +70,9 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 										size :messageList[i].size	}
 								);  
 		} 
-		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", 
-											JSON.stringify(messageHeaders));
+		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders",
+											messageHeaders); 
+											//JSON.stringify(messageHeaders));
 	}else{
 		
 	}
@@ -83,7 +97,10 @@ PostMan.prototype.getJoinServerParameters = function(input) {
 
 PostMan.prototype.getMessageRetrievalParameters = function(input) {
 	var retrievalParameters = null;
-	try {    retrievalParameters =	JSON.parse(input);	} 
+	try {    	
+			//retrievalParameters =	JSON.parse(input);
+			retrievalParameters = input;
+		} 
 	catch (ex) {	retrievalParameters = null;	}
 	
 	if (typeof retrievalParameters.msgID !== 'string' || 
@@ -124,7 +141,8 @@ PostMan.prototype.isPostBoxFull= function(message) {
 PostMan.prototype.getMessage = function(input) {
 	var inputMessage = null;
 	try {    
-		inputMessage =	JSON.parse(input);	 
+		//inputMessage =	JSON.parse(input);	 
+		inputMessage =	input;
 		if (typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.messageBody !== 'string' || 
@@ -142,7 +160,8 @@ PostMan.prototype.getMessage = function(input) {
 
 PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {	
 	try {    
-		var deliveryACK = JSON.parse(inputDeliveryACK);
+		//var deliveryACK = JSON.parse(inputDeliveryACK);
+		var deliveryACK = inputDeliveryACK;
 		
 		if (typeof deliveryACK.msgID !== 'string' || 
 			typeof deliveryACK.md5sum !== 'string' ||
@@ -175,7 +194,8 @@ PostMan.prototype.sendMessageACKs = function(client) {
 									to : listOfACKStoNotify[i].to 	};
 											
 			this.io.sockets.to(client.socketid).emit(	"MessageDeliveryReceipt", 
-															JSON.stringify(deliveryReceipt));
+															deliveryReceipt );
+															//JSON.stringify(deliveryReceipt));
 		}
 	
 	}else{

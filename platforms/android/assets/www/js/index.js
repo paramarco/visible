@@ -55,6 +55,15 @@ var app = {
 };
 */
 
+//TODO class contact
+function Contact(contact2create) {
+	this.publicClientID = contact2create.publicClientID;
+	this.path2photo = contact2create.path2photo;
+	this.number = 0;
+};
+
+
+
   //TODO class Message to another file
 function Message(input) {
 	this.to = input.to;
@@ -134,8 +143,8 @@ Unwrapper.prototype.getMessageFromServer = function(input) {
 
 Unwrapper.prototype.getListOfHeaders= function(inputListOfHeaders) {	
 	try {    
-		var listOfHeaders =	JSON.parse(inputListOfHeaders);
-		
+		//var listOfHeaders =	JSON.parse(inputListOfHeaders);
+		var listOfHeaders =	inputListOfHeaders;
 		if (Array.isArray(listOfHeaders) == false) { return null;}	
 		if (listOfHeaders.length > 50) {	return null;	} //TODO #17 security limit to global
 
@@ -153,7 +162,8 @@ Unwrapper.prototype.getListOfHeaders= function(inputListOfHeaders) {
 
 Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
 	try {    
-		var deliveryReceipt = JSON.parse(inputDeliveryReceipt);
+		//var deliveryReceipt = JSON.parse(inputDeliveryReceipt);
+		var deliveryReceipt = inputDeliveryReceipt;
 		
 		if (typeof deliveryReceipt.msgID !== 'string' || 
 			typeof deliveryReceipt.md5sum !== 'string' ||
@@ -200,8 +210,8 @@ GUI.prototype.sanitize = function(html) {
 
 
 GUI.prototype.insertMessageInConversation = function(message) {
-
-	var i = message.getMsgID();
+/*
+	var i = message.msgID;
 	var newActivity = document.createElement('div');
 	newActivity.id = 'activity' + i;			
 	newActivity.setAttribute('class','activity');
@@ -238,12 +248,149 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	document.getElementById(newActivity.id).appendChild(newReadable);
 	document.getElementById(newReadable.id).appendChild(newUser);
 	document.getElementById(newReadable.id).appendChild(newContent);
+*/	
+	var html2insert = 	
+	'<div class="activity">'+
+	'	<span class="posted_at">'+ message.timeStamp.toLocaleString() + '</span>'+
+//	'	<img class="avatar" src="img/logo.png">'+
+	'	<div class="readable">'+
+	'		<span class="user">    '+ message.from   +'  </span>'+
+	'		<span class="content">    '+ this.sanitize(message.messageBody)+'  </span>'+
+	'	</div>'+
+	'</div>		' ;
 	
+	$("#chat-page-content").append(html2insert);
+	$("#chat-page-content").trigger("create");
+
 	$.mobile.silentScroll($(document).height());
 
 };
 
+GUI.prototype.loadContacts = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	//db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) { 
+     		console.dir(cursor.value); 
+     		listOfContacts.push(cursor.value);      	
+        	gui.insertContactInMainPage(cursor.value);
+         	cursor.continue(); 
+     	}else{
+     	    mainPageReady.resolve();
+     	}
+	};
+	
+};
 
+GUI.prototype.insertContactInMainPage = function(contact) {
+	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
+						'	<img src="'+ contact.path2photo + '" />'+
+						'	<h2>'+ contact.publicClientID +'</h2> '+
+						'	<p>is around you...</p></a>'+
+						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
+						'</li>';
+	$("#listOfContactsInMainPage").append(html2insert);
+	$("#listOfContactsInMainPage").trigger("create");
+
+};
+
+GUI.prototype.go2ChatWith = function(publicClientID) {
+	
+	app.currentChatWith = publicClientID;
+	
+	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	$("#imgOfChat-page-header").attr("src",contact.path2photo );
+	
+	var listOfMessages = mailBox.getAllMessagesOf(publicClientID);
+	
+	listOfMessages.done(function(list){
+		var html2insert ="";
+		list.map(function(message){
+			html2insert += 	
+			'<div class="activity">'+
+			'	<span class="posted_at">'+ message.timeStamp.toLocaleString() + '</span>'+
+			//'	<img class="avatar" src="img/logo.png">'+
+			'	<div class="readable">'+
+			'		<span class="user">    '+ message.from   +'  </span>'+
+			'		<span class="content">    '+ message.messageBody +'  </span>'+
+			'	</div>'+
+			'</div>		' ;	
+		});
+	
+		$("#chat-page-content").append(html2insert);
+		$("#chat-page-content").trigger("create");
+		$("body").pagecontainer("change", "#chat-page");				
+	}); 
+};
+
+
+
+function MailBox() {
+	
+	this.indexedDBHandler = window.indexedDB.open("instalticDBVisible2",3);
+		
+	this.indexedDBHandler.onupgradeneeded= function (e) {
+
+		var thisDB = event.target.result;
+		if(!thisDB.objectStoreNames.contains("messagesV2")){
+			var objectStore = thisDB.createObjectStore("messagesV2", { keyPath: "msgID" });
+			objectStore.createIndex("from","from",{unique:false});
+		}
+		if(!thisDB.objectStoreNames.contains("contacts")){
+			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
+			objectStore.createIndex("number","number",{unique:false});
+			
+		}			
+			
+	};
+		
+	this.indexedDBHandler.onsuccess = function (event,caca) {
+		console.log("DEBUG::: MailBox :: onsuccess");
+		db = event.target.result;		
+		
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		
+		
+		var newContact = new Contact({publicClientID : "Maria"  , path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" } );
+		var request = store.add(newContact);
+		var newContact = new Contact({publicClientID : "Anne"  , path2photo : "https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" });
+		var request = store.add(newContact);		
+		
+		gui.loadContacts(); 			
+	};
+    
+
+};
+
+
+MailBox.prototype.storeMessage = function(message2Store) {
+
+	var transaction = db.transaction(["messagesV2"],"readwrite");	
+	var store = transaction.objectStore("messagesV2");
+	var request = store.add(message2Store);
+ 		
+};
+
+MailBox.prototype.getAllMessagesOf = function(from) {
+	var singleKeyRange = IDBKeyRange.only(from); 
+	var deferred = $.Deferred();
+	var listOfMessages = [];
+	
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("from").openCursor(singleKeyRange).onsuccess = function(e) {
+		
+		var cursor = e.target.result;
+     	if (cursor) {
+        	listOfMessages.push(cursor.value);
+         	cursor.continue(); 
+     	}else{
+     		deferred.resolve(listOfMessages);
+     	}
+	};
+	
+	return deferred.promise();
+};
 
 
 // hooks selector with library "intlTelInput" for the telephone form
@@ -252,15 +399,27 @@ $("#mobile-number").intlTelInput();
 
 
 
-var gui = new GUI();
 
+
+var db;
+var socket;
+var listOfContacts = [];
+var gui = new GUI();
 var unWrapper = new Unwrapper();
+var mailBox = new MailBox();
+var app = {
+    // Application Constructor
+    currentChatWith : "",
+    methodMan : function(){}
+ 
+};
+
 
 $.post('https://127.0.0.1:8090/login', { username: "",    password: ""  }).done(function (result) {    connect_socket(result.token);  });
 
 
 function connect_socket (mytoken) {    
-  //functions to trigger periodically:
+
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 
 	//var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
@@ -271,17 +430,10 @@ function connect_socket (mytoken) {
   									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
-	var socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'joinServerParameters=' + JSON.stringify(joinServerParameters)	});
+	socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'joinServerParameters=' + JSON.stringify(joinServerParameters)	});
 	
 
   //TODO #14 get the data of joinServerParameters from local DB
-	
-
-	//socket.emit('joinserver', JSON.stringify(joinServerParameters));  
-  
-	
-  
-  
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
   //TODO #11.2 store in Local database
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
@@ -307,10 +459,13 @@ function connect_socket (mytoken) {
   							from : messageFromServer.from,
   							msgID : messageFromServer.msgID, 
   							md5sum : messageFromServer.md5sum	};
-  		socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
+  		//socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
+  		socket.emit("MessageDeliveryACK",messageACK);
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
-  		
-		gui.insertMessageInConversation(messageFromServer);  		
+  		if (app.currentChatWith == messageFromServer.from ){
+  			gui.insertMessageInConversation(messageFromServer);	
+  		}
+		mailBox.storeMessage(messageFromServer);  		
 		
   });//END messageFromServer
 	//TODO #13.1 headers come with size of the message get the smallest first, 
@@ -324,9 +479,8 @@ function connect_socket (mytoken) {
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
-				socket.emit('messageRetrieval', JSON.stringify(	{	msgID :  message2request.msgID,
-																	md5sum : message2request.md5sum,
-																	size : message2request.size	}	));		
+				socket.emit('messageRetrieval', {	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}); 
+				//JSON.stringify(	{	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}	));		
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
@@ -336,38 +490,61 @@ function connect_socket (mytoken) {
 
 }//END of connect_socket	
 	
+
+
+
+/***********************************************************************************************
+ * *********************************************************************************************
+ * **************				BINDING EVENTS 						****************************
+ * *********************************************************************************************
+ * *********************************************************************************************/
+var documentReady = new $.Deferred();
+var mainPageReady = new $.Deferred();
+
+
+$.when( documentReady, mainPageReady ).done(function(){
+	$("body").pagecontainer("change", "#MainPage");
+});
+
+
 	
 $(document).ready(function() {	
-
-	$("#chat-input-button").click(function() {
-	//TODO #10.1 message must be store in local DB 
-	//TODO #10.2 displayed in the corresponding chat conversation
-	//TODO get the clientsID
-		var textMessage = $("#chat-input").val();
-		if (textMessage == '') {	return;	}
-		
-		var message2send = new Message(	{ 	to : "Anne", 
-											from : "marco" , 
-											messageBody : gui.sanitize(textMessage) }
-										);
-	
-		if (message2send != null){
-			socket.emit('messagetoserver', JSON.stringify(message2send));
-			console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
-		}
-		gui.insertMessageInConversation(message2send);
-		document.getElementById('chat-input').value='';
-	});
-
-
-
-
-
+	documentReady.resolve();
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
 	$.mobile.silentScroll($(document).height());
 	
+});
+
+$("body").on('pagecontainertransition', function( event, ui ) {
+    if (ui.options.target == "#MainPage"){
+		$("#chat-page-content").empty();  
+		console.log ("DEBUG::: pagecontainertransition");  	    
+    }
+});
+
+
+$(document).on("click","#chat-input-button",function() {
+//TODO #10.1 message must be store in local DB 
+//TODO #10.2 displayed in the corresponding chat conversation
+//TODO get the clientsID
+	var textMessage = $("#chat-input").val();
+	if (textMessage == '') {	return;	}
+	
+	var message2send = new Message(	{ 	to : "Anne", 
+										from : "marco" , 
+										messageBody : gui.sanitize(textMessage) }
+									);
+
+	if (message2send != null){
+		//socket.emit('messagetoserver', JSON.stringify(message2send));
+		socket.emit('messagetoserver', message2send);
+		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
+	}
+	gui.insertMessageInConversation(message2send);
+	//mailBox.showAllMessagesOf();		
+	document.getElementById('chat-input').value='';
 });
 
 
