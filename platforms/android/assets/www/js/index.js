@@ -302,6 +302,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
+	$("#nameOfChatThreadInChatPage").text(contact.publicClientID);
+	
+	
 	var listOfMessages = mailBox.getAllMessagesOf(publicClientID);
 	
 	listOfMessages.done(function(list){
@@ -328,9 +331,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 
 function MailBox() {
 	
-	this.indexedDBHandler = window.indexedDB.open("instalticDBVisible2",3);
+	this.indexedDBHandler = window.indexedDB.open("instalticDBVisible2",5);
 		
-	this.indexedDBHandler.onupgradeneeded= function (e) {
+	this.indexedDBHandler.onupgradeneeded= function (event) {
 
 		var thisDB = event.target.result;
 		if(!thisDB.objectStoreNames.contains("messagesV2")){
@@ -352,11 +355,15 @@ function MailBox() {
 		var transaction = db.transaction(["contacts"],"readwrite");	
 		var store = transaction.objectStore("contacts");
 		
+		var newContact = new Contact({publicClientID : "marco"  , path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg" });
+		var request = store.add(newContact);		
 		
 		var newContact = new Contact({publicClientID : "Maria"  , path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" } );
 		var request = store.add(newContact);
-		var newContact = new Contact({publicClientID : "Anne"  , path2photo : "https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" });
+		var newContact = new Contact({publicClientID : "Anne"  , path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg" });
 		var request = store.add(newContact);		
+		
+		
 		
 		gui.loadContacts(); 			
 	};
@@ -410,6 +417,9 @@ var mailBox = new MailBox();
 var app = {
     // Application Constructor
     currentChatWith : "",
+    myCurrentNick : "",
+//    publicClientID : "Anne",
+ 	publicClientID : "marco",
     methodMan : function(){}
  
 };
@@ -421,12 +431,15 @@ $.post('https://127.0.0.1:8090/login', { username: "",    password: ""  }).done(
 function connect_socket (mytoken) {    
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
+  
+    //DEBUG
+  //  mytoken = "ZZZZZZ";
 
 	//var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
 	console.log('DEBUG ::: connect_socket triggered token: ' + mytoken );
 	
 	var joinServerParameters = { 	token: mytoken , 
-  									publicClientID: "marco",	
+  									publicClientID: app.publicClientID,	
   									location : { lat : "40.34555", lon : "3.44333"}
 								};
 
@@ -524,6 +537,10 @@ $("body").on('pagecontainertransition', function( event, ui ) {
     }
 });
 
+$(document).on("click","#arrowBackInChatPage",function() {
+	$('body').pagecontainer('change', '#MainPage');
+});
+
 
 $(document).on("click","#chat-input-button",function() {
 //TODO #10.1 message must be store in local DB 
@@ -532,18 +549,17 @@ $(document).on("click","#chat-input-button",function() {
 	var textMessage = $("#chat-input").val();
 	if (textMessage == '') {	return;	}
 	
-	var message2send = new Message(	{ 	to : "Anne", 
-										from : "marco" , 
+	var message2send = new Message(	{ 	to : app.currentChatWith, 
+										from : app.publicClientID , 
 										messageBody : gui.sanitize(textMessage) }
 									);
 
 	if (message2send != null){
-		//socket.emit('messagetoserver', JSON.stringify(message2send));
 		socket.emit('messagetoserver', message2send);
 		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 	}
 	gui.insertMessageInConversation(message2send);
-	//mailBox.showAllMessagesOf();		
+		
 	document.getElementById('chat-input').value='';
 });
 

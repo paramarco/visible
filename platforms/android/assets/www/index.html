@@ -403,14 +403,12 @@
 			<div data-role="header" data-position="fixed">							
 			  	<div class="ui-grid-solo">
 			       <div class="ui-block-a">
-			       	<!-- <a onclick='$("body").pagecontainer("change", "#MainPage"); ' data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a> -->
-					<a onclick="$('body').pagecontainer('change', '#MainPage');"  
-						data-role="button" class="icon-list" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>
+			       	<a id="arrowBackInChatPage" data-role="button" class="icon-list" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>
 
 			       	<a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list">
 			       		<img id="imgOfChat-page-header" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="button ui-li-icon ui-corner-none ">
 			       	</a>
-			       	<strong>Fulanito o nombre de grupo</strong>
+			       	<strong id="nameOfChatThreadInChatPage"></strong>
 			       	
 			       </div>
 			     

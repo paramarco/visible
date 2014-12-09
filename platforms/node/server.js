@@ -139,8 +139,10 @@ io.sockets.on("connection", function (socket) {
 
 	
 	socket.on("messagetoserver", function(msg) {
+		console.log('DEBUG ::: messagetoserver ::: input: ' + JSON.stringify(msg) );
+		
 		var message = postMan.getMessage(msg);
-		if ( message == null) return;		
+		if ( message == null) { console.log('DEBUG ::: messagetoserver ::: ups message doesnt look good');  return;}		
 		if (postMan.isPostBoxFull(message) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
 			
 		
@@ -156,7 +158,7 @@ io.sockets.on("connection", function (socket) {
 					
 		if ( isClientReceiverOnline ){
 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
- 			io.sockets.socket(ClientReceiver.socketid).emit("messageFromServer", JSON.stringify(message));		
+ 			io.sockets.to(ClientReceiver.socketid).emit("messageFromServer", message);		
  		}else {
  			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
@@ -191,8 +193,8 @@ io.sockets.on("connection", function (socket) {
 									typeOfACK : "ACKfromAddressee",
 									to : messageACKparameters.to 	};
 									
- 			io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt));
- 			
+ 			//io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
+ 			io.sockets.to(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
  			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
  					
  		}else {

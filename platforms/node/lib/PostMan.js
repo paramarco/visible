@@ -5,6 +5,18 @@ var listOfMessages = []; //array of Message.js (DB)
 var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
 
 
+listOfMessages.push(  { to : "Anne",
+						from : "marco",
+						messageBody : "Lorem ipsum dolor sit amet",
+						msgID : "1",
+						md5sum : "edfefeeeeaeeb5e23323",
+						size : 1212,
+						path2Attachment : null,
+						timeStamp : new Date()	}
+					);
+
+
+
 listOfMessages.push(  { to : "marco",
 						from : "Anne",
 						messageBody : "Lorem ipsum dolor sit amet",
@@ -24,7 +36,7 @@ listOfMessages.push(  { to : "marco",
 						timeStamp : new Date()	}
 					);
 
-listOfMessages.push(  { to : "marco",
+listOfMessages.push(  { to	 : "marco",
 						from : "Maria",
 						messageBody : "Lorem ipsum dolor sit amet",
 						msgID : "4",
