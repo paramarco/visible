@@ -59,6 +59,8 @@ var app = {
 function Contact(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
 	this.path2photo = contact2create.path2photo;
+	this.nickName = contact2create.nickName;
+	this.commentary = contact2create.commentary;
 	this.number = 0;
 };
 
@@ -123,15 +125,15 @@ function Unwrapper() {
 };
 Unwrapper.prototype.getMessageFromServer = function(input) {
 	try {
-		messageFromServer =	JSON.parse(input);	
-	
-		if (typeof messageFromServer.to !== 'string' ||
-			typeof messageFromServer.from !== 'string' ||
-			typeof messageFromServer.messageBody  !== 'string' ||
-			typeof messageFromServer.msgID !== 'string' || 
-			typeof messageFromServer.md5sum !== 'string' ||
-			typeof messageFromServer.size !== 'number' ||
-			Object.keys(messageFromServer).length != 8 ) {	return null;	}
+		//messageFromServer =	JSON.parse(input);
+		messageFromServer =	input;
+		//if (//typeof messageFromServer.to !== 'string' ||
+			//typeof messageFromServer.from !== 'string' ||
+			//typeof messageFromServer.messageBody  !== 'string' ||
+			//typeof messageFromServer.msgID !== 'string' || 
+			//typeof messageFromServer.md5sum !== 'string' ||
+			//typeof messageFromServer.size !== 'number' ||
+			//Object.keys(messageFromServer).length != 9 ) {	return null;	}
 		
 		var message = new Message(messageFromServer);
 	
@@ -286,8 +288,8 @@ GUI.prototype.loadContacts = function() {
 GUI.prototype.insertContactInMainPage = function(contact) {
 	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
 						'	<img src="'+ contact.path2photo + '" />'+
-						'	<h2>'+ contact.publicClientID +'</h2> '+
-						'	<p>is around you...</p></a>'+
+						'	<h2>'+ contact.nickName +'</h2> '+
+						'	<p>' + contact.commentary + '</p>'+
 						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
 						'</li>';
 	$("#listOfContactsInMainPage").append(html2insert);
@@ -302,7 +304,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
-	$("#nameOfChatThreadInChatPage").text(contact.publicClientID);
+	//$("#nameOfChatThreadInChatPage").text(contact.nickName);
 	
 	
 	var listOfMessages = mailBox.getAllMessagesOf(publicClientID);
@@ -355,12 +357,22 @@ function MailBox() {
 		var transaction = db.transaction(["contacts"],"readwrite");	
 		var store = transaction.objectStore("contacts");
 		
-		var newContact = new Contact({publicClientID : "marco"  , path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg" });
+		var newContact = new Contact({	publicClientID : "marco"  , 
+										path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg", 
+										nickName : "Marco",
+										commentary : "doing my best"									
+									});
 		var request = store.add(newContact);		
 		
-		var newContact = new Contact({publicClientID : "Maria"  , path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" } );
+		var newContact = new Contact({	publicClientID : "Maria"  , 
+										path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" ,
+										nickName : "Maria",
+										commentary : "life is a torture"} );
 		var request = store.add(newContact);
-		var newContact = new Contact({publicClientID : "Anne"  , path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg" });
+		var newContact = new Contact({	publicClientID : "Anne"  , 
+										path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg",
+										nickName : "Anne",
+										commentary : "life is great!" });
 		var request = store.add(newContact);		
 		
 		
@@ -418,8 +430,8 @@ var app = {
     // Application Constructor
     currentChatWith : "",
     myCurrentNick : "",
-//    publicClientID : "Anne",
- 	publicClientID : "marco",
+ //  publicClientID : "Anne",
+	publicClientID : "marco",
     methodMan : function(){}
  
 };
@@ -433,7 +445,7 @@ function connect_socket (mytoken) {
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
   
     //DEBUG
-  //  mytoken = "ZZZZZZ";
+//   mytoken = "ZZZZZZ";
 
 	//var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
 	console.log('DEBUG ::: connect_socket triggered token: ' + mytoken );
@@ -464,7 +476,8 @@ function connect_socket (mytoken) {
   //TODO #12.1 display in the corresponding chat conversation, 
   //TODO #12.2  store in Local database
   socket.on("messageFromServer", function(inputMsg) {
-  		var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
+  	
+  	  	var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
   		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
@@ -523,6 +536,7 @@ $.when( documentReady, mainPageReady ).done(function(){
 	
 $(document).ready(function() {	
 	documentReady.resolve();
+	loadMaps();
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
@@ -535,10 +549,24 @@ $("body").on('pagecontainertransition', function( event, ui ) {
 		$("#chat-page-content").empty();  
 		console.log ("DEBUG::: pagecontainertransition");  	    
     }
+    
+    if (ui.options.target == "#map-page"){
+		console.log ("DEBUG::: pagecontainertransition :: map-page" );  
+		google.maps.event.trigger(map,'resize');
+		map.setZoom( map.getZoom() );	    
+    }
+    
+    
+
+
 });
 
 $(document).on("click","#arrowBackInChatPage",function() {
 	$('body').pagecontainer('change', '#MainPage');
+});
+
+$(document).on("click","#mapButtonInMainPage",function() {
+	$('body').pagecontainer('change', '#map-page');
 });
 
 
@@ -569,6 +597,10 @@ $(document).on("click","#chat-input-button",function() {
  * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
  */
 $( document ).on( "pageinit", "#map-page", function() {
+	
+});			
+
+function loadMaps(){
     var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434);  // Default to Hollywood, CA when no geolocation support
     if ( navigator.geolocation ) {
         function success(pos) {
@@ -583,19 +615,21 @@ $( document ).on( "pageinit", "#map-page", function() {
     } else {
         drawMap(defaultLatLng);  // No geolocation support, show default map
     }
-    function drawMap(latlng) {
-        var myOptions = {
-            zoom: 10,
-            center: latlng,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        var map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
-        // Add an overlay to the map of current lat/lng
-        var marker = new google.maps.Marker({
-            position: latlng,
-            map: map,
-            title: "Greetings!"
-        });
-    }
-});			
+	
+}
 
+var map;
+function drawMap(latlng) {
+    var myOptions = {
+        zoom: 10,
+        center: latlng,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
+    // Add an overlay to the map of current lat/lng
+    var marker = new google.maps.Marker({
+        position: latlng,
+        map: map,
+        title: "Greetings!"
+    });
+}

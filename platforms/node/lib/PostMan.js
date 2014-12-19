@@ -153,15 +153,19 @@ PostMan.prototype.isPostBoxFull= function(message) {
 PostMan.prototype.getMessage = function(input) {
 	var inputMessage = null;
 	try {    
-		//inputMessage =	JSON.parse(input);	 
+		//inputMessage =	JSON.parse(input);	
+		
 		inputMessage =	input;
+		
+		console.log("DEBUG :: " + JSON.stringify(inputMessage));
+		
 		if (typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.messageBody !== 'string' || 
 			typeof inputMessage.msgID !== 'string' || 
 			typeof inputMessage.md5sum !== 'string' ||  
 			typeof inputMessage.size !== 'number' ||
-			Object.keys(inputMessage).length != 8 ) 	{	return null; 	}
+			Object.keys(inputMessage).length != 9 ) 	{	return null; 	}
 
 		var message = new Message(inputMessage);	
 		

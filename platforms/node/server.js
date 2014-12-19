@@ -75,15 +75,15 @@ listOfClients.push(newClient);
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
-  var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
-  if (joinServerParameters.token == "xxx" ){
+  //var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+  //if (joinServerParameters.token == "xxx" ){
 	next();	
   	return;  
-  } else {
-  	//next(new Error('Authentication error'));
-	console.log('DEBUG :::  Got disconnect in auth..!');		
-  	return ;	
-  }
+  //} else {
+  	
+	//console.log('DEBUG :::  Got disconnect in auth..!');		
+  	//return ;	
+  //}
   
 });
 
@@ -92,7 +92,9 @@ io.sockets.on("connection", function (socket) {
 	var isKnowClient = false;	
 	var client = null;		
 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
-	if ( joinServerParameters == null ){ return;}					
+	if ( joinServerParameters == null ){ return;}	
+	
+	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
 	client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
 														key.publicClientID  == joinServerParameters.publicClientID )
@@ -139,7 +141,7 @@ io.sockets.on("connection", function (socket) {
 
 	
 	socket.on("messagetoserver", function(msg) {
-		console.log('DEBUG ::: messagetoserver ::: input: ' + JSON.stringify(msg) );
+		//console.log('DEBUG ::: messagetoserver ::: input: ' + JSON.stringify(msg) );
 		
 		var message = postMan.getMessage(msg);
 		if ( message == null) { console.log('DEBUG ::: messagetoserver ::: ups message doesnt look good');  return;}		
@@ -157,8 +159,8 @@ io.sockets.on("connection", function (socket) {
 																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
 					
 		if ( isClientReceiverOnline ){
-			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online');
- 			io.sockets.to(ClientReceiver.socketid).emit("messageFromServer", message);		
+			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online : ' +JSON.stringify(ClientReceiver)  );
+ 			socket.broadcast.to(ClientReceiver.socketid).emit("messageFromServer", message);		
  		}else {
  			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
@@ -167,11 +169,12 @@ io.sockets.on("connection", function (socket) {
 	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("messageRetrieval", function(input) {		
+		console.log('DEBUG ::: messageRetrieval trigered :: ' + JSON.stringify(input));
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
 		if (retrievalParameters == null) return;
 					
 		var message = postMan.getMessageFromArchive(retrievalParameters);		
-		if (message != null){	socket.emit("messageFromServer", JSON.stringify(message));	}
+		if (message != null){	socket.emit("messageFromServer", message);	}
 	});
 
 	socket.on("MessageDeliveryACK", function(input) {		
