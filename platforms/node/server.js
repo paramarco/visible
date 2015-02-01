@@ -9,6 +9,7 @@ var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
 var credentials = {key: privateKey, cert: certificate, requestCert: false};
 
 app.use(cors());
+app.use(express.bodyParser());
 
 app.configure(function() {
 	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
@@ -22,7 +23,6 @@ server.listen(	app.get('port'),
 			);
 			
 var	io 				= require("socket.io").listen(server), 
-	uuid			= require('node-uuid'),
 	_ 				= require('underscore')._ ,
 	Room			= require('./lib/Group.js'),
 	Client			= require('./lib/Client.js'),
@@ -32,11 +32,27 @@ var	io 				= require("socket.io").listen(server),
 
 app.post('/login', function (req, res) {
 
-// TODO: validate the user agaisnt postgress
-// we are sending the profile in the token
-  var token = "xxx";
+  	var challenge = Math.floor((Math.random() * 3) + 0);
+	
+    var client = _.find(listOfClients, function(c) {	return c.publicClientID  == req.body.publicClientID;	}); 
+	if (client){
+		client.indexOfCurrentToken = challenge;
+		console.log('DEBUG ::: app.post :: for client : ' + client.publicClientID + "the current challenge is : " + challenge);
+	}else{
+		console.log('DEBUG ::: app.post :: I dont know any publicClientID like this');
+		return;
+	}
+	
+	res.json({token: challenge});
+  
+});
 
-  res.json({token: token});
+app.post('/firstlogin', function (req, res) {
+
+    var newClient = new Client ();
+	listOfClients.push(newClient);
+	
+	res.json( {publicClientID : newClient.publicClientID , myArrayOfTokens : newClient.myArrayOfTokens });  
 });
 
 	
@@ -48,12 +64,10 @@ app.post('/login', function (req, res) {
 var util = require('util');
 //DEBUG END		##################
 
-			
-
-
-
+	
 //GLOBALS
-var listOfClients = []; //array of Client.js (DB)
+//array of Client
+var listOfClients = []; 
 					
 var brokerOfVisibles = new BrokerOfVisibles();
 var postMan = new PostMan(io);
@@ -61,29 +75,93 @@ var postMan = new PostMan(io);
 //DEBUG temporary variables just for testing Performances
 /* 
 for (var i = 0 ; i<10000000; i++){
-	var newClient = new Client ("x23xx","Fernando",null);
+	var newClient = new Client ();
 	listOfClients.push(newClient);	
 }
 */
-var newClient = new Client ("ZZZZZZ","Anne",null);
+var newClient = new Client ();
 listOfClients.push(newClient);
-var newClient = new Client ("yyyyyy","Maria",null);
+var newClient = new Client ();
 listOfClients.push(newClient);
-var newClient = new Client ("xxx","marco",null);
+var newClient = new Client ();
 listOfClients.push(newClient); 
+
+
+postMan.archiveMessage({ 
+	to : listOfClients[0],
+	from : listOfClients[1],
+	messageBody : "Lorem ipsum dolor sit amet",
+	msgID : "0",
+	md5sum : "edfefeeeeaeeb5e23323",
+	size : 1212,
+	path2Attachment : null,
+	timeStamp : new Date()	
+});
+postMan.archiveMessage({
+	to : listOfClients[0],
+	from : listOfClients[2],
+	messageBody : "Lorem ipsum dolor sit amet",
+	msgID : "1",
+	md5sum : "edfefeeeeaeeb5e23323",
+	size : 1212,
+	path2Attachment : null,
+	timeStamp : new Date()
+});
+
+postMan.archiveMessage({ 
+	to : listOfClients[1],
+	from : listOfClients[0],
+	messageBody : "spend more time with meeee",
+	msgID : "2",
+	md5sum : "edfefeeeeaeeb5e23323",
+	size : 1212,
+	path2Attachment : null,
+	timeStamp : new Date()	
+});
+
+postMan.archiveMessage({ 
+	to : listOfClients[1],
+	from : listOfClients[2],
+	messageBody : "Lorem ipsum dolor sit amet",
+	msgID : "3",
+	md5sum : "edfefeeeeaeeb5e23323",
+	size : 123213,
+	path2Attachment : null,
+	timeStamp : new Date()
+});
+
+postMan.archiveMessage({
+	to	 : listOfClients[1],
+	from : listOfClients[2],
+	messageBody : "Lorem ipsum dolor sit amet second",
+	msgID : "4",
+	md5sum : "edfefeeeeaeeb5e23323",
+	size : 123213,
+	path2Attachment : null,
+	timeStamp : new Date()	
+});
+
+
 
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
-  //var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
-  //if (joinServerParameters.token == "xxx" ){
-	next();	
-  	return;  
-  //} else {
-  	
-	//console.log('DEBUG :::  Got disconnect in auth..!');		
-  	//return ;	
-  //}
+
+ 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+
+  	var client = _.find(listOfClients, function(client) {	
+  		return (	client.publicClientID  == joinServerParameters.publicClientID &&
+  				 	client.myArrayOfTokens[client.indexOfCurrentToken] == joinServerParameters.token);	
+	}); 
+	
+  	if (client){  		
+		console.log("DEBUG ::: io.use :::  %j", joinServerParameters );		
+  		next();	
+  		return; 
+  	}else{
+  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..!');
+  		return;
+  	}
   
 });
 
@@ -96,22 +174,21 @@ io.sockets.on("connection", function (socket) {
 	
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
-	client = _.find(listOfClients, function(key) {	if (key.token == joinServerParameters.token && 	
-														key.publicClientID  == joinServerParameters.publicClientID )
-														return isKnowClient = true;	 
-											}); //TODO sort the listOfClients by publicClientID thus the search is faster
+	client = _.find(listOfClients, function(client) {	
+		if ( client.publicClientID  == joinServerParameters.publicClientID )
+			return isKnowClient = true;	 
+	}); 
 					
 	if (isKnowClient && client != null){ //given it isKnowClient:
-		console.log('DEBUG ::: connection event triggered :: it isKnowClient....');
+
 		client.socketid = socket.id;
 		
 		client.updateLocation(joinServerParameters.location); 
 		//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 		brokerOfVisibles.distributeLocationOf(client);
-		//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+		// #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 		postMan.sendMessageHeaders(client);	
 		postMan.sendMessageACKs(client);	
-				
 					
 	} else {	
 		//TODO #2  send report to administrator	when something non usual or out of logic happens			
@@ -134,11 +211,6 @@ io.sockets.on("connection", function (socket) {
 		console.log('DEBUG :::  Got disconnect!');		
 	});
    
-	socket.on("joinserver", function(input) {
-		 
-
-	});
-
 	
 	socket.on("messagetoserver", function(msg) {
 		//console.log('DEBUG ::: messagetoserver ::: input: ' + JSON.stringify(msg) );

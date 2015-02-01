@@ -5,54 +5,15 @@ var listOfMessages = []; //array of Message.js (DB)
 var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
 
 
-listOfMessages.push(  { to : "Anne",
-						from : "marco",
-						messageBody : "Lorem ipsum dolor sit amet",
-						msgID : "1",
-						md5sum : "edfefeeeeaeeb5e23323",
-						size : 1212,
-						path2Attachment : null,
-						timeStamp : new Date()	}
-					);
 
-
-
-listOfMessages.push(  { to : "marco",
-						from : "Anne",
-						messageBody : "Lorem ipsum dolor sit amet",
-						msgID : "1",
-						md5sum : "edfefeeeeaeeb5e23323",
-						size : 1212,
-						path2Attachment : null,
-						timeStamp : new Date()	}
-					);
-listOfMessages.push(  { to : "marco",
-						from : "Maria",
-						messageBody : "Lorem ipsum dolor sit amet",
-						msgID : "2",
-						md5sum : "edfefeeeeaeeb5e23323",
-						size : 123213,
-						path2Attachment : null,
-						timeStamp : new Date()	}
-					);
-
-listOfMessages.push(  { to	 : "marco",
-						from : "Maria",
-						messageBody : "Lorem ipsum dolor sit amet",
-						msgID : "4",
-						md5sum : "edfefeeeeaeeb5e23323",
-						size : 123213,
-						path2Attachment : null,
-						timeStamp : new Date()	}
-					);
 
 
 
 					
 listOfACKs.push({ 	msgID : "3", 
 					md5sum : "asdasdasdasdasdasd", 
-					from : "marco",
-					to : 'Anne' 	});					
+					from : "11d76d68-886d-4c47-904f",
+					to : 'YYYYY' 	});					
 					
 					
 
@@ -128,12 +89,13 @@ PostMan.prototype.getMessageRetrievalParameters = function(input) {
 //inputRequestMessage = { msgID , md5sum , size}
 PostMan.prototype.getMessageFromArchive = function(retrievalParameters) {
   var message = null;
-  message = _.find(listOfMessages, function(key) {	if (key.msgID == retrievalParameters.msgID && 	
-														key.md5sum  == retrievalParameters.md5sum &&
-														key.size == retrievalParameters.size   )
-														//key.to == socket.id->clientID... 
-														return true;	 
-													});   
+  message = _.find(listOfMessages, function(key) {	
+  	if (key.msgID == retrievalParameters.msgID && 	
+		key.md5sum  == retrievalParameters.md5sum &&
+		key.size == retrievalParameters.size   )
+		//key.to == socket.id->clientID... 
+		return true;	 
+	});   
   return message;
 };
 

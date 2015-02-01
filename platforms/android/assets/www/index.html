@@ -14,7 +14,8 @@
 		
 		<link rel="stylesheet" type="text/css" href="css/font-face.css">
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
-   		<link rel="stylesheet" href="css/intlTelInput.css">
+		<link rel="stylesheet" type="text/css" href="css/picedit.min.css" />
+
 		
         <title>Visible</title>
     </head>
@@ -29,30 +30,26 @@
 			       </div>			     
 	    		</div>
 			</div><!-- /header -->
-			<div data-role="content" data-theme="a">							
+			<div data-role="content" data-theme="a">	
+										
+				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">
+						<input type="file" name="image" id="image" class="picedit_box">	
+			    	</ul>				    
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
+						<div data-role="fieldcontain">
+	                         <label for="firstLoginNameField">my nick Name:</label>
+	                         <input id="firstLoginNameField" type="text" name="firstLoginNameField" value="">
+						</div>						
+					</ul>
+				</form>
 				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<li>
-						<img src="img/logo.png" />	
-						<form>
-							<div data-role="fieldcontain">
-		                         <label for="text-12">Name:</label>
-		                         <input type="text" name="text-12" id="text-12" value="">
-							</div>							
-						</form>
-					</li>
-					
-				</ul>
-				<div data-role="fieldcontain" align="center">
-						<label for="mobile-number">my telephone number:</label>
-						<input id="mobile-number" name="mobile-number" type="tel" placeholder="e.g. +1 702 123 4567">
-				</div>   
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<li>
+					<li id="firstLoginInputButton">
 						<a href="#MainPage">
 							<h2 align="center" >I want to be visible!</h2>
 						</a>											
 					</li>
-				</ul>
+				</ul>	
 			</div><!-- /content  -->			
 		</div><!-- /page profile-->
 	
@@ -279,43 +276,22 @@
 			  	<div class="ui-grid-solo">
 			       <div class="ui-block-a">
 			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
-			       	<strong>Fulanito</strong>			       	
+			       	<strong id="nickNameInProfile"></strong>			       	
 			       </div>			     
 	    		</div>
 			</div><!-- /header -->
 			<div data-role="content" data-theme="a">							
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<!--<li data-role="list-divider"><h1>Who is visible</h1></li> -->
-					<li>
-						<img src="img/logo.png" />
-	
-							<div data-role="fieldcontain">
-		                         <label for="text-12">Name:</label>
-		                         <input type="text" name="text-12" id="text-12" value="">
-							</div>
-						
-							<div data-role="fieldcontain">
-		                         <label for="text-13">Status:</label>
-		                         <input type="text" data-clear-btn="true" name="text-13" id="text-13" value="">
-							</div>
-						
-							<div data-role="fieldcontain">
-		                        <label for="textarea-12">I like to:</label>
-		                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
-							</div>
-							
-							<div data-role="fieldcontain">
-		                        <label for="textarea-12">I work on:</label>
-		                        <textarea cols="40" rows="8" name="textarea-12" id="textarea-12"></textarea>
-		                         
-							</div>							
-					</li>
-					
-				</ul>
-				<div data-role="fieldcontain">
-						<label for="myprofile-mobile-number">my telephone number:</label>
-						<input id="myprofile-mobile-number" name="myprofile-mobile-number" type="tel" placeholder="e.g. +1 702 123 4567">
-				</div>   
+				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">
+						<input type="file" name="image" id="image" class="picedit_box">	
+			    	</ul>				    
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
+						<div data-role="fieldcontain">
+	                         <label for="profileNameField">my nick Name:</label>
+	                         <input id="profileNameField" type="text" name="profileNameField" value="">
+						</div>						
+					</ul>
+				</form>  
 			</div><!-- /content -->
 		</div><!-- /page profile-->
 		
@@ -583,11 +559,11 @@
 		
 		<script src="js/jquery-1.10.2.min.js"></script>
 		<script src="js/jquery.mobile-1.4.2.min.js"></script>
-		<script src="js/socket.io-1.0.6.js"></script>  
+		<script src="js/socket.io-1.0.6.js"></script> 
+		<script src="js/picedit.min.js"></script> 
 	
 	    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
 	    		    
-	    <script src="js/intlTelInput.min.js"></script>  
 		<script src="js/index.js"></script>
 		<script src="js/md5.js"></script>         
 
