@@ -280,6 +280,21 @@ io.sockets.on("connection", function (socket) {
 		
 	});
 	
+	socket.on("ImageRetrieval", function(publicClientID) {	
+		console.log("DEBUG ::: ImageRetrieval ::: of client ::: " + publicClientID );
+		var clientToPoll = _.find(	
+			listOfClients, 
+			function(client) {	
+				if (client.publicClientID === publicClientID && client.socketid != null   )
+					return true;	 
+		});  
+		if (clientToPoll != undefined ){
+			io.sockets.to(clientToPoll.socketid).emit(	"RequestForImage", 	function (img) {
+				socket.emit("ImageFromServer", { publicClientID : publicClientID, img : img  } );    
+			});
+		}
+	});
+	
 	
 
 });

@@ -297,19 +297,53 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		$("#chat-page-content").trigger("create");
 		$("body").pagecontainer("change", "#chat-page");				
 	}); 
+	
+	//request an update of the last photo of this Contact
+	socket.emit('ImageRetrieval', contact.publicClientID);
+
+	
+	
 };
 
 function loadMyConfig(){
 	db.transaction(["myConfig"], "readonly").objectStore("myConfig").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
-     	if (cursor) {      	
+     	if (cursor) {  
+			console.dir(cursor.value);   	
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfTokens = cursor.value.myArrayOfTokens;  
 
-			//	trigger configuration as already loaded    		
-     		configLoaded.resolve();    		   		 
+
+     		
+     		
+     		//DEBUG
+     		var transaction = db.transaction(["contacts"],"readwrite");	
+			var store = transaction.objectStore("contacts");
+			
+			var newContact = new Contact({	publicClientID : cursor.value.publicClientID  , 
+											path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg", 
+											nickName : "Marco",
+											commentary : "doing my best"									
+										});
+			var request = store.add(newContact);		
+			
+			var newContact = new Contact({	publicClientID : "YYYYY"  , 
+											path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" ,
+											nickName : "Maria",
+											commentary : "life is a torture"} );
+			var request = store.add(newContact);
+			var newContact = new Contact({	publicClientID : "ZZZZZ"  , 
+											path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg",
+											nickName : "Anne",
+											commentary : "life is great!" });
+			var request = store.add(newContact);		
+
+     		//DEBUG
+     		 
+     		//	trigger configuration as already loaded    		
+     		configLoaded.resolve();   		   		 
      	}else{
      	    // 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
@@ -346,27 +380,7 @@ function MailBox() {
 		
 		loadMyConfig();
 
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		
-		var newContact = new Contact({	publicClientID : "XXXXX"  , 
-										path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg", 
-										nickName : "Marco",
-										commentary : "doing my best"									
-									});
-		var request = store.add(newContact);		
-		
-		var newContact = new Contact({	publicClientID : "YYYYY"  , 
-										path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" ,
-										nickName : "Maria",
-										commentary : "life is a torture"} );
-		var request = store.add(newContact);
-		var newContact = new Contact({	publicClientID : "ZZZZZ"  , 
-										path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg",
-										nickName : "Anne",
-										commentary : "life is great!" });
-		var request = store.add(newContact);		
-		
+				
 		
 		
 		gui.loadContacts(); 			
@@ -416,6 +430,7 @@ var app = {
     currentChatWith : "",
     myCurrentNick : "hola",
     myPhotoPath : "",
+    myImage : null,
     myArrayOfTokens : [],
  //  publicClientID : "Anne",
 	publicClientID : "marco",
@@ -466,7 +481,7 @@ function connect_socket (mytoken) {
   							from : messageFromServer.from,
   							msgID : messageFromServer.msgID, 
   							md5sum : messageFromServer.md5sum	};
-  		//socket.emit("MessageDeliveryACK",JSON.stringify(messageACK));
+  		//it could be implemented with callback as well....
   		socket.emit("MessageDeliveryACK",messageACK);
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		if (app.currentChatWith == messageFromServer.from ){
@@ -493,7 +508,19 @@ function connect_socket (mytoken) {
 			}							
 		},8000); // loop requesting for a message every 8 seconds
 	   
-	  });//END ServerReplytoDiscoveryHeaders	  
+	  });//END ServerReplytoDiscoveryHeaders	
+	  
+	  
+	socket.on("RequestForImage", function(fn) {
+		fn(app.myImage);	   
+	});//END RequestForImage	
+	
+	socket.on("ImageFromServer", function(data) {
+		console.log("DEBUG ::: ImageFromServer ::: received from client: " + data.publicClientID );
+		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		contact.path2photo = data.img.src;	   
+	});//END ImageFromServer
+	  
 
 }//END of connect_socket	
 	
@@ -627,7 +654,8 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 $('.picedit_box').picEdit({
   imageUpdated: function(img){
-  	app.myPhotoPath = img.src; 
+  	app.myPhotoPath = img.src;
+  	app.myImage = img;
   	console.log("DEBUG ::: picEdit ::: " + img.src);
   }
 });
