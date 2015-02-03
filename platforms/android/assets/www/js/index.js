@@ -257,7 +257,7 @@ GUI.prototype.loadContacts = function() {
 
 GUI.prototype.insertContactInMainPage = function(contact) {
 	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
-						'	<img src="'+ contact.path2photo + '" />'+
+						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
 						'	<h2>'+ contact.nickName +'</h2> '+
 						'	<p>' + contact.commentary + '</p>'+
 						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
@@ -274,9 +274,6 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
-	//$("#nameOfChatThreadInChatPage").text(contact.nickName);
-	
-	//
 	var listOfMessages = mailBox.getAllMessagesOf(contact.publicClientID);
 	
 	listOfMessages.done(function(list){
@@ -285,7 +282,6 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 			html2insert += 	
 			'<div class="activity">'+
 			'	<span class="posted_at">'+ message.timeStamp.toLocaleString() + '</span>'+
-			//'	<img class="avatar" src="img/logo.png">'+
 			'	<div class="readable">'+
 			'		<span class="user">    '+ contact.nickName   +'  </span>'+
 			'		<span class="content">    '+ message.messageBody +'  </span>'+
@@ -299,9 +295,11 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	}); 
 	
 	//request an update of the last photo of this Contact
-	socket.emit('ImageRetrieval', {	publicClientIDofRequester : app.publicClientID, 
-									publicClientID2getImg : contact.publicClientID	}
-	);
+	var ImageRetrievalObject = {	
+		publicClientIDofRequester : app.publicClientID, 
+		publicClientID2getImg : contact.publicClientID
+	};							
+	socket.emit('ImageRetrieval', ImageRetrievalObject	);
 
 	
 	
@@ -381,10 +379,7 @@ function MailBox() {
 		db = event.target.result;
 		
 		loadMyConfig();
-
 				
-		
-		
 		gui.loadContacts(); 			
 	};
     
@@ -407,8 +402,7 @@ MailBox.prototype.getAllMessagesOf = function(from) {
 	
 	// TODO get the list of my own messages as well and ordered by time
 	
-	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("from").openCursor(singleKeyRange).onsuccess = function(e) {
-		
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("from").openCursor(singleKeyRange).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
         	listOfMessages.push(cursor.value);
@@ -429,14 +423,12 @@ var unWrapper = new Unwrapper();
 var mailBox = new MailBox();
 var app = {
     // Application Constructor
-    currentChatWith : "",
-    myCurrentNick : "hola",
-    myPhotoPath : "",
-    myImage : null,
+    currentChatWith : null,
+    myCurrentNick : null,
+    myPhotoPath : null,
     myArrayOfTokens : [],
- //  publicClientID : "Anne",
-	publicClientID : "marco",
-    methodMan : function(){}
+	publicClientID : null,
+	myPosition : null
  
 };
 
@@ -446,13 +438,12 @@ function connect_socket (mytoken) {
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 
-	//var socket = io.connect('https://127.0.0.1:8080' , {secure: true});
-	console.log('DEBUG ::: connect_socket triggered token: ' + mytoken );
-	
-	var joinServerParameters = { 	token: mytoken , 
-  									publicClientID: app.publicClientID,	
-  									location : { lat : "40.34555", lon : "3.44333"}
-								};
+
+	var joinServerParameters = { 	
+		token: mytoken , 
+  		publicClientID: app.publicClientID,
+  		location : { lat : app.myPosition.coords.latitude.toString() , lon : app.myPosition.coords.longitude.toString()}
+  	};
 
 	socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'joinServerParameters=' + JSON.stringify(joinServerParameters)	});
 	
@@ -493,7 +484,7 @@ function connect_socket (mytoken) {
 		
   });//END messageFromServer
 	//TODO #13.1 headers come with size of the message get the smallest first, 
-	//TODO #13.2  start a loop requesting a message one by one 
+	//#13.2  start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }  		
@@ -514,17 +505,20 @@ function connect_socket (mytoken) {
 	  
 	  
 	socket.on("RequestForImage", function(publicClientIDofRequester) {
-		socket.emit("imageResponse",	{	publicClientIDofSender : app.publicClientID, 
-											publicClientIDofRequester : publicClientIDofRequester,
-											img : app.myImage		}
-		);	   
+		var imageResponseObject = {	
+			publicClientIDofSender : app.publicClientID, 
+			publicClientIDofRequester : publicClientIDofRequester,
+			img : app.myPhotoPath		
+		};
+		
+		socket.emit("imageResponse",imageResponseObject	);	   
 	});//END RequestForImage	
 	
 	socket.on("ImageFromServer", function(data) {
-		console.log("DEBUG ::: ImageFromServer ::: received from client: " + data.publicClientID );
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
-		//console.dir(data.img);
-		//contact.path2photo = data.img.src;	   
+		contact.path2photo = data.img;
+		$("#imgOfChat-page-header").attr("src", data.img);
+		$("#profilePhoto"+data.publicClientID ).attr("src", data.img);
 	});//END ImageFromServer
 	  
 
@@ -541,12 +535,13 @@ function connect_socket (mytoken) {
 var documentReady = new $.Deferred();
 var mainPageReady = new $.Deferred();
 var configLoaded  = new $.Deferred();
+var positionLoaded  = new $.Deferred();
 
 
-$.when( documentReady, mainPageReady, configLoaded ).done(function(){
+$.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
 
-	$.post('https://127.0.0.1:8090/login', { publicClientID: app.publicClientID }).done(function (result) { 
-			//console.log(app.myArrayOfTokens[result.token]);   			
+	$.post('https://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
+		.done(function (result) { 
 			connect_socket(app.myArrayOfTokens[result.token]);  
 		});
 
@@ -556,7 +551,6 @@ $.when( documentReady, mainPageReady, configLoaded ).done(function(){
 
 	
 $(document).ready(function() {	
-	$('#thebox').picEdit();
 	documentReady.resolve();
 	loadMaps();
 });//END $(document).ready()
@@ -568,15 +562,6 @@ $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 	console.log ("DEBUG ::: pageshow#profile :: profile" + app.myCurrentNick );  
 	$("#nickNameInProfile").html(app.myCurrentNick);
-	
-	$('.picedit_box').picEdit({
-		defaultImage: app.myPhotoPath,
-		imageUpdated: function(img){
-		  	app.myPhotoPath = img.src; 
-		  	console.log("DEBUG ::: picEdit ::: " + img.src);
-  		}
-	});
-
 
 });
 
@@ -631,6 +616,20 @@ $(document).on("click","#chat-input-button",function() {
 $(document).on("click","#firstLoginInputButton",function() {
 
 	console.log('DEBUG ::: firstLoginInputButton :::');
+	
+	var myCurrentNick = $("#firstLoginNameField").val();
+	
+	if ( myCurrentNick == "" || myCurrentNick == undefined || app.myPhotoPath == null) {
+		$("#firstLoginPopupDiv").remove();
+		var prompt2show = 	'<div id="firstLoginPopupDiv" data-role="popup"> '+
+							'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
+							'</div>';
+		$("#contentOfvisibleFirstTime").append(prompt2show);
+		$("#contentOfvisibleFirstTime").trigger("create");
+		$("#firstLoginPopupDiv").popup("open");
+		return;
+	}
 
 	$.post('https://127.0.0.1:8090/firstlogin').done(function (result) { 
 	
@@ -649,7 +648,6 @@ $(document).on("click","#firstLoginInputButton",function() {
 		//update app object	
 		app.publicClientID = result.publicClientID;
 		app.myCurrentNick = myCurrentNick;
-		//app.myPhotoPath = ""; 
 		app.myArrayOfTokens = result.myArrayOfTokens;
 		
 		//trigger configuration as already loaded
@@ -659,18 +657,18 @@ $(document).on("click","#firstLoginInputButton",function() {
 });
 
 $('.picedit_box').picEdit({
-  imageUpdated: function(img){
-  	app.myPhotoPath = img.src;
-  	app.myImage = img;
-  	console.log("DEBUG ::: picEdit ::: " + img.src);
-  }
+	defaultImage: app.myPhotoPath,
+	imageUpdated: function(img){
+	  	app.myPhotoPath = img.src; 
+	  	console.log("DEBUG ::: picEdit ::: " + img.src);
+	}
 });
 
-$("#profileNameField").change(function() {
-  app.myCurrentNick = $("#profileNameField").val();
-  $("#nickNameInProfile").html(app.myCurrentNick);
-});
 
+$("#profileNameField").on("input", function() {
+	app.myCurrentNick = $("#profileNameField").val();
+  	$("#nickNameInProfile").text(app.myCurrentNick);
+});
 /*
  * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
  * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
@@ -679,25 +677,33 @@ $( document ).on( "pageinit", "#map-page", function() {
 	
 });			
 
+
+
 function loadMaps(){
      
     if ( navigator.geolocation ) {
         function success(pos) {
             // Location found, show map with these coordinates
-             var defaultLatLng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude); 
+            app.myPosition = pos;
+            var defaultLatLng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude); 
             drawMap(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
+            positionLoaded.resolve();
         }
         function fail(error) {
+        	        
+			app.myPosition = { coords : { latitude : "34.0983425" , longitude : "-118.3267434"  } };
         	var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434); 
             drawMap(defaultLatLng);  // Failed to find location, show default map
+            positionLoaded.resolve();
         }
         // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
         navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
     } else {
+    	app.myPosition = { coords : { latitude : "34.0983425" , longitude : "-118.3267434"  } };
     	var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434); 
         drawMap(defaultLatLng);  // No geolocation support, show default map
-    }
-	
+        positionLoaded.resolve();
+    }	
 }
 
 var map;
