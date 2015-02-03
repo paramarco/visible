@@ -280,21 +280,31 @@ io.sockets.on("connection", function (socket) {
 		
 	});
 	
-	socket.on("ImageRetrieval", function(publicClientID) {	
-		console.log("DEBUG ::: ImageRetrieval ::: of client ::: " + publicClientID );
+	socket.on("ImageRetrieval", function(parameters) {	
+		console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + parameters.publicClientIDofRequester + " requesting img of : " + parameters.publicClientID2getImg );
 		var clientToPoll = _.find(	
 			listOfClients, 
 			function(client) {	
-				if (client.publicClientID === publicClientID && client.socketid != null   )
+				if (client.publicClientID === parameters.publicClientID2getImg && client.socketid != null   )
 					return true;	 
 		});  
 		if (clientToPoll != undefined ){
-			io.sockets.to(clientToPoll.socketid).emit(	"RequestForImage", 	function (img) {
-				socket.emit("ImageFromServer", { publicClientID : publicClientID, img : img  } );    
-			});
+			io.sockets.to(clientToPoll.socketid).emit("RequestForImage", parameters.publicClientIDofRequester 	);
 		}
 	});
 	
+	socket.on("imageResponse", function(parameters) {	
+		console.log("DEBUG ::: imageResponse ::: from client ::: " + parameters.publicClientIDofSender + " answering img request to : " + parameters.publicClientIDofRequester );
+		var clientToPoll = _.find(	
+				listOfClients, 
+				function(client) {	
+					if (client.publicClientID === parameters.publicClientIDofRequester && client.socketid != null   )
+						return true;	 
+			});  
+			if (clientToPoll != undefined ){
+				io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", { publicClientID : parameters.publicClientIDofSender, img : parameters.img	} 	);
+			}
+	});	
 	
 
 });

@@ -299,7 +299,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	}); 
 	
 	//request an update of the last photo of this Contact
-	socket.emit('ImageRetrieval', contact.publicClientID);
+	socket.emit('ImageRetrieval', {	publicClientIDofRequester : app.publicClientID, 
+									publicClientID2getImg : contact.publicClientID	}
+	);
 
 	
 	
@@ -511,14 +513,18 @@ function connect_socket (mytoken) {
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
 	  
-	socket.on("RequestForImage", function(fn) {
-		fn(app.myImage);	   
+	socket.on("RequestForImage", function(publicClientIDofRequester) {
+		socket.emit("imageResponse",	{	publicClientIDofSender : app.publicClientID, 
+											publicClientIDofRequester : publicClientIDofRequester,
+											img : app.myImage		}
+		);	   
 	});//END RequestForImage	
 	
 	socket.on("ImageFromServer", function(data) {
 		console.log("DEBUG ::: ImageFromServer ::: received from client: " + data.publicClientID );
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
-		contact.path2photo = data.img.src;	   
+		//console.dir(data.img);
+		//contact.path2photo = data.img.src;	   
 	});//END ImageFromServer
 	  
 
