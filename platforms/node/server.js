@@ -31,28 +31,27 @@ var	io 				= require("socket.io").listen(server),
 	Message			= require('./lib/Message.js');
 
 app.post('/login', function (req, res) {
-
-  	var challenge = Math.floor((Math.random() * 3) + 0);
-	
-    var client = _.find(listOfClients, function(c) {	return c.publicClientID  == req.body.publicClientID;	}); 
-	if (client){
+	var client = brokerOfVisibles.getClientById(req.body.publicClientID);
+    var challenge = Math.floor((Math.random() * 3) + 0);  
+    
+	if (client){		
 		client.indexOfCurrentToken = challenge;
-		console.log('DEBUG ::: app.post :: for client : ' + client.publicClientID + "the current challenge is : " + challenge);
 	}else{
 		console.log('DEBUG ::: app.post :: I dont know any publicClientID like this');
 		return;
 	}
-	
-	res.json({token: challenge});
-  
+	// challenge forwarding to the Client	
+	res.json({token: challenge});  
 });
 
 app.post('/firstlogin', function (req, res) {
-
-    var newClient = new Client ();
-	listOfClients.push(newClient);
+	var newClient = brokerOfVisibles.createNewClient();	
+	var response = {
+		publicClientID : newClient.publicClientID , 
+		myArrayOfTokens : newClient.myArrayOfTokens 
+	};
 	
-	res.json( {publicClientID : newClient.publicClientID , myArrayOfTokens : newClient.myArrayOfTokens });  
+	res.json( response );  
 });
 
 	
@@ -65,10 +64,7 @@ var util = require('util');
 //DEBUG END		##################
 
 	
-//GLOBALS
-//array of Client
-var listOfClients = []; 
-					
+				
 var brokerOfVisibles = new BrokerOfVisibles();
 var postMan = new PostMan(io);
 
@@ -79,14 +75,15 @@ for (var i = 0 ; i<10000000; i++){
 	listOfClients.push(newClient);	
 }
 */
+/*
 var newClient = new Client ();
 listOfClients.push(newClient);
 var newClient = new Client ();
 listOfClients.push(newClient);
 var newClient = new Client ();
 listOfClients.push(newClient); 
-
-
+*/
+/*
 postMan.archiveMessage({ 
 	to : listOfClients[0],
 	from : listOfClients[1],
@@ -140,20 +137,15 @@ postMan.archiveMessage({
 	path2Attachment : null,
 	timeStamp : new Date()	
 });
-
+*/
 
 
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
-
  	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+  	var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters); 	
 
-  	var client = _.find(listOfClients, function(client) {	
-  		return (	client.publicClientID  == joinServerParameters.publicClientID &&
-  				 	client.myArrayOfTokens[client.indexOfCurrentToken] == joinServerParameters.token);	
-	}); 
-	
   	if (client){  		
 		console.log("DEBUG ::: io.use :::  %j", joinServerParameters );		
   		next();	
@@ -167,26 +159,19 @@ io.use(function(socket, next){
 
 io.sockets.on("connection", function (socket) {
 	
-	var isKnowClient = false;	
-	var client = null;		
 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
 	if ( joinServerParameters == null ){ return;}	
 	
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
-	client = _.find(listOfClients, function(client) {	
-		if ( client.publicClientID  == joinServerParameters.publicClientID )
-			return isKnowClient = true;	 
-	}); 
+	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
 					
-	if (isKnowClient && client != null){ //given it isKnowClient:
-
-		client.socketid = socket.id;
-		
+	if ( typeof client != 'undefined'){ 
+		client.socketid = socket.id;		
 		client.updateLocation(joinServerParameters.location); 
-		//TODO #9 XEP-0080: User Location:: distribute its Location to its "Visible"s
-		brokerOfVisibles.distributeLocationOf(client);
-		// #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+
+		// #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
+		// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 		postMan.sendMessageHeaders(client);	
 		postMan.sendMessageACKs(client);	
 					
@@ -199,14 +184,14 @@ io.sockets.on("connection", function (socket) {
 	
 	socket.on('disconnect', function() {
 		
-		var client = null;
-		var isKnowClient = false;
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
 		
-		client = _.find(listOfClients, function(key) {	if (key.socketid == socket.id ){	return isKnowClient = true;	} });									
-		if (isKnowClient && client != null) { //given it isKnowClient
+		if ( typeof client != 'undefined') { //given it isKnowClient
 			client.socketid = null;   
-		} else { 					//TODO #2  send report to administrator	when something non usual or out of logic happens
-			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');console.log("DEBUG :::  %j ", client);
+		} else { 					
+			//TODO #2  send report to administrator	when something non usual or out of logic happens
+			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');
+			//console.log("DEBUG :::  %j ", client);
 		}				 
 		console.log('DEBUG :::  Got disconnect!');		
 	});
@@ -225,14 +210,11 @@ io.sockets.on("connection", function (socket) {
 		//socket.emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt) );
 		socket.emit("MessageDeliveryReceipt", deliveryReceipt );
 		
-		var isClientReceiverOnline = false;
-		var ClientReceiver = _.find(listOfClients, function(client) {	if (client.publicClientID === message.to && client.socketid != null   )
-																			return isClientReceiverOnline = true;	 
-																	}); //TODO sort the listOfClients by publicClientID thus the search is faster
+		var clientReceiver = brokerOfVisibles.isClientOnline(message.to);		
 					
-		if ( isClientReceiverOnline ){
-			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Online : ' +JSON.stringify(ClientReceiver)  );
- 			socket.broadcast.to(ClientReceiver.socketid).emit("messageFromServer", message);		
+		if (  typeof clientReceiver != 'undefined'){
+			console.log('DEBUG ::: messagetoserver trigered :: clientReceiver is Online : ' +JSON.stringify(clientReceiver)  );
+ 			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", message);		
  		}else {
  			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
@@ -253,58 +235,50 @@ io.sockets.on("connection", function (socket) {
 		var messageACKparameters = postMan.getDeliveryACK(input);		
 		if (messageACKparameters == null) return;
 					
-		var isClientSerderOnline = false;
-		var ClientSender = _.find(	listOfClients, 
-									function(client) {	
-										if (client.publicClientID === messageACKparameters.from &&  
-											client.socketid != null   )
-												return isClientSerderOnline  = true;	 
-									}	);  //TODO sort the listOfClients by publicClientID thus the search is faster
+		var clientSender = brokerOfVisibles.isClientOnline(messageACKparameters.from);		
 									
 		//XEP-0184: Message Delivery Receipts			
-		if ( isClientSerderOnline ){				
-			var deliveryReceipt = { msgID : messageACKparameters.msgID, 
-									md5sum : messageACKparameters.md5sum, 
-									typeOfACK : "ACKfromAddressee",
-									to : messageACKparameters.to 	};
+		if (  typeof clientSender != 'undefined'){				
+			var deliveryReceipt = { 
+				msgID : messageACKparameters.msgID, 
+				md5sum : messageACKparameters.md5sum, 
+				typeOfACK : "ACKfromAddressee",
+				to : messageACKparameters.to 	
+			};
 									
  			//io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
- 			io.sockets.to(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
+ 			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
  			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
  					
  		}else {
  			postMan.archiveACK(messageACKparameters);
  			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender offline, MessageDeliveryReceipt archived');
-
  		}
 		
 	});
 	
 	socket.on("ImageRetrieval", function(parameters) {	
-		console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + parameters.publicClientIDofRequester + " requesting img of : " + parameters.publicClientID2getImg );
-		var clientToPoll = _.find(	
-			listOfClients, 
-			function(client) {	
-				if (client.publicClientID === parameters.publicClientID2getImg && client.socketid != null   )
-					return true;	 
-		});  
-		if (clientToPoll != undefined ){
+		console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + JSON.stringify(parameters) );
+		
+		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg);
+
+		if ( typeof clientToPoll != 'undefined'){
 			io.sockets.to(clientToPoll.socketid).emit("RequestForImage", parameters.publicClientIDofRequester 	);
 		}
 	});
 	
 	socket.on("imageResponse", function(parameters) {	
 		console.log("DEBUG ::: imageResponse ::: from client ::: " + parameters.publicClientIDofSender + " answering img request to : " + parameters.publicClientIDofRequester );
-		var clientToPoll = _.find(	
-				listOfClients, 
-				function(client) {	
-					if (client.publicClientID === parameters.publicClientIDofRequester && client.socketid != null   )
-						return true;	 
-			});  
-			if (clientToPoll != undefined ){
-				io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", { publicClientID : parameters.publicClientIDofSender, img : parameters.img	} 	);
-			}
+		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester); 
+
+		if ( typeof clientToPoll != 'undefined' ){
+			io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", { publicClientID : parameters.publicClientIDofSender, img : parameters.img	} 	);
+		}
 	});	
+	
+	socket.on('RequestOfListOfPeopleAround', function (publicClientID, fn) {		
+    	fn(brokerOfVisibles.getListOfPeopleAround(publicClientID));
+  	});
 	
 
 });

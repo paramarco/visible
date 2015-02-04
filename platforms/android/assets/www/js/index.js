@@ -319,7 +319,7 @@ function loadMyConfig(){
      		
      		
      		//DEBUG
-     		var transaction = db.transaction(["contacts"],"readwrite");	
+  /*   		var transaction = db.transaction(["contacts"],"readwrite");	
 			var store = transaction.objectStore("contacts");
 			
 			var newContact = new Contact({	publicClientID : cursor.value.publicClientID  , 
@@ -339,7 +339,7 @@ function loadMyConfig(){
 											nickName : "Anne",
 											commentary : "life is great!" });
 			var request = store.add(newContact);		
-
+*/
      		//DEBUG
      		 
      		//	trigger configuration as already loaded    		
@@ -436,18 +436,26 @@ var app = {
 
 function connect_socket (mytoken) {    
 
-  //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
-
-
 	var joinServerParameters = { 	
 		token: mytoken , 
   		publicClientID: app.publicClientID,
-  		location : { lat : app.myPosition.coords.latitude.toString() , lon : app.myPosition.coords.longitude.toString()}
+  		location : { 
+  			lat : app.myPosition.coords.latitude.toString() , 
+  			lon : app.myPosition.coords.longitude.toString()
+  		}
   	};
 
 	socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'joinServerParameters=' + JSON.stringify(joinServerParameters)	});
 	
+	socket.on('connect', function () {
+		console.log('DEBUG ::: connect triggered : ' );
 
+		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, function (data) {
+	      console.log(JSON.stringify(data)); 
+	    });		
+	});
+
+  //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
   //TODO #11.2 store in Local database
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
@@ -458,7 +466,6 @@ function connect_socket (mytoken) {
 		}
 		if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
 		}
-		console.log('DEBUG ::: MessageDeliveryReceipt triggered msgID: ' + deliveryReceipt.msgID +' md5sum  :' + deliveryReceipt.md5sum + " typeOfACK:" + deliveryReceipt.typeOfACK + "  message to > " + deliveryReceipt.to  );
   		
 	});
   
@@ -470,10 +477,12 @@ function connect_socket (mytoken) {
   		if (messageFromServer == null) { return; }
   		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
-  		var messageACK = {	to : messageFromServer.to, 
-  							from : messageFromServer.from,
-  							msgID : messageFromServer.msgID, 
-  							md5sum : messageFromServer.md5sum	};
+  		var messageACK = {	
+  			to : messageFromServer.to, 
+  			from : messageFromServer.from,
+  			msgID : messageFromServer.msgID, 
+  			md5sum : messageFromServer.md5sum	
+  		};
   		//it could be implemented with callback as well....
   		socket.emit("MessageDeliveryACK",messageACK);
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
@@ -539,7 +548,7 @@ var positionLoaded  = new $.Deferred();
 
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
-
+	
 	$.post('https://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
 			connect_socket(app.myArrayOfTokens[result.token]);  

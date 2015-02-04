@@ -19,7 +19,7 @@ Client.prototype.updateLocation = function(location) {
   }
 };
 
-//TODO to finish
+//TODO to be done
 Client.prototype.isLocationWellFormatted = function(location) {
   //var isformatted = false;
   var isformatted = true;

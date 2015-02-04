@@ -88,13 +88,13 @@ PostMan.prototype.getMessageRetrievalParameters = function(input) {
 //TODO #16 get the message from database
 //inputRequestMessage = { msgID , md5sum , size}
 PostMan.prototype.getMessageFromArchive = function(retrievalParameters) {
-  var message = null;
-  message = _.find(listOfMessages, function(key) {	
-  	if (key.msgID == retrievalParameters.msgID && 	
-		key.md5sum  == retrievalParameters.md5sum &&
-		key.size == retrievalParameters.size   )
-		//key.to == socket.id->clientID... 
-		return true;	 
+	var message = null;
+  	message = _.find(listOfMessages, function(key) {	
+		if (key.msgID == retrievalParameters.msgID && 	
+			key.md5sum  == retrievalParameters.md5sum &&
+			key.size == retrievalParameters.size   )
+			//key.to == socket.id->clientID... 
+			return true;	 
 	});   
   return message;
 };
@@ -115,8 +115,6 @@ PostMan.prototype.isPostBoxFull= function(message) {
 PostMan.prototype.getMessage = function(input) {
 	var inputMessage = null;
 	try {    
-		//inputMessage =	JSON.parse(input);	
-		
 		inputMessage =	input;
 		
 		console.log("DEBUG :: " + JSON.stringify(inputMessage));
@@ -138,7 +136,6 @@ PostMan.prototype.getMessage = function(input) {
 
 PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {	
 	try {    
-		//var deliveryACK = JSON.parse(inputDeliveryACK);
 		var deliveryACK = inputDeliveryACK;
 		
 		if (typeof deliveryACK.msgID !== 'string' || 
@@ -159,23 +156,22 @@ PostMan.prototype.archiveACK = function(messageACKparameters) {
 PostMan.prototype.sendMessageACKs = function(client) {
 
 	var thereAreACKs = false;
-	var listOfACKStoNotify = _.filter(	listOfACKs,
-								function(key) {	if (key.from == client.publicClientID)
-														return thereAreACKs = true;	
-												});
+	var listOfACKStoNotify = _.filter(	listOfACKs,	function(key) {	
+		if (key.from == client.publicClientID)
+			return thereAreACKs = true;	
+	});
 	
 	if (thereAreACKs){
 		for(var i = 0; i < listOfACKStoNotify.length; i++){
-			var deliveryReceipt = { msgID : listOfACKStoNotify[i].msgID, 
-									md5sum : listOfACKStoNotify[i].md5sum, 
-									typeOfACK : "ACKfromAddressee",
-									to : listOfACKStoNotify[i].to 	};
-											
-			this.io.sockets.to(client.socketid).emit(	"MessageDeliveryReceipt", 
-															deliveryReceipt );
-															//JSON.stringify(deliveryReceipt));
-		}
-	
+			var deliveryReceipt = { 
+				msgID : listOfACKStoNotify[i].msgID, 
+				md5sum : listOfACKStoNotify[i].md5sum, 
+				typeOfACK : "ACKfromAddressee",
+				to : listOfACKStoNotify[i].to 	
+			};
+							
+			this.io.sockets.to(client.socketid).emit("MessageDeliveryReceipt",deliveryReceipt );
+		} // END FOR	
 	}else{
 		
 	}
