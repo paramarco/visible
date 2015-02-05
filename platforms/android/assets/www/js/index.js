@@ -59,6 +59,7 @@ function Contact(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
 	this.path2photo = contact2create.path2photo;
 	this.nickName = contact2create.nickName;
+	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
 	this.number = 0;
 };
@@ -259,12 +260,13 @@ GUI.prototype.insertContactInMainPage = function(contact) {
 	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
 						'	<h2>'+ contact.nickName +'</h2> '+
-						'	<p>' + contact.commentary + '</p>'+
+						'	<p>' + contact.commentary + '</p></a>'+
 						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
 						'</li>';
 	$("#listOfContactsInMainPage").append(html2insert);
 	$("#listOfContactsInMainPage").trigger("create");
-
+	
+	//$( html2insert ).appendTo( "#listOfContactsInMainPage" ).enhanceWithin();
 };
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
@@ -319,7 +321,7 @@ function loadMyConfig(){
      		
      		
      		//DEBUG
-  /*   		var transaction = db.transaction(["contacts"],"readwrite");	
+  		var transaction = db.transaction(["contacts"],"readwrite");	
 			var store = transaction.objectStore("contacts");
 			
 			var newContact = new Contact({	publicClientID : cursor.value.publicClientID  , 
@@ -339,7 +341,7 @@ function loadMyConfig(){
 											nickName : "Anne",
 											commentary : "life is great!" });
 			var request = store.add(newContact);		
-*/
+
      		//DEBUG
      		 
      		//	trigger configuration as already loaded    		
@@ -451,7 +453,20 @@ function connect_socket (mytoken) {
 		console.log('DEBUG ::: connect triggered : ' );
 
 		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, function (data) {
-	      console.log(JSON.stringify(data)); 
+			
+			data.map(function(c){
+				var newContact = new Contact({	
+					publicClientID : c.publicClientID  ,
+					location :  c.location,
+					path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg", 
+					nickName : "Hola",
+					commentary : "Hola"									
+				});
+				listOfContacts.push(newContact);
+				GUI.prototype.insertContactInMainPage(newContact);
+			});
+			//$("body").pagecontainer("load", "#MainPage", {reloadPage: true});
+			// $.mobile.pageContainer.pagecontainer("load", "#MainPage", {reloadPage: true});
 	    });		
 	});
 

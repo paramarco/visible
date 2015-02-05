@@ -11,8 +11,16 @@ BrokerOfVisibles.prototype.getListOfPeopleAround = function(publicClientID) {
 	var listOfPeopleAround = _.filter( listOfClients, function(c) {	
 		return (c.publicClientID != publicClientID);	
 	});
+	var listOfVisibles = [];
+	listOfPeopleAround.map(function(c){
+		var visible = {
+			publicClientID : c.publicClientID,
+			location : c.location
+		}; 
+		listOfVisibles.push(visible);
+	});
 	
-	return listOfPeopleAround;
+	return listOfVisibles;
 };
 
 BrokerOfVisibles.prototype.getClientById = function(publicClientID) {
