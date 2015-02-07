@@ -30,10 +30,10 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 	// messageHeaders = [{ msgID , md5sum , size}]; 
 	//messageHeaders = [];
 	var thereAreMessages = false;
-	var messageList = _.filter(	listOfMessages,
-									function(key) {	if (key.to == client.publicClientID)
-														return thereAreMessages = true;	
-													});
+	var messageList = _.filter(	listOfMessages,	function(key) {
+		if (key.to == client.publicClientID)
+			return thereAreMessages = true;	
+	});
 	
 	var messageHeaders = [];
 	if (thereAreMessages){
@@ -43,26 +43,38 @@ PostMan.prototype.sendMessageHeaders = function(client) {
 										size :messageList[i].size	}
 								);  
 		} 
-		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders",
-											messageHeaders); 
-											//JSON.stringify(messageHeaders));
-	}else{
+		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", messageHeaders); 
+		
+	} else{
 		
 	}
 	
 };
 
-PostMan.prototype.getJoinServerParameters = function(input) {
+PostMan.prototype.getJoinServerParameters = function(token) {
 	var joinParameters  = null;
-	try {   joinParameters =	JSON.parse(input);	} 
-	catch (ex) {	joinParameters = null;	}
-	
-	if (typeof joinParameters.token !== 'string' || 
-		typeof joinParameters.publicClientID !== 'string' ||
-		typeof joinParameters.location.lat  !== 'string' ||
-		typeof joinParameters.location.lon  !== 'string' ) {	joinParameters= null; }
-	
-	if (Object.keys(joinParameters).length != 3) {	joinParameters = null;	}
+	try {
+		//TODO decipherment of the token  JSON Web Token http://jwt.io/
+		joinParameters = JSON.parse(token);		
+		
+		if (typeof joinParameters.token !== 'string' || 
+			typeof joinParameters.publicClientID !== 'string' ||
+			typeof joinParameters.location.lat  !== 'string' ||
+			typeof joinParameters.location.lon  !== 'string' ||
+			typeof joinParameters.nickName  !== 'string' 	) {	
+				joinParameters = null;
+				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking "  ); 
+		}
+		
+		if (Object.keys(joinParameters).length != 4) {	
+			joinParameters = null;
+			console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the format check "  ); 	
+		}
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: getJoinServerParameters  :::  exceptrion thrown "  ); 
+		joinParameters = null;	
+	}
 
 	return joinParameters; 	
 };

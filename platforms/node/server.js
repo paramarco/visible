@@ -65,7 +65,7 @@ var util = require('util');
 
 	
 				
-var brokerOfVisibles = new BrokerOfVisibles();
+var brokerOfVisibles = new BrokerOfVisibles(io);
 var postMan = new PostMan(io);
 
 //DEBUG temporary variables just for testing Performances
@@ -143,7 +143,7 @@ postMan.archiveMessage({
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
- 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+ 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
   	var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters); 	
 
   	if (client){  		
@@ -158,8 +158,8 @@ io.use(function(socket, next){
 });
 
 io.sockets.on("connection", function (socket) {
-	
-	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.joinServerParameters);
+
+	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
 	if ( joinServerParameters == null ){ return;}	
 	
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
@@ -167,8 +167,8 @@ io.sockets.on("connection", function (socket) {
 	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
 					
 	if ( typeof client != 'undefined'){ 
-		client.socketid = socket.id;		
-		client.updateLocation(joinServerParameters.location); 
+		client.setSocketId(socket.id);		
+		client.setNewParameters(joinServerParameters); 
 
 		// #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 		// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
@@ -213,17 +213,17 @@ io.sockets.on("connection", function (socket) {
 		var clientReceiver = brokerOfVisibles.isClientOnline(message.to);		
 					
 		if (  typeof clientReceiver != 'undefined'){
-			console.log('DEBUG ::: messagetoserver trigered :: clientReceiver is Online : ' +JSON.stringify(clientReceiver)  );
+			//console.log('DEBUG ::: messagetoserver trigered :: clientReceiver is Online : ' +JSON.stringify(clientReceiver)  );
  			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", message);		
  		}else {
- 			console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
+ 			//console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
  			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
  		}
 	});
 	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("messageRetrieval", function(input) {		
-		console.log('DEBUG ::: messageRetrieval trigered :: ' + JSON.stringify(input));
+		//console.log('DEBUG ::: messageRetrieval trigered :: ' + JSON.stringify(input));
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
 		if (retrievalParameters == null) return;
 					
@@ -248,17 +248,17 @@ io.sockets.on("connection", function (socket) {
 									
  			//io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
  			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
- 			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
+ 			//console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
  					
  		}else {
  			postMan.archiveACK(messageACKparameters);
- 			console.log('DEBUG ::: MessageDeliveryACK trigered :: sender offline, MessageDeliveryReceipt archived');
+ 			//console.log('DEBUG ::: MessageDeliveryACK trigered :: sender offline, MessageDeliveryReceipt archived');
  		}
 		
 	});
 	
 	socket.on("ImageRetrieval", function(parameters) {	
-		console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + JSON.stringify(parameters) );
+		//console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + JSON.stringify(parameters) );
 		
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg);
 
@@ -268,7 +268,7 @@ io.sockets.on("connection", function (socket) {
 	});
 	
 	socket.on("imageResponse", function(parameters) {	
-		console.log("DEBUG ::: imageResponse ::: from client ::: " + parameters.publicClientIDofSender + " answering img request to : " + parameters.publicClientIDofRequester );
+		//console.log("DEBUG ::: imageResponse ::: from client ::: " + parameters.publicClientIDofSender + " answering img request to : " + parameters.publicClientIDofRequester );
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester); 
 
 		if ( typeof clientToPoll != 'undefined' ){
@@ -276,8 +276,10 @@ io.sockets.on("connection", function (socket) {
 		}
 	});	
 	
-	socket.on('RequestOfListOfPeopleAround', function (publicClientID, fn) {		
-    	fn(brokerOfVisibles.getListOfPeopleAround(publicClientID));
+	socket.on('RequestOfListOfPeopleAround', function (publicClientID, fn) {	
+		var listOfPeople = brokerOfVisibles.getListOfPeopleAround(publicClientID);	
+		brokerOfVisibles.informSomebodyIsAround(listOfPeople,publicClientID);
+    	fn(listOfPeople);
   	});
 	
 

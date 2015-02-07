@@ -3,8 +3,8 @@ var _ 				= require('underscore')._
 
 var listOfClients = []; 
 
-function BrokerOfVisibles() {
-
+function BrokerOfVisibles(_io) {
+	this.io = _io;
 };
 //#9 XEP-0080: User Location:: distribute its Location to its "Visible"s
 BrokerOfVisibles.prototype.getListOfPeopleAround = function(publicClientID) {
@@ -15,7 +15,9 @@ BrokerOfVisibles.prototype.getListOfPeopleAround = function(publicClientID) {
 	listOfPeopleAround.map(function(c){
 		var visible = {
 			publicClientID : c.publicClientID,
-			location : c.location
+			location : c.location,
+			nickName : c.nickName,
+  			commentary : c.commentary
 		}; 
 		listOfVisibles.push(visible);
 	});
@@ -45,10 +47,17 @@ BrokerOfVisibles.prototype.createNewClient = function() {
 };
 
 BrokerOfVisibles.prototype.evaluateResponseToTheChanllenge = function(joinServerParameters) {
-  	var client = _.find(listOfClients, function(client) {	
+	var client;
+	try{
+		client = _.find(listOfClients, function(client) {	
   		return (	client.publicClientID  == joinServerParameters.publicClientID &&
   				 	client.myArrayOfTokens[client.indexOfCurrentToken] == joinServerParameters.token);	
-	});
+		});		
+	}
+	catch(e){
+		console.log("DEBUG ::: evaluateResponseToTheChanllenge ::: joinServerParameters probably null");
+	}
+
 	return client;
 };
 
@@ -60,6 +69,25 @@ BrokerOfVisibles.prototype.isClientOnline = function(publicClientID) {
 	});
 	return client;
 };
+
+BrokerOfVisibles.prototype.informSomebodyIsAround = function(listOfPeople,publicClientID) {
+	var newClientAround = BrokerOfVisibles.prototype.getClientById(publicClientID);
+	var visible = {
+			publicClientID : newClientAround.publicClientID,
+			location : newClientAround.location,
+			nickName : newClientAround.nickName,
+  			commentary : newClientAround.commentary
+	}; 
+	listOfPeople.map(function (c){
+		var client2BeNotified = BrokerOfVisibles.prototype.isClientOnline(c.publicClientID);
+		if (typeof client2BeNotified  !== 'undefined' ){
+			this.io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact",[visible] );
+		}		
+	});
+};
+
+
+
 
 
 module.exports = BrokerOfVisibles;
