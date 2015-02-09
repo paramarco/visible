@@ -418,21 +418,27 @@ MailBox.prototype.getAllMessagesOf = function(from) {
 
 function setNewContacts (data) {			
 	data.map(function(c){
-		var newContact = new Contact({	
-			publicClientID : c.publicClientID  ,
-			location :  c.location,
-			path2photo : "./img/profile_black_195x195.png", 
-			nickName : c.nickName,
-			commentary : c.commentary								
-		});
-		//TODO check if the Contact already exists and act consequently
-		listOfContacts.push(newContact);
-		GUI.prototype.insertContactInMainPage(newContact);
 		
+		var contactExist = listOfContacts.some(function (elem) {
+			return elem.publicClientID == c.publicClientID;
+		});
+
+		if (!contactExist){		
+			var newContact = new Contact({	
+				publicClientID : c.publicClientID  ,
+				location :  c.location,
+				path2photo : "./img/profile_black_195x195.png", 
+				nickName : c.nickName,
+				commentary : c.commentary								
+			});
+			
+			listOfContacts.push(newContact);
+			GUI.prototype.insertContactInMainPage(newContact);			
+		}		
 		//request an update of the last photo of this Contact
 		var ImageRetrievalObject = {	
 			publicClientIDofRequester : app.publicClientID, 
-			publicClientID2getImg : newContact.publicClientID
+			publicClientID2getImg : c.publicClientID
 		};	
 		socket.emit('ImageRetrieval', ImageRetrievalObject	);
 

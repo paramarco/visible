@@ -1,55 +1,107 @@
 var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 
-var listOfMessages = []; //array of Message.js (DB)
-var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
-
-
-
-
-
-
-					
+/*				
 listOfACKs.push({ 	msgID : "3", 
 					md5sum : "asdasdasdasdasdasd", 
 					from : "11d76d68-886d-4c47-904f",
 					to : 'YYYYY' 	});					
 					
-					
+*/				
 
-//class definition
-function PostMan(io) {
-	this.io = io; //pointer to io.sockets
+function PostMan(_io) {
+	var io = _io; //pointer to io.sockets
+	var listOfMessages = []; //array of Message.js (DB)
+	var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
+	
+	
+	//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+	//TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}];
+	this.sendMessageHeaders = function(client) {
+	
+		// messageHeaders = [{ msgID , md5sum , size}]; 
+		//messageHeaders = [];
+		var thereAreMessages = false;
+		var messageList = _.filter(	listOfMessages,	function(key) {
+			if (key.to == client.publicClientID)
+				return thereAreMessages = true;	
+		});
+		
+		var messageHeaders = [];
+		if (thereAreMessages){
+			for(var i = 0; i < messageList.length; i++){
+				messageHeaders.push(	{	msgID : messageList[i].msgID,
+											md5sum : messageList[i].md5sum,
+											size :messageList[i].size	}
+									);  
+			} 
+			io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", messageHeaders); 
+			
+		} else{
+			
+		}
+		
+	};
+	
+	//TODO #16 get the message from database
+	this.getMessageFromArchive = function(retrievalParameters) {
+		var message = null;
+	  	message = _.find(listOfMessages, function(key) {	
+			if (key.msgID == retrievalParameters.msgID && 	
+				key.md5sum  == retrievalParameters.md5sum &&
+				key.size == retrievalParameters.size   )
+				//key.to == socket.id->clientID... 
+				return true;	 
+		});   
+	  return message;
+	};
+	
+	
+	//TODO #5 save the message in the Buffer
+	this.archiveMessage = function(msg) {
+		listOfMessages.push(msg);
+	};
 
+	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
+	this.isPostBoxFull= function(message) {
+		//get from the message the sender and receiver
+		var isPostBoxFull = false;
+		
+		return isPostBoxFull;
+	
+	};
+	
+	this.archiveACK = function(messageACKparameters) {	
+		listOfACKs.push(messageACKparameters);
+	};
+
+	this.sendMessageACKs = function(client) {
+	
+		var thereAreACKs = false;
+		var listOfACKStoNotify = _.filter(	listOfACKs,	function(key) {	
+			if (key.from == client.publicClientID)
+				return thereAreACKs = true;	
+		});
+		
+		if (thereAreACKs){
+			for(var i = 0; i < listOfACKStoNotify.length; i++){
+				var deliveryReceipt = { 
+					msgID : listOfACKStoNotify[i].msgID, 
+					md5sum : listOfACKStoNotify[i].md5sum, 
+					typeOfACK : "ACKfromAddressee",
+					to : listOfACKStoNotify[i].to 	
+				};
+								
+				io.sockets.to(client.socketid).emit("MessageDeliveryReceipt",deliveryReceipt );
+			} // END FOR	
+		}else{
+			
+		}
+		
+	};
 
 };
-//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-//TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}];
-PostMan.prototype.sendMessageHeaders = function(client) {
-	
-	// messageHeaders = [{ msgID , md5sum , size}]; 
-	//messageHeaders = [];
-	var thereAreMessages = false;
-	var messageList = _.filter(	listOfMessages,	function(key) {
-		if (key.to == client.publicClientID)
-			return thereAreMessages = true;	
-	});
-	
-	var messageHeaders = [];
-	if (thereAreMessages){
-		for(var i = 0; i < messageList.length; i++){
-			messageHeaders.push(	{	msgID : messageList[i].msgID,
-										md5sum : messageList[i].md5sum,
-										size :messageList[i].size	}
-								);  
-		} 
-		this.io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", messageHeaders); 
-		
-	} else{
-		
-	}
-	
-};
+
 
 PostMan.prototype.getJoinServerParameters = function(token) {
 	var joinParameters  = null;
@@ -83,7 +135,6 @@ PostMan.prototype.getJoinServerParameters = function(token) {
 PostMan.prototype.getMessageRetrievalParameters = function(input) {
 	var retrievalParameters = null;
 	try {    	
-			//retrievalParameters =	JSON.parse(input);
 			retrievalParameters = input;
 		} 
 	catch (ex) {	retrievalParameters = null;	}
@@ -97,39 +148,13 @@ PostMan.prototype.getMessageRetrievalParameters = function(input) {
 	return retrievalParameters; 	
 };
 
-//TODO #16 get the message from database
-//inputRequestMessage = { msgID , md5sum , size}
-PostMan.prototype.getMessageFromArchive = function(retrievalParameters) {
-	var message = null;
-  	message = _.find(listOfMessages, function(key) {	
-		if (key.msgID == retrievalParameters.msgID && 	
-			key.md5sum  == retrievalParameters.md5sum &&
-			key.size == retrievalParameters.size   )
-			//key.to == socket.id->clientID... 
-			return true;	 
-	});   
-  return message;
-};
 
-//TODO #5 save the message in the Buffer
-PostMan.prototype.archiveMessage = function(msg) {
-	listOfMessages.push(msg);
-};
 
-//TODO #4 check if this new message makes the Buffer of sender/receiver become full
-PostMan.prototype.isPostBoxFull= function(message) {
-	//get from the message the sender and receiver
-	var isPostBoxFull = false;
-	
-	return isPostBoxFull;
 
-};
 PostMan.prototype.getMessage = function(input) {
 	var inputMessage = null;
 	try {    
 		inputMessage =	input;
-		
-		console.log("DEBUG :: " + JSON.stringify(inputMessage));
 		
 		if (typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
@@ -160,36 +185,6 @@ PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {
 	}
 	catch (ex) {	return null;	}	
 };
-
-PostMan.prototype.archiveACK = function(messageACKparameters) {	
-	listOfACKs.push(messageACKparameters);
-};
-
-PostMan.prototype.sendMessageACKs = function(client) {
-
-	var thereAreACKs = false;
-	var listOfACKStoNotify = _.filter(	listOfACKs,	function(key) {	
-		if (key.from == client.publicClientID)
-			return thereAreACKs = true;	
-	});
-	
-	if (thereAreACKs){
-		for(var i = 0; i < listOfACKStoNotify.length; i++){
-			var deliveryReceipt = { 
-				msgID : listOfACKStoNotify[i].msgID, 
-				md5sum : listOfACKStoNotify[i].md5sum, 
-				typeOfACK : "ACKfromAddressee",
-				to : listOfACKStoNotify[i].to 	
-			};
-							
-			this.io.sockets.to(client.socketid).emit("MessageDeliveryReceipt",deliveryReceipt );
-		} // END FOR	
-	}else{
-		
-	}
-	
-};
-
 
 
 
