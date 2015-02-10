@@ -76,6 +76,7 @@ function Message(input) {
 	this.path2Attachment = null;
 	this.timeStamp = new Date();
 	this.markedAsRead = false; 
+	this.chatWith = null;
 
 	switch (Object.keys(input).length )	{
 		case 3 :
@@ -115,6 +116,11 @@ Message.prototype.assignmd5sum = function(){
 Message.prototype.calculateSize = function(){
 	this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
 };
+
+Message.prototype.setChatWith = function(publicClientID){
+	this.chatWith = publicClientID;
+};
+
 //END Class Message
 
 
@@ -283,7 +289,10 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
-	var listOfMessages = mailBox.getAllMessagesOf(contact.publicClientID);
+	var newerDate = new Date();
+	var olderDate = new Date(newerDate.getDate() - 30);
+	
+	var listOfMessages = mailBox.getAllMessagesOf(contact.publicClientID, olderDate, newerDate);
 	
 	listOfMessages.done(function(list){
 		var html2insert ="";
@@ -362,14 +371,14 @@ function loadMyConfig(){
 
 function MailBox() {
 	
-	this.indexedDBHandler = window.indexedDB.open("instalticDBVisible2",6);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible",1);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 
 		var thisDB = event.target.result;
 		if(!thisDB.objectStoreNames.contains("messagesV2")){
 			var objectStore = thisDB.createObjectStore("messagesV2", { keyPath: "msgID" });
-			objectStore.createIndex("from","from",{unique:false});
+			objectStore.createIndex("chatWith",["chatWith","timeStamp"],{unique:false});
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
@@ -402,14 +411,18 @@ MailBox.prototype.storeMessage = function(message2Store) {
  		
 };
 
-MailBox.prototype.getAllMessagesOf = function(from) {
-	var singleKeyRange = IDBKeyRange.only(from); 
+MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
+
+	var lowerBound = [ from, olderDate ];
+	var upperBound = [ from, newerDate ];
+	var range = IDBKeyRange.bound(lowerBound,upperBound);
+		
 	var deferred = $.Deferred();
 	var listOfMessages = [];
 	
 	// TODO get the list of my own messages as well and ordered by time
 	
-	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("from").openCursor(singleKeyRange).onsuccess = function(e) {		
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("chatWith").openCursor(range).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
         	listOfMessages.push(cursor.value);
@@ -424,23 +437,20 @@ MailBox.prototype.getAllMessagesOf = function(from) {
 
 MailBox.prototype.getMessageByID = function(msgID) {
 	 
-	var deferred = $.Deferred();
+	var deferredGetMessageByID = $.Deferred();
 	var message;
 	
-	var transaction = db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").get(msgID);
-	
-	transaction.onsuccess = function(e) {
+	//db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").get(msgID).onsuccess = function(e) {
+	db.transaction(["messagesV2"], "readwrite").objectStore("messagesV2").get(msgID).onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) {
      		message = cursor.value;
      	}
-     	deferred.resolve(message); 
+     	deferredGetMessageByID.resolve(message); 
 	};
-	transaction.onerror = function (e){
-		deferred.resolve(message);
-	}
+
 	
-	return deferred.promise();
+	return deferredGetMessageByID.promise();
 };
 
 function setNewContacts (data) {			
@@ -555,12 +565,16 @@ function connect_socket (mytoken) {
   		socket.emit("MessageDeliveryACK",messageACK);
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		
-  		//double check to avoid printing messages twice...(which should never be received...)
-  		mailBox.getMessageByID(messageFromServer.msgID).done(function (message){
-  			if (typeof message == 'undefined' ){  			
-  				
-  				mailBox.storeMessage(messageFromServer);  				  		 
-  		 		
+  		//double check to avoid saving messages twice...(which should never be received...)
+  		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
+  		
+  		getAsyncMessageFromDB.done(function (message){
+  			if (typeof message == 'undefined' ){ 
+  				//in order to index the IndexDB
+  				messageFromServer.setChatWith(messageFromServer.from); 	
+  				//stores in IndexDB			
+  				mailBox.storeMessage(messageFromServer); 
+  				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
   		 			gui.insertMessageInConversation(messageFromServer);
   		  		}  				

@@ -162,7 +162,7 @@ PostMan.prototype.getMessage = function(input) {
 			typeof inputMessage.msgID !== 'string' || 
 			typeof inputMessage.md5sum !== 'string' ||  
 			typeof inputMessage.size !== 'number' ||
-			Object.keys(inputMessage).length != 9 ) 	{	return null; 	}
+			Object.keys(inputMessage).length != 10 ) 	{	return null; 	}
 
 		var message = new Message(inputMessage);	
 		
