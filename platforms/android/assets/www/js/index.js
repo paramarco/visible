@@ -117,6 +117,9 @@ Message.prototype.calculateSize = function(){
 };
 //END Class Message
 
+
+//TODO de/encript tokenEncripted, JSON Web Token http://jwt.io/
+
 function Unwrapper() {
 };
 Unwrapper.prototype.getMessageFromServer = function(input) {
@@ -262,12 +265,15 @@ GUI.prototype.insertContactInMainPage = function(contact) {
 						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
 						'</li>';
 	$("#listOfContactsInMainPage").append(html2insert);
-	
-	$( "#listOfContactsInMainPage" ).listview( "refresh" );
 
-	//$("#listOfContactsInMainPage").trigger("create");
+	$('#listOfContactsInMainPage').listview().listview('refresh');
 	
+	
+	
+	//$( "#listOfContactsInMainPage" ).listview( "refresh" );
+	//$("#listOfContactsInMainPage").trigger("create");
 	//$( html2insert ).appendTo( "#listOfContactsInMainPage" ).enhanceWithin();
+
 };
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
@@ -416,6 +422,27 @@ MailBox.prototype.getAllMessagesOf = function(from) {
 	return deferred.promise();
 };
 
+MailBox.prototype.getMessageByID = function(msgID) {
+	 
+	var deferred = $.Deferred();
+	var message;
+	
+	var transaction = db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").get(msgID);
+	
+	transaction.onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		message = cursor.value;
+     	}
+     	deferred.resolve(message); 
+	};
+	transaction.onerror = function (e){
+		deferred.resolve(message);
+	}
+	
+	return deferred.promise();
+};
+
 function setNewContacts (data) {			
 	data.map(function(c){
 		
@@ -527,10 +554,19 @@ function connect_socket (mytoken) {
   		//it could be implemented with callback as well....
   		socket.emit("MessageDeliveryACK",messageACK);
   		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
-  		if (app.currentChatWith == messageFromServer.from ){
-  			gui.insertMessageInConversation(messageFromServer);	
-  		}
-		mailBox.storeMessage(messageFromServer);  		
+  		
+  		//double check to avoid printing messages twice...(which should never be received...)
+  		mailBox.getMessageByID(messageFromServer.msgID).done(function (message){
+  			if (typeof message == 'undefined' ){  			
+  				
+  				mailBox.storeMessage(messageFromServer);  				  		 
+  		 		
+  				if (app.currentChatWith == messageFromServer.from ){
+  		 			gui.insertMessageInConversation(messageFromServer);
+  		  		}  				
+  			}  		
+  		});	
+ 
 		
   });//END messageFromServer
 	//TODO #13.1 headers come with size of the message get the smallest first, 
@@ -653,6 +689,7 @@ $(document).on("click","#chat-input-button",function() {
 		messageBody : gui.sanitize(textMessage) 
 	});
 
+	//TODO save the message into the list and DB
 	if (message2send != null){
 		socket.emit('messagetoserver', message2send);
 		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
