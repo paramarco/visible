@@ -26,7 +26,8 @@ function BrokerOfVisibles(_io) {
 	
 	this.getListOfPeopleAround = function(publicClientID) {
 		var listOfPeopleAround = _.filter( listOfClients, function(c) {	
-			return (c.publicClientID != publicClientID);	
+			return (	c.publicClientID 	!= publicClientID &&
+						c.socketid			!= null 			);	
 		});
 		var listOfVisibles = [];
 		listOfPeopleAround.map(function(c){
