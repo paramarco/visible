@@ -436,13 +436,12 @@ MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 };
 
 MailBox.prototype.getMessageByID = function(msgID) {
-	 
+	var singleKeyRange = IDBKeyRange.only(msgID);  
 	var deferredGetMessageByID = $.Deferred();
-	var message;
 	
-	//db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").get(msgID).onsuccess = function(e) {
-	db.transaction(["messagesV2"], "readwrite").objectStore("messagesV2").get(msgID).onsuccess = function(e) {
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").openCursor(singleKeyRange).onsuccess = function(e) {
 		var cursor = e.target.result;
+		var message;
      	if (cursor) {
      		message = cursor.value;
      	}
@@ -708,8 +707,13 @@ $(document).on("click","#chat-input-button",function() {
 		socket.emit('messagetoserver', message2send);
 		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
 	}
+	//print message on the GUI
 	gui.insertMessageInConversation(message2send);
-		
+
+	//stores to DB
+	message2send.setChatWith(app.currentChatWith); 	
+	mailBox.storeMessage(message2send); 
+	// clear chat-input	
 	document.getElementById('chat-input').value='';
 });
 
