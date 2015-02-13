@@ -184,8 +184,6 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 	catch (ex) {	return null;	}	
 };
 
-
-
 //END Class UnWrapper
 
 function GUI() {
@@ -247,28 +245,32 @@ GUI.prototype.insertMessageInConversation = function(message) {
 
 GUI.prototype.loadContacts = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	//db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
      		listOfContacts.push(cursor.value);      	
-        	gui.insertContactInMainPage(cursor.value);
+        	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
      	    mainPageReady.resolve();
      	}
-	};
-	
+	};	
 };
 
-
-
-GUI.prototype.insertContactInMainPage = function(contact) {
+GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
+	
+	var attributesOfLink = "" ; 
+		
+	if (isNewContact){
+		attributesOfLink += ' onclick="addNewContact(\'' + contact.publicClientID + '\');" ' +
+							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+	}
+	
 	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
-						'	<h2>'+ contact.nickName +'</h2> '+
+						'	<h2>'+ contact.nickName   + '</h2> '+
 						'	<p>' + contact.commentary + '</p></a>'+
-						'	<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>'+
+						'	<a ' + attributesOfLink   + ' ></a>'+
 						'</li>';
 	$("#listOfContactsInMainPage").append(html2insert);
 
@@ -335,7 +337,7 @@ function loadMyConfig(){
 
 
     		//DEBUG
-  	/* 	var transaction = db.transaction(["contacts"],"readwrite");	
+/*  	 	var transaction = db.transaction(["contacts"],"readwrite");	
 			var store = transaction.objectStore("contacts");
 			
 			var newContact = new Contact({	publicClientID : cursor.value.publicClientID  , 
@@ -355,8 +357,8 @@ function loadMyConfig(){
 											nickName : "Anne",
 											commentary : "life is great!" });
 			var request = store.add(newContact);		
-
-*/   		
+*/
+   		
 //DEBUG
      		 
      		//	trigger configuration as already loaded    		
@@ -364,13 +366,14 @@ function loadMyConfig(){
      	}else{
      	    // 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-     	    //console.log("DEBUG ::: loadMyConfig ::: for the first time");
+     	    console.log("DEBUG ::: loadMyConfig ::: for the first time");
+     	   $.mobile.loading( "hide" ); 
+     	   $("body").pagecontainer("change", "#visibleFirstTime");
      	}
 	};
 }
 
-function MailBox() {
-	
+function init() {
 	this.indexedDBHandler = window.indexedDB.open("instaltic.visible",1);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
@@ -400,8 +403,11 @@ function MailBox() {
 	};
     
 
-};
+}
 
+
+function MailBox() {
+};
 
 MailBox.prototype.storeMessage = function(message2Store) {
 
@@ -452,6 +458,25 @@ MailBox.prototype.getMessageByID = function(msgID) {
 	return deferredGetMessageByID.promise();
 };
 
+//    this function assumes that the contact is already inserted on the Array listOfContacts
+
+function addNewContact (publicClientID) {	
+			
+	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+
+	if (contact){		
+		//TODO to finish
+		//GUI.prototype.updateContactInMainPage(newContact);
+		
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		var request = store.add(contact);		
+		
+	}
+}
+
+
+
 function setNewContacts (data) {			
 	data.map(function(c){
 		
@@ -469,7 +494,7 @@ function setNewContacts (data) {
 			});
 			
 			listOfContacts.push(newContact);
-			GUI.prototype.insertContactInMainPage(newContact);			
+			GUI.prototype.insertContactInMainPage(newContact,true);			
 		}		
 		//request an update of the last photo of this Contact
 		var ImageRetrievalObject = {	
@@ -492,22 +517,7 @@ function launchPeriodicTasks(){
 	},5000); // loop every 15 seconds	
 }
 
-var db;
-var socket;
-var listOfContacts = [];
-var gui = new GUI();
-var unWrapper = new Unwrapper();
-var mailBox = new MailBox();
-var app = {
-    // Application Constructor
-    currentChatWith : null,
-    myCurrentNick : null,
-    myPhotoPath : null,
-    myArrayOfTokens : [],
-	publicClientID : null,
-	myPosition : null
- 
-};
+
 
 
 
@@ -618,6 +628,8 @@ function connect_socket (mytoken) {
 		contact.path2photo = data.img;
 		$("#imgOfChat-page-header").attr("src", data.img);
 		$("#profilePhoto"+data.publicClientID ).attr("src", data.img);
+		
+		//TODO insert photo on DB
 	});//END ImageFromServer
 	  
 	socket.on("notificationOfNewContact", setNewContacts);//END notificationOfNewContact
@@ -625,6 +637,37 @@ function connect_socket (mytoken) {
 }//END of connect_socket	
 	
 
+
+
+
+
+/***********************************************************************************************
+ * *********************************************************************************************
+ * **************				MAIN		 						****************************
+ * *********************************************************************************************
+ * *********************************************************************************************/
+
+
+
+var db;
+var socket;
+var listOfContacts = [];
+var gui = new GUI();
+var unWrapper = new Unwrapper();
+var mailBox = new MailBox();
+var app = {
+    // Application Constructor
+    currentChatWith : null,
+    myCurrentNick : null,
+    myPhotoPath : null,
+    myArrayOfTokens : [],
+	publicClientID : null,
+	myPosition : null
+ 
+};
+
+
+	init();
 
 
 /***********************************************************************************************
@@ -644,15 +687,34 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 		.done(function (result) { 
 			connect_socket(app.myArrayOfTokens[result.token]);  
 		});
-
+	
+	$.mobile.loading( "hide" );
 	$("body").pagecontainer("change", "#MainPage");
 });
+
+
+
 
 
 	
 $(document).ready(function() {	
 	documentReady.resolve();
+	  var theme =  $.mobile.loader.prototype.options.theme,
+	  msgText =  $.mobile.loader.prototype.options.text,
+	  textVisible =  $.mobile.loader.prototype.options.textVisible,
+	  textonly = false
+	  html = "";
+	$.mobile.loading( 'show', {
+	  text: msgText,
+	  textVisible: textVisible,
+	  theme: theme,
+	  textonly: textonly,
+	  html: html
+	  });
+	
+	// TODO check whether is the best place to local the loadMaps or not
 	loadMaps();
+	
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo

@@ -15,44 +15,10 @@
 		<link rel="stylesheet" type="text/css" href="css/font-face.css">
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="css/picedit.min.css" />
-
-		
+				
         <title>Visible</title>
     </head>
-
 	<body>
-		<div data-role="page" data-theme="a" id="visibleFirstTime">
-			<div data-role="header" data-position="fixed">
-			  	<div class="ui-grid-solo">
-			       <div class="ui-block-a">
-			       	<a href="#" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a>		       	
-			       	<strong>Visible for the first time</strong>			       	
-			       </div>			     
-	    		</div>
-			</div><!-- /header -->
-			<div id="contentOfvisibleFirstTime" data-role="content" data-theme="a">	
-										
-				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
-			    	</ul>				    
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
-						<div data-role="fieldcontain">
-	                         <label for="firstLoginNameField">my nick Name:</label>
-	                         <input id="firstLoginNameField" type="text" name="firstLoginNameField" value="">
-						</div>						
-					</ul>
-				</form>
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<li id="firstLoginInputButton">
-						<a href="#">
-							<h2 align="center" >I want to be visible!</h2>
-						</a>											
-					</li>
-				</ul>	
-			</div><!-- /content  -->			
-		</div><!-- /page profile-->
-	
 		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
@@ -140,7 +106,45 @@
 						</li>
 					</ul>
 			</div><!-- /panel -->
-		</div><!-- /page 1-->
+		</div><!-- /MainPage-->
+
+
+		<div data-role="page" data-theme="a" id="visibleFirstTime">
+			<div data-role="header" data-position="fixed">							
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a">	</div>
+			    <div class="ui-block-b"><p><strong>Welcome! please insert your settings below</strong></p></div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-d"><a href="" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-e"><a href="" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
+			  </div>
+			</div><!-- /header -->
+			
+
+			<div id="contentOfvisibleFirstTime" data-role="content" data-theme="a">	
+										
+				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">
+						<input type="file" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
+			    	</ul>				    
+					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
+						<div data-role="fieldcontain">
+	                         <label for="firstLoginNameField">my nick Name:</label>
+	                         <input id="firstLoginNameField" type="text" name="firstLoginNameField" value="">
+						</div>						
+					</ul>
+				</form>
+				<ul data-role="listview" data-inset="true" data-divider-theme="a">
+					<li id="firstLoginInputButton">
+						<a href="#">
+							<h2 align="center" >I want to be visible!</h2>
+						</a>											
+					</li>
+				</ul>	
+			</div><!-- /content  -->			
+		</div><!-- /page profile-->
+
+
 
 		<div data-role="page" data-theme="a" id="manageVisibles">
 			<div data-role="header" data-position="fixed">							
