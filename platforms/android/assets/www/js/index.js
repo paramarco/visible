@@ -266,11 +266,12 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}
 	
-	var html2insert = 	'<li id="' + contact.publicClientID + '"><a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');"> '+
+	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
+						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
 						'	<h2>'+ contact.nickName   + '</h2> '+
 						'	<p>' + contact.commentary + '</p></a>'+
-						'	<a ' + attributesOfLink   + ' ></a>'+
+						'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
 						'</li>';
 	$("#listOfContactsInMainPage").append(html2insert);
 
@@ -426,8 +427,6 @@ MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 	var deferred = $.Deferred();
 	var listOfMessages = [];
 	
-	// TODO get the list of my own messages as well and ordered by time
-	
 	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("chatWith").openCursor(range).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
@@ -461,18 +460,25 @@ MailBox.prototype.getMessageByID = function(msgID) {
 //    this function assumes that the contact is already inserted on the Array listOfContacts
 
 function addNewContact (publicClientID) {	
-			
+	
+	//TODO show message to user that the contact is included
+	//GUI.prototype.updateContactInMainPage(newContact);			
+	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
+	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
+	
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
-
+	
 	if (contact){		
-		//TODO to finish
-		//GUI.prototype.updateContactInMainPage(newContact);
-		
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		var request = store.add(contact);		
-		
-	}
+		//TODO do not insert when already exist
+		try {
+			var transaction = db.transaction(["contacts"],"readwrite");	
+			var store = transaction.objectStore("contacts");		
+			var request = store.add(contact);
+		}
+		catch(e){
+			console.log("DEBUG ::: addNewContact ::: exception trown ");
+		}	
+	}	
 }
 
 
