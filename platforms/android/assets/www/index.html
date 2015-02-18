@@ -22,7 +22,7 @@
 		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#mypanel" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-a"><a href="#mypanel" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/list_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-d"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
@@ -33,78 +33,37 @@
                 <input type="search" name="search-5" id="search-5" value="" placeholder="who is visible?">				
 				
 				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">
-				<!--
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" />
-						<h2>Fulanito de tal</h2>
-						<p>is around you...</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
 
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/9908d2ca5936aea6c4e5ce09404ffbaa" />
-						<h2>Sutanito</h2>
-						<p>is around you...</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" />
-						<h2>Ian</h2>
-						<p>is around you...</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/a0e1c0eacfecf9743bec4ebd6bdcd6f5" />
-						<h2>Pepito</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/aee8b5f6253c3190ea5fef63a1568def" />
-						<h2>Ian</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
-						<h2>Maria</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="img/logo.png" />
-						<h2>Apache</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					-->
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel" data-display="overlay">
-				    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-						<li data-icon="gear">
-							<a href="#profile">
-								<img src="img/profile_black_195x195.png" >
-								<h2>Profile</h2>								
-							</a>
-						</li>
-						<li data-icon="gear">
-							<a href="#createGroup" >							
-								<img src="img/group_black_195x195.png" >
-								<h2>Groups</h2>
-							</a>
-						</li>
-						<li data-icon="gear">
-							<a href="#manageVisibles" >							
-								<img src="img/visibles_black_195x195.png" >
-								<h2>Visibles</h2>
-							</a>
-						</li>
+			    <ul data-role="listview" data-inset="true" data-divider-theme="b">
+					<li data-icon="gear">
+						<a href="#profile">
+							<img src="img/profile_black_195x195.png" >
+							<h2>Profile</h2>								
+						</a>
+					</li>
+					<li data-icon="gear">
+						<a href="#createGroup" >							
+							<img src="img/group_black_195x195.png" >
+							<h2>Groups</h2>
+						</a>
+					</li>
+					<li data-icon="gear">
+						<a href="#manageVisibles" >							
+							<img src="img/visibles_black_195x195.png" >
+							<h2>Visibles</h2>
+						</a>
+					</li>
 
-						<li data-icon="gear">
-							<a href="#activateAccount" >							
-								<img src="img/account_black_195x195.png" >
-								<h2>Account</h2>
-							</a>
-						</li>
-					</ul>
+					<li data-icon="gear">
+						<a href="#activateAccount" >							
+							<img src="img/account_black_195x195.png" >
+							<h2>Account</h2>
+						</a>
+					</li>
+				</ul>
 			</div><!-- /panel -->
 		</div><!-- /MainPage-->
 
@@ -148,61 +107,28 @@
 
 		<div data-role="page" data-theme="a" id="manageVisibles">
 			<div data-role="header" data-position="fixed">							
-			  	<div class="ui-grid-solo">
-			       <div class="ui-block-a">
-			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
-			       	<strong>Fulanito</strong>			       	
-			       </div>			     
-	    		</div>
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-b"></div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-d"></div>
+			    <div class="ui-block-e"></div>
+			  </div>
 			</div><!-- /header -->
+			
 			<div data-role="content" data-theme="b">
 				Are you visible for...?
 				<ul data-role="listview" data-inset="true" data-divider-theme="b">
 					<li>
-						<img src="img/logo.png" />
-						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p>	
+						
+						<h2>Anybody</h2>
+						<p>should you swith this off, then only your contacts would see you online, is not that borring?</p>	
 						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
 							<option value="on">On</option>
 							<option value="off">Off</option>							
 						</select>
 					</li>
-					<li>
-						<img src="img/logo.png" />
-						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p>	
-						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
-							<option value="on">On</option>
-							<option value="off">Off</option>							
-						</select>
-					</li>
-					<li>
-						<img src="img/logo.png" />
-						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p>	
-						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
-							<option value="on">On</option>
-							<option value="off">Off</option>							
-						</select>
-					</li>
-					<li>
-						<img src="img/logo.png" />
-						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p>	
-						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
-							<option value="on">On</option>
-							<option value="off">Off</option>							
-						</select>
-					</li>
-					<li>
-						<img src="img/logo.png" />
-						<h2>Fulanito de tal</h2>
-						<p>estoy cagando...</p>	
-						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
-							<option value="on">On</option>
-							<option value="off">Off</option>							
-						</select>
-					</li>					
+							
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel-manageVisibles" data-display="overlay">
@@ -218,12 +144,13 @@
 
 		<div data-role="page" data-theme="a" id="createGroup">
 			<div data-role="header" data-position="fixed">							
-			  	<div class="ui-grid-solo">
-			       <div class="ui-block-a">
-			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
-			       	<strong>group</strong>			       	
-			       </div>			     
-	    		</div>
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-b"></div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-d"></div>
+			    <div class="ui-block-e"></div>
+			  </div>
 			</div><!-- /header -->
 			<div data-role="content" data-theme="a">							
 				<ul data-role="listview" data-inset="true" data-divider-theme="a">
@@ -277,13 +204,15 @@
 		
 		<div data-role="page" data-theme="a" id="profile">
 			<div data-role="header" data-position="fixed">							
-			  	<div class="ui-grid-solo">
-			       <div class="ui-block-a">
-			       	<a href="#" data-role="button" class="icon-list" data-rel="back" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a>			       	
-			       	<strong id="nickNameInProfile"></strong>			       	
-			       </div>			     
-	    		</div>
+			  <div class="ui-grid-d" >
+			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a> <strong id="nickNameInProfile"></strong></div>
+			    <div class="ui-block-b">	</div>
+			    <div class="ui-block-c"></div>
+			    <div class="ui-block-d"></div>
+			    <div class="ui-block-e"></div>
+			  </div>
 			</div><!-- /header -->
+
 			<div data-role="content" data-theme="a">							
 				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">
@@ -302,7 +231,7 @@
 		<div data-role="page" id="map-page" data-url="map-page">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="icon-list" data-icon="bars" data-iconpos="notext" data-inline="true">Menu</a></div>
+			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/list_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-e"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
@@ -383,17 +312,17 @@
 		<div data-role="page" id="chat-page" data-url="chat-page" >
 			<div data-role="header" data-position="fixed">
 				<div class="ui-grid-d">
-			    <div class="ui-block-a"><a id="arrowBackInChatPage" data-role="button" class="icon-list" data-icon="arrow-l" data-iconpos="notext" data-inline="true"></a></div>
-			    <div class="ui-block-b">
-			    	<a href="#MainPage" data-role="button" class="imgOfChat-page" data-inline="false">
-			       		<img id="imgOfChat-page-header" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="imgOfChat-page-header">
-			       	</a>
-			       	<strong id="nameOfChatThreadInChatPage"></strong>
-		       	</div>
-			    <div class="ui-block-c"><strong id="nameOfChatThreadInChatPage"></strong></div>
-			    <div class="ui-block-d"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-			    <div class="ui-block-e"><a id="mapButtonInchat-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
-			  </div>
+					<div class="ui-block-a"><a id="arrowBackInChatPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+				    <div class="ui-block-b">
+				    	<a href="#MainPage" data-role="button" class="imgOfChat-page" data-inline="false">
+				       		<img id="imgOfChat-page-header" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="imgOfChat-page-header">
+				       	</a>
+				       	<strong id="nameOfChatThreadInChatPage"></strong>
+			       	</div>
+				    <div class="ui-block-c"><strong id="nameOfChatThreadInChatPage"></strong></div>
+				    <div class="ui-block-d"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+				    <div class="ui-block-e"><a id="mapButtonInchat-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
+			  	</div>
 			</div><!-- /header -->
 		<!--  	<div  data-role="content" data-theme="a">  -->
 			<div id="chat-page-content" role="main" class="ui-content">

@@ -266,6 +266,11 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}
 	
+	if (contact.commentary == ""){
+		contact.commentary = "I'm visible!" ;
+	}
+	
+	
 	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
 						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
@@ -333,34 +338,7 @@ function loadMyConfig(){
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
-			app.myArrayOfTokens = cursor.value.myArrayOfTokens;  
-
-
-
-    		//DEBUG
-/*  	 	var transaction = db.transaction(["contacts"],"readwrite");	
-			var store = transaction.objectStore("contacts");
-			
-			var newContact = new Contact({	publicClientID : cursor.value.publicClientID  , 
-											path2photo : "https://media.licdn.com/mpr/mpr/shrink_200_200/p/1/005/022/279/3a1127b.jpg", 
-											nickName : "Marco",
-											commentary : "doing my best"									
-										});
-			var request = store.add(newContact);		
-			
-			var newContact = new Contact({	publicClientID : "YYYYY"  , 
-											path2photo : "https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" ,
-											nickName : "Maria",
-											commentary : "life is a torture"} );
-			var request = store.add(newContact);
-			var newContact = new Contact({	publicClientID : "ZZZZZ"  , 
-											path2photo : "https://media.licdn.com/media/p/3/005/01b/19c/1daf72d.jpg",
-											nickName : "Anne",
-											commentary : "life is great!" });
-			var request = store.add(newContact);		
-*/
-   		
-//DEBUG
+			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
      		 
      		//	trigger configuration as already loaded    		
      		configLoaded.resolve();   		   		 
@@ -371,6 +349,24 @@ function loadMyConfig(){
      	   $.mobile.loading( "hide" ); 
      	   $("body").pagecontainer("change", "#visibleFirstTime");
      	}
+     	
+     	$('.picedit_box').picEdit({
+     		defaultImage: app.myPhotoPath,
+     		imageUpdated: function(img){
+     		  	app.myPhotoPath = img.src; 
+     			//update internal DB
+     			var transaction = db.transaction(["myConfig"],"readwrite");	
+     			var store = transaction.objectStore("myConfig");
+     			var request = store.put({	
+     				publicClientID : app.publicClientID , 
+     				myCurrentNick : app.myCurrentNick, 
+     				myPhotoPath : app.myPhotoPath , 
+     				myArrayOfTokens : app.myArrayOfTokens 
+     			});
+     		  	
+     		}
+     	});
+     	
 	};
 }
 
@@ -466,6 +462,17 @@ function addNewContact (publicClientID) {
 	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
 	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
 	
+	$("#popupDiv").remove();
+	var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
+						'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+						'	<p><br></p> <p> new contact saved !	</p> '+
+						'</div>';
+	$("#listOfContactsInMainPage").append(prompt2show);
+	$("#listOfContactsInMainPage").trigger("create");
+	$("#popupDiv").popup("open");
+	
+	
+	
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	
 	if (contact){		
@@ -480,6 +487,29 @@ function addNewContact (publicClientID) {
 		}	
 	}	
 }
+
+//this function assumes that the contact is already inserted on the DB
+
+function modifyContactOnDB (contact) {
+	
+	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
+	
+	try {			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		message = cursor.value;
+	     		store.put(contact);	     		
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: modifyContact ::: exception trown ");
+	}		
+}
+
 
 
 
@@ -636,6 +666,9 @@ function connect_socket (mytoken) {
 		$("#profilePhoto"+data.publicClientID ).attr("src", data.img);
 		
 		//TODO insert photo on DB
+		//only if it is a persistent contact
+		modifyContactOnDB(contact);
+
 	});//END ImageFromServer
 	  
 	socket.on("notificationOfNewContact", setNewContacts);//END notificationOfNewContact
@@ -791,14 +824,14 @@ $(document).on("click","#firstLoginInputButton",function() {
 	var myCurrentNick = $("#firstLoginNameField").val();
 	
 	if ( myCurrentNick == "" || myCurrentNick == undefined || app.myPhotoPath == null) {
-		$("#firstLoginPopupDiv").remove();
-		var prompt2show = 	'<div id="firstLoginPopupDiv" data-role="popup"> '+
+		$("#popupDiv").remove();
+		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
 							'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
 							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
 							'</div>';
 		$("#contentOfvisibleFirstTime").append(prompt2show);
 		$("#contentOfvisibleFirstTime").trigger("create");
-		$("#firstLoginPopupDiv").popup("open");
+		$("#popupDiv").popup("open");
 		return;
 	}
 
@@ -827,12 +860,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 });
 
-$('.picedit_box').picEdit({
-	defaultImage: app.myPhotoPath,
-	imageUpdated: function(img){
-	  	app.myPhotoPath = img.src; 
-	}
-});
+
 
 
 $("#profileNameField").on("input", function() {
