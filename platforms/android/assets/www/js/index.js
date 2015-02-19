@@ -77,6 +77,8 @@ function Message(input) {
 	this.timeStamp = new Date();
 	this.markedAsRead = false; 
 	this.chatWith = null;
+	this.ACKfromServer = false;
+	this.ACKfromAddressee = false;
 
 	switch (Object.keys(input).length )	{
 		case 3 :
@@ -121,6 +123,15 @@ Message.prototype.setChatWith = function(publicClientID){
 	this.chatWith = publicClientID;
 };
 
+Message.prototype.setACKfromServer = function(bool){
+	this.ACKfromServer = bool;
+};
+
+Message.prototype.setACKfromAddressee = function(bool){
+	this.ACKfromAddressee = bool;
+};
+
+
 //END Class Message
 
 
@@ -140,8 +151,11 @@ Unwrapper.prototype.getMessageFromServer = function(input) {
 			//typeof messageFromServer.size !== 'number' ||
 			//Object.keys(messageFromServer).length != 9 ) {	return null;	}
 		
-		var message = new Message(messageFromServer);
-	
+		var message = new Message(messageFromServer);	
+		message.setACKfromServer(true);
+		message.setACKfromAddressee(true);
+		
+		
 		return message; 	
 	} 
 	catch (ex) {	return null;	}
@@ -225,11 +239,16 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		authorOfMessage = contact.nickName;
 	}
 	
-
+	var classOfmessageStateColor = "red-no-rx-by-srv"; 
+	if (message.ACKfromAddressee == true){
+		classOfmessageStateColor = 	"green-rx-by-end";
+	} else if (message.ACKfromServer == true){
+		classOfmessageStateColor = "amber-rx-by-srv";
+	}
+	
 	var html2insert = 	
 	'<div class="activity">'+
-	'	<span class="posted_at">'+ message.timeStamp.toLocaleString() + '</span>'+
-//	'	<img class="avatar" src="img/logo.png">'+
+	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ message.timeStamp.toLocaleString() + '</span>'+
 	'	<div class="readable">'+
 	'		<span class="user">    '+ authorOfMessage   +'  </span>'+
 	'		<span class="content">    '+ this.sanitize(message.messageBody)+'  </span>'+
@@ -304,19 +323,10 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	listOfMessages.done(function(list){
 		var html2insert ="";
-		list.map(function(message){
-			html2insert += 	
-			'<div class="activity">'+
-			'	<span class="posted_at">'+ message.timeStamp.toLocaleString() + '</span>'+
-			'	<div class="readable">'+
-			'		<span class="user">    '+ contact.nickName   +'  </span>'+
-			'		<span class="content">    '+ message.messageBody +'  </span>'+
-			'	</div>'+
-			'</div>		' ;	
+		list.map(function(message){			
+			gui.insertMessageInConversation(message);
 		});
 	
-		$("#chat-page-content").append(html2insert);
-		$("#chat-page-content").trigger("create");
 		$("body").pagecontainer("change", "#chat-page");				
 	}); 
 	
@@ -324,8 +334,13 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var ImageRetrievalObject = {	
 		publicClientIDofRequester : app.publicClientID, 
 		publicClientID2getImg : contact.publicClientID
-	};							
-	socket.emit('ImageRetrieval', ImageRetrievalObject	);
+	};
+	try {
+		socket.emit('ImageRetrieval', ImageRetrievalObject	);
+	}catch (e){
+		console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
+	}
+	
 
 	
 	
@@ -353,17 +368,20 @@ function loadMyConfig(){
      	$('.picedit_box').picEdit({
      		defaultImage: app.myPhotoPath,
      		imageUpdated: function(img){
-     		  	app.myPhotoPath = img.src; 
+     		  	 
      			//update internal DB
      			var transaction = db.transaction(["myConfig"],"readwrite");	
      			var store = transaction.objectStore("myConfig");
-     			var request = store.put({	
-     				publicClientID : app.publicClientID , 
-     				myCurrentNick : app.myCurrentNick, 
-     				myPhotoPath : app.myPhotoPath , 
-     				myArrayOfTokens : app.myArrayOfTokens 
-     			});
-     		  	
+     			
+     			if (app.myPhotoPath != null){
+     				var request = store.put({	
+         				publicClientID : app.publicClientID , 
+         				myCurrentNick : app.myCurrentNick, 
+         				myPhotoPath : app.myPhotoPath , 
+         				myArrayOfTokens : app.myArrayOfTokens 
+         			});     				
+     			}     		  	
+     			app.myPhotoPath = img.src;
      		}
      	});
      	
@@ -414,6 +432,14 @@ MailBox.prototype.storeMessage = function(message2Store) {
  		
 };
 
+MailBox.prototype.updateMessage = function(message2update) {
+
+	var transaction = db.transaction(["messagesV2"],"readwrite");	
+	var store = transaction.objectStore("messagesV2");
+	var request = store.put(message2update);
+ 		
+};
+
 MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 
 	var lowerBound = [ from, olderDate ];
@@ -448,7 +474,6 @@ MailBox.prototype.getMessageByID = function(msgID) {
      	}
      	deferredGetMessageByID.resolve(message); 
 	};
-
 	
 	return deferredGetMessageByID.promise();
 };
@@ -580,16 +605,29 @@ function connect_socket (mytoken) {
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
-  //TODO #11.2 store in Local database
+  //#11.2 store in Local database
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
 
   		var deliveryReceipt = unWrapper.getDeliveryReceipt(inputDeliveryReceipt);
-  		if ( deliveryReceipt == null) { return; }
-		if (deliveryReceipt.typeOfACK == "ACKfromServer") {
-		}
-		if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
-		}
+  		if ( deliveryReceipt == null) { return; }	
   		
+  		// delay introduced just to avoid receiving a ACKfromServer before the message 
+  		// was written in the local DB, weird but it could happen
+  		setTimeout(function (){
+  			var getAsyncMessageFromDB = mailBox.getMessageByID(deliveryReceipt.msgID);
+  	  		getAsyncMessageFromDB.done(function (message){
+  	  			if (deliveryReceipt.typeOfACK == "ACKfromServer") {
+  	  				message.ACKfromServer = true;
+  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
+  	  			}
+  	  			if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
+  	  				message.ACKfromServer = true;
+  	  				message.ACKfromAddressee = true;	
+  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
+  	  			}
+  	  			mailBox.updateMessage(message);	  			
+  	  		});  			
+  		}, 600);   		
 	});
   
   //#12.1 display in the corresponding chat conversation, 
@@ -628,7 +666,7 @@ function connect_socket (mytoken) {
  
 		
   });//END messageFromServer
-	//TODO #13.1 headers come with size of the message get the smallest first, 
+	 
 	//#13.2  start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
@@ -724,7 +762,11 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 	
 	$.post('https://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
-			connect_socket(app.myArrayOfTokens[result.token]);  
+			connect_socket(app.myArrayOfTokens[result.index]);  
+		})
+		.fail(function() {
+			//TODO launch periodic task to try to reconnect
+			console.log ("DEBUG ::: https://127.0.0.1:8090/login :: trying to reconnect" );
 		});
 	
 	$.mobile.loading( "hide" );
@@ -761,7 +803,6 @@ $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
 	
 });
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
-	console.log ("DEBUG ::: pageshow#profile :: profile" + app.myCurrentNick );  
 	$("#nickNameInProfile").html(app.myCurrentNick);
 
 });
@@ -772,8 +813,7 @@ $("body").on('pagecontainertransition', function( event, ui ) {
 		$("#chat-page-content").empty();  
     }    
     if (ui.options.target == "#map-page"){
-		console.log ("DEBUG ::: pagecontainertransition :: map-page" );  
-		
+				
 		google.maps.event.trigger(map,'resize');
 		map.setZoom( map.getZoom() );	    
     }
@@ -802,20 +842,28 @@ $(document).on("click","#chat-input-button",function() {
 		from : app.publicClientID , 
 		messageBody : gui.sanitize(textMessage) 
 	});
+	message2send.setACKfromServer(false);
+	message2send.setACKfromServer(false);
+	message2send.setChatWith(app.currentChatWith); 
 
-	//TODO save the message into the list and DB
-	if (message2send != null){
-		socket.emit('messagetoserver', message2send);
-		console.log('DEBUG ::: message2send:' + JSON.stringify(message2send));
-	}
+	//stores to DB
+	mailBox.storeMessage(message2send); 
+	
 	//print message on the GUI
 	gui.insertMessageInConversation(message2send);
 
-	//stores to DB
-	message2send.setChatWith(app.currentChatWith); 	
-	mailBox.storeMessage(message2send); 
 	// clear chat-input	
 	document.getElementById('chat-input').value='';
+	
+	//sends message	
+	if (message2send != null){
+		try{
+			socket.emit('messagetoserver', message2send);
+		}catch (e){
+			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
+		}		
+	}
+
 });
 
 

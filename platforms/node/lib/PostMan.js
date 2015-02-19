@@ -156,14 +156,14 @@ PostMan.prototype.getMessage = function(input) {
 	try {    
 		inputMessage =	input;
 		
-		if (typeof inputMessage.to !== 'string' || 
+	/*	if (typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.messageBody !== 'string' || 
 			typeof inputMessage.msgID !== 'string' || 
 			typeof inputMessage.md5sum !== 'string' ||  
 			typeof inputMessage.size !== 'number' ||
-			Object.keys(inputMessage).length != 10 ) 	{	return null; 	}
-
+			Object.keys(inputMessage).length != 12 ) 	{	return null; 	}
+*/
 		var message = new Message(inputMessage);	
 		
 		return message;

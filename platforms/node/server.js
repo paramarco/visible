@@ -41,7 +41,7 @@ app.post('/login', function (req, res) {
 		return;
 	}
 	// challenge forwarding to the Client	
-	res.json({token: challenge});  
+	res.json({index: challenge});  
 });
 
 app.post('/firstlogin', function (req, res) {
