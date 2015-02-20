@@ -232,18 +232,40 @@ GUI.prototype.sanitize = function(html) {
 GUI.prototype.insertMessageInConversation = function(message) {
 
 	var authorOfMessage;
+	var classOfmessageStateColor = "";
+		
 	if (message.from == app.publicClientID){
-		authorOfMessage = app.myCurrentNick;
-	}else {
+		authorOfMessage = " ";
+		
+		classOfmessageStateColor = "red-no-rx-by-srv";		
+		if (message.markedAsRead == true){
+			classOfmessageStateColor = "blue-r-by-end";
+			//$('.blue-r-by-end' ).fadeOut( 7000  );
+			$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
+		} else if (message.ACKfromAddressee == true){
+			classOfmessageStateColor = 	"green-rx-by-end";
+		} else if (message.ACKfromServer == true){
+			classOfmessageStateColor = "amber-rx-by-srv";
+		}
+	}else {		
+		
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); })[0];
 		authorOfMessage = contact.nickName;
-	}
-	
-	var classOfmessageStateColor = "red-no-rx-by-srv"; 
-	if (message.ACKfromAddressee == true){
-		classOfmessageStateColor = 	"green-rx-by-end";
-	} else if (message.ACKfromServer == true){
-		classOfmessageStateColor = "amber-rx-by-srv";
+		
+		if (message.markedAsRead == false) {
+			var messageACK = {	
+		  			to : message.to, 
+		  			from : message.from,
+		  			msgID : message.msgID, 
+		  			md5sum : message.md5sum,
+		  			typeOfACK : "ReadfromAddressee"
+		  		};
+		  	
+			socket.emit("MessageDeliveryACK",messageACK);
+			message.markedAsRead = true;
+			mailBox.updateMessage(message);
+			
+		}		
 	}
 	
 	var html2insert = 	
@@ -258,8 +280,9 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	$("#chat-page-content").append(html2insert);
 	$("#chat-page-content").trigger("create");
 
-	$.mobile.silentScroll($(document).height());
-
+	$.mobile.silentScroll($(document).height()); 		
+	
+	
 };
 
 GUI.prototype.loadContacts = function() {
@@ -616,14 +639,23 @@ function connect_socket (mytoken) {
   		setTimeout(function (){
   			var getAsyncMessageFromDB = mailBox.getMessageByID(deliveryReceipt.msgID);
   	  		getAsyncMessageFromDB.done(function (message){
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromServer") {
+  	  			if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
   	  				message.ACKfromServer = true;
   	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
   	  			}
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromAddressee") {
+  	  			if (deliveryReceipt.typeOfACK == "ACKfromAddressee" && message.ACKfromAddressee == false) {
   	  				message.ACKfromServer = true;
   	  				message.ACKfromAddressee = true;	
   	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
+  	  			}
+  	  			if (deliveryReceipt.typeOfACK == "ReadfromAddressee") {
+  	  				message.ACKfromServer = true;
+  	  				message.ACKfromAddressee = true;	
+  	  				message.markedAsRead = true;
+  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
+  	  				$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
+
+  	  				//$('.blue-r-by-end' ).fadeOut( 7000 );
   	  			}
   	  			mailBox.updateMessage(message);	  			
   	  		});  			
@@ -636,17 +668,16 @@ function connect_socket (mytoken) {
   	
   	  	var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
-  		console.log('DEBUG ::: messageFromServer triggered : ' + JSON.stringify(messageFromServer));
   		
   		var messageACK = {	
   			to : messageFromServer.to, 
   			from : messageFromServer.from,
   			msgID : messageFromServer.msgID, 
-  			md5sum : messageFromServer.md5sum	
+  			md5sum : messageFromServer.md5sum,
+  			typeOfACK : "ACKfromAddressee"
   		};
   		//it could be implemented with callback as well....
   		socket.emit("MessageDeliveryACK",messageACK);
-  		console.log('DEBUG ::: MessageDeliveryACK emitted : ' + JSON.stringify(messageACK));
   		
   		//double check to avoid saving messages twice...(which should never be received...)
   		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
@@ -810,7 +841,8 @@ $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 $("body").on('pagecontainertransition', function( event, ui ) {
     if (ui.options.target == "#MainPage"){
 
-		$("#chat-page-content").empty();  
+		$("#chat-page-content").empty();
+		app.currentChatWith = null;
     }    
     if (ui.options.target == "#map-page"){
 				

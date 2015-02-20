@@ -223,7 +223,7 @@ io.sockets.on("connection", function (socket) {
 	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("messageRetrieval", function(input) {		
-		//console.log('DEBUG ::: messageRetrieval trigered :: ' + JSON.stringify(input));
+		
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
 		if (retrievalParameters == null) return;
 					
@@ -231,35 +231,34 @@ io.sockets.on("connection", function (socket) {
 		if (message != null){	socket.emit("messageFromServer", message);	}
 	});
 
+	//XEP-0184: Message Delivery Receipts
 	socket.on("MessageDeliveryACK", function(input) {		
+		
 		var messageACKparameters = postMan.getDeliveryACK(input);		
 		if (messageACKparameters == null) return;
 					
-		var clientSender = brokerOfVisibles.isClientOnline(messageACKparameters.from);		
-									
-		//XEP-0184: Message Delivery Receipts			
-		if (  typeof clientSender != 'undefined'){				
+		var clientSender = brokerOfVisibles.isClientOnline(messageACKparameters.from);									
+					
+		if (  typeof clientSender != 'undefined'){
+			
 			var deliveryReceipt = { 
 				msgID : messageACKparameters.msgID, 
 				md5sum : messageACKparameters.md5sum, 
-				typeOfACK : "ACKfromAddressee",
+				typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
 				to : messageACKparameters.to 	
 			};
-									
- 			//io.sockets.socket(ClientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
+			console.log("DEBUG ::: MessageDeliveryACK ::: is emiting to sender :  " + JSON.stringify(deliveryReceipt) );
+						
  			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
- 			//console.log('DEBUG ::: MessageDeliveryACK trigered :: sender online, MessageDeliveryReceipt goes to sender');
  					
  		}else {
  			postMan.archiveACK(messageACKparameters);
- 			//console.log('DEBUG ::: MessageDeliveryACK trigered :: sender offline, MessageDeliveryReceipt archived');
  		}
 		
 	});
 	
 	socket.on("ImageRetrieval", function(parameters) {	
-		//console.log("DEBUG ::: ImageRetrieval ::: from client ::: " + JSON.stringify(parameters) );
-		
+				
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg);
 
 		if ( typeof clientToPoll != 'undefined'){

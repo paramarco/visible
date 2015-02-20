@@ -179,7 +179,8 @@ PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {
 			typeof deliveryACK.md5sum !== 'string' ||
 			typeof deliveryACK.to !== 'string' ||
 			typeof deliveryACK.from !== 'string' ||
-			Object.keys(deliveryACK).length != 4  ) {	return null;}
+			typeof deliveryACK.typeOfACK !== 'string' ||
+			Object.keys(deliveryACK).length != 5  ) {	return null;}
 		
 		return deliveryACK; 
 	}
