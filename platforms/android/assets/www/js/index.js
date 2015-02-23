@@ -240,8 +240,6 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		classOfmessageStateColor = "red-no-rx-by-srv";		
 		if (message.markedAsRead == true){
 			classOfmessageStateColor = "blue-r-by-end";
-			//$('.blue-r-by-end' ).fadeOut( 7000  );
-			$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
 		} else if (message.ACKfromAddressee == true){
 			classOfmessageStateColor = 	"green-rx-by-end";
 		} else if (message.ACKfromServer == true){
@@ -280,8 +278,10 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	$("#chat-page-content").append(html2insert);
 	$("#chat-page-content").trigger("create");
 
-	$.mobile.silentScroll($(document).height()); 		
-	
+	$.mobile.silentScroll($(document).height()); 
+			
+	$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
+
 	
 };
 
