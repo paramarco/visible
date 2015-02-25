@@ -1,59 +1,4 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- */
-/*
-var app = {
-    // Application Constructor
-    initialize: function() {
-        this.bindEvents();
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    //
-    // The scope of 'this' is the event. In order to call the 'receivedEvent'
-    // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        var parentElement = document.getElementById(id);
-        var listeningElement = parentElement.querySelector('.listening');
-        var receivedElement = parentElement.querySelector('.received');
 
-        listeningElement.setAttribute('style', 'display:none;');
-        receivedElement.setAttribute('style', 'display:block;');
-
-        console.log('Received Event: ' + id);
-        
-        //var pruebaInterfaz = new interface2AllJoyn();
-        //pruebaInterfaz.makeCall("hoooooooooooollllllllllllllaaaaaaaaa");
-
-
-    }
-};
-*/
 
 function Contact(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
@@ -236,7 +181,7 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		
 	if (message.from == app.publicClientID){
 		authorOfMessage = " ";
-		
+
 		classOfmessageStateColor = "red-no-rx-by-srv";		
 		if (message.markedAsRead == true){
 			classOfmessageStateColor = "blue-r-by-end";
@@ -265,17 +210,35 @@ GUI.prototype.insertMessageInConversation = function(message) {
 			
 		}		
 	}
+	var htmlOfContent = "";
+	if ( typeof message.messageBody == "string")	{
+		htmlOfContent = this.sanitize(message.messageBody);		
+	}else if (typeof message.messageBody == "object"){
+		if (message.messageBody.messageType == "multimedia"){
+			htmlOfContent = '<div class="image-preview"> ' + 
+						  	'	<a target="_blank" href="">  ' +   
+						    '		<img class="image-embed" src="' + message.messageBody.src  + '">' +
+						  	'	</a>' + 
+						  	'	<div class="name"></div>' + 
+							'</div>' ; 		
+		}		
+	}
 	
 	var html2insert = 	
 	'<div class="activity">'+
 	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ message.timeStamp.toLocaleString() + '</span>'+
 	'	<div class="readable">'+
 	'		<span class="user">    '+ authorOfMessage   +'  </span>'+
-	'		<span class="content">    '+ this.sanitize(message.messageBody)+'  </span>'+
-	'	</div>'+
+	'		<span class="content">    '+ htmlOfContent +'  </span>'+
+	'	</div>' +
 	'</div>		' ;
 	
-	$("#chat-page-content").append(html2insert);
+	var $newMsg = $(html2insert);
+	
+	if (message.from != app.publicClientID){
+		$newMsg.css("background", "#FFFFE0"); // //FFFAF0 // FDF5E6
+	}
+	$("#chat-page-content").append($newMsg);
 	$("#chat-page-content").trigger("create");
 
 	$.mobile.silentScroll($(document).height()); 
@@ -299,6 +262,49 @@ GUI.prototype.loadContacts = function() {
 	};	
 };
 
+GUI.prototype.loadContactsOnMapPage = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) { 
+     		listOfContacts.push(cursor.value);      	
+        	gui.insertContactOnMapPage(cursor.value,false);
+         	cursor.continue(); 
+     	}else{
+     	    //mainPageReady.resolve();
+     	}
+	};	
+};
+
+GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
+	
+	var attributesOfLink = "" ; 
+		
+	if (isNewContact){
+		attributesOfLink += ' onclick="addNewContact(\'' + contact.publicClientID + '\');" ' +
+							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+	}
+	
+	if (contact.commentary == ""){
+		contact.commentary = "I'm visible!" ;
+	}	
+	
+	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
+						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+						'	<h2>'+ contact.nickName   + '</h2> '+
+						'	<p>' + contact.commentary + '</p></a>'+
+						'	<a id="linkAddNewContact' + contact.publicClientID + '" ></a>'+
+						'</li>';
+	$("#listOfContactsInMapPage").append(html2insert);
+
+	$('#listOfContactsInMapPage').listview().listview('refresh');
+	
+	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(map);
+	
+};
+
 GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
 	var attributesOfLink = "" ; 
@@ -315,7 +321,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
 	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
 						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
-						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" />'+
+						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 						'	<h2>'+ contact.nickName   + '</h2> '+
 						'	<p>' + contact.commentary + '</p></a>'+
 						'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
@@ -388,7 +394,29 @@ function loadMyConfig(){
      	   $("body").pagecontainer("change", "#visibleFirstTime");
      	}
      	
-     	$('.picedit_box').picEdit({
+     	
+     	//TODO think about imageOnVisibleFirstTime
+     	$('#imageOnVisibleFirstTime').picEdit({
+     		defaultImage: app.myPhotoPath,
+     		imageUpdated: function(img){
+     		  	 
+     			//update internal DB
+     			var transaction = db.transaction(["myConfig"],"readwrite");	
+     			var store = transaction.objectStore("myConfig");
+     			
+     			if (app.myPhotoPath != null){
+     				var request = store.put({	
+         				publicClientID : app.publicClientID , 
+         				myCurrentNick : app.myCurrentNick, 
+         				myPhotoPath : app.myPhotoPath , 
+         				myArrayOfTokens : app.myArrayOfTokens 
+         			});     				
+     			}     		  	
+     			app.myPhotoPath = img.src;
+     		}
+     	});
+     	
+     	$('#imageProfile').picEdit({
      		defaultImage: app.myPhotoPath,
      		imageUpdated: function(img){
      		  	 
@@ -756,7 +784,7 @@ function connect_socket (mytoken) {
  * *********************************************************************************************/
 
 
-
+var map;
 var db;
 var socket;
 var listOfContacts = [];
@@ -770,7 +798,40 @@ var app = {
     myPhotoPath : null,
     myArrayOfTokens : [],
 	publicClientID : null,
-	myPosition : null
+	myPosition : null,
+	
+	// Application Constructor
+    initialize: function() {
+        //this.bindEvents();
+    },
+    // Bind Event Listeners
+    //
+    // Bind any events that are required on startup. Common events are:
+    // 'load', 'deviceready', 'offline', and 'online'.
+    bindEvents: function() {
+        document.addEventListener('deviceready', this.onDeviceReady, false);
+        
+        document.addEventListener('backbutton', function(){}, false);
+        document.addEventListener('menubutton', function(){}, false);
+        document.addEventListener('searchbutton', function(){}, false);
+        document.addEventListener('startcallbutton', function(){}, false);
+        document.addEventListener('endcallbutton', function(){}, false);
+        document.addEventListener("pause", function(){}, false);
+        
+    },
+    // deviceready Event Handler
+    //
+    // The scope of 'this' is the event. In order to call the 'receivedEvent'
+    // function, we must explicitly call 'app.receivedEvent(...);'
+    onDeviceReady: function() {
+        app.receivedEvent();
+    },
+    // Update DOM on a Received Event
+    receivedEvent: function() {
+
+    }
+	
+	
  
 };
 
@@ -814,7 +875,7 @@ $(document).ready(function() {
 	  var theme =  $.mobile.loader.prototype.options.theme,
 	  msgText =  $.mobile.loader.prototype.options.text,
 	  textVisible =  $.mobile.loader.prototype.options.textVisible,
-	  textonly = false
+	  textonly = false,
 	  html = "";
 	$.mobile.loading( 'show', {
 	  text: msgText,
@@ -823,9 +884,25 @@ $(document).ready(function() {
 	  textonly: textonly,
 	  html: html
 	  });
-	
-	// TODO check whether is the best place to local the loadMaps or not
-	loadMaps();
+	  
+	  
+	  
+	if ( navigator.geolocation ) {
+        function success(pos) {
+            // Location found, show map with these coordinates
+            app.myPosition = pos;
+            positionLoaded.resolve();
+        }
+        function fail(error) {        	        
+			app.myPosition = { coords : { latitude : "48.0983425" , longitude : "11.5407508"  } };
+        	positionLoaded.resolve();
+        }
+        // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
+        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
+    } else {
+    	app.myPosition = { coords : { latitude : "48.098" , longitude : "11.540"  } };
+        positionLoaded.resolve();
+    }		  
 	
 });//END $(document).ready()
 
@@ -846,8 +923,11 @@ $("body").on('pagecontainertransition', function( event, ui ) {
     }    
     if (ui.options.target == "#map-page"){
 				
-		google.maps.event.trigger(map,'resize');
-		map.setZoom( map.getZoom() );	    
+		//google.maps.event.trigger(map,'resize');
+		//map.setZoom( map.getZoom() );	
+		loadMaps();
+		//gui.loadContactsOnMapPage();
+		 
     }
 
 });
@@ -888,7 +968,7 @@ $(document).on("click","#chat-input-button",function() {
 	document.getElementById('chat-input').value='';
 	
 	//sends message	
-	if (message2send != null){
+	if (socket != null){
 		try{
 			socket.emit('messagetoserver', message2send);
 		}catch (e){
@@ -896,6 +976,51 @@ $(document).on("click","#chat-input-button",function() {
 		}		
 	}
 
+});
+
+$(document).on("click","#chat-multimedia-button",function() {
+		
+	$("#popupDivMultimedia").remove();
+	var prompt2show = 	'<div id="popupDivMultimedia" data-role="popup"> '+
+			'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+			'	<input type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+			'</div>';
+	$("#chat-page-content").append(prompt2show);
+	$("#chat-page-content").trigger("create");
+	
+	$('#picPopupDivMultimedia').picEdit({
+ 		imageUpdated: function(img){ 				 			
+			var message2send = new Message(	{ 	
+				to : app.currentChatWith, 
+				from : app.publicClientID , 
+				messageBody : { messageType : "multimedia", src : img.src }
+			});
+			message2send.setACKfromServer(false);
+			message2send.setACKfromServer(false);
+			message2send.setChatWith(app.currentChatWith); 
+		
+			//stores to DB
+			mailBox.storeMessage(message2send); 
+			
+			//print message on the GUI
+			gui.insertMessageInConversation(message2send);
+		
+			//sends message	
+			if (socket != null){
+				try{
+					socket.emit('messagetoserver', message2send);
+				}catch (e){
+					console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
+				}		
+			}
+			$("#popupDivMultimedia").remove();
+ 		}// END imageUpdated
+ 	});// END picEdit construct
+	
+		
+	$("#popupDivMultimedia").popup("open");
+	
+	
 });
 
 
@@ -957,8 +1082,31 @@ $( document ).on( "pageinit", "#map-page", function() {
 
 
 
-function loadMaps(){
-     
+function loadMaps(){	
+	
+		map = L.map('map-canvas');
+
+		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+			id: 'examples.map-i875mjb7',
+			trackResize : true
+		}).addTo(map);
+
+		
+		map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
+		var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
+		L.marker(latlng).addTo(map).bindPopup("Here you are! ").openPopup();
+		L.circle(latlng, 200).addTo(map); 
+		map.addEventListener("load",gui.loadContactsOnMapPage());	
+
+		
+}	
+
+
+/*     
     if ( navigator.geolocation ) {
         function success(pos) {
             // Location found, show map with these coordinates
@@ -984,7 +1132,7 @@ function loadMaps(){
     }	
 }
 
-var map;
+
 function drawMap(latlng) {
     var myOptions = {
         zoom: 10,
@@ -999,3 +1147,4 @@ function drawMap(latlng) {
         title: "Greetings!"
     });
 }
+*/

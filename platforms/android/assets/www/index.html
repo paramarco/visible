@@ -15,10 +15,18 @@
 		<link rel="stylesheet" type="text/css" href="css/font-face.css">
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="css/picedit.min.css" />
+		
+		<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+		
+	<!--	<script type="text/javascript" src="cordova.js"></script> -->
+
 				
         <title>Visible</title>
     </head>
 	<body>
+		<script type="text/javascript" charset="utf-8">
+	    	//app.initialize();
+		</script>
 		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
@@ -34,48 +42,71 @@
 				
 				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">
 					
-		<!--			
+					
+					
+					
+	<!--	
+		<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="http://www.openstreetmap.org/export/embed.html?bbox=8.820862,53.071104,8.825239,53.073605&amp;layer=mapnik&amp;marker=53.07235,8.82290" style="border: 1px solid black"></iframe>
+			
 				<div class="activity" id="activity-1221"><span class="posted_at">1 month ago</span>
-					<img class="avatar" src="img/descarga.png">				
+					<img class="avatar" src="img/logo.png">				
 					<div class="readable">
 					  <span class="user">
 					    scenefz
 					  </span>					
 					  <span class="content">
 					    <div class="image-preview">
-					  		<a target="_blank" href="img/descarga.png">
-					    		<img class="image-embed" src="img/meme-1414044393.jpg">
+					  		<a target="_blank" href="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636">
+					    		<img class="image-embed" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636">
 					  		</a>
-					  	<div class="name">click her to see the bra...</div>
+					  		<div class="name">click her to see </div>
 						</div>
 					  </span>					
 					</div>				
+				</div>
+				
+				
+				<div class="activity" id="activity-2165">
+					<span class="posted_at">1 month ago</span>
+					<img class="avatar" src="https://secure.gravatar.com/avatar/9bd2beb44be76b3073c12cbc5ffcad5d?s=30&amp;d=identicon">				
+					<div class="readable">
+					  <span class="user">
+					    janesmith
+					  </span>					
+					  <span class="content">
+					    <div class="youtube-preview">
+					      	<iframe width="100%" height="50%" src="http://www.youtube.com/embed/yrFETnz8wFg" frameborder="0" allowfullscreen="">
+					      	</iframe>
+					  		<div class="name">http://www.youtube.com/watch?v=yrFETnz8wFg</div>
+						</div>
+				 	 </span>				
+					</div>		
 				</div>
 -->
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel" data-display="overlay">
 			    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li data-icon="gear">
+					<li data-icon="false">
 						<a href="#profile">
 							<img src="img/profile_black_195x195.png" >
 							<h2>Profile</h2>								
 						</a>
 					</li>
-					<li data-icon="gear">
+					<li data-icon="false">
 						<a href="#createGroup" >							
 							<img src="img/group_black_195x195.png" >
 							<h2>Groups</h2>
 						</a>
 					</li>
-					<li data-icon="gear">
+					<li data-icon="false">
 						<a href="#manageVisibles" >							
 							<img src="img/visibles_black_195x195.png" >
 							<h2>Visibles</h2>
 						</a>
 					</li>
 
-					<li data-icon="gear">
+					<li data-icon="false">
 						<a href="#activateAccount" >							
 							<img src="img/account_black_195x195.png" >
 							<h2>Account</h2>
@@ -140,7 +171,7 @@
 					<li>
 						
 						<h2>Anybody</h2>
-						<p>should you swith this off, then only your contacts would see you online, is not that borring?</p>	
+						<p>should you switch this off, then only your contacts would see you online, is not that borring?</p>	
 						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
 							<option value="on">On</option>
 							<option value="off">Off</option>							
@@ -234,7 +265,7 @@
 			<div data-role="content" data-theme="a">							
 				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" name="image" id="image" class="picedit_box">	
+						<input type="file" name="image" id="imageProfile" class="picedit_box">	
 			    	</ul>				    
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
 						<div data-role="fieldcontain">
@@ -246,7 +277,7 @@
 			</div><!-- /content -->
 		</div><!-- /page profile-->
 		
-		<div data-role="page" id="map-page" data-url="map-page">
+		<div data-role="page" data-cache="false" id="map-page" data-url="map-page">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
 			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/list_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
@@ -258,66 +289,35 @@
 			</div><!-- /header -->
 			
 			<div role="main" id="map-canvas" >
-	        <!-- map loads here... -->
-	    	</div>
-				
-			<div data-role="content" data-theme="a">
-				<ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21" />
-						<h2>pepito</h2>
-						<p>Broken Bells</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/9908d2ca5936aea6c4e5ce09404ffbaa" />
-						<h2>fulanito</h2>
-						<p>Hot Chic
-						</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" />
-						<h2>Sutanito</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/a0e1c0eacfecf9743bec4ebd6bdcd6f5" />
-						<h2>Ian</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="img/logo.png" />
-						<h2>Apache</h2>
-						<p>Hot Chip</p></a>
-					</li>
-					<li><a href="#chat-page">
-						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
-						<h2>Maria</h2>
-						<p>Hot Chip</p></a>
-					</li>
+		        	<!-- map loads here...  -->
+		  	</div>
+		  					
+			<div data-role="content" data-theme="a">				 
+				<ul id="listOfContactsInMapPage" data-role="listview" data-inset="true" data-divider-theme="b">					
 				</ul>
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel-map-page" data-display="overlay">
 				    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-						<li data-icon="gear">
+						<li data-icon="false">
 							<a href="#profile">
 								<img src="img/profile_black_195x195.png" >
 								<h2>Profile</h2>								
 							</a>
 						</li>
-						<li data-icon="gear">
+						<li data-icon="false">
 							<a href="#createGroup" >							
 								<img src="img/group_black_195x195.png" >
 								<h2>Groups</h2>
 							</a>
 						</li>
-						<li data-icon="gear">
+						<li data-icon="false">
 							<a href="#manageVisibles" >							
 								<img src="img/visibles_black_195x195.png" >
 								<h2>Visibles</h2>
 							</a>
 						</li>
 
-						<li data-icon="gear">
+						<li data-icon="false">
 							<a href="#activateAccount" >							
 								<img src="img/account_black_195x195.png" >
 								<h2>Account</h2>
@@ -332,9 +332,16 @@
 				<div class="ui-grid-d">
 					<div class="ui-block-a"><a id="arrowBackInChatPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
 				    <div class="ui-block-b">
-				    	<a href="#MainPage" data-role="button" class="imgOfChat-page" data-inline="false">
-				       		<img id="imgOfChat-page-header" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636" alt="lists" class="imgOfChat-page-header">
-				       	</a>
+				    	
+				    	
+				    	 <!--<a id="arrowBackInChatPage" data-role="button" class="ui-nodisc-icon icon-list">
+				    		<img id="imgOfChat-page-header" src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">				    		
+				    	</a>-->
+				    	
+				   	<a href="#MainPage" data-role="button" class="imgOfChat-page" data-inline="false">
+				       		<img id="imgOfChat-page-header" src="" class="imgOfChat-page-header">
+				    </a> 
+				       	
 				       	<strong id="nameOfChatThreadInChatPage"></strong>
 			       	</div>
 				    <div class="ui-block-c"><strong id="nameOfChatThreadInChatPage"></strong></div>
@@ -498,13 +505,26 @@
 					
 					</div>				
 				</div>
--->
+
+				<div id="popupDivMultimedia" data-role="popup"> 
+					<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>
+					<div id="picPopupDivMultimedia"></div>	
+				</div>-->
 			</div><!-- /content -->
-			<div data-role="footer" data-position="fixed" data-position="fixed">
-				<div class="chatbox">
-					<textarea id="chat-input" class="chat-input"></textarea>
-					<button id="chat-input-button" class="post">Post</button>
+			<div data-role="footer" data-position="fixed">				
+				<div id="chat-multimedia-button" class="ui-block-20percent" >					
+					<a href="" data-role="button" ><img src="img/multimedia_50x37.png" width="100%" class="button"></a>					
+				 </div>
+				<div class="ui-block-80percent">							
+					<textarea  name="textarea" id="chat-input" ></textarea>
+														
 				</div>
+			   <button id="chat-input-button" type="submit" data-theme="a">send</button>	
+			
+				<!-- <div>
+					<textarea id="chat-input" ></textarea>
+					<button id="chat-input-button" class="post">Post</button>
+				</div> -->
 			</div><!-- /footer -->
 		</div><!-- /page chat-page-->		
 		
@@ -513,7 +533,8 @@
 		<script src="js/socket.io-1.0.6.js"></script> 
 		<script src="js/picedit.min.js"></script> 
 	
-	    <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script>
+	     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+	   <!-- <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&language=en"></script> -->
 	    		    
 		<script src="js/index.js"></script>
 		<script src="js/md5.js"></script>         
