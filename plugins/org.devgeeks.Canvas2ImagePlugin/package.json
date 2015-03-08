@@ -1,0 +1,23 @@
+{
+    "version": "0.6.0",
+    "name": "org.devgeeks.canvas2imageplugin",
+    "cordova_name": "Canvas 2 Image",
+    "description": "This plugin allows you to save the contents of an HTML canvas tag to the iOS Photo Library, or Android Gallery from your app.",
+    "license": "MIT",
+    "keywords": [
+        "canvas",
+        "image",
+        "photo library"
+    ],
+    "platforms": [
+        "ios",
+        "android",
+        "wp8"
+    ],
+    "engines": [
+        {
+            "name": "cordova",
+            "version": ">=3.0.0"
+        }
+    ]
+}

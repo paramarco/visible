@@ -15,9 +15,6 @@
     </author>
     <content src="index.html" />
     <access origin="*" />
-    <feature name="NetworkStatus">
-        <param name="android-package" value="org.apache.cordova.networkinformation.NetworkManager" />
-    </feature>
     <feature name="File">
         <param name="android-package" value="org.apache.cordova.file.FileUtils" />
         <param name="onload" value="true" />
@@ -41,7 +38,17 @@
         <param name="android-package" value="org.apache.cordova.inappbrowser.InAppBrowser" />
     </feature>
     <feature name="interface2AllJoyn">
-    	<param name="android-package" value="com.instaltic.alljoyn.interface2AllJoyn" />
-    <param name="onload" value="true" />
-</feature>
+        <param name="android-package" value="com.instaltic.alljoyn.interface2AllJoyn" />
+        <param name="onload" value="true" />
+    </feature>
+    <feature name="Base64ToPNG">
+        <param name="android-package" value="org.apache.cordova.base64topng.Base64ToPNG" />
+        <param name="onload" value="true" />
+    </feature>
+    <feature name="Canvas2ImagePlugin">
+        <param name="android-package" value="org.devgeeks.Canvas2ImagePlugin.Canvas2ImagePlugin" />
+    </feature>
+    <feature name="NetworkStatus">
+        <param name="android-package" value="org.apache.cordova.networkinformation.NetworkManager" />
+    </feature>
 </widget>

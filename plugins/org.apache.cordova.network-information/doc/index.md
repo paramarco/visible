@@ -33,10 +33,11 @@ wifi connection, and whether the device has an internet connection.
 - Amazon Fire OS
 - Android
 - BlackBerry 10
+- Browser
 - iOS
 - Windows Phone 7 and 8
 - Tizen
-- Windows 8
+- Windows
 - Firefox OS
 
 # Connection
@@ -104,6 +105,10 @@ eventually be removed.
 - Windows Phone can't detect the type of cellular network connection.
     - `navigator.connection.type` is set to `Connection.CELL` for all cellular data.
 
+### Windows Quirks
+
+- When running in the Phone 8.1 emulator, always detects `navigator.connection.type` as `Connection.ETHERNET`.
+
 ### Tizen Quirks
 
 - Tizen can only detect a WiFi or cellular connection.
@@ -128,8 +133,7 @@ not connected to the Internet.
 The `offline` event fires when a previously connected device loses a
 network connection so that an application can no longer access the
 Internet.  It relies on the same information as the Connection API,
-and fires when the `connection.type` changes from `NONE` to any other
-value.
+and fires when the value of `connection.type` becomes `NONE`.
 
 Applications typically should use `document.addEventListener` to
 attach an event listener once the `deviceready` event fires.
@@ -166,8 +170,9 @@ becomes connected to the Internet.
 
 The `online` event fires when a previously unconnected device receives
 a network connection to allow an application access to the Internet.
-It relies on the same information as the Connection API, and fires
-when the value of `connection.type` becomes `NONE`.
+It relies on the same information as the Connection API,
+and fires when the `connection.type` changes from `NONE` to any other
+value.
 
 Applications typically should use `document.addEventListener` to
 attach an event listener once the `deviceready` event fires.

@@ -1,21 +1,6 @@
 cordova.define('cordova/plugin_list', function(require, exports, module) {
 module.exports = [
     {
-        "file": "plugins/org.apache.cordova.network-information/www/network.js",
-        "id": "org.apache.cordova.network-information.network",
-        "clobbers": [
-            "navigator.connection",
-            "navigator.network.connection"
-        ]
-    },
-    {
-        "file": "plugins/org.apache.cordova.network-information/www/Connection.js",
-        "id": "org.apache.cordova.network-information.Connection",
-        "clobbers": [
-            "Connection"
-        ]
-    },
-    {
         "file": "plugins/org.apache.cordova.file/www/DirectoryEntry.js",
         "id": "org.apache.cordova.file.DirectoryEntry",
         "clobbers": [
@@ -279,13 +264,34 @@ module.exports = [
         "clobbers": [
             "window.open"
         ]
+    },
+    {
+        "file": "plugins/org.devgeeks.Canvas2ImagePlugin/www/Canvas2ImagePlugin.js",
+        "id": "org.devgeeks.Canvas2ImagePlugin.Canvas2ImagePlugin",
+        "clobbers": [
+            "window.canvas2ImagePlugin"
+        ]
+    },
+    {
+        "file": "plugins/org.apache.cordova.network-information/www/network.js",
+        "id": "org.apache.cordova.network-information.network",
+        "clobbers": [
+            "navigator.connection",
+            "navigator.network.connection"
+        ]
+    },
+    {
+        "file": "plugins/org.apache.cordova.network-information/www/Connection.js",
+        "id": "org.apache.cordova.network-information.Connection",
+        "clobbers": [
+            "Connection"
+        ]
     }
 ];
 module.exports.metadata = 
 // TOP OF METADATA
 {
     "org.apache.cordova.geolocation": "0.3.8",
-    "org.apache.cordova.network-information": "0.2.9",
     "org.apache.cordova.file": "1.2.0",
     "org.apache.cordova.file-transfer": "0.4.4",
     "org.apache.cordova.dialogs": "0.2.8",
@@ -293,7 +299,9 @@ module.exports.metadata =
     "org.apache.cordova.contacts": "0.2.10",
     "org.apache.cordova.globalization": "0.2.8",
     "org.apache.cordova.inappbrowser": "0.5.0",
-    "org.apache.cordova.console": "0.2.9"
+    "org.apache.cordova.console": "0.2.9",
+    "org.devgeeks.Canvas2ImagePlugin": "0.6.0",
+    "org.apache.cordova.network-information": "0.2.15"
 }
 // BOTTOM OF METADATA
 });

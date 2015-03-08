@@ -1,12 +1,13 @@
 
 
-function Contact(contact2create) {
+function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
 	this.path2photo = contact2create.path2photo;
 	this.nickName = contact2create.nickName;
 	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
 	this.number = 0;
+	this.lastProfileUpdate = new Date();
 };
 
 
@@ -255,6 +256,8 @@ GUI.prototype.loadContacts = function() {
      	if (cursor) { 
      		listOfContacts.push(cursor.value);      	
         	gui.insertContactInMainPage(cursor.value,false);
+        	console.log("DEBUG ::: loadContacts ::: LOOP gui.insertContactInMainPage ");
+
          	cursor.continue(); 
      	}else{
      	    mainPageReady.resolve();
@@ -269,14 +272,19 @@ GUI.prototype.loadContactsOnMapPage = function() {
      	if (cursor) { 
      		listOfContacts.push(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
+        	console.log("DEBUG ::: loadContactsOnMapPage :::  ");
+
          	cursor.continue(); 
      	}else{
      	    //mainPageReady.resolve();
+     	    return;
      	}
 	};	
 };
 
 GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
+
+
 	
 	var attributesOfLink = "" ; 
 		
@@ -307,6 +315,9 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 
 GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
+	
+	   console.log("DEBUG ::: insertContactInMainPage :::  "  + JSON.stringify(contact) + JSON.stringify(isNewContact));
+
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
@@ -376,71 +387,81 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 };
 
 function loadMyConfig(){
-	db.transaction(["myConfig"], "readonly").objectStore("myConfig").openCursor(null, "nextunique").onsuccess = function(e) {
+	
+
+	var singleKeyRange = IDBKeyRange.only(0);  
+	
+	db.transaction(["myConfig"], "readonly").objectStore("myConfig").openCursor(singleKeyRange).onsuccess = function(e) {
 		var cursor = e.target.result;
-     	if (cursor) {  
+     	if (cursor) {
+ 
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
-			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
-     		 
-     		//	trigger configuration as already loaded    		
-     		configLoaded.resolve();   		   		 
+			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 			 
+						
+			$('#imageProfile').picEdit({
+	     		//defaultImage: app.myPhotoPath,
+	     		imageUpdated: function(img){
+	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
+					    function(result) {
+			   				app.myPhotoPath = result;
+					   		console.log('DEBUG ::: loadMyConfig ::: transaction !!' );
+					   		//update internal DB
+			     			var transaction = db.transaction(["myConfig"],"readwrite");	
+			     			var store = transaction.objectStore("myConfig");
+			     			
+		     				var request = store.put({
+		     					index : 0,	
+		         				publicClientID : app.publicClientID , 
+		         				myCurrentNick : app.myCurrentNick, 
+		         				myPhotoPath : app.myPhotoPath , 
+		         				myArrayOfTokens : app.myArrayOfTokens 
+		         			});  		         							
+			     						   				
+			   			}, function(error) {
+			      			console.log('DEBUG ::: loadMyConfig ::: canvas2ImagePlugin ::: fail ' + error);
+			   			},
+			   			img.src
+				    );
+	     			//app.myPhotoPath = img.src;	     				
+	     		}
+	     	});
+     		
+     		//	trigger configuration as already loaded     		
+			configLoaded.resolve();  
+     		return;
      	}else{
-     	    // 	login for the first time configLoaded.resolve(); 
+     		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-     	    console.log("DEBUG ::: loadMyConfig ::: for the first time");
-     	   $.mobile.loading( "hide" ); 
-     	   $("body").pagecontainer("change", "#visibleFirstTime");
+     	    
+	     	$('#imageOnVisibleFirstTime').picEdit({
+	     		imageUpdated: function(img){
+	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
+					    function(result) {
+			   				app.myPhotoPath = result;
+			   				
+			   			}, function(error) {
+			      			console.log('DEBUG ::: receivedEvent ::: fail ' + error);
+			   			},
+			   			img.src
+				    );	     			
+	     		}
+	     	});
+	     	
+	     		
+     	         	    
+     	   	$.mobile.loading( "hide" ); 
+     	   	$("body").pagecontainer("change", "#visibleFirstTime");
+     	   	
+     	   	return;
+     		
      	}
-     	
-     	
-     	//TODO think about imageOnVisibleFirstTime
-     	$('#imageOnVisibleFirstTime').picEdit({
-     		defaultImage: app.myPhotoPath,
-     		imageUpdated: function(img){
-     		  	 
-     			//update internal DB
-     			var transaction = db.transaction(["myConfig"],"readwrite");	
-     			var store = transaction.objectStore("myConfig");
-     			
-     			if (app.myPhotoPath != null){
-     				var request = store.put({	
-         				publicClientID : app.publicClientID , 
-         				myCurrentNick : app.myCurrentNick, 
-         				myPhotoPath : app.myPhotoPath , 
-         				myArrayOfTokens : app.myArrayOfTokens 
-         			});     				
-     			}     		  	
-     			app.myPhotoPath = img.src;
-     		}
-     	});
-     	
-     	$('#imageProfile').picEdit({
-     		defaultImage: app.myPhotoPath,
-     		imageUpdated: function(img){
-     		  	 
-     			//update internal DB
-     			var transaction = db.transaction(["myConfig"],"readwrite");	
-     			var store = transaction.objectStore("myConfig");
-     			
-     			if (app.myPhotoPath != null){
-     				var request = store.put({	
-         				publicClientID : app.publicClientID , 
-         				myCurrentNick : app.myCurrentNick, 
-         				myPhotoPath : app.myPhotoPath , 
-         				myArrayOfTokens : app.myArrayOfTokens 
-         			});     				
-     			}     		  	
-     			app.myPhotoPath = img.src;
-     		}
-     	});
-     	
 	};
 }
 
 function init() {
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible",1);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.3",3);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 
@@ -455,7 +476,8 @@ function init() {
 			
 		}
 		if(!thisDB.objectStoreNames.contains("myConfig")){
-			var objectStore = thisDB.createObjectStore("myConfig", { keyPath: "publicClientID" });					
+			var objectStore = thisDB.createObjectStore("myConfig", { keyPath: "index" });
+			objectStore.createIndex("index","index",{unique:true});
 		}					
 			
 	};
@@ -567,6 +589,8 @@ function addNewContact (publicClientID) {
 //this function assumes that the contact is already inserted on the DB
 
 function modifyContactOnDB (contact) {
+	console.log('DEBUG ::: modifyContactOnDB ::: ');
+
 	
 	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
 	
@@ -589,24 +613,36 @@ function modifyContactOnDB (contact) {
 
 
 
-function setNewContacts (data) {			
+function setNewContacts (data) {
+	console.log("DEBUG ::: setNewContacts :::  " + JSON.stringify(data));
+				
 	data.map(function(c){
 		
 		var contactExist = listOfContacts.some(function (elem) {
 			return elem.publicClientID == c.publicClientID;
-		});
+		});		
 
-		if (!contactExist){		
-			var newContact = new Contact({	
+		if (!contactExist){	
+			
+			console.log("DEBUG ::: setNewContacts ::: no estan en la listOfContacts ");
+	
+			var newContact =  new ContactOfVisible({	
 				publicClientID : c.publicClientID  ,
 				location :  c.location,
-				path2photo : "./img/profile_black_195x195.png", 
+				path2photo : "img/profile_black_195x195.png", 
 				nickName : c.nickName,
 				commentary : c.commentary								
-			});
+			});			
 			
 			listOfContacts.push(newContact);
-			GUI.prototype.insertContactInMainPage(newContact,true);			
+			GUI.prototype.insertContactInMainPage(newContact,true);
+			
+			/*
+			 
+			c.path2photo = "img/profile_black_195x195.png";
+			listOfContacts.push(c);
+			GUI.prototype.insertContactInMainPage(c,true);	
+			 */		
 		}		
 		//request an update of the last photo of this Contact
 		var ImageRetrievalObject = {	
@@ -618,20 +654,27 @@ function setNewContacts (data) {
 	});
 }
 
-
-function launchPeriodicTasks(){
-	var loop = setInterval(function(){			
-		//TODO if current location  != app.location --> we are moving..
-		if (true){
-			//sendNewLocation();
-		}
-						
-	},5000); // loop every 15 seconds	
+function loadMaps(){	
+	
+	map = L.map('map-canvas');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; OpenStreetMap contributors, ' +
+			'CC-BY-SA, ' +
+			'Imagery &copy; Mapbox',
+		id: 'examples.map-i875mjb7',
+		trackResize : true
+	}).addTo(map);
+	
+	
+	map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
+	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
+	L.marker(latlng).addTo(map).bindPopup("Here you are! ").openPopup();
+	L.circle(latlng, 200).addTo(map); 
+	map.addEventListener("load",gui.loadContactsOnMapPage());	
+		
 }
-
-
-
-
 
 function connect_socket (mytoken) {    
 
@@ -646,12 +689,13 @@ function connect_socket (mytoken) {
   	};
   	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
   	var tokenEncripted = JSON.stringify(tokenEncripted);
+  	
+  	console.log("DEBUG ::: connect_socket ::: with tokenEncripted :  " + tokenEncripted );
 
-	socket = io.connect('https://127.0.0.1:8090' , {secure: true, query: 'token=' + tokenEncripted	});
+	socket = io.connect('http://217.127.199.47:8080' , { secure: true, query: 'token=' + tokenEncripted	});
 	
 	socket.on('connect', function () {		
-		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
-		launchPeriodicTasks();	
+		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );						
 	});
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
@@ -683,7 +727,6 @@ function connect_socket (mytoken) {
   	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
   	  				$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
 
-  	  				//$('.blue-r-by-end' ).fadeOut( 7000 );
   	  			}
   	  			mailBox.updateMessage(message);	  			
   	  		});  			
@@ -747,16 +790,27 @@ function connect_socket (mytoken) {
 	  
 	  
 	socket.on("RequestForImage", function(publicClientIDofRequester) {
+		console.log('DEBUG ::: RequestForImage ::: from : ' + publicClientIDofRequester);
+		
+		//TODO read from 
+		
+		
+
 		var imageResponseObject = {	
 			publicClientIDofSender : app.publicClientID, 
 			publicClientIDofRequester : publicClientIDofRequester,
 			img : app.myPhotoPath		
 		};
 		
+		console.log('DEBUG ::: RequestForImage ::: my image is in : ' + app.myPhotoPath);
+
 		socket.emit("imageResponse",imageResponseObject	);	   
 	});//END RequestForImage	
 	
 	socket.on("ImageFromServer", function(data) {
+		
+		console.log('DEBUG ::: ImageFromServer ::: ' + JSON.stringify(data));
+
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
 		contact.path2photo = data.img;
 		$("#imgOfChat-page-header").attr("src", data.img);
@@ -772,9 +826,6 @@ function connect_socket (mytoken) {
 	
 }//END of connect_socket	
 	
-
-
-
 
 
 /***********************************************************************************************
@@ -799,45 +850,71 @@ var app = {
     myArrayOfTokens : [],
 	publicClientID : null,
 	myPosition : null,
+	connected : false,
 	
 	// Application Constructor
     initialize: function() {
-        //this.bindEvents();
+        this.bindEvents();
     },
     // Bind Event Listeners
     //
     // Bind any events that are required on startup. Common events are:
     // 'load', 'deviceready', 'offline', and 'online'.
     bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
+        document.addEventListener('deviceready', this.onDeviceReadyCustom, false);
         
         document.addEventListener('backbutton', function(){}, false);
         document.addEventListener('menubutton', function(){}, false);
         document.addEventListener('searchbutton', function(){}, false);
         document.addEventListener('startcallbutton', function(){}, false);
         document.addEventListener('endcallbutton', function(){}, false);
-        document.addEventListener("pause", function(){}, false);
-        
+        //document.addEventListener("pause", function(){}, false);
+        document.addEventListener("offline", this.onOfflineCustom, false);
+        document.addEventListener("online", this.onOnlineCustom, false);
+                
     },
     // deviceready Event Handler
     //
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
-        app.receivedEvent();
+    onDeviceReadyCustom: function() {
+        deviceReady.resolve();
+        
     },
-    // Update DOM on a Received Event
-    receivedEvent: function() {
+   	
+   	onOfflineCustom: function() {
+		 //socket.close();
+		//socket.destroy();
+		console.log ("DEBUG ::: onOffline :: trigered" );
 
-    }
-	
-	
- 
+   	} ,
+   	onOnlineCustom: function() {
+   		
+		if (typeof socket == "undefined" || socket.connected == false){
+			$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
+			
+			
+				$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
+				.done(function (result) { 
+					console.log ("DEBUG ::: https://217.127.199.47:8090/login :: done" );
+			
+					connect_socket(app.myArrayOfTokens[result.index]);  
+				})
+				.fail(function() {
+					//TODO launch periodic task to try to reconnect
+					console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
+				});	
+				
+				$.mobile.loading( "hide" );
+				$("body").pagecontainer("change", "#MainPage");		
+						
+			});
+		}
+	}
 };
 
 
-	init();
-
+init();
 
 /***********************************************************************************************
  * *********************************************************************************************
@@ -848,44 +925,51 @@ var documentReady = new $.Deferred();
 var mainPageReady = new $.Deferred();
 var configLoaded  = new $.Deferred();
 var positionLoaded  = new $.Deferred();
+var deviceReady  = new $.Deferred();
+var wsLoaded  = new $.Deferred();
 
 
-$.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
-	
-	$.post('https://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
-		.done(function (result) { 
-			connect_socket(app.myArrayOfTokens[result.index]);  
-		})
-		.fail(function() {
-			//TODO launch periodic task to try to reconnect
-			console.log ("DEBUG ::: https://127.0.0.1:8090/login :: trying to reconnect" );
-		});
-	
+$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
+
+
+/*	$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
+	.done(function (result) { 
+		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: done" );
+
+		connect_socket(app.myArrayOfTokens[result.index]);  
+	})
+	.fail(function() {
+		//TODO launch periodic task to try to reconnect
+		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
+	});	
+	*/
 	$.mobile.loading( "hide" );
 	$("body").pagecontainer("change", "#MainPage");
+	
+
+
+			
 });
 
-
-
-
-
-	
 $(document).ready(function() {	
-	documentReady.resolve();
-	  var theme =  $.mobile.loader.prototype.options.theme,
-	  msgText =  $.mobile.loader.prototype.options.text,
-	  textVisible =  $.mobile.loader.prototype.options.textVisible,
-	  textonly = false,
-	  html = "";
+	
+	documentReady.resolve();	
+	
+	app.initialize();
+	
+	var theme =  $.mobile.loader.prototype.options.theme,
+	msgText =  $.mobile.loader.prototype.options.text,
+	textVisible =  $.mobile.loader.prototype.options.textVisible,
+	textonly = false,
+	html = "";
+
 	$.mobile.loading( 'show', {
-	  text: msgText,
-	  textVisible: textVisible,
-	  theme: theme,
-	  textonly: textonly,
-	  html: html
-	  });
-	  
-	  
+		text: msgText,
+		textVisible: textVisible,
+		theme: theme,
+		textonly: textonly,
+		html: html
+	});	  
 	  
 	if ( navigator.geolocation ) {
         function success(pos) {
@@ -932,9 +1016,6 @@ $("body").on('pagecontainertransition', function( event, ui ) {
 
 });
 
-
-
-
 $(document).on("click","#arrowBackInChatPage",function() {
 	$('body').pagecontainer('change', '#MainPage');
 });
@@ -942,7 +1023,6 @@ $(document).on("click","#arrowBackInChatPage",function() {
 $(document).on("click","#mapButtonInMainPage",function() {
 	$('body').pagecontainer('change', '#map-page');
 });
-
 
 $(document).on("click","#chat-input-button",function() {
 //TODO #10.1 message must be store in local DB 
@@ -968,7 +1048,7 @@ $(document).on("click","#chat-input-button",function() {
 	document.getElementById('chat-input').value='';
 	
 	//sends message	
-	if (socket != null){
+	if (typeof socket != "undefined"){
 		try{
 			socket.emit('messagetoserver', message2send);
 		}catch (e){
@@ -989,7 +1069,9 @@ $(document).on("click","#chat-multimedia-button",function() {
 	$("#chat-page-content").trigger("create");
 	
 	$('#picPopupDivMultimedia').picEdit({
- 		imageUpdated: function(img){ 				 			
+ 		imageUpdated: function(img){ 
+ 			console.log('DEBUG ::: picPopupDivMultimedia ::: ');
+				 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
 				from : app.publicClientID , 
@@ -1040,14 +1122,15 @@ $(document).on("click","#firstLoginInputButton",function() {
 		return;
 	}
 
-	$.post('https://127.0.0.1:8090/firstlogin').done(function (result) { 
+	$.post('http://217.127.199.47:8080/firstlogin').done(function (result) { 
 	
 		var myCurrentNick = $("#firstLoginNameField").val();
 	
 		//update internal DB
 		var transaction = db.transaction(["myConfig"],"readwrite");	
 		var store = transaction.objectStore("myConfig");
-		var request = store.add({	
+		var request = store.add({
+				index : 0,	
 				publicClientID : result.publicClientID , 
 				myCurrentNick : myCurrentNick, 
 				myPhotoPath : app.myPhotoPath , 
@@ -1065,86 +1148,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 });
 
-
-
-
 $("#profileNameField").on("input", function() {
 	app.myCurrentNick = $("#profileNameField").val();
   	$("#nickNameInProfile").text(app.myCurrentNick);
 });
-/*
- * Google Maps documentation: http://code.google.com/apis/maps/documentation/javascript/basics.html
- * Geolocation documentation: http://dev.w3.org/geo/api/spec-source.html
- */
-$( document ).on( "pageinit", "#map-page", function() {
-	
-});			
-
-
-
-function loadMaps(){	
-	
-		map = L.map('map-canvas');
-
-		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-			maxZoom: 18,
-			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
-			id: 'examples.map-i875mjb7',
-			trackResize : true
-		}).addTo(map);
-
-		
-		map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
-		var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
-		L.marker(latlng).addTo(map).bindPopup("Here you are! ").openPopup();
-		L.circle(latlng, 200).addTo(map); 
-		map.addEventListener("load",gui.loadContactsOnMapPage());	
-
-		
-}	
-
-
-/*     
-    if ( navigator.geolocation ) {
-        function success(pos) {
-            // Location found, show map with these coordinates
-            app.myPosition = pos;
-            var defaultLatLng = new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude); 
-            drawMap(new google.maps.LatLng(pos.coords.latitude, pos.coords.longitude));
-            positionLoaded.resolve();
-        }
-        function fail(error) {
-        	        
-			app.myPosition = { coords : { latitude : "34.0983425" , longitude : "-118.3267434"  } };
-        	var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434); 
-            drawMap(defaultLatLng);  // Failed to find location, show default map
-            positionLoaded.resolve();
-        }
-        // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
-        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
-    } else {
-    	app.myPosition = { coords : { latitude : "34.0983425" , longitude : "-118.3267434"  } };
-    	var defaultLatLng = new google.maps.LatLng(34.0983425, -118.3267434); 
-        drawMap(defaultLatLng);  // No geolocation support, show default map
-        positionLoaded.resolve();
-    }	
-}
-
-
-function drawMap(latlng) {
-    var myOptions = {
-        zoom: 10,
-        center: latlng,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-    };
-    map = new google.maps.Map(document.getElementById("map-canvas"), myOptions);
-    // Add an overlay to the map of current lat/lng
-    var marker = new google.maps.Marker({
-        position: latlng,
-        map: map,
-        title: "Greetings!"
-    });
-}
-*/

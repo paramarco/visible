@@ -20,7 +20,10 @@
 package com.instaltic.visible;
 
 import android.os.Bundle;
-import org.apache.cordova.*;
+
+import org.apache.cordova.Config;
+import org.apache.cordova.CordovaActivity;
+import org.apache.cordova.base64topng.*;
 
 public class visible extends CordovaActivity 
 {
