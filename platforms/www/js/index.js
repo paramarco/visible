@@ -7,7 +7,7 @@ function ContactOfVisible(contact2create) {
 	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
 	this.number = 0;
-	this.lastProfileUpdate = new Date();
+	this.lastProfileUpdate = new Date().getTime();
 };
 
 
@@ -388,12 +388,14 @@ function loadMyConfig(){
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
+			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 									
 			$('#imageProfile').picEdit({
 	     		//defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(img){
 	     			
 	   				app.myPhotoPath = img.src;
+	   				app.lastProfileUpdate = new Date().getTime();
 			   		//update internal DB
 	     			var transaction = db.transaction(["myConfig"],"readwrite");	
 	     			var store = transaction.objectStore("myConfig");
@@ -403,7 +405,8 @@ function loadMyConfig(){
          				publicClientID : app.publicClientID , 
          				myCurrentNick : app.myCurrentNick, 
          				myPhotoPath : app.myPhotoPath , 
-         				myArrayOfTokens : app.myArrayOfTokens 
+         				myArrayOfTokens : app.myArrayOfTokens ,
+         				lastProfileUpdate : new Date().getTime()
          			}); 			
 	     		}
 	     	});
@@ -419,7 +422,8 @@ function loadMyConfig(){
      	    
 	     	$('#imageOnVisibleFirstTime').picEdit({
 	     		imageUpdated: function(img){
-	     			app.myPhotoPath = img.src;	     			
+	     			app.myPhotoPath = img.src;
+	     			
 	     		}
 	     	});  	
 	     		
@@ -593,7 +597,7 @@ function setNewContacts (data) {
 //			return elem.publicClientID == c.publicClientID;
 //		});
 
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
 				
 		//request an update of the last photo of this Contact
 		var ImageRetrievalObject = {	
@@ -656,7 +660,7 @@ function connect_socket (mytoken) {
   	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
   	var tokenEncripted = JSON.stringify(tokenEncripted);
 
-	socket = io.connect('http://217.127.199.47:8080' , { secure: true, query: 'token=' + tokenEncripted	});
+	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenEncripted	});
 	
 	socket.on('connect', function () {	
 		console.log("DEBUG ::: SOCKET.connect :::  ");	
@@ -754,24 +758,36 @@ function connect_socket (mytoken) {
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
 	//TODO check new parameter Date of last profileUpdate  
-	socket.on("RequestForImage", function(publicClientIDofRequester) {
-		console.log('DEBUG ::: RequestForImage ::: ');
+	socket.on("RequestForImage", function(requestParameters) {		
 
-		var imageResponseObject = {	
-			publicClientIDofSender : app.publicClientID, 
-			publicClientIDofRequester : publicClientIDofRequester,
-			img : app.myPhotoPath		
-		};
+		console.log ("DEBUG ::: RequestForImage  :: app.lastProfileUpdate: " + app.lastProfileUpdate);
+		console.log ("DEBUG ::: RequestForImage  :: requestParameters.lastProfileUpdate: " + requestParameters.lastProfileUpdate);
 		
-		socket.emit("imageResponse",imageResponseObject	);	   
+		
+		if ( requestParameters.lastProfileUpdate == null || requestParameters.lastProfileUpdate <  app.lastProfileUpdate ){		
+			var imageResponseObject = {	
+					publicClientIDofSender : app.publicClientID, 
+					publicClientIDofRequester : requestParameters.publicClientIDofRequester,
+					img : app.myPhotoPath,
+					nickName: app.myCurrentNick,
+					commentary : "I'm super visible!!"	
+				};
+				
+			socket.emit("imageResponse",imageResponseObject	);
+		}		
+			   
 	});//END RequestForImage	
 	
 	socket.on("ImageFromServer", function(data) {
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientIDofSender); })[0];
 		contact.path2photo = data.img;
+		contact.nickName = data.nickName ;
+		contact.commentary = data.commentary ;
+		contact.lastProfileUpdate = new Date().getTime();
+		
 		$("#imgOfChat-page-header").attr("src", data.img);
-		$("#profilePhoto"+data.publicClientID ).attr("src", data.img);
+		$("#profilePhoto"+data.publicClientIDofSender ).attr("src", data.img);
 		
 		//TODO insert photo on DB
 		//only if it is a persistent contact
@@ -807,6 +823,7 @@ var app = {
     myArrayOfTokens : [],
 	publicClientID : null,
 	myPosition : null,
+	lastProfileUpdate : null
 };
 
 
@@ -829,7 +846,7 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 	$.mobile.loading( "hide" );
 	$("body").pagecontainer("change", "#MainPage");
 	
-	$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
+	$.post('http://127.0.0.1:8080/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
 			connect_socket(app.myArrayOfTokens[result.index]);  
 		})
@@ -1007,7 +1024,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 		return;
 	}
 
-	$.post('http://217.127.199.47:8080/firstlogin').done(function (result) { 
+	$.post('http://127.0.0.1:8080/firstlogin').done(function (result) { 
 	
 		var myCurrentNick = $("#firstLoginNameField").val();
 	
@@ -1019,13 +1036,15 @@ $(document).on("click","#firstLoginInputButton",function() {
 				publicClientID : result.publicClientID , 
 				myCurrentNick : myCurrentNick, 
 				myPhotoPath : app.myPhotoPath , 
-				myArrayOfTokens : result.myArrayOfTokens 
+				myArrayOfTokens : result.myArrayOfTokens ,
+				lastProfileUpdate : new Date().getTime()
 		});
 		
 		//update app object	
 		app.publicClientID = result.publicClientID;
 		app.myCurrentNick = myCurrentNick;
 		app.myArrayOfTokens = result.myArrayOfTokens;
+		app.lastProfileUpdate = new Date().getTime();
 		
 		//trigger configuration as already loaded
 		configLoaded.resolve();    		   		 
@@ -1034,6 +1053,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 });
 
 $("#profileNameField").on("input", function() {
-	app.myCurrentNick = $("#profileNameField").val();
+	app.myCurrentNick = $("#profileNameField").val();	
   	$("#nickNameInProfile").text(app.myCurrentNick);
+  	app.lastProfileUpdate = new Date().getTime();
 });

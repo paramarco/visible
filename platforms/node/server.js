@@ -1,5 +1,6 @@
 var fs = require('fs');
-var https = require('https');
+//var https = require('https');
+var http = require('http');
 var express = require('express');
 var app = express();
 var cors = require('cors');
@@ -12,11 +13,12 @@ app.use(cors());
 app.use(express.bodyParser());
 
 app.configure(function() {
-	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
+	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
   	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
 });
 
-var server = https.createServer(credentials, app);
+//var server = https.createServer(credentials, app);
+var server = http.createServer(app);
 server.listen(	app.get('port'),
 					app.get('ipaddr'), 
 					function(){	console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));	}
@@ -262,7 +264,11 @@ io.sockets.on("connection", function (socket) {
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg);
 
 		if ( typeof clientToPoll != 'undefined'){
-			io.sockets.to(clientToPoll.socketid).emit("RequestForImage", parameters.publicClientIDofRequester 	);
+			var requestParameters = {
+				publicClientIDofRequester : parameters.publicClientIDofRequester,
+				lastProfileUpdate : parameters.lastProfileUpdate				
+			};
+			io.sockets.to(clientToPoll.socketid).emit("RequestForImage", requestParameters );
 		}
 	});
 	
@@ -271,7 +277,7 @@ io.sockets.on("connection", function (socket) {
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester); 
 
 		if ( typeof clientToPoll != 'undefined' ){
-			io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", { publicClientID : parameters.publicClientIDofSender, img : parameters.img	} 	);
+			io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", parameters 	);
 		}
 	});	
 	
