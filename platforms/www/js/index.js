@@ -196,19 +196,25 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); })[0];
 		authorOfMessage = contact.nickName;
 		
-		if (message.markedAsRead == false) {
-			var messageACK = {	
-		  			to : message.to, 
-		  			from : message.from,
-		  			msgID : message.msgID, 
-		  			md5sum : message.md5sum,
-		  			typeOfACK : "ReadfromAddressee"
-		  		};
-		  	
-			socket.emit("MessageDeliveryACK",messageACK);
-			message.markedAsRead = true;
-			mailBox.updateMessage(message);
-			
+		if (message.markedAsRead == false) {		  	
+			//sends ACK ReadfromAddressee	
+			if (typeof socket != "undefined" && socket.connected == true){
+				try{
+					var messageACK = {	
+			  			to : message.to, 
+			  			from : message.from,
+			  			msgID : message.msgID, 
+			  			md5sum : message.md5sum,
+			  			typeOfACK : "ReadfromAddressee"
+				  	};					
+					socket.emit("MessageDeliveryACK",messageACK);
+					message.markedAsRead = true;
+					mailBox.updateMessage(message);				
+					
+				}catch (e){
+					console.log('DEBUG ::: insertMessageInConversation ::: socket not connected');
+				}		
+			}		
 		}		
 	}
 	var htmlOfContent = "";
@@ -361,17 +367,19 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	}); 
 	
 	//request an update of the last photo of this Contact
-	var ImageRetrievalObject = {	
-		publicClientIDofRequester : app.publicClientID, 
-		publicClientID2getImg : contact.publicClientID,
-		lastProfileUpdate : contact.lastProfileUpdate
-	};
-	try {
-		socket.emit('ImageRetrieval', ImageRetrievalObject	);
-	}catch (e){
-		console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
-	}
 	
+	if (typeof socket != "undefined" && socket.connected == true){
+		try {
+			var ImageRetrievalObject = {	
+				publicClientIDofRequester : app.publicClientID, 
+				publicClientID2getImg : contact.publicClientID,
+				lastProfileUpdate : contact.lastProfileUpdate
+			};
+			socket.emit('ImageRetrieval', ImageRetrievalObject	);
+		}catch (e){
+			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
+		}		
+	}	
 	
 };
 
@@ -389,7 +397,7 @@ function loadMyConfig(){
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
 			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
-									
+	
 			$('#imageProfile').picEdit({
 	     		//defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(img){
@@ -410,24 +418,21 @@ function loadMyConfig(){
          			}); 			
 	     		}
 	     	});
-     		
-     		//	trigger configuration as already loaded    		
-     		
-     		
+			
+			//	trigger configuration as already loaded     		
 			configLoaded.resolve();  
      		return;
      	}else{
      		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-     	    
+			
 	     	$('#imageOnVisibleFirstTime').picEdit({
 	     		imageUpdated: function(img){
-	     			app.myPhotoPath = img.src;
-	     			
+	     			app.myPhotoPath = img.src;	     			
 	     		}
 	     	});  	
-	     		
      	         	    
+	     	$("#link2profileFromMyPanel").remove();
      	   	$.mobile.loading( "hide" ); 
      	   	$("body").pagecontainer("change", "#visibleFirstTime");
      	   	
@@ -438,6 +443,7 @@ function loadMyConfig(){
 }
 
 function init() {
+	
 	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.3",3);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
@@ -738,7 +744,7 @@ function connect_socket (mytoken) {
 		
   });//END messageFromServer
 	 
-	//#13.2  start a loop requesting a message one by one 
+	// start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }  		
@@ -749,7 +755,6 @@ function connect_socket (mytoken) {
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
 				socket.emit('messageRetrieval', {	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}); 
-				//JSON.stringify(	{	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}	));		
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
@@ -789,7 +794,6 @@ function connect_socket (mytoken) {
 		$("#imgOfChat-page-header").attr("src", data.img);
 		$("#profilePhoto"+data.publicClientIDofSender ).attr("src", data.img);
 		
-		//TODO insert photo on DB
 		//only if it is a persistent contact
 		modifyContactOnDB(contact);
 
@@ -950,7 +954,7 @@ $(document).on("click","#chat-input-button",function() {
 	document.getElementById('chat-input').value='';
 	
 	//sends message	
-	if (socket != null){
+	if (typeof socket != "undefined" && socket.connected == true){
 		try{
 			socket.emit('messagetoserver', message2send);
 		}catch (e){
@@ -988,16 +992,21 @@ $(document).on("click","#chat-multimedia-button",function() {
 			
 			//print message on the GUI
 			gui.insertMessageInConversation(message2send);
-		
+					
+			$("#popupDivMultimedia").remove();
+			$.mobile.silentScroll($(document).height()); 
+
+			
 			//sends message	
-			if (socket != null){
+			if (typeof socket != "undefined" && socket.connected == true){
 				try{
 					socket.emit('messagetoserver', message2send);
 				}catch (e){
-					console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
+					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
 				}		
 			}
-			$("#popupDivMultimedia").remove();
+			
+			
  		}// END imageUpdated
  	});// END picEdit construct
 	

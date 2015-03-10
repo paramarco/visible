@@ -1088,7 +1088,7 @@ $(document).on("click","#chat-multimedia-button",function() {
 			gui.insertMessageInConversation(message2send);
 		
 			//sends message	
-			if (socket != null){
+			if (typeof socket != "undefined" && socket.connected == true){
 				try{
 					socket.emit('messagetoserver', message2send);
 				}catch (e){
