@@ -7,7 +7,7 @@ function ContactOfVisible(contact2create) {
 	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
 	this.number = 0;
-	this.lastProfileUpdate = new Date();
+	this.lastProfileUpdate = new Date().getTime();
 };
 
 
@@ -196,19 +196,25 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); })[0];
 		authorOfMessage = contact.nickName;
 		
-		if (message.markedAsRead == false) {
-			var messageACK = {	
-		  			to : message.to, 
-		  			from : message.from,
-		  			msgID : message.msgID, 
-		  			md5sum : message.md5sum,
-		  			typeOfACK : "ReadfromAddressee"
-		  		};
-		  	
-			socket.emit("MessageDeliveryACK",messageACK);
-			message.markedAsRead = true;
-			mailBox.updateMessage(message);
-			
+		if (message.markedAsRead == false) {		  	
+			//sends ACK ReadfromAddressee	
+			if (typeof socket != "undefined" && socket.connected == true){
+				try{
+					var messageACK = {	
+			  			to : message.to, 
+			  			from : message.from,
+			  			msgID : message.msgID, 
+			  			md5sum : message.md5sum,
+			  			typeOfACK : "ReadfromAddressee"
+				  	};					
+					socket.emit("MessageDeliveryACK",messageACK);
+					message.markedAsRead = true;
+					mailBox.updateMessage(message);				
+					
+				}catch (e){
+					console.log('DEBUG ::: insertMessageInConversation ::: socket not connected');
+				}		
+			}		
 		}		
 	}
 	var htmlOfContent = "";
@@ -256,8 +262,6 @@ GUI.prototype.loadContacts = function() {
      	if (cursor) { 
      		listOfContacts.push(cursor.value);      	
         	gui.insertContactInMainPage(cursor.value,false);
-        	console.log("DEBUG ::: loadContacts ::: LOOP gui.insertContactInMainPage ");
-
          	cursor.continue(); 
      	}else{
      	    mainPageReady.resolve();
@@ -272,19 +276,12 @@ GUI.prototype.loadContactsOnMapPage = function() {
      	if (cursor) { 
      		listOfContacts.push(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
-        	console.log("DEBUG ::: loadContactsOnMapPage :::  ");
-
          	cursor.continue(); 
-     	}else{
-     	    //mainPageReady.resolve();
-     	    return;
      	}
 	};	
 };
 
 GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
-
-
 	
 	var attributesOfLink = "" ; 
 		
@@ -315,9 +312,6 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 
 GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
-	
-	   console.log("DEBUG ::: insertContactInMainPage :::  "  + JSON.stringify(contact) + JSON.stringify(isNewContact));
-
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
@@ -371,24 +365,26 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	}); 
 	
 	//request an update of the last photo of this Contact
-	var ImageRetrievalObject = {	
-		publicClientIDofRequester : app.publicClientID, 
-		publicClientID2getImg : contact.publicClientID
-	};
-	try {
-		socket.emit('ImageRetrieval', ImageRetrievalObject	);
-	}catch (e){
-		console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
-	}
 	
-
-	
+	if (typeof socket != "undefined" && socket.connected == true){
+		try {
+			var ImageRetrievalObject = {	
+				publicClientIDofRequester : app.publicClientID, 
+				publicClientID2getImg : contact.publicClientID,
+				lastProfileUpdate : contact.lastProfileUpdate
+			};
+			socket.emit('ImageRetrieval', ImageRetrievalObject	);
+		}catch (e){
+			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
+		}		
+	}	
 	
 };
 
+
+
 function loadMyConfig(){
 	
-
 	var singleKeyRange = IDBKeyRange.only(0);  
 	
 	db.transaction(["myConfig"], "readonly").objectStore("myConfig").openCursor(singleKeyRange).onsuccess = function(e) {
@@ -398,26 +394,28 @@ function loadMyConfig(){
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
-			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 			 
-						
+			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
+			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
+	
 			$('#imageProfile').picEdit({
 	     		//defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(img){
 	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
 					    function(result) {
 			   				app.myPhotoPath = result;
-					   		console.log('DEBUG ::: loadMyConfig ::: transaction !!' );
-					   		//update internal DB
-			     			var transaction = db.transaction(["myConfig"],"readwrite");	
-			     			var store = transaction.objectStore("myConfig");
-			     			
-		     				var request = store.put({
-		     					index : 0,	
-		         				publicClientID : app.publicClientID , 
-		         				myCurrentNick : app.myCurrentNick, 
-		         				myPhotoPath : app.myPhotoPath , 
-		         				myArrayOfTokens : app.myArrayOfTokens 
-		         			});  		         							
+	   				app.lastProfileUpdate = new Date().getTime();
+			   		//update internal DB
+	     			var transaction = db.transaction(["myConfig"],"readwrite");	
+	     			var store = transaction.objectStore("myConfig");
+	     			
+     				var request = store.put({
+     					index : 0,	
+         				publicClientID : app.publicClientID , 
+         				myCurrentNick : app.myCurrentNick, 
+         				myPhotoPath : app.myPhotoPath , 
+         				myArrayOfTokens : app.myArrayOfTokens ,
+         				lastProfileUpdate : new Date().getTime()
+         			}); 			
 			     						   				
 			   			}, function(error) {
 			      			console.log('DEBUG ::: loadMyConfig ::: canvas2ImagePlugin ::: fail ' + error);
@@ -427,30 +425,28 @@ function loadMyConfig(){
 	     			//app.myPhotoPath = img.src;	     				
 	     		}
 	     	});
-     		
-     		//	trigger configuration as already loaded     		
+			
+			//	trigger configuration as already loaded     		
 			configLoaded.resolve();  
      		return;
      	}else{
      		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-     	    
+			
 	     	$('#imageOnVisibleFirstTime').picEdit({
 	     		imageUpdated: function(img){
 	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
 					    function(result) {
-			   				app.myPhotoPath = result;
-			   				
+			   				app.myPhotoPath = result;			   				
 			   			}, function(error) {
 			      			console.log('DEBUG ::: receivedEvent ::: fail ' + error);
 			   			},
 			   			img.src
 				    );	     			
 	     		}
-	     	});
-	     	
-	     		
+	     	});  	
      	         	    
+	     	$("#link2profileFromMyPanel").remove();
      	   	$.mobile.loading( "hide" ); 
      	   	$("body").pagecontainer("change", "#visibleFirstTime");
      	   	
@@ -461,6 +457,7 @@ function loadMyConfig(){
 }
 
 function init() {
+	
 	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.3",3);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
@@ -612,45 +609,33 @@ function modifyContactOnDB (contact) {
 
 
 
-
-function setNewContacts (data) {
-	console.log("DEBUG ::: setNewContacts :::  " + JSON.stringify(data));
-				
+function setNewContacts (data) {			
 	data.map(function(c){
 		
-		var contactExist = listOfContacts.some(function (elem) {
-			return elem.publicClientID == c.publicClientID;
-		});		
-
-		if (!contactExist){	
-			
-			console.log("DEBUG ::: setNewContacts ::: no estan en la listOfContacts ");
-	
-			var newContact =  new ContactOfVisible({	
-				publicClientID : c.publicClientID  ,
-				location :  c.location,
-				path2photo : "img/profile_black_195x195.png", 
-				nickName : c.nickName,
-				commentary : c.commentary								
-			});			
-			
-			listOfContacts.push(newContact);
-			GUI.prototype.insertContactInMainPage(newContact,true);
-			
-			/*
-			 
-			c.path2photo = "img/profile_black_195x195.png";
-			listOfContacts.push(c);
-			GUI.prototype.insertContactInMainPage(c,true);	
-			 */		
-		}		
+		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
+				
 		//request an update of the last photo of this Contact
 		var ImageRetrievalObject = {	
 			publicClientIDofRequester : app.publicClientID, 
-			publicClientID2getImg : c.publicClientID
-		};	
+			publicClientID2getImg : c.publicClientID,
+			lastProfileUpdate : null
+		};
+	
+		if (contact){			
+			ImageRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;						
+		}else{			
+			var newContact = new ContactOfVisible({	
+				publicClientID : c.publicClientID  ,
+				location :  c.location,
+				path2photo : "./img/profile_black_195x195.png", 
+				nickName : c.nickName,
+				commentary : c.commentary								
+			});
+			
+			listOfContacts.push(newContact);
+			GUI.prototype.insertContactInMainPage(newContact,true);			
+		}	
 		socket.emit('ImageRetrieval', ImageRetrievalObject	);
-
 	});
 }
 
@@ -689,13 +674,11 @@ function connect_socket (mytoken) {
   	};
   	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
   	var tokenEncripted = JSON.stringify(tokenEncripted);
-  	
-  	console.log("DEBUG ::: connect_socket ::: with tokenEncripted :  " + tokenEncripted );
 
 	socket = io.connect('http://217.127.199.47:8080' , { secure: true, query: 'token=' + tokenEncripted	});
 	
-	socket.on('connect', function () {		
-		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );						
+	socket.on('connect', function () {	
+		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
 	});
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
@@ -769,7 +752,7 @@ function connect_socket (mytoken) {
 		
   });//END messageFromServer
 	 
-	//#13.2  start a loop requesting a message one by one 
+	// start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }  		
@@ -780,7 +763,6 @@ function connect_socket (mytoken) {
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();
 				socket.emit('messageRetrieval', {	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}); 
-				//JSON.stringify(	{	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}	));		
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
@@ -788,35 +770,33 @@ function connect_socket (mytoken) {
 	   
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
-	  
-	socket.on("RequestForImage", function(publicClientIDofRequester) {
-		console.log('DEBUG ::: RequestForImage ::: from : ' + publicClientIDofRequester);
-		
-		//TODO read from 
-		
-		
 
-		var imageResponseObject = {	
-			publicClientIDofSender : app.publicClientID, 
-			publicClientIDofRequester : publicClientIDofRequester,
-			img : app.myPhotoPath		
-		};
+	socket.on("RequestForImage", function(requestParameters) {	
 		
-		console.log('DEBUG ::: RequestForImage ::: my image is in : ' + app.myPhotoPath);
-
-		socket.emit("imageResponse",imageResponseObject	);	   
+		if ( requestParameters.lastProfileUpdate == null || requestParameters.lastProfileUpdate <  app.lastProfileUpdate ){		
+			var imageResponseObject = {	
+					publicClientIDofSender : app.publicClientID, 
+					publicClientIDofRequester : requestParameters.publicClientIDofRequester,
+					img : app.myPhotoPath,
+					nickName: app.myCurrentNick,
+					commentary : "I'm super visible!!"	
+				};				
+			socket.emit("imageResponse",imageResponseObject	);
+		}	
+			   
 	});//END RequestForImage	
 	
 	socket.on("ImageFromServer", function(data) {
 		
-		console.log('DEBUG ::: ImageFromServer ::: ' + JSON.stringify(data));
-
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientIDofSender); })[0];
 		contact.path2photo = data.img;
-		$("#imgOfChat-page-header").attr("src", data.img);
-		$("#profilePhoto"+data.publicClientID ).attr("src", data.img);
+		contact.nickName = data.nickName ;
+		contact.commentary = data.commentary ;
+		contact.lastProfileUpdate = new Date().getTime();
 		
-		//TODO insert photo on DB
+		$("#imgOfChat-page-header").attr("src", data.img);
+		$("#profilePhoto"+data.publicClientIDofSender ).attr("src", data.img);
+		
 		//only if it is a persistent contact
 		modifyContactOnDB(contact);
 
@@ -850,8 +830,8 @@ var app = {
     myArrayOfTokens : [],
 	publicClientID : null,
 	myPosition : null,
-	connected : false,
-	
+	lastProfileUpdate : null,
+
 	// Application Constructor
     initialize: function() {
         this.bindEvents();
@@ -878,16 +858,11 @@ var app = {
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicitly call 'app.receivedEvent(...);'
     onDeviceReadyCustom: function() {
-        deviceReady.resolve();
-        
-    },
-   	
+        deviceReady.resolve();        
+    },   	
    	onOfflineCustom: function() {
-		 //socket.close();
-		//socket.destroy();
-		console.log ("DEBUG ::: onOffline :: trigered" );
 
-   	} ,
+   	},
    	onOnlineCustom: function() {
    		
 		if (typeof socket == "undefined" || socket.connected == false){
@@ -914,7 +889,8 @@ var app = {
 };
 
 
-init();
+	init();
+
 
 /***********************************************************************************************
  * *********************************************************************************************
@@ -926,29 +902,22 @@ var mainPageReady = new $.Deferred();
 var configLoaded  = new $.Deferred();
 var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
-var wsLoaded  = new $.Deferred();
 
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
 
-
 /*	$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
-	.done(function (result) { 
-		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: done" );
-
-		connect_socket(app.myArrayOfTokens[result.index]);  
-	})
-	.fail(function() {
-		//TODO launch periodic task to try to reconnect
+		.done(function (result) { 
+			connect_socket(app.myArrayOfTokens[result.index]);  
+		})
+		.fail(function() {
+			//TODO launch periodic task to try to reconnect
 		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
-	});	
+		});
 	*/
 	$.mobile.loading( "hide" );
 	$("body").pagecontainer("change", "#MainPage");
 	
-
-
-			
 });
 
 $(document).ready(function() {	
@@ -956,7 +925,7 @@ $(document).ready(function() {
 	documentReady.resolve();	
 	
 	app.initialize();
-	
+
 	var theme =  $.mobile.loader.prototype.options.theme,
 	msgText =  $.mobile.loader.prototype.options.text,
 	textVisible =  $.mobile.loader.prototype.options.textVisible,
@@ -1007,8 +976,6 @@ $("body").on('pagecontainertransition', function( event, ui ) {
     }    
     if (ui.options.target == "#map-page"){
 				
-		//google.maps.event.trigger(map,'resize');
-		//map.setZoom( map.getZoom() );	
 		loadMaps();
 		//gui.loadContactsOnMapPage();
 		 
@@ -1048,7 +1015,7 @@ $(document).on("click","#chat-input-button",function() {
 	document.getElementById('chat-input').value='';
 	
 	//sends message	
-	if (typeof socket != "undefined"){
+	if (typeof socket != "undefined" && socket.connected == true){
 		try{
 			socket.emit('messagetoserver', message2send);
 		}catch (e){
@@ -1086,16 +1053,18 @@ $(document).on("click","#chat-multimedia-button",function() {
 			
 			//print message on the GUI
 			gui.insertMessageInConversation(message2send);
-		
+					
+			$("#popupDivMultimedia").remove();
+			$.mobile.silentScroll($(document).height());
+			
 			//sends message	
 			if (typeof socket != "undefined" && socket.connected == true){
 				try{
 					socket.emit('messagetoserver', message2send);
 				}catch (e){
-					console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
+					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
 				}		
-			}
-			$("#popupDivMultimedia").remove();
+			}			
  		}// END imageUpdated
  	});// END picEdit construct
 	
@@ -1134,13 +1103,15 @@ $(document).on("click","#firstLoginInputButton",function() {
 				publicClientID : result.publicClientID , 
 				myCurrentNick : myCurrentNick, 
 				myPhotoPath : app.myPhotoPath , 
-				myArrayOfTokens : result.myArrayOfTokens 
+				myArrayOfTokens : result.myArrayOfTokens ,
+				lastProfileUpdate : new Date().getTime()
 		});
 		
 		//update app object	
 		app.publicClientID = result.publicClientID;
 		app.myCurrentNick = myCurrentNick;
 		app.myArrayOfTokens = result.myArrayOfTokens;
+		app.lastProfileUpdate = new Date().getTime();
 		
 		//trigger configuration as already loaded
 		configLoaded.resolve();    		   		 
@@ -1149,6 +1120,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 });
 
 $("#profileNameField").on("input", function() {
-	app.myCurrentNick = $("#profileNameField").val();
+	app.myCurrentNick = $("#profileNameField").val();	
   	$("#nickNameInProfile").text(app.myCurrentNick);
+  	app.lastProfileUpdate = new Date().getTime();
 });

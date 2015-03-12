@@ -14,9 +14,9 @@
 		
 		<link rel="stylesheet" type="text/css" href="css/font-face.css">
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
-		<link rel="stylesheet" type="text/css" href="css/picedit.min.css" />
+		<link rel="stylesheet" type="text/css" href="css/picedit.css" />		
 		<link rel="stylesheet" type="text/css" href="css/leaflet.css" />
-		
+				
 
 		<script type="text/javascript" src="cordova.js"></script> 
 
@@ -24,9 +24,6 @@
         <title>Visible</title>
     </head>
 	<body>
-		<script type="text/javascript" charset="utf-8">
-	    	
-		</script>
 		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
@@ -86,7 +83,7 @@
 			</div><!-- /content -->
 			<div data-role="panel" id="mypanel" data-display="overlay">
 			    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li data-icon="false">
+					<li id="link2profileFromMyPanel" data-icon="false">
 						<a href="#profile">
 							<img src="img/profile_black_195x195.png" >
 							<h2>Profile</h2>								
@@ -132,7 +129,7 @@
 										
 				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
+						<input type="file" accept="image/*;capture=camera" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
 			    	</ul>				    
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
 						<div data-role="fieldcontain">
@@ -156,7 +153,11 @@
 		<div data-role="page" data-theme="a" id="manageVisibles">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-a">
+			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
+			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
+		    		</a>
+	    		</div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-d"></div>
@@ -167,33 +168,26 @@
 			<div data-role="content" data-theme="b">
 				Are you visible for...?
 				<ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li>
-						
+					<li>						
 						<h2>Anybody</h2>
 						<p>should you switch this off, then only your contacts would see you online, is not that borring?</p>	
 						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
 							<option value="on">On</option>
 							<option value="off">Off</option>							
 						</select>
-					</li>
-							
+					</li>							
 				</ul>
-			</div><!-- /content -->
-			<div data-role="panel" id="mypanel-manageVisibles" data-display="overlay">
-			    <div class="ui-grid-solo">
-			      <div class="ui-block-a"  align="center" ><a href="#profile"><img src="img/logo.png" ></a>mi perfil</div>
-			      <div class="ui-block-a"  align="center" ><a href="#createGroup"><img src="img/logo.png" ></a>crear un grupo</div>
-			      <div class="ui-block-a"  align="center" ><a href="#manageVisibles"><img src="img/logo.png" ></a>gestionar mis visibles</div>
-			      <div class="ui-block-a"  align="center" ><a href="#activateAccount"><img src="img/logo.png" ></a>activar cuenta</div>
-
-			    </div>
-			</div><!-- /panel -->
+			</div><!-- /content -->			
 		</div><!-- /page manageVisibles-->
 
 		<div data-role="page" data-theme="a" id="createGroup">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-a">
+			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
+			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
+		    		</a>
+		    	</div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-d"></div>
@@ -203,87 +197,52 @@
 			<div data-role="content" data-theme="a">							
 				<ul data-role="listview" data-inset="true" data-divider-theme="a">
 					<li>
-						<img src="img/logo.png" />
-                        <input type="text" name="groupName" id="groupName" value="" placeholder="Name of the group">
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>pepito</h2>
-						<p>Broken Bells</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>fulanito</h2>
-						<p>Hot Chip</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Sutanito</h2>
-						<p>Hot Chip</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Ian</h2>
-						<p>Hot Chip</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#">
-						<img src="https://secure.gravatar.com/avatar/046093605484ecdce0ad1d7fc31f6d81" />
-						<h2>Maria</h2>
-						<p>Hot Chic</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
-					<li><a href="#">
-						<img src="img/logo.png" />
-						<h2>Menganito</h2>
-						<p>Hot Chip</p></a>
-						<a href="#" data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true"></a>
-					</li>
+						<h1>Not implemented yet</h1>
+					</li>					
 				</ul>
 			</div><!-- /content -->
-			<div data-role="footer" data-position="fixed" data-position="fixed">
-				<button id="createGroupButton" class="ui-btn ui-corner-all" >Create Group</button>
-			</div><!-- /footer -->
 		</div><!-- /page createGroup-->
 		
 		
 		<div data-role="page" data-theme="a" id="profile">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a> <strong id="nickNameInProfile"></strong></div>
-			    <div class="ui-block-b">	</div>
+			    <div class="ui-block-a">
+			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
+			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
+		    		</a> 		    		
+	    		</div>
+			    <div class="ui-block-b">	<h2 id="nickNameInProfile"></h2> </div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-d"></div>
 			    <div class="ui-block-e"></div>
+			    <div class="ui-block-e"></div>
 			  </div>
-			</div><!-- /header -->
-
-			<div data-role="content" data-theme="a">							
-				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" name="image" id="imageProfile" class="picedit_box">	
-			    	</ul>				    
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
-						<div data-role="fieldcontain">
-	                         <label for="profileNameField">my nick Name:</label>
-	                         <input id="profileNameField" type="text" name="profileNameField" value="">
-						</div>						
-					</ul>
-				</form>  
+			</div><!-- /header --> 	
+			<div data-role="content" data-theme="a">			
+				<div id="picEditDiv">
+					<form action="" method="post" enctype="multipart/form-data" id="xid" >	
+						<input type="file" accept="image/*;capture=camera" name="image" id="imageProfile" class="picedit_box">
+					</form>
+				</div>			    
+				<div data-role="fieldcontain">
+					 <label for="profileNameField">my nick Name:</label>
+					 <input id="profileNameField" type="text" name="profileNameField" value="">
+				</div>  
 			</div><!-- /content -->
 		</div><!-- /page profile-->
 		
 		<div data-role="page" data-cache="false" id="map-page" data-url="map-page">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d" >
-			    <div class="ui-block-a"><a href="#mypanel-map-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/list_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
+			    <div class="ui-block-a">
+			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
+			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
+		    		</a> 
+	    		</div>
 			    <div class="ui-block-b"></div>
 			    <div class="ui-block-c"></div>
 			    <div class="ui-block-e"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-			    <div class="ui-block-e"><a id="mapButtonInmap-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
 			  </div>
 			</div><!-- /header -->
 			
@@ -530,13 +489,9 @@
 		<script src="js/jquery-1.10.2.min.js"></script>
 		<script src="js/jquery.mobile-1.4.2.min.js"></script>
 		<script src="js/socket.io-1.0.6.js"></script> 
-		<script src="js/picedit.min.js"></script>
-		<script src="js/IndexedDBShim.js"></script>
-		 
-		<!--<script src="js/leaflet.js"></script> -->
-
-	     <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
-	    		    
+		<script src="js/picedit.js"></script>	
+	    <script src="js/leaflet.js"></script>	    
+	    <script src="js/IndexedDBShim.js"></script>	    		    
 		<script src="js/index.js"></script>
 		<script src="js/md5.js"></script>         
 

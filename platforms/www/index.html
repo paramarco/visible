@@ -125,7 +125,7 @@
 										
 				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
+						<input type="file" accept="image/*;capture=camera" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
 			    	</ul>				    
 					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
 						<div data-role="fieldcontain">
@@ -217,7 +217,7 @@
 			<div data-role="content" data-theme="a">			
 				<div id="picEditDiv">
 					<form action="" method="post" enctype="multipart/form-data" id="xid" >	
-						<input type="file" name="image" id="imageProfile" class="picedit_box">
+						<input type="file" accept="image/*;capture=camera" name="image" id="imageProfile" class="picedit_box">
 					</form>
 				</div>			    
 				<div data-role="fieldcontain">
@@ -485,12 +485,9 @@
 		<script src="js/jquery-1.10.2.min.js"></script>
 		<script src="js/jquery.mobile-1.4.2.min.js"></script>
 		<script src="js/socket.io-1.0.6.js"></script> 
-		<script src="js/picedit.js"></script> 
-	
-	    <script src="js/leaflet.js"></script>
-	    
-	    <script src="js/IndexedDBShim.js"></script>
-	    		    
+		<script src="js/picedit.js"></script>	
+	    <script src="js/leaflet.js"></script>	    
+	    <script src="js/IndexedDBShim.js"></script>	    		    
 		<script src="js/index.js"></script>
 		<script src="js/md5.js"></script>         
 

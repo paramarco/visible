@@ -277,8 +277,6 @@ GUI.prototype.loadContactsOnMapPage = function() {
      		listOfContacts.push(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
          	cursor.continue(); 
-     	}else{
-     	    //mainPageReady.resolve();
      	}
 	};	
 };
@@ -390,7 +388,6 @@ function loadMyConfig(){
 	db.transaction(["myConfig"], "readonly").objectStore("myConfig").openCursor(singleKeyRange).onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) {
-     		console.log('DEBUG ::: loadMyConfig ::: init !!' );
  
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
@@ -595,14 +592,9 @@ function modifyContactOnDB (contact) {
 
 
 
-//TODO to replicate in android
 function setNewContacts (data) {			
 	data.map(function(c){
 		
-//		var contactExist = listOfContacts.some(function (elem) {
-//			return elem.publicClientID == c.publicClientID;
-//		});
-
 		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
 				
 		//request an update of the last photo of this Contact
@@ -669,7 +661,6 @@ function connect_socket (mytoken) {
 	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenEncripted	});
 	
 	socket.on('connect', function () {	
-		console.log("DEBUG ::: SOCKET.connect :::  ");	
 		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
 	});
 
@@ -762,12 +753,8 @@ function connect_socket (mytoken) {
 	   
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
-	//TODO check new parameter Date of last profileUpdate  
-	socket.on("RequestForImage", function(requestParameters) {		
 
-		console.log ("DEBUG ::: RequestForImage  :: app.lastProfileUpdate: " + app.lastProfileUpdate);
-		console.log ("DEBUG ::: RequestForImage  :: requestParameters.lastProfileUpdate: " + requestParameters.lastProfileUpdate);
-		
+	socket.on("RequestForImage", function(requestParameters) {	
 		
 		if ( requestParameters.lastProfileUpdate == null || requestParameters.lastProfileUpdate <  app.lastProfileUpdate ){		
 			var imageResponseObject = {	
@@ -776,10 +763,9 @@ function connect_socket (mytoken) {
 					img : app.myPhotoPath,
 					nickName: app.myCurrentNick,
 					commentary : "I'm super visible!!"	
-				};
-				
+				};				
 			socket.emit("imageResponse",imageResponseObject	);
-		}		
+		}	
 			   
 	});//END RequestForImage	
 	
@@ -847,9 +833,6 @@ var positionLoaded  = new $.Deferred();
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
 
-	$.mobile.loading( "hide" );
-	$("body").pagecontainer("change", "#MainPage");
-	
 	$.post('http://127.0.0.1:8080/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
 			connect_socket(app.myArrayOfTokens[result.index]);  
@@ -858,6 +841,10 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 			//TODO launch periodic task to try to reconnect
 			console.log ("DEBUG ::: https://217.127.199.47:8090/login :: trying to reconnect" );
 		});
+	
+	$.mobile.loading( "hide" );
+	$("body").pagecontainer("change", "#MainPage");
+	
 });
 
 $(document).ready(function() {	
@@ -994,8 +981,7 @@ $(document).on("click","#chat-multimedia-button",function() {
 			gui.insertMessageInConversation(message2send);
 					
 			$("#popupDivMultimedia").remove();
-			$.mobile.silentScroll($(document).height()); 
-
+			$.mobile.silentScroll($(document).height());
 			
 			//sends message	
 			if (typeof socket != "undefined" && socket.connected == true){
@@ -1004,9 +990,7 @@ $(document).on("click","#chat-multimedia-button",function() {
 				}catch (e){
 					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
 				}		
-			}
-			
-			
+			}			
  		}// END imageUpdated
  	});// END picEdit construct
 	

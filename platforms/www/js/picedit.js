@@ -75,7 +75,7 @@
                     this._fileinput = $(this.inputelement);
                 else {
                     // Create a reference to the file input box
-                    $(this.inputelement).after('<input type="file" style="display:none" accept="image/*">');
+                    $(this.inputelement).after('<input type="file" style="display:none" accept="image/*;capture=camera">');
 				    this._fileinput = $(this.inputelement).next("input");
                 }
                 // Show regular file upload on old browsers
@@ -343,9 +343,13 @@
 		// Open video element and start capturing live video from camera to later make a photo
 		camera_open: function() {
 			var getUserMedia;
-			var browserUserMedia = navigator.webkitGetUserMedia	||	// WebKit
-									 navigator.mozGetUserMedia	||	// Mozilla FireFox
-									 navigator.getUserMedia;			// 2013...
+//			var browserUserMedia = navigator.webkitGetUserMedia	||	// WebKit
+//									 navigator.mozGetUserMedia	||	// Mozilla FireFox
+//									 navigator.getUserMedia;			// 2013...
+			var browserUserMedia = 	(	navigator.getUserMedia ||
+					                   	navigator.webkitGetUserMedia ||
+					                    navigator.mozGetUserMedia ||
+					                    navigator.msGetUserMedia	);
 			if (!browserUserMedia) return this.set_messagebox("Sorry, your browser doesn't support WebRTC!");
 			var _this = this;
 			getUserMedia = browserUserMedia.bind(navigator);
