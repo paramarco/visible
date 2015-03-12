@@ -356,12 +356,10 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var listOfMessages = mailBox.getAllMessagesOf(contact.publicClientID, olderDate, newerDate);
 	
 	listOfMessages.done(function(list){
-		var html2insert ="";
+		$("body").pagecontainer("change", "#chat-page");
 		list.map(function(message){			
 			gui.insertMessageInConversation(message);
-		});
-	
-		$("body").pagecontainer("change", "#chat-page");				
+		});	
 	}); 
 	
 	//request an update of the last photo of this Contact
@@ -382,7 +380,6 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 };
 
 
-
 function loadMyConfig(){
 	
 	var singleKeyRange = IDBKeyRange.only(0);  
@@ -396,35 +393,32 @@ function loadMyConfig(){
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
 			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
-	
+			
 			$('#imageProfile').picEdit({
-	     		//defaultImage: app.myPhotoPath,
-	     		imageUpdated: function(img){
-	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
-					    function(result) {
-			   				app.myPhotoPath = result;
-	   				app.lastProfileUpdate = new Date().getTime();
-			   		//update internal DB
-	     			var transaction = db.transaction(["myConfig"],"readwrite");	
-	     			var store = transaction.objectStore("myConfig");
-	     			
-     				var request = store.put({
-     					index : 0,	
-         				publicClientID : app.publicClientID , 
-         				myCurrentNick : app.myCurrentNick, 
-         				myPhotoPath : app.myPhotoPath , 
-         				myArrayOfTokens : app.myArrayOfTokens ,
-         				lastProfileUpdate : new Date().getTime()
-         			}); 			
-			     						   				
-			   			}, function(error) {
-			      			console.log('DEBUG ::: loadMyConfig ::: canvas2ImagePlugin ::: fail ' + error);
-			   			},
-			   			img.src
-				    );
-	     			//app.myPhotoPath = img.src;	     				
-	     		}
-	     	});
+				targetedDiv : "#imageProfile",
+	     		nameOfevent2trigger: "myCustomEventImageProfile",
+	     		defaultImage: app.myPhotoPath,
+	     		imageUpdated: function(){}
+	     	}); 
+	
+			$("#imageProfile").on( "myCustomEventImageProfile", {}, function( event, img) {
+			    app.lastProfileUpdate = new Date().getTime();
+   				app.myPhotoPath = img;
+		   		//update internal DB
+     			var transaction = db.transaction(["myConfig"],"readwrite");	
+     			var store = transaction.objectStore("myConfig");
+     			
+ 				var request = store.put({
+ 					index : 0,	
+     				publicClientID : app.publicClientID , 
+     				myCurrentNick : app.myCurrentNick, 
+     				myPhotoPath : app.myPhotoPath , 
+     				myArrayOfTokens : app.myArrayOfTokens ,
+     				lastProfileUpdate : new Date().getTime()
+     			});	     				
+			});
+
+    	
 			
 			//	trigger configuration as already loaded     		
 			configLoaded.resolve();  
@@ -432,19 +426,17 @@ function loadMyConfig(){
      	}else{
      		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-			
-	     	$('#imageOnVisibleFirstTime').picEdit({
-	     		imageUpdated: function(img){
-	     			window.canvas2ImagePlugin.saveImageDataToLibrary(
-					    function(result) {
-			   				app.myPhotoPath = result;			   				
-			   			}, function(error) {
-			      			console.log('DEBUG ::: receivedEvent ::: fail ' + error);
-			   			},
-			   			img.src
-				    );	     			
-	     		}
-	     	});  	
+     	    
+     	    $('#imageOnVisibleFirstTime').picEdit({
+     	    	targetedDiv : "#imageOnVisibleFirstTime",
+	     		nameOfevent2trigger: "myCustomEventImageOnVisibleFirstTime",
+	     		defaultImage: false,
+	     		imageUpdated: function(){}
+	     	}); 
+	     	
+	     	$("#imageOnVisibleFirstTime").on( "myCustomEventImageOnVisibleFirstTime", {}, function( event, img) {
+   				app.myPhotoPath = img;
+			});
      	         	    
 	     	$("#link2profileFromMyPanel").remove();
      	   	$.mobile.loading( "hide" ); 
@@ -1036,41 +1028,42 @@ $(document).on("click","#chat-multimedia-button",function() {
 	$("#chat-page-content").trigger("create");
 	
 	$('#picPopupDivMultimedia').picEdit({
- 		imageUpdated: function(img){ 
- 			console.log('DEBUG ::: picPopupDivMultimedia ::: ');
-				 			
-			var message2send = new Message(	{ 	
-				to : app.currentChatWith, 
-				from : app.publicClientID , 
-				messageBody : { messageType : "multimedia", src : img.src }
-			});
-			message2send.setACKfromServer(false);
-			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith); 
-		
-			//stores to DB
-			mailBox.storeMessage(message2send); 
-			
-			//print message on the GUI
-			gui.insertMessageInConversation(message2send);
-					
-			$("#popupDivMultimedia").remove();
-			$.mobile.silentScroll($(document).height());
-			
-			//sends message	
-			if (typeof socket != "undefined" && socket.connected == true){
-				try{
-					socket.emit('messagetoserver', message2send);
-				}catch (e){
-					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
-				}		
-			}			
- 		}// END imageUpdated
+		targetedDiv : "#picPopupDivMultimedia",
+	    nameOfevent2trigger: "myCustomEventpicPopupDivMultimedia",
+		defaultImage: false,
+ 		imageUpdated: function(){ }
  	});// END picEdit construct
 	
-		
-	$("#popupDivMultimedia").popup("open");
+	$("#popupDivMultimedia").on( "myCustomEventpicPopupDivMultimedia", {}, function( event, img) {
 	
+		var message2send = new Message(	{ 	
+			to : app.currentChatWith, 
+			from : app.publicClientID , 
+			messageBody : { messageType : "multimedia", src : img }
+		});
+		message2send.setACKfromServer(false);
+		message2send.setACKfromServer(false);
+		message2send.setChatWith(app.currentChatWith); 
+	
+		//stores to DB
+		mailBox.storeMessage(message2send); 
+		
+		//print message on the GUI
+		gui.insertMessageInConversation(message2send);
+				
+		$("#popupDivMultimedia").remove();
+		$.mobile.silentScroll($(document).height());
+		
+		//sends message	
+		if (typeof socket != "undefined" && socket.connected == true){
+			try{
+				socket.emit('messagetoserver', message2send);
+			}catch (e){
+				console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
+			}		
+		}	
+	});
+	$("#popupDivMultimedia").popup("open");	
 	
 });
 
@@ -1124,3 +1117,5 @@ $("#profileNameField").on("input", function() {
   	$("#nickNameInProfile").text(app.myCurrentNick);
   	app.lastProfileUpdate = new Date().getTime();
 });
+
+

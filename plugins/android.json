@@ -83,6 +83,10 @@
                         {
                             "xml": "<feature name=\"NetworkStatus\"><param name=\"android-package\" value=\"org.apache.cordova.networkinformation.NetworkManager\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"Camera\"><param name=\"android-package\" value=\"org.apache.cordova.camera.CameraLauncher\" /></feature>",
+                            "count": 1
                         }
                     ]
                 }
@@ -121,6 +125,9 @@
             "PACKAGE_NAME": "com.instaltic.visible"
         },
         "org.apache.cordova.network-information": {
+            "PACKAGE_NAME": "com.instaltic.visible"
+        },
+        "org.apache.cordova.camera": {
             "PACKAGE_NAME": "com.instaltic.visible"
         }
     },

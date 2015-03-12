@@ -23,11 +23,13 @@
         defaults = {
 			imageUpdated: function(img){},	// Image updated callback function
 			formSubmitted: function(res){},	// After form was submitted callback function
+			nameOfevent2trigger: function(){},
+			targetedDiv : function(){},
 			redirectUrl: false,				// Page url for redirect on form submit
 			maxWidth: 400,					// Max width parameter
 			maxHeight: 'auto',				// Max height parameter
 			aspectRatio: true,				// Preserve aspect ratio
-            defaultImage: false             // Default image to be used with the plugin
+            defaultImage: true             // Default image to be used with the plugin
         };
 
     // The actual plugin constructor
@@ -147,7 +149,8 @@
 				});
 				// Bind onchange event to the fileinput to pre-process the image selected
 				$(this._fileinput).on("change", function() {
-					build_img_from_file(this.files);
+					//build_img_from_file(this.files);
+					console.log("DEBUG :::  this._fileinput :: onchange trigerred");
 				});
 				// If Firefox (doesn't support clipboard object), create DIV to catch pasted image
 				if (!window.Clipboard) { // Firefox
@@ -165,6 +168,7 @@
 				}
 				// Bind onpaste event to capture images from the the clipboard
 				$(document).on("paste", function(event) {
+
 					var items = (event.clipboardData  || event.originalEvent.clipboardData).items;
 					var blob;
 					if(!items) {
@@ -221,13 +225,13 @@
         },
         // Set the default Image
         set_default_image: function (path) {
-            this._create_image_with_datasrc(path, false, false, true);
+            this._create_image_with_datasrc_without_imageUpdated(path, false, false, true);
         },
 		// Remove all notification copy and hide message box
 		hide_messagebox: function () {
 			var msgbox = this._messagebox;
 			msgbox.removeClass("active no_close_button");
-			setTimeout(function() {msgbox.children("div").html("")}, 200);
+			setTimeout(function() {msgbox.children("div").html("");}, 200);
 		},
 		// Open a loading spinner message box or working... message box
 		set_loading: function (message) {
@@ -272,7 +276,29 @@
 		},
 		// Perform image load when user clicks on image button
 		load_image: function () {
-			this._fileinput.click();
+			//this._fileinput.click();
+			var _this = this;
+			var cameraOptions = { 
+				quality : 75,
+				destinationType : navigator.camera.DestinationType.FILE_URI,
+				sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY,
+				allowEdit : true,
+				encodingType: navigator.camera.EncodingType.JPEG,
+				targetWidth: 300,
+				targetHeight: 300,
+				saveToPhotoAlbum: true
+			};
+			navigator.camera.getPicture(	
+				function (datasrc){ 
+					//_this._videobox.addClass("active");
+					_this._create_image_with_datasrc_without_imageUpdated(datasrc, false, false , true);
+					//_this._videobox.removeClass("active");
+				}, 
+				function(message){
+					console.log('Captured Failed because: ' + message); 
+				},
+				cameraOptions
+		    );
 		},
 		// Open pen tool and start drawing
 		pen_tool_open: function () {
@@ -325,6 +351,7 @@
 		},
 		// Resize the image
 		resize_image: function () {
+
 			if(!this._image) return this._hideAllNav(1);
 			var _this = this;
 			this.set_loading(1).delay(200).promise().done(function() {
@@ -342,53 +369,39 @@
 		},
 		// Open video element and start capturing live video from camera to later make a photo
 		camera_open: function() {
-			var getUserMedia;
-			var browserUserMedia = navigator.webkitGetUserMedia	||	// WebKit
-									 navigator.mozGetUserMedia	||	// Mozilla FireFox
-									 navigator.getUserMedia;			// 2013...
-			if (!browserUserMedia) return this.set_messagebox("Sorry, your browser doesn't support WebRTC!");
 			var _this = this;
-			getUserMedia = browserUserMedia.bind(navigator);
-			getUserMedia({
-					audio: false,
-					video: true
+			var cameraOptions = { 
+				quality : 75,
+				destinationType : navigator.camera.DestinationType.FILE_URI,
+				sourceType : navigator.camera.PictureSourceType.CAMERA,
+				allowEdit : true,
+				encodingType: navigator.camera.EncodingType.JPEG,
+				targetWidth: 450,
+				targetHeight: 450,
+				saveToPhotoAlbum: true
+			};
+			navigator.camera.getPicture(	
+				function (datasrc){ 
+					_this._create_image_with_datasrc_without_imageUpdated(datasrc, false, false , true);
+				}, 
+				function(message){
+					console.log('Captured Failed because: ' + message); 
 				},
-				function(stream) {
-					var videoElement = _this._videobox.find("video")[0];
-					videoElement.src = URL.createObjectURL(stream);
-					//resize viewport
-					videoElement.onloadedmetadata = function() {
-						if(videoElement.videoWidth && videoElement.videoHeight) {
-							if(!_this._image) _this._image = {};
-							_this._image.width = videoElement.videoWidth;
-							_this._image.height = videoElement.videoHeight;
-							_this._resizeViewport();
-						}
-					};
-					_this._videobox.addClass("active");
-				},
-				function(err) {
-					return _this.set_messagebox("No video source detected! Please allow camera access!");
-				}
-			);
+				cameraOptions
+		    );
+			
+			//this._videobox.addClass("active");
+			
 		},
 		camera_close: function() {
-			this._videobox.removeClass("active");
+			//this._videobox.removeClass("active");
 		},
 		take_photo: function() {
-			var _this = this;
-			var live = this._videobox.find("video")[0];
-			var canvas = document.createElement('canvas');
-			var ctx = canvas.getContext("2d");
-			canvas.width = live.clientWidth;
-			canvas.height = live.clientHeight;
-			ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
-			this._create_image_with_datasrc(canvas.toDataURL("image/png"), function() {
-				_this._videobox.removeClass("active");
-			});
+
 		},
 		// Crop the image
 		crop_image: function() {
+
 			var crop = this._calculateCropWindow();
 			var _this = this;
 			this.set_loading(1).delay(200).promise().done(function() {
@@ -433,6 +446,33 @@
 				_this.options.imageUpdated(_this._image);
 				_this._mainbuttons.removeClass("active");
 				if(callback && typeof(callback) == "function") callback();
+			};
+		},
+		// Create and update image from datasrc
+		_create_image_with_datasrc_without_imageUpdated: function(datasrc, callback, file, dataurl) {
+			var _this = this;
+			var img = document.createElement("img");
+            if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
+			if(file) img.file = file;
+			img.src = datasrc;
+			img.onload = function() {
+				if(dataurl) {
+                    var canvas = document.createElement('canvas');
+                    var ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    img.src = canvas.toDataURL('image/png');
+                }
+                _this._image = img;
+				_this._resizeViewport();
+				_this._paintCanvas();
+				//_this.options.imageUpdated(_this._image);
+				_this._mainbuttons.removeClass("active");
+				//if(callback && typeof(callback) == "function") callback();
+				console.log("DEBUG ::: value of _this.options.targetedDiv : " + _this.options.targetedDiv);
+				console.log("DEBUG ::: value of _this.options.nameOfevent2trigger : " + _this.options.nameOfevent2trigger);
+				$(_this.options.targetedDiv).trigger( _this.options.nameOfevent2trigger, img.src );
 			};
 		},
 		// Functions to controll cropping functionality (drag & resize cropping box)
@@ -509,6 +549,7 @@
 			this._variables.prev_pos = pos;
 		},
 		_painter_merge_drawing: function() {
+
 			var canvas = document.createElement('canvas');
 			var ctx = canvas.getContext("2d");
 			var _this = this;
@@ -733,6 +774,8 @@
 		},
 		// Prepare the template here
 		_template: function() {
+			console.log("DEBUG ::: pasa por _template  ");
+
 			var template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div><\/div><\/div><div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"><\/div><div class="picedit_nav_elements"><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-pencil" title="Pen Tool"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_3"> <label class="picedit_colors"> <span title="Black" class="picedit_control picedit_action picedit_black active" data-action="toggle_button" data-variable="pen_color" data-value="black"></span> <span title="Red" class="picedit_control picedit_action picedit_red" data-action="toggle_button" data-variable="pen_color" data-value="red"></span> <span title="Green" class="picedit_control picedit_action picedit_green" data-action="toggle_button" data-variable="pen_color" data-value="green"></span> </label> <label> <span class="picedit_separator"></span> </label> <label class="picedit_sizes"> <span title="Large" class="picedit_control picedit_action picedit_large" data-action="toggle_button" data-variable="pen_size" data-value="16"></span> <span title="Medium" class="picedit_control picedit_action picedit_medium" data-action="toggle_button" data-variable="pen_size" data-value="8"></span> <span title="Small" class="picedit_control picedit_action picedit_small" data-action="toggle_button" data-variable="pen_size" data-value="3"></span> </label> <\/div><\/div><\/div><div class="picedit_element"><span class="picedit_control picedit_action ico-picedit-insertpicture" title="Crop" data-action="crop_open"></span> <\/div><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-redo" title="Rotate"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_1"> <label> <span>90° CW</span> <span class="picedit_control picedit_action ico-picedit-redo" data-action="rotate_cw"></span> </label> <label> <span>90° CCW</span> <span class="picedit_control picedit_action ico-picedit-undo" data-action="rotate_ccw"></span> </label> <\/div><\/div><\/div><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-arrow-maximise" title="Resize"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_2"> <label><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="resize_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action=""></span> </label> <label> <span>Width (px)</span> <input type="text" class="picedit_input" data-variable="resize_width" value="0"> </label> <label class="picedit_nomargin"> <span class="picedit_control ico-picedit-link" data-action="toggle_button" data-variable="resize_proportions"></span> </label> <label> <span>Height (px)</span> <input type="text" class="picedit_input" data-variable="resize_height" value="0"> </label> <\/div><\/div><\/div></div></div><div class="picedit_canvas_box"><div class="picedit_painter"><canvas></canvas></div><div class="picedit_canvas"><canvas></canvas></div><div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"><\/div><div class="picedit_control ico-picedit-camera" data-action="camera_open"><\/div><div class="center">or copy/paste image here</div></div></div><div class="picedit_video"> <video autoplay></video><div class="picedit_video_controls"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div><div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div><div class="picedit_drag_resize_box"><div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div></div><div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div></div>';
 			var _this = this;
 			$(this.inputelement).hide().after(template).each(function() {
