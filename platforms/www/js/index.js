@@ -231,11 +231,11 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		}		
 	}
 	
-	var timeStampOfMessage = new Date().setTime(message.timeStamp).toLocaleString();
+	var timeStampOfMessage = new Date(message.timeStamp);
 	
 	var html2insert = 	
 	'<div class="activity">'+
-	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ timeStampOfMessage + '</span>'+
+	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ timeStampOfMessage.toLocaleString() + '</span>'+
 	'	<div class="readable">'+
 	'		<span class="user">    '+ authorOfMessage   +'  </span>'+
 	'		<span class="content">    '+ htmlOfContent +'  </span>'+
@@ -327,7 +327,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
 	
 	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
-						'	<a onclick="gui.go2ChatWith(event,\'' + contact.publicClientID + '\');">  '+
+						'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 						'	<h2>'+ contact.nickName   + '</h2> '+
 						'	<p>' + contact.commentary + '</p></a>'+
@@ -364,12 +364,11 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 	
 };
 //TODO fix that race condition
-GUI.prototype.go2ChatWith = function(e,publicClientID) {
-	event.stopImmediatePropagation();	
-    $("body").pagecontainer("change", "#chat-page");
-    e.stopPropagation();
-    e.preventDefault();
+GUI.prototype.go2ChatWith = function(publicClientID) {
+	
+	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
 	app.currentChatWith = publicClientID;
+    $("body").pagecontainer("change", "#chat-page");
 				
 
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
@@ -393,7 +392,9 @@ GUI.prototype.go2ChatWith = function(e,publicClientID) {
 		}catch (e){
 			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
 		}		
-	}	
+	}
+	
+	
 	
 };
 
@@ -902,27 +903,22 @@ $(document).ready(function() {
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
-	$.mobile.silentScroll($(document).height());
-	
+	$.mobile.silentScroll($(document).height());	
+	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");				
 });
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 	$("#nickNameInProfile").html(app.myCurrentNick);
-
 });
 
 $("body").on('pagecontainertransition', function( event, ui ) {
     if (ui.options.target == "#MainPage"){
-
 		$("#chat-page-content").empty();
 		app.currentChatWith = null;
     }    
-    if (ui.options.target == "#map-page"){
-				
+    if (ui.options.target == "#map-page"){				
 		loadMaps();
-		//gui.loadContactsOnMapPage();
-		 
+		//gui.loadContactsOnMapPage();		 
     }
-
 });
 
 $(document).on("click","#arrowBackInChatPage",function() {
