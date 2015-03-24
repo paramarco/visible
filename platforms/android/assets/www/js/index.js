@@ -20,7 +20,7 @@ function Message(input) {
 	this.md5sum = "" ;
 	this.size = 0 ;
 	this.path2Attachment = null;
-	this.timeStamp = new Date();
+	this.timeStamp = new Date().getTime();
 	this.markedAsRead = false; 
 	this.chatWith = null;
 	this.ACKfromServer = false;
@@ -231,9 +231,11 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		}		
 	}
 	
+	var timeStampOfMessage = new Date(message.timeStamp);
+	
 	var html2insert = 	
 	'<div class="activity">'+
-	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ message.timeStamp.toLocaleString() + '</span>'+
+	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ timeStampOfMessage.toLocaleString() + '</span>'+
 	'	<div class="readable">'+
 	'		<span class="user">    '+ authorOfMessage   +'  </span>'+
 	'		<span class="content">    '+ htmlOfContent +'  </span>'+
@@ -325,7 +327,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
 	
 	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
-						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+						'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
 						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 						'	<h2>'+ contact.nickName   + '</h2> '+
 						'	<p>' + contact.commentary + '</p></a>'+
@@ -343,27 +345,42 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 
 };
 
+GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
+	
+	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
+		console.log("DEBUG ::: getAllMessagesOf :: insed if :: olderDate, newerDate : " + olderDate + " " + newerDate  + " num. sms: " + listOfMessages.length );
+		
+		//stop when there is more than 20 SMS in the list and searching for newer than 2015
+		if (listOfMessages.length > 20 || olderDate < 1420070401000 ){			
+			listOfMessages.map(function(message){			
+				gui.insertMessageInConversation(message);
+			});
+		}else {			
+			olderDate = olderDate - 2628000000;
+			newerDate = newerDate - 2628000000;
+			gui.printMessagesOf(publicClientID, olderDate, newerDate, listOfMessages.concat(list));
+		}
+	});
+	
+};
+//TODO fix that race condition
 GUI.prototype.go2ChatWith = function(publicClientID) {
 	
+	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
 	app.currentChatWith = publicClientID;
-	
+    $("body").pagecontainer("change", "#chat-page");
+				
+
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
-	var newerDate = new Date();
-	var olderDate = new Date(newerDate.getDate() - 30);
+	// 2592000000 is a month in miliseconds
+	var newerDate = new Date().getTime();	
+	var olderDate = new Date(newerDate - 2592000000).getTime();
 	
-	var listOfMessages = mailBox.getAllMessagesOf(contact.publicClientID, olderDate, newerDate);
-	
-	listOfMessages.done(function(list){
-		$("body").pagecontainer("change", "#chat-page");
-		list.map(function(message){			
-			gui.insertMessageInConversation(message);
-		});	
-	}); 
+	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
 	//request an update of the last photo of this Contact
-	
 	if (typeof socket != "undefined" && socket.connected == true){
 		try {
 			var ImageRetrievalObject = {	
@@ -375,10 +392,11 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		}catch (e){
 			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
 		}		
-	}	
+	}
+	
+	
 	
 };
-
 
 function loadMyConfig(){
 	
@@ -393,32 +411,30 @@ function loadMyConfig(){
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
 			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
-			
+	
 			$('#imageProfile').picEdit({
 				targetedDiv : "#imageProfile",
 	     		nameOfevent2trigger: "myCustomEventImageProfile",
 	     		defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(){}
 	     	}); 
-	
+	     			
 			$("#imageProfile").on( "myCustomEventImageProfile", {}, function( event, img) {
-			    app.lastProfileUpdate = new Date().getTime();
+	   				app.lastProfileUpdate = new Date().getTime();
    				app.myPhotoPath = img;
-		   		//update internal DB
-     			var transaction = db.transaction(["myConfig"],"readwrite");	
-     			var store = transaction.objectStore("myConfig");
-     			
- 				var request = store.put({
- 					index : 0,	
-     				publicClientID : app.publicClientID , 
-     				myCurrentNick : app.myCurrentNick, 
-     				myPhotoPath : app.myPhotoPath , 
-     				myArrayOfTokens : app.myArrayOfTokens ,
-     				lastProfileUpdate : new Date().getTime()
-     			});	     				
-			});
-
-    	
+			   		//update internal DB
+	     			var transaction = db.transaction(["myConfig"],"readwrite");	
+	     			var store = transaction.objectStore("myConfig");
+	     			
+     				var request = store.put({
+     					index : 0,	
+         				publicClientID : app.publicClientID , 
+         				myCurrentNick : app.myCurrentNick, 
+         				myPhotoPath : app.myPhotoPath , 
+         				myArrayOfTokens : app.myArrayOfTokens ,
+         				lastProfileUpdate : new Date().getTime()
+         			}); 			
+	     	});
 			
 			//	trigger configuration as already loaded     		
 			configLoaded.resolve();  
@@ -426,8 +442,8 @@ function loadMyConfig(){
      	}else{
      		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
-     	    
-     	    $('#imageOnVisibleFirstTime').picEdit({
+			
+	     	$('#imageOnVisibleFirstTime').picEdit({
      	    	targetedDiv : "#imageOnVisibleFirstTime",
 	     		nameOfevent2trigger: "myCustomEventImageOnVisibleFirstTime",
 	     		defaultImage: false,
@@ -436,7 +452,7 @@ function loadMyConfig(){
 	     	
 	     	$("#imageOnVisibleFirstTime").on( "myCustomEventImageOnVisibleFirstTime", {}, function( event, img) {
    				app.myPhotoPath = img;
-			});
+	     	});  	
      	         	    
 	     	$("#link2profileFromMyPanel").remove();
      	   	$.mobile.loading( "hide" ); 
@@ -450,14 +466,14 @@ function loadMyConfig(){
 
 function init() {
 	
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.3",3);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.4",4);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 
 		var thisDB = event.target.result;
 		if(!thisDB.objectStoreNames.contains("messagesV2")){
 			var objectStore = thisDB.createObjectStore("messagesV2", { keyPath: "msgID" });
-			objectStore.createIndex("chatWith",["chatWith","timeStamp"],{unique:false});
+			objectStore.createIndex("timeStamp","timeStamp",{unique:false});
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
@@ -502,22 +518,22 @@ MailBox.prototype.updateMessage = function(message2update) {
  		
 };
 
+
 MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 
-	var lowerBound = [ from, olderDate ];
-	var upperBound = [ from, newerDate ];
-	var range = IDBKeyRange.bound(lowerBound,upperBound);
-		
+	var range = IDBKeyRange.bound(olderDate,newerDate);		
 	var deferred = $.Deferred();
 	var listOfMessages = [];
 	
-	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("chatWith").openCursor(range).onsuccess = function(e) {		
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("timeStamp").openCursor(range).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
-        	listOfMessages.push(cursor.value);
+     		if (cursor.value.chatWith == from ){
+     			listOfMessages.push(cursor.value);	
+     		}        	
          	cursor.continue(); 
-     	}else{
-     		deferred.resolve(listOfMessages);
+     	}else{			
+     		deferred.resolve(listOfMessages);     			
      	}
 	};
 	
@@ -947,32 +963,29 @@ $(document).ready(function() {
     } else {
     	app.myPosition = { coords : { latitude : "48.098" , longitude : "11.540"  } };
         positionLoaded.resolve();
-    }		  
+    }
+	
+	FastClick.attach(document.body);
 	
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
-	$.mobile.silentScroll($(document).height());
-	
+	$.mobile.silentScroll($(document).height());	
+	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");				
 });
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 	$("#nickNameInProfile").html(app.myCurrentNick);
-
 });
 
 $("body").on('pagecontainertransition', function( event, ui ) {
     if (ui.options.target == "#MainPage"){
-
 		$("#chat-page-content").empty();
 		app.currentChatWith = null;
     }    
-    if (ui.options.target == "#map-page"){
-				
+    if (ui.options.target == "#map-page"){				
 		loadMaps();
-		//gui.loadContactsOnMapPage();
-		 
+		//gui.loadContactsOnMapPage();		 
     }
-
 });
 
 $(document).on("click","#arrowBackInChatPage",function() {
@@ -1035,35 +1048,36 @@ $(document).on("click","#chat-multimedia-button",function() {
  	});// END picEdit construct
 	
 	$("#popupDivMultimedia").on( "myCustomEventpicPopupDivMultimedia", {}, function( event, img) {
-	
-		var message2send = new Message(	{ 	
-			to : app.currentChatWith, 
-			from : app.publicClientID , 
+				 			
+			var message2send = new Message(	{ 	
+				to : app.currentChatWith, 
+				from : app.publicClientID , 
 			messageBody : { messageType : "multimedia", src : img }
-		});
-		message2send.setACKfromServer(false);
-		message2send.setACKfromServer(false);
-		message2send.setChatWith(app.currentChatWith); 
-	
-		//stores to DB
-		mailBox.storeMessage(message2send); 
+			});
+			message2send.setACKfromServer(false);
+			message2send.setACKfromServer(false);
+			message2send.setChatWith(app.currentChatWith); 
 		
-		//print message on the GUI
-		gui.insertMessageInConversation(message2send);
-				
-		$("#popupDivMultimedia").remove();
-		$.mobile.silentScroll($(document).height());
-		
-		//sends message	
-		if (typeof socket != "undefined" && socket.connected == true){
-			try{
-				socket.emit('messagetoserver', message2send);
-			}catch (e){
-				console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
-			}		
-		}	
+			//stores to DB
+			mailBox.storeMessage(message2send); 
+			
+			//print message on the GUI
+			gui.insertMessageInConversation(message2send);
+					
+			$("#popupDivMultimedia").remove();
+			$.mobile.silentScroll($(document).height());
+			
+			//sends message	
+			if (typeof socket != "undefined" && socket.connected == true){
+				try{
+					socket.emit('messagetoserver', message2send);
+				}catch (e){
+					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
+				}		
+			}			
 	});
-	$("#popupDivMultimedia").popup("open");	
+	$("#popupDivMultimedia").popup("open");
+	
 	
 });
 
@@ -1117,5 +1131,3 @@ $("#profileNameField").on("input", function() {
   	$("#nickNameInProfile").text(app.myCurrentNick);
   	app.lastProfileUpdate = new Date().getTime();
 });
-
-
