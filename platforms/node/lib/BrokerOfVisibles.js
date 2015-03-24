@@ -68,7 +68,7 @@ function BrokerOfVisibles(_io) {
 		try{
 			client = _.find(listOfClients, function(client) {	
 	  		return (	client.publicClientID  == joinServerParameters.publicClientID &&
-	  				 	client.myArrayOfTokens[client.indexOfCurrentToken] == joinServerParameters.token);	
+	  					client.currentChallenge == joinServerParameters.token);	
 			});		
 		}
 		catch(e){

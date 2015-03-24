@@ -267,6 +267,7 @@ GUI.prototype.loadContacts = function() {
          	cursor.continue(); 
      	}else{
      	    mainPageReady.resolve();
+     	    console.log("DEBUG ::: loadContacts counter :" + counter);
      	}
 	};	
 };
@@ -466,13 +467,13 @@ function loadMyConfig(){
 
 function init() {
 	
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.4",4);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.7",7);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 
 		var thisDB = event.target.result;
 		if(!thisDB.objectStoreNames.contains("messagesV2")){
-			var objectStore = thisDB.createObjectStore("messagesV2", { keyPath: "msgID" });
+			var objectStore = thisDB.createObjectStore("messagesV2", { keyPath: "timeStamp" });
 			objectStore.createIndex("timeStamp","timeStamp",{unique:false});
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
@@ -525,7 +526,7 @@ MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 	var deferred = $.Deferred();
 	var listOfMessages = [];
 	
-	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("timeStamp").openCursor(range).onsuccess = function(e) {		
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").openCursor(range).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
      		if (cursor.value.chatWith == from ){
@@ -543,14 +544,19 @@ MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 MailBox.prototype.getMessageByID = function(msgID) {
 	var singleKeyRange = IDBKeyRange.only(msgID);  
 	var deferredGetMessageByID = $.Deferred();
-	
-	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").openCursor(singleKeyRange).onsuccess = function(e) {
-		var cursor = e.target.result;
-		var message;
-     	if (cursor) {
-     		message = cursor.value;
+	var message;
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").openCursor(null, "prev").onsuccess = function(e) {
+		var cursor = e.target.result;		
+     	if (cursor){
+     	    if( cursor.value.msgID == msgID ) {
+	     		message = cursor.value;
+	     		deferredGetMessageByID.resolve(message); 
+	     	} else{
+	     		cursor.continue();
+	     	}
+     	}else{
+     		deferredGetMessageByID.resolve(message); 
      	}
-     	deferredGetMessageByID.resolve(message); 
 	};
 	
 	return deferredGetMessageByID.promise();
@@ -683,11 +689,21 @@ function connect_socket (mytoken) {
   	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
   	var tokenEncripted = JSON.stringify(tokenEncripted);
 
-	socket = io.connect('http://217.127.199.47:8080' , { secure: true, query: 'token=' + tokenEncripted	});
+	socket = io.connect('http://217.127.199.47:8080' , { reconnection: false, secure: true, query: 'token=' + tokenEncripted	});
 	
-	socket.on('connect', function () {	
+	socket.on('connect', function () {
+		app.connecting = false;
 		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
 	});
+	
+	socket.on('disconnect', function () {
+		socket.conn.close();
+		console.log("DEBUG ::: socket.on.disconnect ::: ");
+		//socket.disconnect();
+		app.connecting = false;					
+	});
+	
+	
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
   //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
@@ -701,7 +717,9 @@ function connect_socket (mytoken) {
   		// was written in the local DB, weird but it could happen
   		setTimeout(function (){
   			var getAsyncMessageFromDB = mailBox.getMessageByID(deliveryReceipt.msgID);
-  	  		getAsyncMessageFromDB.done(function (message){
+  	  		getAsyncMessageFromDB.done(function (message){  	  		
+  	  			if (typeof message == "undefined") return;
+  	  			
   	  			if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
   	  				message.ACKfromServer = true;
   	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
@@ -742,13 +760,13 @@ function connect_socket (mytoken) {
   		socket.emit("MessageDeliveryACK",messageACK);
   		
   		//double check to avoid saving messages twice...(which should never be received...)
-  		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
-  		
+  		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);  		
   		getAsyncMessageFromDB.done(function (message){
   			if (typeof message == 'undefined' ){ 
   				//in order to index the IndexDB
   				messageFromServer.setChatWith(messageFromServer.from); 	
-  				//stores in IndexDB			
+  				//stores in IndexDB	
+  				console.log("DEBUG ::: socket.on.messageFromServer  ::: messageFromServer" + JSON.stringify(messageFromServer));		
   				mailBox.storeMessage(messageFromServer); 
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
@@ -822,7 +840,6 @@ function connect_socket (mytoken) {
  * *********************************************************************************************
  * *********************************************************************************************/
 
-
 var map;
 var db;
 var socket;
@@ -839,7 +856,7 @@ var app = {
 	publicClientID : null,
 	myPosition : null,
 	lastProfileUpdate : null,
-
+	connecting : false,
 	// Application Constructor
     initialize: function() {
         this.bindEvents();
@@ -872,20 +889,18 @@ var app = {
 
    	},
    	onOnlineCustom: function() {
-   		
-		if (typeof socket == "undefined" || socket.connected == false){
+		//if ((typeof socket == "undefined" || socket.connected == false ) && app.connecting == false){
+		if	(	typeof socket == "undefined"  || (	socket.connected == false && app.connecting == false ) ){
+			app.connecting = true;
 			$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
-			
-			
+				
 				$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
-				.done(function (result) { 
-					console.log ("DEBUG ::: https://217.127.199.47:8090/login :: done" );
-			
-					connect_socket(app.myArrayOfTokens[result.index]);  
+				.done(function (result) {			
+					connect_socket(app.myArrayOfTokens[result.index]);
 				})
 				.fail(function() {
-					//TODO launch periodic task to try to reconnect
 					console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
+					app.connecting = false;  
 				});	
 				
 				$.mobile.loading( "hide" );
@@ -912,7 +927,7 @@ var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
 
 
-$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
+//$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
 
 /*	$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
@@ -923,10 +938,10 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady
 		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
 		});
 	*/
-	$.mobile.loading( "hide" );
-	$("body").pagecontainer("change", "#MainPage");
+//	$.mobile.loading( "hide" );
+//	$("body").pagecontainer("change", "#MainPage");
 	
-});
+//});
 
 $(document).ready(function() {	
 	
@@ -964,8 +979,7 @@ $(document).ready(function() {
     	app.myPosition = { coords : { latitude : "48.098" , longitude : "11.540"  } };
         positionLoaded.resolve();
     }
-	
-	FastClick.attach(document.body);
+	//	FastClick.attach(document.body);
 	
 });//END $(document).ready()
 
@@ -1011,6 +1025,7 @@ $(document).on("click","#chat-input-button",function() {
 	message2send.setChatWith(app.currentChatWith); 
 
 	//stores to DB
+	console.log("DEBUG ::: chat-input-button  ::: messageFromServer" + JSON.stringify(message2send));
 	mailBox.storeMessage(message2send); 
 	
 	//print message on the GUI

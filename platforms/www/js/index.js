@@ -409,7 +409,7 @@ function loadMyConfig(){
 			app.publicClientID = cursor.value.publicClientID;
      		app.myCurrentNick = cursor.value.myCurrentNick;
      		app.myPhotoPath = cursor.value.myPhotoPath; 
-			app.myArrayOfTokens = cursor.value.myArrayOfTokens; 
+			app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
 			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 	
 			$('#imageProfile').picEdit({
@@ -427,7 +427,7 @@ function loadMyConfig(){
          				publicClientID : app.publicClientID , 
          				myCurrentNick : app.myCurrentNick, 
          				myPhotoPath : app.myPhotoPath , 
-         				myArrayOfTokens : app.myArrayOfTokens ,
+         				myArrayOfKeys : app.myArrayOfKeys ,
          				lastProfileUpdate : new Date().getTime()
          			}); 			
 	     		}
@@ -661,8 +661,11 @@ function loadMaps(){
 		
 }
 
-function connect_socket (mytoken) {    
+function connect_socket (result) {    
 
+	var mytoken = result.challenge;
+	var symetricKey2use = app.myArrayOfKeys[result.index];
+	
 	var tokenEncripted = { 	
 		token: mytoken , 
   		publicClientID: app.publicClientID,
@@ -827,7 +830,7 @@ var app = {
     currentChatWith : null,
     myCurrentNick : null,
     myPhotoPath : null,
-    myArrayOfTokens : [],
+    myArrayOfKeys : [],
 	publicClientID : null,
 	myPosition : null,
 	lastProfileUpdate : null
@@ -852,7 +855,7 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 
 	$.post('http://127.0.0.1:8080/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
-			connect_socket(app.myArrayOfTokens[result.index]);  
+			connect_socket(result);  
 		})
 		.fail(function() {
 			//TODO launch periodic task to try to reconnect
@@ -1041,14 +1044,14 @@ $(document).on("click","#firstLoginInputButton",function() {
 				publicClientID : result.publicClientID , 
 				myCurrentNick : myCurrentNick, 
 				myPhotoPath : app.myPhotoPath , 
-				myArrayOfTokens : result.myArrayOfTokens ,
+				myArrayOfKeys : result.myArrayOfKeys ,
 				lastProfileUpdate : new Date().getTime()
 		});
 		
 		//update app object	
 		app.publicClientID = result.publicClientID;
 		app.myCurrentNick = myCurrentNick;
-		app.myArrayOfTokens = result.myArrayOfTokens;
+		app.myArrayOfKeys = result.myArrayOfKeys;
 		app.lastProfileUpdate = new Date().getTime();
 		
 		//trigger configuration as already loaded

@@ -4,6 +4,7 @@ var http = require('http');
 var express = require('express');
 var app = express();
 var cors = require('cors');
+var	uuid = require('node-uuid');
 
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
@@ -34,23 +35,26 @@ var	io 				= require("socket.io").listen(server),
 
 app.post('/login', function (req, res) {
 	var client = brokerOfVisibles.getClientById(req.body.publicClientID);
-    var challenge = Math.floor((Math.random() * 3) + 0);  
+    var indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
+    var token2AnswerEncripted = uuid.v4();
     
 	if (client){		
-		client.indexOfCurrentToken = challenge;
+		client.indexOfCurrentToken = indexOfCurrentKey;
+		client.currentChallenge = token2AnswerEncripted;
 	}else{
 		console.log('DEBUG ::: app.post :: I dont know any publicClientID like this');
 		return;
 	}
 	// challenge forwarding to the Client	
-	res.json({index: challenge});  
+	//var token2AnswerEncripted = signed();
+	res.json({index: indexOfCurrentKey, challenge : token2AnswerEncripted });  
 });
 
 app.post('/firstlogin', function (req, res) {
 	var newClient = brokerOfVisibles.createNewClient();	
 	var response = {
 		publicClientID : newClient.publicClientID , 
-		myArrayOfTokens : newClient.myArrayOfTokens 
+		myArrayOfKeys : newClient.myArrayOfKeys 
 	};
 	
 	res.json( response );  
@@ -146,24 +150,27 @@ postMan.archiveMessage({
 
 io.use(function(socket, next){
  	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
-  	var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters); 	
+	if ( joinServerParameters == null ){ return;}	
 
+  	var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters); 	
+  	console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
   	if (client){  		
-		console.log("DEBUG ::: io.use :::  %j", joinServerParameters );		
-  		next();	
-  		return; 
+		if(client.socketid == null){
+			next();  			
+		}else{
+			console.log('DEBUG ::: io.use ::: Got disconnect in auth..! client already connected');
+		}		  		 
   	}else{
-  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..!');
-  		return;
+  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! I dont know this freaking client');  		
   	}
-  
+  	return;
 });
 
 io.sockets.on("connection", function (socket) {
 
 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
 	if ( joinServerParameters == null ){ return;}	
-	
+
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
 	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
