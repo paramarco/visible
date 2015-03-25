@@ -267,7 +267,6 @@ GUI.prototype.loadContacts = function() {
          	cursor.continue(); 
      	}else{
      	    mainPageReady.resolve();
-     	    console.log("DEBUG ::: loadContacts counter :" + counter);
      	}
 	};	
 };
@@ -688,16 +687,20 @@ function connect_socket (mytoken) {
   	};
   	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
   	var tokenEncripted = JSON.stringify(tokenEncripted);
+	
+	console.log("DEBUG ::: connect_socket " + tokenEncripted);
 
-	socket = io.connect('http://217.127.199.47:8080' , { reconnection: false, secure: true, query: 'token=' + tokenEncripted	});
+	socket = null;
+	socket = io.connect('http://217.127.199.47:8080' , { secure: true, query: 'token=' + tokenEncripted	});
 	
 	socket.on('connect', function () {
+		console.log("DEBUG ::: socket.on.connect !!!!!! ::: ");
+
 		app.connecting = false;
 		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
 	});
 	
 	socket.on('disconnect', function () {
-		socket.conn.close();
 		console.log("DEBUG ::: socket.on.disconnect ::: ");
 		//socket.disconnect();
 		app.connecting = false;					
@@ -890,7 +893,7 @@ var app = {
    	},
    	onOnlineCustom: function() {
 		//if ((typeof socket == "undefined" || socket.connected == false ) && app.connecting == false){
-		if	(	typeof socket == "undefined"  || (	socket.connected == false && app.connecting == false ) ){
+		if	( app.connecting == false &&  typeof socket == "undefined"){
 			app.connecting = true;
 			$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
 				
@@ -907,6 +910,8 @@ var app = {
 				$("body").pagecontainer("change", "#MainPage");		
 						
 			});
+		}else{
+			console.log ("DEBUG ::: onOnlineCustom :: thinks it was app.connecting = true" );
 		}
 	}
 };
@@ -927,7 +932,7 @@ var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
 
 
-//$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
+$.when( documentReady, mainPageReady, configLoaded , positionLoaded, deviceReady).done(function(){
 
 /*	$.post('http://217.127.199.47:8080/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
@@ -938,10 +943,10 @@ var deviceReady  = new $.Deferred();
 		console.log ("DEBUG ::: https://217.127.199.47:8090/login :: failed" );
 		});
 	*/
-//	$.mobile.loading( "hide" );
-//	$("body").pagecontainer("change", "#MainPage");
+$.mobile.loading( "hide" );
+	$("body").pagecontainer("change", "#MainPage");
 	
-//});
+});
 
 $(document).ready(function() {	
 	
@@ -1041,6 +1046,8 @@ $(document).on("click","#chat-input-button",function() {
 		}catch (e){
 			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
 		}		
+	}else{
+		console.log('DEBUG ::: chat-input-button ::: socket not connected');
 	}
 
 });

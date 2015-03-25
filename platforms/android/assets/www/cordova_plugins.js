@@ -330,7 +330,7 @@ module.exports.metadata =
     "org.apache.cordova.console": "0.2.9",
     "org.devgeeks.Canvas2ImagePlugin": "0.6.0",
     "org.apache.cordova.network-information": "0.2.15",
-    "org.apache.cordova.camera": "0.3.5"
+    "org.apache.cordova.camera": "0.3.6"
 }
 // BOTTOM OF METADATA
 });
