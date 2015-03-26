@@ -1,5 +1,6 @@
 var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
+var crypto = require('jsrsasign');
 
 /*				
 listOfACKs.push({ 	msgID : "3", 
@@ -103,12 +104,55 @@ function PostMan(_io) {
 };
 
 
-PostMan.prototype.getJoinServerParameters = function(token) {
-	var joinParameters  = null;
+PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
+	var verified = false;
 	try {
-		//TODO decipherment of the token  JSON Web Token http://jwt.io/
-		joinParameters = JSON.parse(token);		
+		//verifies if it was signed with the current symmetric key of the client (number of the challenge)
+		var key = client.myArrayOfKeys[client.indexOfCurrentToken];	
+			
+		verified = crypto.jws.JWS.verify(tokenHandshake, key);
 		
+		//verifies if it the content of the handshake has the challenge (token of the challenge)
+		var a = tokenHandshake.split(".");
+		var uClaim = crypto.b64utos(a[1]);
+		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
+		
+		if (decodedHandshake.token != client.currentChallenge){
+			verified = false;
+			console.log("DEBUG ::: verifyHandshake  :::  token different than challenge "  );
+		}
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: verifyHandshake  :::  exception thrown "  + ex); 
+	}
+
+	return verified; 	
+};
+
+
+PostMan.prototype.decodeHandshake = function(sJWS) {
+	var decodedHandshake= null;
+	try {
+		var a = sJWS.split(".");
+		//var uHeader = b64utos(a[0]);
+		var uClaim = crypto.b64utos(a[1]);
+
+		//var pHeader = KJUR.jws.JWS.readSafeJSONString(uHeader);
+		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);	
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: decodeHandshake  :::  exception thrown "  + ex.toString() ); 
+	}
+
+	return decodedHandshake; 	
+};
+
+
+
+PostMan.prototype.getJoinServerParameters = function(joinParameters) {
+
+	try {
+				
 		if (typeof joinParameters.token !== 'string' || 
 			typeof joinParameters.publicClientID !== 'string' ||
 			typeof joinParameters.location.lat  !== 'string' ||
@@ -117,7 +161,7 @@ PostMan.prototype.getJoinServerParameters = function(token) {
 				joinParameters = null;
 				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking "  ); 
 		}
-		
+				
 		if (Object.keys(joinParameters).length != 4) {	
 			joinParameters = null;
 			console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the format check "  ); 	

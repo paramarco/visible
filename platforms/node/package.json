@@ -9,6 +9,7 @@
     "node-uuid": 	"~1.4.1",
     "socket.io": 	"~1.0.6",
     "underscore": 	"~1.5.2",
+    "jsrsasign": 	"~0.0.3",
     "shrinkwrap": 	"~0.0.3"
   },
   "repository": {

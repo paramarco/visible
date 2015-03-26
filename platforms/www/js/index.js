@@ -144,6 +144,92 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 	catch (ex) {	return null;	}	
 };
 
+Unwrapper.prototype.signToken = function(message) {	
+	try {    
+		var stringMessage = JSON.stringify(message);
+		var pHeader = {'alg': 'HS512', 'typ': 'JWT'};
+		var sHeader = JSON.stringify(pHeader);		
+		var stringJWS = '';
+		stringJWS  = KJUR.jws.JWS.sign('HS512', sHeader, stringMessage, app.symetricKey2use);		
+		return stringJWS; 
+	}
+	catch (ex) {	return null;	}	
+};
+
+
+Unwrapper.prototype.encrypt = function(message) {	
+
+	try {    
+		 
+		
+		
+		var key = forge.random.getBytes(16);
+		var iv = forge.random.getBytes(16);	
+		
+		var encodedMessage = encodeURI(JSON.stringify(message));
+		
+		var l = new Date().getTime();
+		
+		console.log("DEBUG ::: encrypt  ::: key in use : " + app.symetricKey2use );
+
+		var cipher = forge.cipher.createCipher('AES-CBC', key);
+		cipher.start({iv: iv});
+		cipher.update(forge.util.createBuffer(encodedMessage));
+		cipher.finish();
+		var encrypted = cipher.output;
+		var j = new Date().getTime();
+
+		var decipher = forge.cipher.createDecipher('AES-CBC', key);
+		decipher.start({iv: iv});
+		decipher.update(encrypted);
+		decipher.finish();
+			
+		
+		var timelapse = (j - l);
+		console.log("DEBUG ::: encrypt  ::: decipher.output : " + decodeURI(decipher.output) +" , timelapse :" + timelapse + " ms");
+		
+		return decodeURI(decipher.output);
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encrypt  :::  " + ex);
+		return null;
+	}	
+};
+
+function test_forge_AES(c) {
+
+	try {
+
+	} catch (n) {
+		f = n.message;
+		$("#encrypt_aes_forge").html(f);
+		b = 1
+	}
+	if (b == 0) {
+		try {
+			l = new Date().getTime();
+			var k = a;
+			var d = forge.aes.startDecrypting(q, i);
+			d.update(k);
+			var o = d.finish();
+			c = d.output.data;
+			j = new Date().getTime();
+			g = (j - l);
+			$("#decrypt_aes_forge").html(g + " ms" + valid)
+		} catch (n) {
+			f = n.message;
+			$("#decrypt_aes_forge").html(f);
+			b = 1
+		}
+	}
+	$("#loader_aes_forge").hide();
+	if ((r.length != c.length) || (r != c)) {
+		console.log("ERROR (forge): the plaintext does not match.")
+	}
+};
+
+
 //END Class UnWrapper
 
 function GUI() {
@@ -664,9 +750,9 @@ function loadMaps(){
 function connect_socket (result) {    
 
 	var mytoken = result.challenge;
-	var symetricKey2use = app.myArrayOfKeys[result.index];
+	app.symetricKey2use = app.myArrayOfKeys[result.index];
 	
-	var tokenEncripted = { 	
+	var token2sign = { 	
 		token: mytoken , 
   		publicClientID: app.publicClientID,
   		nickName : app.myCurrentNick ,
@@ -675,10 +761,11 @@ function connect_socket (result) {
   			lon : app.myPosition.coords.longitude.toString()
   		}
   	};
-  	//TODO encript tokenEncripted, JSON Web Token http://jwt.io/
-  	var tokenEncripted = JSON.stringify(tokenEncripted);
+  	// encript token, JSON Web Token http://jwt.io/	
+	
+  	var tokenSigned = unWrapper.signToken(token2sign);
 
-	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenEncripted	});
+	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenSigned	});
 	
 	socket.on('connect', function () {	
 		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
@@ -833,7 +920,8 @@ var app = {
     myArrayOfKeys : [],
 	publicClientID : null,
 	myPosition : null,
-	lastProfileUpdate : null
+	lastProfileUpdate : null,
+	symetricKey2use : null
 };
 
 
@@ -958,6 +1046,8 @@ $(document).on("click","#chat-input-button",function() {
 	//sends message	
 	if (typeof socket != "undefined" && socket.connected == true){
 		try{
+			message2send = unWrapper.encrypt(message2send);
+			message2send = JSON.parse(message2send);
 			socket.emit('messagetoserver', message2send);
 		}catch (e){
 			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');

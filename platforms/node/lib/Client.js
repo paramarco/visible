@@ -11,8 +11,7 @@ function Client() {
   this.nickName = "";
   this.commentary = "";
   this.myArrayOfKeys = [uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4()];
-  
-  console.log('DEBUG ::: new Client () :: client : '  +  JSON.stringify(this) );
+ 
 
 };
 

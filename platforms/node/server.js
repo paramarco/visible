@@ -149,13 +149,25 @@ postMan.archiveMessage({
 //DEBUG END		##################					 					 					 	  
 
 io.use(function(socket, next){
- 	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
-	if ( joinServerParameters == null ){ return;}	
+	
+	var token = socket.handshake.query.token;
+	
+	var decodedToken = postMan.decodeHandshake(token);
+	
+	var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
+	if ( joinServerParameters == null ){ return;}  	
+	console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
+	
+		
+	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
+		
+	var verified = postMan.verifyHandshake(token,client);
+	
+  	if (client && verified == true){
 
-  	var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters); 	
-  	console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
-  	if (client){  		
+  		//var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters);
 		if(client.socketid == null){
+			console.log('DEBUG ::: io.use ::: pass test in auth..! client goes to connect');
 			next();  			
 		}else{
 			console.log('DEBUG ::: io.use ::: Got disconnect in auth..! client already connected');
@@ -167,9 +179,13 @@ io.use(function(socket, next){
 });
 
 io.sockets.on("connection", function (socket) {
-
-	var joinServerParameters = postMan.getJoinServerParameters(socket.handshake.query.token);
+	
+	
+	var joinServerParameters = postMan.getJoinServerParameters(postMan.decodeHandshake(socket.handshake.query.token));	
 	if ( joinServerParameters == null ){ return;}	
+	
+	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
+
 
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
