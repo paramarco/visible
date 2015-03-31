@@ -1,6 +1,8 @@
 var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 var crypto = require('jsrsasign');
+var forge = require('node-forge')({disableNativeCode: true});
+
 
 /*				
 listOfACKs.push({ 	msgID : "3", 
@@ -35,23 +37,21 @@ function PostMan(_io) {
 											md5sum : messageList[i].md5sum,
 											size :messageList[i].size	}
 									);  
-			} 
-			io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", messageHeaders); 
-			
-		} else{
-			
-		}
+			}
+			var message = { list : messageHeaders };
+			io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client )); 			
+		} 
 		
 	};
 	
 	//TODO #16 get the message from database
-	this.getMessageFromArchive = function(retrievalParameters) {
+	this.getMessageFromArchive = function(retrievalParameters , client) {
 		var message = null;
-	  	message = _.find(listOfMessages, function(key) {	
-			if (key.msgID == retrievalParameters.msgID && 	
-				key.md5sum  == retrievalParameters.md5sum &&
-				key.size == retrievalParameters.size   )
-				//key.to == socket.id->clientID... 
+	  	message = _.find(listOfMessages, function(m) {	
+			if (m.msgID == retrievalParameters.msgID 	&& 	
+				m.md5sum  == retrievalParameters.md5sum &&
+				m.size == retrievalParameters.size   	&&
+				m.to == client.publicClientID )
 				return true;	 
 		});   
 	  return message;
@@ -64,6 +64,7 @@ function PostMan(_io) {
 	};
 
 	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
+	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
 	this.isPostBoxFull= function(message) {
 		//get from the message the sender and receiver
 		var isPostBoxFull = false;
@@ -93,7 +94,7 @@ function PostMan(_io) {
 					to : listOfACKStoNotify[i].to 	
 				};
 								
-				io.sockets.to(client.socketid).emit("MessageDeliveryReceipt",deliveryReceipt );
+				io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) );
 			} // END FOR	
 		}else{
 			
@@ -108,7 +109,7 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 	var verified = false;
 	try {
 		//verifies if it was signed with the current symmetric key of the client (number of the challenge)
-		var key = client.myArrayOfKeys[client.indexOfCurrentToken];	
+		var key = client.myArrayOfKeys[client.indexOfCurrentKey];	
 			
 		verified = crypto.jws.JWS.verify(tokenHandshake, key);
 		
@@ -157,18 +158,14 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 			typeof joinParameters.publicClientID !== 'string' ||
 			typeof joinParameters.location.lat  !== 'string' ||
 			typeof joinParameters.location.lon  !== 'string' ||
-			typeof joinParameters.nickName  !== 'string' 	) {	
+			typeof joinParameters.nickName  !== 'string' ||
+			Object.keys(joinParameters).length != 4 ) {	
 				joinParameters = null;
 				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking "  ); 
-		}
-				
-		if (Object.keys(joinParameters).length != 4) {	
-			joinParameters = null;
-			console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the format check "  ); 	
-		}
+		}	
 	} 
 	catch (ex) {	
-		console.log("DEBUG ::: getJoinServerParameters  :::  exceptrion thrown "  ); 
+		console.log("DEBUG ::: getJoinServerParameters  :::  exceptrion thrown :"  + ex); 
 		joinParameters = null;	
 	}
 
@@ -176,48 +173,171 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 };
 
 
-PostMan.prototype.getMessageRetrievalParameters = function(input) {
+
+PostMan.prototype.getMessageRetrievalParameters = function(encryptedInput , client) {
 	var retrievalParameters = null;
 	try {    	
-			retrievalParameters = input;
-		} 
-	catch (ex) {	retrievalParameters = null;	}
+		retrievalParameters = PostMan.prototype.decrypt(encryptedInput, client );	
 	
-	if (typeof retrievalParameters.msgID !== 'string' || 
-		typeof retrievalParameters.md5sum !== 'string' ||
-		typeof retrievalParameters.size !== 'number' ) {	retrievalParameters = null; }
-	
-	if (Object.keys(retrievalParameters).length != 3) {	retrievalParameters = null;	}
+		if (retrievalParameters == null ||
+			typeof retrievalParameters.msgID !== 'string' || 
+			typeof retrievalParameters.md5sum !== 'string' ||
+			typeof retrievalParameters.size !== 'number' ||
+			Object.keys(retrievalParameters).length != 3 ) {
+			
+			console.log("DEBUG ::: getMessageRetrievalParameters  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return retrievalParameters;
+	} 
+	catch (ex) {
+		console.log("DEBUG ::: getMessageRetrievalParameters  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
+};
 
-	return retrievalParameters; 	
+
+
+PostMan.prototype.getProfileResponseParameters = function(encryptedInput , client) {
+	var parameters = null;
+	try {    	
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
+	
+		if (parameters == null ||
+			typeof parameters.publicClientIDofSender !== 'string' || 
+			typeof parameters.nickName !== 'string'  
+			 ) {
+			
+			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return parameters;
+	} 
+	catch (ex) {
+		console.log("DEBUG ::: getProfileResponseParameters  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
+};
+
+
+PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , client) {
+	var parameters = null;
+	try {    	
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
+	
+		if (parameters == null ||
+			typeof parameters.publicClientID2getImg !== 'string' || 
+			typeof parameters.publicClientIDofRequester !== 'string'			 
+			 ) {
+			
+			console.log("DEBUG ::: getProfileRetrievalParameters  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return parameters;
+	} 
+	catch (ex) {
+		console.log("DEBUG ::: getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
 };
 
 
 
 
-PostMan.prototype.getMessage = function(input) {
-	var inputMessage = null;
-	try {    
-		inputMessage =	input;
+
+PostMan.prototype.sanitize = function(html) {
+	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+	
+	var tagOrComment = new RegExp(
+	    '<(?:'
+	    // Comment body.
+	    + '!--(?:(?:-*[^->])*--+|-?)'
+	    // Special "raw text" elements whose content should be elided.
+	    + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+	    + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+	    // Regular name
+	    + '|/?[a-z]'
+	    + tagBody
+	    + ')>',
+	    'gi');
+	
+	var oldHtml;
+	do {
+		oldHtml = html;
+		html = html.replace(tagOrComment, '');
+	} while (html !== oldHtml);
+	return html.replace(/</g, '&lt;');
+};
+
+
+PostMan.prototype.encrypt = function(message , client) {	
+
+	try {
 		
-	/*	if (typeof inputMessage.to !== 'string' || 
+		if ( typeof message.messageBody == "string")	{
+			message.messageBody = PostMan.prototype.sanitize(message.messageBody);
+			//message.messageBody = encodeURI(message.messageBody);
+		}
+		
+		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
+		var iv = client.myArrayOfKeys[0];
+				
+		var cipher = forge.cipher.createCipher('AES-CBC', key );
+		cipher.start({iv: iv});
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		return cipher.output.data ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encrypt  :::  " + ex);
+		return null;
+	}	
+};
+
+PostMan.prototype.decrypt = function(encrypted, client) {
+	
+	var decipher = forge.cipher.createDecipher('AES-CBC', client.myArrayOfKeys[client.indexOfCurrentKey] );
+
+	decipher.start({iv: client.myArrayOfKeys[0]});
+	decipher.update(forge.util.createBuffer(encrypted));
+	decipher.finish();
+
+	return crypto.jws.JWS.readSafeJSONString(decipher.output.data);	
+	
+};
+
+
+
+PostMan.prototype.getMessage = function(encrypted, client) {
+	var inputMessage = null;
+	try {
+
+		inputMessage = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (inputMessage == null ||
+			typeof inputMessage.to !== 'string' || 
 			typeof inputMessage.from !== 'string' ||
-			typeof inputMessage.messageBody !== 'string' || 
-			typeof inputMessage.msgID !== 'string' || 
-			typeof inputMessage.md5sum !== 'string' ||  
-			typeof inputMessage.size !== 'number' ||
-			Object.keys(inputMessage).length != 12 ) 	{	return null; 	}
-*/
-		var message = new Message(inputMessage);	
+			typeof inputMessage.msgID !== 'string'	) 	{	
+			
+			console.log("DEBUG ::: getMessage  ::: didnt pass the format check "  );
+			return null;
+		}
+
+		var message = new Message(inputMessage);			 	
 		
 		return message;
 	}
-	catch (ex) {	return null;	} 	
+	catch (ex) {	
+		console.log("DEBUG ::: getMessage  ::: didnt pass the format check ex:" + ex  + ex.stack ); 	
+		return null;	
+	} 	
 };
 
-PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {	
+PostMan.prototype.getDeliveryACK = function(encrypted, client) {	
 	try {    
-		var deliveryACK = inputDeliveryACK;
+		var deliveryACK = PostMan.prototype.decrypt(encrypted, client);
 		
 		if (typeof deliveryACK.msgID !== 'string' || 
 			typeof deliveryACK.md5sum !== 'string' ||
@@ -228,7 +348,10 @@ PostMan.prototype.getDeliveryACK = function(inputDeliveryACK) {
 		
 		return deliveryACK; 
 	}
-	catch (ex) {	return null;	}	
+	catch (ex) {
+		console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
 };
 
 

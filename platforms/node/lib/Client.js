@@ -1,8 +1,8 @@
 var	uuid	= require('node-uuid');
-
+var forge = require('node-forge')({disableNativeCode: true});
 
 function Client() {
-  this.indexOfCurrentToken = 0;
+  this.indexOfCurrentKey = 0;
   this.currentChallenge = null;
   this.publicClientID = uuid.v4();
   this.socketid = null;
@@ -10,7 +10,15 @@ function Client() {
   this.memberSince = new Date();
   this.nickName = "";
   this.commentary = "";
-  this.myArrayOfKeys = [uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4(),uuid.v4()];
+  this.myArrayOfKeys = [forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32)];
  
 
 };

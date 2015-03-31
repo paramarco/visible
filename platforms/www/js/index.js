@@ -65,6 +65,11 @@ Message.prototype.calculateSize = function(){
 	this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
 };
 
+Message.prototype.convertToUTF = function(){
+	this.messageBody = encodeURI(this.messageBody);
+};
+
+
 Message.prototype.setChatWith = function(publicClientID){
 	this.chatWith = publicClientID;
 };
@@ -81,68 +86,127 @@ Message.prototype.setACKfromAddressee = function(bool){
 //END Class Message
 
 
-//TODO de/encript tokenEncripted, JSON Web Token http://jwt.io/
 
 function Unwrapper() {
 };
-Unwrapper.prototype.getMessageFromServer = function(input) {
+Unwrapper.prototype.getMessageFromServer = function(encrypted) {
+
 	try {
-		//messageFromServer =	JSON.parse(input);
-		messageFromServer =	input;
-		//if (//typeof messageFromServer.to !== 'string' ||
-			//typeof messageFromServer.from !== 'string' ||
-			//typeof messageFromServer.messageBody  !== 'string' ||
-			//typeof messageFromServer.msgID !== 'string' || 
-			//typeof messageFromServer.md5sum !== 'string' ||
-			//typeof messageFromServer.size !== 'number' ||
-			//Object.keys(messageFromServer).length != 9 ) {	return null;	}
+		var inputMessage = Unwrapper.prototype.decrypt(encrypted);
 		
-		var message = new Message(messageFromServer);	
+		if (inputMessage == null ||
+			typeof inputMessage.to !== 'string' ||
+			typeof inputMessage.from !== 'string' ||
+			typeof inputMessage.msgID !== 'string' ){
+				
+			console.log("DEBUG ::: getMessageFromServer  :::  " + decipher.output.data);
+			return null;
+		}
+		
+		var message = new Message(inputMessage);	
 		message.setACKfromServer(true);
-		message.setACKfromAddressee(true);
-		
+		message.setACKfromAddressee(true);		
 		
 		return message; 	
 	} 
-	catch (ex) {	return null;	}
+	catch (ex) {	
+		console.log("DEBUG ::: getMessageFromServer :::  " + ex);
+		return null;
+	}
 	
 };
 
-Unwrapper.prototype.getListOfHeaders= function(inputListOfHeaders) {	
+Unwrapper.prototype.getListOfHeaders = function(encryptedList) {	
 	try {    
-		//var listOfHeaders =	JSON.parse(inputListOfHeaders);
-		var listOfHeaders =	inputListOfHeaders;
+		
+		var listOfHeaders =	Unwrapper.prototype.decrypt(encryptedList).list;
 		if (Array.isArray(listOfHeaders) == false) { return null;}
-		//TODO #17 security limit to global	
-		if (listOfHeaders.length > 50) {	return null;	} 
 
 		for (var i = 0; i < listOfHeaders.length; i++){
 			if (typeof listOfHeaders[i].msgID !== 'string' || 
 				typeof listOfHeaders[i].md5sum !== 'string' ||
 				typeof listOfHeaders[i].size !== 'number'||
-				Object.keys(listOfHeaders[i]).length != 3  ) {	return null;}
+				Object.keys(listOfHeaders[i]).length != 3  ) {	
+				return null;
+			}
 		}
+		
+		console.log("DEBUG ::: getListOfHeaders ::: " + JSON.stringify(listOfHeaders));
 		
 		return listOfHeaders; 
 	}
-	catch (ex) {	return null;	}	
+	catch (ex) {	
+		return null;
+	}	
 };
 
 Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
 	try {    
-		//var deliveryReceipt = JSON.parse(inputDeliveryReceipt);
-		var deliveryReceipt = inputDeliveryReceipt;
+
+		var deliveryReceipt = Unwrapper.prototype.decrypt(inputDeliveryReceipt);
 		
-		if (typeof deliveryReceipt.msgID !== 'string' || 
-			typeof deliveryReceipt.md5sum !== 'string' ||
+		if (deliveryReceipt == null ||
+			typeof deliveryReceipt.msgID !== 'string' 	|| 
+			typeof deliveryReceipt.md5sum !== 'string' 	||
 			typeof deliveryReceipt.typeOfACK !== 'string'||
-			typeof deliveryReceipt.to !== 'string'||
-			Object.keys(deliveryReceipt).length != 4  ) {	return null;}
+			typeof deliveryReceipt.to !== 'string'		||
+			Object.keys(deliveryReceipt).length != 4  ) {	
+			return null;
+		}
 		
 		return deliveryReceipt; 
 	}
-	catch (ex) {	return null;	}	
+	catch (ex) {	
+		console.log("DEBUG ::: getDeliveryReceipt  :::  " + ex);
+		return null;
+	}	
 };
+
+Unwrapper.prototype.getParametersOfProfileRequest = function(input) {	
+	try {    
+
+		var parameters = Unwrapper.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			typeof parameters.publicClientIDofRequester !== 'string' 	|| 
+			Object.keys(parameters).length != 2  ) {
+			
+			console.log("DEBUG ::: getParametersOfProfileRequest  ::: didn't pass the type check " + JSON.stringify(parameters)); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: getParametersOfProfileRequest  :::  " + ex);
+		return null;
+	}	
+};
+
+
+Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {	
+	try {    
+
+		var parameters = Unwrapper.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			typeof parameters.publicClientIDofSender !== 'string' 	 
+		 ) {
+			
+			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check "); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: getParametersOfProfileFromServer  :::  " + ex);
+		return null;
+	}	
+};
+
+
+
 
 Unwrapper.prototype.signToken = function(message) {	
 	try {    
@@ -157,38 +221,16 @@ Unwrapper.prototype.signToken = function(message) {
 };
 
 
-Unwrapper.prototype.encrypt = function(message) {	
-
+Unwrapper.prototype.encrypt = function(message) {
 	try {    
-		 
-		
-		
-		var key = forge.random.getBytes(16);
-		var iv = forge.random.getBytes(16);	
-		
-		var encodedMessage = encodeURI(JSON.stringify(message));
-		
-		var l = new Date().getTime();
-		
-		console.log("DEBUG ::: encrypt  ::: key in use : " + app.symetricKey2use );
 
-		var cipher = forge.cipher.createCipher('AES-CBC', key);
-		cipher.start({iv: iv});
-		cipher.update(forge.util.createBuffer(encodedMessage));
-		cipher.finish();
-		var encrypted = cipher.output;
-		var j = new Date().getTime();
+		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
 
-		var decipher = forge.cipher.createDecipher('AES-CBC', key);
-		decipher.start({iv: iv});
-		decipher.update(encrypted);
-		decipher.finish();
-			
+		cipher.start({iv: app.myArrayOfKeys[0] });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
 		
-		var timelapse = (j - l);
-		console.log("DEBUG ::: encrypt  ::: decipher.output : " + decodeURI(decipher.output) +" , timelapse :" + timelapse + " ms");
-		
-		return decodeURI(decipher.output);
+		return cipher.output.data ;
 
 	}
 	catch (ex) {	
@@ -197,38 +239,23 @@ Unwrapper.prototype.encrypt = function(message) {
 	}	
 };
 
-function test_forge_AES(c) {
+Unwrapper.prototype.decrypt = function(encrypted) {	
+	try {    
 
-	try {
+		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
 
-	} catch (n) {
-		f = n.message;
-		$("#encrypt_aes_forge").html(f);
-		b = 1
+		decipher.start({iv: app.myArrayOfKeys[0]});
+		decipher.update(forge.util.createBuffer(encrypted));
+		decipher.finish();		
+		
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+
 	}
-	if (b == 0) {
-		try {
-			l = new Date().getTime();
-			var k = a;
-			var d = forge.aes.startDecrypting(q, i);
-			d.update(k);
-			var o = d.finish();
-			c = d.output.data;
-			j = new Date().getTime();
-			g = (j - l);
-			$("#decrypt_aes_forge").html(g + " ms" + valid)
-		} catch (n) {
-			f = n.message;
-			$("#decrypt_aes_forge").html(f);
-			b = 1
-		}
-	}
-	$("#loader_aes_forge").hide();
-	if ((r.length != c.length) || (r != c)) {
-		console.log("ERROR (forge): the plaintext does not match.")
-	}
+	catch (ex) {	
+		console.log("DEBUG ::: decrypt  :::  " + ex);
+		return null;
+	}	
 };
-
 
 //END Class UnWrapper
 
@@ -283,7 +310,6 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		authorOfMessage = contact.nickName;
 		
 		if (message.markedAsRead == false) {		  	
-			//sends ACK ReadfromAddressee	
 			if (typeof socket != "undefined" && socket.connected == true){
 				try{
 					var messageACK = {	
@@ -293,19 +319,21 @@ GUI.prototype.insertMessageInConversation = function(message) {
 			  			md5sum : message.md5sum,
 			  			typeOfACK : "ReadfromAddressee"
 				  	};					
-					socket.emit("MessageDeliveryACK",messageACK);
+					socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
 					message.markedAsRead = true;
 					mailBox.updateMessage(message);				
 					
 				}catch (e){
-					console.log('DEBUG ::: insertMessageInConversation ::: socket not connected');
+					console.log('DEBUG ::: insertMessageInConversation ::: socket not connected : ' + e );
 				}		
 			}		
 		}		
 	}
 	var htmlOfContent = "";
 	if ( typeof message.messageBody == "string")	{
-		htmlOfContent = this.sanitize(message.messageBody);		
+		htmlOfContent = this.sanitize(message.messageBody);
+		htmlOfContent = decodeURI(htmlOfContent);
+		
 	}else if (typeof message.messageBody == "object"){
 		if (message.messageBody.messageType == "multimedia"){
 			htmlOfContent = '<div class="image-preview"> ' + 
@@ -423,11 +451,6 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 
 	$('#listOfContactsInMainPage').listview().listview('refresh');
 	
-	
-	
-	//$( "#listOfContactsInMainPage" ).listview( "refresh" );
-	//$("#listOfContactsInMainPage").trigger("create");
-	//$( html2insert ).appendTo( "#listOfContactsInMainPage" ).enhanceWithin();
 
 };
 
@@ -449,7 +472,7 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 	});
 	
 };
-//TODO fix that race condition
+
 GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
@@ -469,18 +492,16 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	//request an update of the last photo of this Contact
 	if (typeof socket != "undefined" && socket.connected == true){
 		try {
-			var ImageRetrievalObject = {	
+			var profileRetrievalObject = {	
 				publicClientIDofRequester : app.publicClientID, 
 				publicClientID2getImg : contact.publicClientID,
 				lastProfileUpdate : contact.lastProfileUpdate
 			};
-			socket.emit('ImageRetrieval', ImageRetrievalObject	);
+			socket.emit('ProfileRetrieval',  unWrapper.encrypt(profileRetrievalObject)	);
 		}catch (e){
 			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
 		}		
-	}
-	
-	
+	}	
 	
 };
 
@@ -638,8 +659,6 @@ MailBox.prototype.getMessageByID = function(msgID) {
 
 function addNewContact (publicClientID) {	
 	
-	//TODO show message to user that the contact is included
-	//GUI.prototype.updateContactInMainPage(newContact);			
 	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
 	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
 	
@@ -652,12 +671,9 @@ function addNewContact (publicClientID) {
 	$("#listOfContactsInMainPage").trigger("create");
 	$("#popupDiv").popup("open");
 	
-	
-	
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	
 	if (contact){		
-		//TODO do not insert when already exist
 		try {
 			var transaction = db.transaction(["contacts"],"readwrite");	
 			var store = transaction.objectStore("contacts");		
@@ -672,8 +688,6 @@ function addNewContact (publicClientID) {
 //this function assumes that the contact is already inserted on the DB
 
 function modifyContactOnDB (contact) {
-	console.log('DEBUG ::: modifyContactOnDB ::: ');
-
 	
 	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
 	
@@ -701,14 +715,14 @@ function setNewContacts (data) {
 		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
 				
 		//request an update of the last photo of this Contact
-		var ImageRetrievalObject = {	
+		var profileRetrievalObject = {	
 			publicClientIDofRequester : app.publicClientID, 
 			publicClientID2getImg : c.publicClientID,
 			lastProfileUpdate : null
 		};
 	
 		if (contact){			
-			ImageRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;						
+			profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;						
 		}else{			
 			var newContact = new ContactOfVisible({	
 				publicClientID : c.publicClientID  ,
@@ -721,7 +735,7 @@ function setNewContacts (data) {
 			listOfContacts.push(newContact);
 			GUI.prototype.insertContactInMainPage(newContact,true);			
 		}	
-		socket.emit('ImageRetrieval', ImageRetrievalObject	);
+		socket.emit('ProfileRetrieval', unWrapper.encrypt(profileRetrievalObject)	);
 	});
 }
 
@@ -772,8 +786,6 @@ function connect_socket (result) {
 	});
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
-  //TODO #11.1 once upon reception set Message as received in the corresponding chat conversation
-  //#11.2 store in Local database
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
 
   		var deliveryReceipt = unWrapper.getDeliveryReceipt(inputDeliveryReceipt);
@@ -806,8 +818,6 @@ function connect_socket (result) {
   		}, 600);   		
 	});
   
-  //#12.1 display in the corresponding chat conversation, 
-  //#12.2  store in Local database
   socket.on("messageFromServer", function(inputMsg) {
   	
   	  	var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
@@ -821,14 +831,14 @@ function connect_socket (result) {
   			typeOfACK : "ACKfromAddressee"
   		};
   		//it could be implemented with callback as well....
-  		socket.emit("MessageDeliveryACK",messageACK);
+  		socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
   		
   		//double check to avoid saving messages twice...(which should never be received...)
   		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
   		
   		getAsyncMessageFromDB.done(function (message){
   			if (typeof message == 'undefined' ){ 
-  				//in order to index the IndexDB
+
   				messageFromServer.setChatWith(messageFromServer.from); 	
   				//stores in IndexDB			
   				mailBox.storeMessage(messageFromServer); 
@@ -844,15 +854,21 @@ function connect_socket (result) {
 	 
 	// start a loop requesting a message one by one 
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
+
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }  		
-	
-		console.log('DEBUG ::: ServerReplytoDiscoveryHeaders triggered : ' + JSON.stringify(listOfHeaders));  		
+
 		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
-				var message2request = listOfHeaders.pop();
-				socket.emit('messageRetrieval', {	msgID :  message2request.msgID,	md5sum : message2request.md5sum,size : message2request.size	}); 
+				var message2request = listOfHeaders.pop();				
+				var requestOfMessage =  {	
+					msgID :  message2request.msgID,
+					md5sum : message2request.md5sum,
+					size : message2request.size
+				};
+				console.log("DEBUG ::: triggered messageRetrieval  ::: for : " + JSON.stringify(requestOfMessage)); 
+				socket.emit('messageRetrieval', unWrapper.encrypt(requestOfMessage)); 
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
@@ -861,22 +877,28 @@ function connect_socket (result) {
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
 
-	socket.on("RequestForImage", function(requestParameters) {	
+	socket.on("RequestForProfile", function(input) {
 		
-		if ( requestParameters.lastProfileUpdate == null || requestParameters.lastProfileUpdate <  app.lastProfileUpdate ){		
-			var imageResponseObject = {	
-					publicClientIDofSender : app.publicClientID, 
-					publicClientIDofRequester : requestParameters.publicClientIDofRequester,
-					img : app.myPhotoPath,
-					nickName: app.myCurrentNick,
-					commentary : "I'm super visible!!"	
-				};				
-			socket.emit("imageResponse",imageResponseObject	);
+		var requestParameters = unWrapper.getParametersOfProfileRequest(input);
+		
+		if ( requestParameters != null && 
+			(	requestParameters.lastProfileUpdate == null || 
+				requestParameters.lastProfileUpdate <  app.lastProfileUpdate ) ){		
+			var profileResponseObject = {	
+				publicClientIDofSender : app.publicClientID, 
+				publicClientIDofRequester : requestParameters.publicClientIDofRequester,
+				img : app.myPhotoPath,
+				nickName: app.myCurrentNick,
+				commentary : "I'm super visible!!"	
+			};				
+			socket.emit("ProfileResponse", unWrapper.encrypt(profileResponseObject)	);
 		}	
 			   
-	});//END RequestForImage	
+	});//END RequestForProfile	
 	
-	socket.on("ImageFromServer", function(data) {
+	socket.on("ProfileFromServer", function(input) {
+		
+		var data = unWrapper.getParametersOfProfileFromServer(input);
 		
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientIDofSender); })[0];
 		contact.path2photo = data.img;
@@ -884,13 +906,16 @@ function connect_socket (result) {
 		contact.commentary = data.commentary ;
 		contact.lastProfileUpdate = new Date().getTime();
 		
-		$("#imgOfChat-page-header").attr("src", data.img);
+		if (app.currentChatWith == data.publicClientIDofSender){
+			$("#imgOfChat-page-header").attr("src", data.img);	
+		}
+		
 		$("#profilePhoto"+data.publicClientIDofSender ).attr("src", data.img);
 		
 		//only if it is a persistent contact
 		modifyContactOnDB(contact);
 
-	});//END ImageFromServer
+	});//END ProfileFromServer
 	  
 	socket.on("notificationOfNewContact", setNewContacts);//END notificationOfNewContact
 	
@@ -946,7 +971,6 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 			connect_socket(result);  
 		})
 		.fail(function() {
-			//TODO launch periodic task to try to reconnect
 			console.log ("DEBUG ::: https://217.127.199.47:8090/login :: trying to reconnect" );
 		});
 	
@@ -1021,7 +1045,7 @@ $(document).on("click","#mapButtonInMainPage",function() {
 });
 
 $(document).on("click","#chat-input-button",function() {
-//TODO #10.1 message must be store in local DB 
+
 	var textMessage = $("#chat-input").val();
 	if (textMessage == '') {	return;	}
 	
@@ -1033,6 +1057,8 @@ $(document).on("click","#chat-input-button",function() {
 	message2send.setACKfromServer(false);
 	message2send.setACKfromServer(false);
 	message2send.setChatWith(app.currentChatWith); 
+	message2send.convertToUTF();
+	
 
 	//stores to DB
 	mailBox.storeMessage(message2send); 
@@ -1045,10 +1071,8 @@ $(document).on("click","#chat-input-button",function() {
 	
 	//sends message	
 	if (typeof socket != "undefined" && socket.connected == true){
-		try{
-			message2send = unWrapper.encrypt(message2send);
-			message2send = JSON.parse(message2send);
-			socket.emit('messagetoserver', message2send);
+		try{			 
+			socket.emit('messagetoserver', unWrapper.encrypt(message2send) );
 		}catch (e){
 			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
 		}		
@@ -1091,7 +1115,8 @@ $(document).on("click","#chat-multimedia-button",function() {
 			//sends message	
 			if (typeof socket != "undefined" && socket.connected == true){
 				try{
-					socket.emit('messagetoserver', message2send);
+					socket.emit('messagetoserver', unWrapper.encrypt(message2send));
+					
 				}catch (e){
 					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
 				}		

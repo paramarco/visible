@@ -39,7 +39,7 @@ app.post('/login', function (req, res) {
     var token2AnswerEncripted = uuid.v4();
     
 	if (client){		
-		client.indexOfCurrentToken = indexOfCurrentKey;
+		client.indexOfCurrentKey = indexOfCurrentKey;
 		client.currentChallenge = token2AnswerEncripted;
 	}else{
 		console.log('DEBUG ::: app.post :: I dont know any publicClientID like this');
@@ -221,45 +221,64 @@ io.sockets.on("connection", function (socket) {
 		console.log('DEBUG :::  Got disconnect!');		
 	});
    
-	
+	//XEP-0184: Message Delivery Receipts
 	socket.on("messagetoserver", function(msg) {
-		//console.log('DEBUG ::: messagetoserver ::: input: ' + JSON.stringify(msg) );
 		
-		var message = postMan.getMessage(msg);
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') { 
+			console.log('DEBUG ::: messagetoserver ::: I dont know this client ' );
+			return;   
+		}
+		var message = postMan.getMessage( msg , client);
 		if ( message == null) { console.log('DEBUG ::: messagetoserver ::: ups message doesnt look good');  return;}		
-		if (postMan.isPostBoxFull(message) == true) return;	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
+		if (postMan.isPostBoxFull(message) == true) return;	
 			
 		
-		//XEP-0184: Message Delivery Receipts
 		var deliveryReceipt = { msgID : message.msgID, md5sum : message.md5sum, typeOfACK : "ACKfromServer", to : message.to};
-		//socket.emit("MessageDeliveryReceipt", JSON.stringify(deliveryReceipt) );
-		socket.emit("MessageDeliveryReceipt", deliveryReceipt );
+		
+		socket.emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, client) );
+		
 		
 		var clientReceiver = brokerOfVisibles.isClientOnline(message.to);		
 					
 		if (  typeof clientReceiver != 'undefined'){
-			//console.log('DEBUG ::: messagetoserver trigered :: clientReceiver is Online : ' +JSON.stringify(clientReceiver)  );
- 			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", message);		
+			
+			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", postMan.encrypt( message , clientReceiver));
  		}else {
- 			//console.log('DEBUG ::: messagetoserver trigered :: ClientReceiver is Offline');
- 			postMan.archiveMessage(message);	//TODO #5 save the message in the Buffer
+ 			
+ 			postMan.archiveMessage(message);	
  		}
 	});
 	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("messageRetrieval", function(input) {		
 		
-		var retrievalParameters = postMan.getMessageRetrievalParameters(input);		
-		if (retrievalParameters == null) return;
-					
-		var message = postMan.getMessageFromArchive(retrievalParameters);		
-		if (message != null){	socket.emit("messageFromServer", message);	}
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') {
+			console.log('DEBUG ::: messageRetrieval ::: I dont know this client ' );
+			return;   
+		}		
+		
+		var retrievalParameters = postMan.getMessageRetrievalParameters(input , client);		
+		if (retrievalParameters == null) return;		
+
+		
+		var message = postMan.getMessageFromArchive(retrievalParameters, client);		
+		if (message != null){
+			console.log('DEBUG ::: messageRetrieval ::: it is replying the messageRetrieval request ' );
+			socket.emit("messageFromServer", postMan.encrypt( message , client));	
+		}
 	});
 
 	//XEP-0184: Message Delivery Receipts
 	socket.on("MessageDeliveryACK", function(input) {		
 		
-		var messageACKparameters = postMan.getDeliveryACK(input);		
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') {
+			console.log('DEBUG ::: MessageDeliveryACK ::: I dont know this client ' );
+			return;   
+		}		
+		var messageACKparameters = postMan.getDeliveryACK(input, client);		
 		if (messageACKparameters == null) return;
 					
 		var clientSender = brokerOfVisibles.isClientOnline(messageACKparameters.from);									
@@ -274,7 +293,7 @@ io.sockets.on("connection", function (socket) {
 			};
 			console.log("DEBUG ::: MessageDeliveryACK ::: is emiting to sender :  " + JSON.stringify(deliveryReceipt) );
 						
- 			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", deliveryReceipt);
+ 			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ));
  					
  		}else {
  			postMan.archiveACK(messageACKparameters);
@@ -282,7 +301,15 @@ io.sockets.on("connection", function (socket) {
 		
 	});
 	
-	socket.on("ImageRetrieval", function(parameters) {	
+	socket.on("ProfileRetrieval", function(input) {
+		
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') {
+			console.log('DEBUG ::: ProfileResponse ::: I dont know this client ' );
+			return;   
+		}
+		var parameters = postMan.getProfileRetrievalParameters(input, client);		
+		if (parameters == null) return;	
 				
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg);
 
@@ -291,23 +318,36 @@ io.sockets.on("connection", function (socket) {
 				publicClientIDofRequester : parameters.publicClientIDofRequester,
 				lastProfileUpdate : parameters.lastProfileUpdate				
 			};
-			io.sockets.to(clientToPoll.socketid).emit("RequestForImage", requestParameters );
+			
+			io.sockets.to(clientToPoll.socketid).emit("RequestForProfile", postMan.encrypt(requestParameters , clientToPoll ));
 		}
 	});
 	
-	socket.on("imageResponse", function(parameters) {	
-		//console.log("DEBUG ::: imageResponse ::: from client ::: " + parameters.publicClientIDofSender + " answering img request to : " + parameters.publicClientIDofRequester );
+	socket.on("ProfileResponse", function(input) {	
+		
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') {
+			console.log('DEBUG ::: ProfileResponse ::: I dont know this client ' );
+			return;   
+		}	
+
+		var parameters = postMan.getProfileResponseParameters(input, client);		
+		if (parameters == null) return;		
+		
 		var clientToPoll = brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester); 
 
 		if ( typeof clientToPoll != 'undefined' ){
-			io.sockets.to(clientToPoll.socketid).emit("ImageFromServer", parameters 	);
+			io.sockets.to(clientToPoll.socketid).emit("ProfileFromServer", postMan.encrypt(parameters , clientToPoll ));
 		}
 	});	
 	
 	socket.on('RequestOfListOfPeopleAround', function (publicClientID, fn) {	
+		
 		var listOfPeople = brokerOfVisibles.getListOfPeopleAround(publicClientID);	
+		
 		brokerOfVisibles.informSomebodyIsAround(listOfPeople,publicClientID);
-    	fn(listOfPeople);
+    	
+		fn(listOfPeople);
   	});
 	
 

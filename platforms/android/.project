@@ -41,10 +41,5 @@
 			<type>2</type>
 			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/merges</locationURI>
 		</link>
-		<link>
-			<name>www</name>
-			<type>2</type>
-			<locationURI>$%7BPARENT-2-PROJECT_LOC%7D/www</locationURI>
-		</link>
 	</linkedResources>
 </projectDescription>
