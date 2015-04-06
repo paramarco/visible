@@ -280,10 +280,16 @@ io.sockets.on("connection", function (socket) {
 		}		
 		var messageACKparameters = postMan.getDeliveryACK(input, client);		
 		if (messageACKparameters == null) return;
+		
+		//check if sender of MessageDeliveryACK is actually the receiver
+		if (messageACKparameters.to != client.publicClientID) {
+			console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong ::: messageACKparameters.to != client.publicClientID ' );
+			return;
+		}
 					
 		var clientSender = brokerOfVisibles.isClientOnline(messageACKparameters.from);									
 					
-		if (  typeof clientSender != 'undefined'){
+		if (  typeof clientSender !== 'undefined'){
 			
 			var deliveryReceipt = { 
 				msgID : messageACKparameters.msgID, 
@@ -291,7 +297,7 @@ io.sockets.on("connection", function (socket) {
 				typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
 				to : messageACKparameters.to 	
 			};
-			console.log("DEBUG ::: MessageDeliveryACK ::: is emiting to sender :  " + JSON.stringify(deliveryReceipt) );
+			console.log("DEBUG ::: MessageDeliveryACK ::: is emiting to sender :  " + JSON.stringify(deliveryReceipt) + "messageACKparameters.from : " + messageACKparameters.from + "client.publicClientID" + client.publicClientID);
 						
  			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ));
  					
@@ -341,14 +347,35 @@ io.sockets.on("connection", function (socket) {
 		}
 	});	
 	
-	socket.on('RequestOfListOfPeopleAround', function (publicClientID, fn) {	
+	socket.on('RequestOfListOfPeopleAround', function (input) {
+		
+		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		if ( typeof client == 'undefined') {
+			console.log('DEBUG ::: ProfileResponse ::: I dont know this client ' );
+			return;   
+		}		
+		
+		var publicClientID =  postMan.getpublicClientIDOfRequest(input, client);		
+		if (publicClientID == null) return;	
 		
 		var listOfPeople = brokerOfVisibles.getListOfPeopleAround(publicClientID);	
 		
-		brokerOfVisibles.informSomebodyIsAround(listOfPeople,publicClientID);
-    	
-		fn(listOfPeople);
-  	});
-	
+		socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
+		
+		var visible = {
+			publicClientID : client.publicClientID,
+			location : client.location,
+			nickName : client.nickName,
+  			commentary : client.commentary
+		}; 
+		
+		listOfPeople.map(function (c){
+			var client2BeNotified = brokerOfVisibles.isClientOnline(c.publicClientID);  
+			if (typeof client2BeNotified  !== 'undefined' ){
+				io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", 
+																postMan.encrypt( { list : [visible] } , client2BeNotified));
+			}		
+		});		
+  	});	
 
 });

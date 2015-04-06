@@ -8,21 +8,6 @@ function BrokerOfVisibles(_io) {
 	var this_ = this;
 	var listOfClients = []; 
 	
-	this.informSomebodyIsAround = function(listOfPeople,publicClientID) {
-		var newClientAround = this_.getClientById(publicClientID);
-		var visible = {
-				publicClientID : newClientAround.publicClientID,
-				location : newClientAround.location,
-				nickName : newClientAround.nickName,
-	  			commentary : newClientAround.commentary
-		}; 
-		listOfPeople.map(function (c){
-			var client2BeNotified = this_.isClientOnline(c.publicClientID);
-			if (typeof client2BeNotified  !== 'undefined' ){
-				io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact",[visible] );
-			}		
-		});
-	};
 	
 	this.getListOfPeopleAround = function(publicClientID) {
 		var listOfPeopleAround = _.filter( listOfClients, function(c) {	

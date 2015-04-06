@@ -131,11 +131,37 @@ Unwrapper.prototype.getListOfHeaders = function(encryptedList) {
 			}
 		}
 		
-		console.log("DEBUG ::: getListOfHeaders ::: " + JSON.stringify(listOfHeaders));
-		
 		return listOfHeaders; 
 	}
 	catch (ex) {	
+		return null;
+	}	
+};
+
+Unwrapper.prototype.getParametersOfSetNewContacts = function(encryptedList) {	
+	try {    
+		
+		var listOfContacts = Unwrapper.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfContacts) == false) { 
+			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfContacts)); 
+			return null;
+		}
+
+		for (var i = 0; i < listOfContacts.length; i++){
+			if (typeof listOfContacts[i].publicClientID !== 'string' || 
+				typeof listOfContacts[i].nickName !== 'string' ||
+				typeof listOfContacts[i].commentary !== 'string'||
+				typeof listOfContacts[i].location !== 'object'||
+				Object.keys(listOfContacts[i]).length != 4  ) {	
+				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfContacts)); 
+				return null;
+			}
+		}		
+			
+		return listOfContacts; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfContacts)); 
 		return null;
 	}	
 };
@@ -306,8 +332,17 @@ GUI.prototype.insertMessageInConversation = function(message) {
 		}
 	}else {		
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); })[0];
+		var contact = listOfContacts.filter(function(c){ 
+			return (c.publicClientID == message.from); }
+		)[0];
+		
+		if (typeof contact === "undefined" || typeof contact === "null" ) {
+			console.log("DEBUG ::: insertMessageInConversation ::: something went wrong");
+			return;
+		}
+		
 		authorOfMessage = contact.nickName;
+		
 		
 		if (message.markedAsRead == false) {		  	
 			if (typeof socket != "undefined" && socket.connected == true){
@@ -457,8 +492,6 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
 	
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
-		console.log("DEBUG ::: getAllMessagesOf :: insed if :: olderDate, newerDate : " + olderDate + " " + newerDate  + " num. sms: " + listOfMessages.length );
-		
 		//stop when there is more than 20 SMS in the list and searching for newer than 2015
 		if (listOfMessages.length > 20 || olderDate < 1420070401000 ){			
 			listOfMessages.map(function(message){			
@@ -655,6 +688,59 @@ MailBox.prototype.getMessageByID = function(msgID) {
 	return deferredGetMessageByID.promise();
 };
 
+
+MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
+
+	var range = IDBKeyRange.bound(olderDate,newerDate);		
+	var deferred = $.Deferred();
+	var listOfMessages = [];
+	
+	db.transaction(["messagesV2"], "readonly").objectStore("messagesV2").index("timeStamp").openCursor(range).onsuccess = function(e) {		
+		var cursor = e.target.result;
+     	if (cursor) {
+     		if (cursor.value.ACKfromServer == false ){
+     			listOfMessages.push(cursor.value);	
+     		}        	
+         	cursor.continue(); 
+     	}else{			
+     		deferred.resolve(listOfMessages);     			
+     	}
+	};
+	
+	return deferred.promise();
+};
+
+//TODO for the moment it does only sends the last 30 messages that were sent off-line 
+MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMessages) {
+	
+	mailBox.getMessagesSentOffline(olderDate, newerDate).done(function(list){
+		//stop when there is more than 30 SMS in the list and searching for newer than 2015
+		if (listOfMessages.length > 30 || olderDate < 1420070401000 ){			
+			listOfMessages.map(function(message){			
+				//sends message	
+				if (typeof socket != "undefined" && socket.connected == true){
+					try{
+						socket.emit('messagetoserver', unWrapper.encrypt(message));	
+											
+					}catch (e){
+						console.log('DEBUG ::: sendOfflineMessages ::: socket not initialized yet');
+					}		
+				}
+			});
+			console.log("DEBUG ::: sendOfflineMessages  :::");
+			console.dir(listOfMessages);
+		}else {			
+			olderDate = olderDate - 2628000000;
+			newerDate = newerDate - 2628000000;
+			mailBox.sendOfflineMessages( olderDate, newerDate, listOfMessages.concat(list));
+		}
+	});
+	
+};
+
+
+
+
 //    this function assumes that the contact is already inserted on the Array listOfContacts
 
 function addNewContact (publicClientID) {	
@@ -709,7 +795,11 @@ function modifyContactOnDB (contact) {
 
 
 
-function setNewContacts (data) {			
+function setNewContacts (input) {
+	
+	var data = unWrapper.getParametersOfSetNewContacts(input);
+	if (data == null ) { return;}
+				
 	data.map(function(c){
 		
 		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
@@ -782,7 +872,14 @@ function connect_socket (result) {
 	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenSigned	});
 	
 	socket.on('connect', function () {	
-		socket.emit('RequestOfListOfPeopleAround', app.publicClientID, setNewContacts );			
+		socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( { publicClientID : app.publicClientID } ) );
+	
+		// 2592000000 is a month in miliseconds
+		var newerDate = new Date().getTime();	
+		var olderDate = new Date(newerDate - 2592000000).getTime();
+
+		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
+
 	});
 
   //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
@@ -867,7 +964,6 @@ function connect_socket (result) {
 					md5sum : message2request.md5sum,
 					size : message2request.size
 				};
-				console.log("DEBUG ::: triggered messageRetrieval  ::: for : " + JSON.stringify(requestOfMessage)); 
 				socket.emit('messageRetrieval', unWrapper.encrypt(requestOfMessage)); 
 			}else {				
 				clearInterval(loopRequestingMessages);				
@@ -898,7 +994,8 @@ function connect_socket (result) {
 	
 	socket.on("ProfileFromServer", function(input) {
 		
-		var data = unWrapper.getParametersOfProfileFromServer(input);
+		var data = unWrapper.getParametersOfProfileFromServer(input); 
+		if (data == null) { return;	}
 		
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientIDofSender); })[0];
 		contact.path2photo = data.img;
@@ -1092,8 +1189,7 @@ $(document).on("click","#chat-multimedia-button",function() {
 	
 	$('#picPopupDivMultimedia').picEdit({
  		imageUpdated: function(img){ 
- 			console.log('DEBUG ::: picPopupDivMultimedia ::: ');
-				 			
+		 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
 				from : app.publicClientID , 

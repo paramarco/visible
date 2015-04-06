@@ -339,12 +339,16 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 	try {    
 		var deliveryACK = PostMan.prototype.decrypt(encrypted, client);
 		
-		if (typeof deliveryACK.msgID !== 'string' || 
+		if (deliveryACK == null ||
+			typeof deliveryACK.msgID !== 'string' || 
 			typeof deliveryACK.md5sum !== 'string' ||
 			typeof deliveryACK.to !== 'string' ||
 			typeof deliveryACK.from !== 'string' ||
 			typeof deliveryACK.typeOfACK !== 'string' ||
-			Object.keys(deliveryACK).length != 5  ) {	return null;}
+			Object.keys(deliveryACK).length != 5  ) {	
+				
+			console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check 1 " );
+			return null;}
 		
 		return deliveryACK; 
 	}
@@ -353,6 +357,27 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 		return null;
 	}	
 };
+
+
+PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			typeof input.publicClientID !== 'string' ||
+			Object.keys(input).length != 1 ) {	
+			console.log("DEBUG ::: getpublicClientIDOfRequest ::: didnt pass the format check 1 :" + input );
+			return null;
+		}
+		
+		return input.publicClientID; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getpublicClientIDOfRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
 
 
 
