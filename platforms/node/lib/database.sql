@@ -97,30 +97,37 @@ CREATE EXTENSION IF NOT EXISTS postgis_topology WITH SCHEMA topology;
 COMMENT ON EXTENSION postgis_topology IS 'PostGIS topology spatial types and functions';
 
 
-SET search_path = tiger, pg_catalog;
+SET search_path = public, pg_catalog;
 
 SET default_tablespace = '';
 
 SET default_with_oids = false;
 
 --
--- Name: client; Type: TABLE; Schema: tiger; Owner: visible; Tablespace: 
+-- Name: client; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
 --
 
 CREATE TABLE client (
-    "publicClientID" uuid NOT NULL,
-    "indexOfCurrentKey" integer,
-    "currentChallenge" uuid,
+    publicclientid uuid NOT NULL,
+    indexofcurrentkey integer,
+    currentchallenge uuid,
     socketid text,
-    "memberSince" integer,
-    "nickName" text,
+    membersince bigint,
+    nickname text,
     commentary text,
-    location public.geography(Point,4326),
-    "myArrayOfKeys" json
+    location geography(Point,4326),
+    myarrayofkeys text
 );
 
 
-ALTER TABLE tiger.client OWNER TO visible;
+ALTER TABLE public.client OWNER TO visible;
+
+--
+-- Name: publicClientID; Type: INDEX; Schema: public; Owner: visible; Tablespace: 
+--
+
+CREATE UNIQUE INDEX "publicClientID" ON client USING btree (publicclientid);
+
 
 --
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
@@ -133,6 +140,14 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
--- PostgreSQL database dump complete
+-- Name: client; Type: ACL; Schema: public; Owner: visible
 --
 
+REVOKE ALL ON TABLE client FROM PUBLIC;
+REVOKE ALL ON TABLE client FROM visible;
+GRANT ALL ON TABLE client TO visible;
+
+
+--
+-- PostgreSQL database dump complete
+--

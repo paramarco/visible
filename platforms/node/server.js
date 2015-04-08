@@ -5,6 +5,7 @@ var express = require('express');
 var app = express();
 var cors = require('cors');
 var	uuid = require('node-uuid');
+var when = require('when');
 
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
@@ -14,7 +15,7 @@ app.use(cors());
 app.use(express.bodyParser());
 
 app.configure(function() {
-	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8080);
+	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
   	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
 });
 
@@ -34,30 +35,44 @@ var	io 				= require("socket.io").listen(server),
 	Message			= require('./lib/Message.js');
 
 app.post('/login', function (req, res) {
-	var client = brokerOfVisibles.getClientById(req.body.publicClientID);
-    var indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
-    var token2AnswerEncripted = uuid.v4();
-    
-	if (client){		
-		client.indexOfCurrentKey = indexOfCurrentKey;
-		client.currentChallenge = token2AnswerEncripted;
-	}else{
-		console.log('DEBUG ::: app.post :: I dont know any publicClientID like this');
-		return;
-	}
-	// challenge forwarding to the Client	
-	//var token2AnswerEncripted = signed();
-	res.json({index: indexOfCurrentKey, challenge : token2AnswerEncripted });  
+	
+	brokerOfVisibles.getClientById(req.body.publicClientID).then(function(client){
+		
+		if (client == null ){
+	  		console.log('DEBUG ::: login ::: I dont know any publicClientID like this');
+			return;
+		} 
+		
+		client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
+		client.currentChallenge = uuid.v4();
+		
+		brokerOfVisibles.updateClientsHandshake(client).then(function(){
+			// challenge forwarding to the Client	
+			//var token2AnswerEncripted = signed();
+			res.json({index: client.indexOfCurrentKey , challenge : client.currentChallenge });	
+		});	
+	
+		
+	});
+      
 });
 
+
 app.post('/firstlogin', function (req, res) {
-	var newClient = brokerOfVisibles.createNewClient();	
-	var response = {
-		publicClientID : newClient.publicClientID , 
-		myArrayOfKeys : newClient.myArrayOfKeys 
-	};
 	
-	res.json( response );  
+	brokerOfVisibles.createNewClient().then(function (newClient){	
+		
+		if (newClient != null){			
+			var response = {
+				publicClientID : newClient.publicClientID , 
+				myArrayOfKeys : newClient.myArrayOfKeys 
+			};
+					
+			res.json( response );
+		}
+		
+	});	
+	  
 });
 
 	
@@ -156,26 +171,33 @@ io.use(function(socket, next){
 	
 	var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
 	if ( joinServerParameters == null ){ return;}  	
-	console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
+	//console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
 	
-		
-	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
-		
-	var verified = postMan.verifyHandshake(token,client);
-	
-  	if (client && verified == true){
+	brokerOfVisibles.getClientById(joinServerParameters.publicClientID).then(function(client){
 
-  		//var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters);
-		if(client.socketid == null){
-			console.log('DEBUG ::: io.use ::: pass test in auth..! client goes to connect');
-			next();  			
-		}else{
-			console.log('DEBUG ::: io.use ::: Got disconnect in auth..! client already connected');
-		}		  		 
-  	}else{
-  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! I dont know this freaking client');  		
-  	}
-  	return;
+		if (client == null){
+			console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
+			return null;
+		}
+		
+		socket.visibleClient = client;
+		
+			
+		var verified = postMan.verifyHandshake(token,client);
+		
+	  	if (client && verified == true){
+	
+	  		//var client = brokerOfVisibles.evaluateResponseToTheChanllenge(joinServerParameters);
+			if(client.socketid != null){
+				console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
+			}
+			next();
+	  	}else{
+	  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! I dont know this freaking client');  		
+	  	}
+	  	return;
+	  	
+	});
 });
 
 io.sockets.on("connection", function (socket) {
@@ -184,21 +206,21 @@ io.sockets.on("connection", function (socket) {
 	var joinServerParameters = postMan.getJoinServerParameters(postMan.decodeHandshake(socket.handshake.query.token));	
 	if ( joinServerParameters == null ){ return;}	
 	
-	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
-
-
 	console.log("DEBUG :: onconnection :: " + joinServerParameters.publicClientID);				
 
-	var client = brokerOfVisibles.getClientById(joinServerParameters.publicClientID);
-					
-	if ( typeof client != 'undefined'){ 
-		client.setSocketId(socket.id);		
-		client.setNewParameters(joinServerParameters); 
+	if ( typeof socket.visibleClient != 'undefined'){ 
+		
+		socket.visibleClient.socketid = socket.id ;		
+		socket.visibleClient.location = joinServerParameters.location ;		
+		socket.visibleClient.nickName = joinServerParameters.nickName ;
 
+		//TODO: update DB
+		brokerOfVisibles.updateClientsProfile(socket.visibleClient);
+		
 		// #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 		// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-		postMan.sendMessageHeaders(client);	
-		postMan.sendMessageACKs(client);	
+		postMan.sendMessageHeaders(socket.visibleClient);	
+		postMan.sendMessageACKs(socket.visibleClient);	
 					
 	} else {	
 		//TODO #2  send report to administrator	when something non usual or out of logic happens			
@@ -209,15 +231,10 @@ io.sockets.on("connection", function (socket) {
 	
 	socket.on('disconnect', function() {
 		
-		var client = brokerOfVisibles.getClientBySocketId(socket.id);
+		socket.visibleClient.socketid = null ;
 		
-		if ( typeof client != 'undefined') { //given it isKnowClient
-			client.socketid = null;   
-		} else { 					
-			//TODO #2  send report to administrator	when something non usual or out of logic happens
-			//console.log('DEBUG :::  the only reason why a client haven`t got a socket is because he was connected twice, lets keep it like this');
-			//console.log("DEBUG :::  %j ", client);
-		}				 
+		brokerOfVisibles.updateClientsProfile(socket.visibleClient);
+		
 		console.log('DEBUG :::  Got disconnect!');		
 	});
    

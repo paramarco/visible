@@ -109,10 +109,18 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 	var verified = false;
 	try {
 		//verifies if it was signed with the current symmetric key of the client (number of the challenge)
-		var key = client.myArrayOfKeys[client.indexOfCurrentKey];	
+		
+		//console.log("DEBUG ::: verifyHandshake  :::  begining" + JSON.stringify(client)  + "token: " + JSON.stringify(tokenHandshake));
+
+		
+		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
+		
+
 			
 		verified = crypto.jws.JWS.verify(tokenHandshake, key);
 		
+		//console.log("DEBUG ::: verifyHandshake  :::  tokenHandshake: " + JSON.stringify(tokenHandshake)  );
+
 		//verifies if it the content of the handshake has the challenge (token of the challenge)
 		var a = tokenHandshake.split(".");
 		var uClaim = crypto.b64utos(a[1]);

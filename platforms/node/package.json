@@ -10,7 +10,10 @@
     "socket.io": 	"~1.0.6",
     "underscore": 	"~1.5.2",
     "jsrsasign": 	"~0.0.3",
-    "node-forge": 	"~0.6.21",    
+    "node-forge": 	"~0.6.21", 
+    "pg": 			"~4.3.0", 
+    "when": 		"~3.7.2",
+    "squel": 		"~3.10.0",
     "shrinkwrap": 	"~0.0.3"
   },
   "repository": {

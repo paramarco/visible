@@ -7,7 +7,7 @@ function Client() {
   this.publicClientID = uuid.v4();
   this.socketid = null;
   this.location = { lat : "", lon : ""};
-  this.memberSince = new Date();
+  this.memberSince = new Date().getTime();
   this.nickName = "";
   this.commentary = "";
   this.myArrayOfKeys = [forge.random.getBytesSync(32),

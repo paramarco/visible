@@ -869,7 +869,7 @@ function connect_socket (result) {
 	
   	var tokenSigned = unWrapper.signToken(token2sign);
 
-	socket = io.connect('http://127.0.0.1:8080' , { secure: true, query: 'token=' + tokenSigned	});
+	socket = io.connect('http://127.0.0.1:8090' , { secure: true, query: 'token=' + tokenSigned	});
 	
 	socket.on('connect', function () {	
 		socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( { publicClientID : app.publicClientID } ) );
@@ -1063,7 +1063,7 @@ var positionLoaded  = new $.Deferred();
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
 
-	$.post('http://127.0.0.1:8080/login', { publicClientID: app.publicClientID })
+	$.post('http://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
 		.done(function (result) { 
 			connect_socket(result);  
 		})
@@ -1243,7 +1243,7 @@ $(document).on("click","#firstLoginInputButton",function() {
 		return;
 	}
 
-	$.post('http://127.0.0.1:8080/firstlogin').done(function (result) { 
+	$.post('http://127.0.0.1:8090/firstlogin').done(function (result) { 
 	
 		var myCurrentNick = $("#firstLoginNameField").val();
 	
