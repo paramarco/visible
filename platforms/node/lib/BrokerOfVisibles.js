@@ -11,40 +11,21 @@ function BrokerOfVisibles(_io) {
 	var this_ = this;
 	var listOfClients = []; 
 	var clientOfDB = null;
-	
+
+    //TODO : what about this?
+    //call `done()` to release the client back to the pool
+    //done();
+    //client.end();
+
 	pg.connect(conString, function(err, client, done) {
-	  if(err) {
-	    return console.error('error fetching client from pool', err);
-	  }
-	  clientOfDB = client;
-	  /*	  
-	  client.query('SELECT * FROM client', function(err, result) {
-	    //call `done()` to release the client back to the pool 
-	    done();
+		if(err) {
+			return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
+		}
+		clientOfDB = client;
 	    
-	    if(err) {
-	      return console.error('error running query', err);
-	    }
-	    console.log(result.rows[0]);
-	    console.log(result.rows[1]);
-	    console.log(result.rows[2]);
-	    //output: 1 
-	    //client.end();
-	  });
-	  
-	  var query2send = "INSERT INTO client VALUES ( 'b42be128-6353-4353-b7d9-e45b6b86fb07', 7, 'b42be128-6353-4353-b7d9-e45b6b86fb07','','22222222','xxxx','xxxx', ST_GeomFromText('POINT(-71.060333 48.432044)', 4326) , '{\"x\":22}'); ";
-	  client.query(query2send, function(err, result) {
-	    if(err) {
-	      return console.error('error running query', err);
-	    }
-	    //console.log(result.rows[0]);
-	    //output: Tue Jan 15 2013 19:12:47 GMT-600 (CST) 
-	    client.end();
-	  });
-	  */
-	});
+	});	
 	
-		
+	//XEP-0080: User Location:: distribute its Location to its "Visible"s	
 	this.getListOfPeopleAround = function(publicClientID) {
 		var listOfPeopleAround = _.filter( listOfClients, function(c) {	
 			return (	c.publicClientID 	!= publicClientID &&
@@ -198,7 +179,6 @@ function BrokerOfVisibles(_io) {
 	
 	this.updateClientsProfile = function(client) {
 		
-		//var location2set = ;
 		var query2send = squel.update()
 							    .table("client")
 							    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")')" , {dontQuote: true} )
@@ -237,30 +217,66 @@ function BrokerOfVisibles(_io) {
 	};
 	
 	this.isClientOnline = function(publicClientID) {
+		
+	    var d = when.defer();
+	    
+	    var query2send = squel.select()
+							    .from("client")
+							    .where("publicclientid = '" + publicClientID + "'")							    
+							    .toString();
+	    
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: isClientOnline ::: error running query', err);	
+		    	return d.resolve(err);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined" || 
+			    	result.rows[0].socketid == null ){
+			    	console.log('DEBUG ::: isClientOnline ::: publicClientID not regietered or socket is set to null --> offline for client:' + publicClientID );
+			    	return  d.resolve(null);
+			    }
+		    		    
+			    var client = {};
+			    client.indexOfCurrentKey = result.rows[0].indexofcurrentkey;
+			    client.currentChallenge = result.rows[0].currentchallenge;
+			    client.publicClientID = result.rows[0].publicclientid;
+			    client.socketid = result.rows[0].socketid;
+			    
+			    var location = {"lat":"48.0983425","lon":"11.5407508"};
+			    client.location = location;			    
+			    
+			    client.memberSince = result.rows[0].membersince;
+			    client.nickName = result.rows[0].nickname;
+			    client.commentary = result.rows[0].commentary;
+			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );
+			   		    
+			    return  d.resolve(client);
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getClientById  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+		
+		
+		/*		
 	    var client =  _.find(listOfClients, function(client) {	
 	    	if (client.publicClientID === publicClientID && 
 	    		client.socketid != null   )
 				return true;	 
 		});
 		return client;
+		*/
 	};
 	
 };
-//#9 XEP-0080: User Location:: distribute its Location to its "Visible"s
-//BrokerOfVisibles.prototype.
-
-//BrokerOfVisibles.prototype.
-
-//BrokerOfVisibles.prototype.
-
-
-//BrokerOfVisibles.prototype.
-
-//BrokerOfVisibles.prototype.
-//BrokerOfVisibles.prototype.
-//BrokerOfVisibles.prototype.
-
-
 
 
 

@@ -2,20 +2,30 @@ var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 var crypto = require('jsrsasign');
 var forge = require('node-forge')({disableNativeCode: true});
+var pg = require('pg');
+var conString = "postgres://visible:paramarco@localhost/visible.0.0.1.db";
+var when = require('when');
+var squel = require("squel");
 
-
-/*				
-listOfACKs.push({ 	msgID : "3", 
-					md5sum : "asdasdasdasdasdasd", 
-					from : "11d76d68-886d-4c47-904f",
-					to : 'YYYYY' 	});					
-					
-*/				
 
 function PostMan(_io) {
 	var io = _io; //pointer to io.sockets
 	var listOfMessages = []; //array of Message.js (DB)
-	var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)
+	var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)	
+	var clientOfDB = null;
+
+    //TODO : what about this?
+    //call `done()` to release the client back to the pool
+    //done();
+    //client.end();
+	pg.connect(conString, function(err, client, done) {
+		if(err) {
+			return console.error('DEBUG ::: PostMan  ::: error fetching client from pool', err);
+		}
+		clientOfDB = client;
+		
+	});	
+
 	
 	
 	//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
@@ -44,7 +54,6 @@ function PostMan(_io) {
 		
 	};
 	
-	//TODO #16 get the message from database
 	this.getMessageFromArchive = function(retrievalParameters , client) {
 		var message = null;
 	  	message = _.find(listOfMessages, function(m) {	
@@ -58,8 +67,21 @@ function PostMan(_io) {
 	};
 	
 	
-	//TODO #5 save the message in the Buffer
+
 	this.archiveMessage = function(msg) {
+		/*
+		  	this.to = input.to;
+			this.from = input.from;
+			this.messageBody = input.messageBody;
+			this.msgID = "" ;
+			this.md5sum = "" ;
+			this.size = 0 ;
+			this.path2Attachment = null;
+			this.timeStamp = new Date(); 
+		*/
+		
+		
+		
 		listOfMessages.push(msg);
 	};
 
@@ -329,7 +351,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.msgID !== 'string'	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didnt pass the format check "  );
+			console.log("DEBUG ::: getMessage  ::: didn't pass the format check "  );
 			return null;
 		}
 
