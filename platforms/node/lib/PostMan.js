@@ -31,58 +31,122 @@ function PostMan(_io) {
 	//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 	//TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}];
 	this.sendMessageHeaders = function(client) {
-	
-		// messageHeaders = [{ msgID , md5sum , size}]; 
-		//messageHeaders = [];
-		var thereAreMessages = false;
-		var messageList = _.filter(	listOfMessages,	function(key) {
-			if (key.to == client.publicClientID)
-				return thereAreMessages = true;	
-		});
 		
-		var messageHeaders = [];
-		if (thereAreMessages){
-			for(var i = 0; i < messageList.length; i++){
-				messageHeaders.push(	{	msgID : messageList[i].msgID,
-											md5sum : messageList[i].md5sum,
-											size :messageList[i].size	}
-									);  
+	    var query2send = squel.select()
+	    						.field("msgid")
+							    .from("message")							    
+							    .where("receiver = '" + client.publicClientID + "'")							    
+							    .toString();
+		
+	    console.log ('DEBUG ::: sendMessageHeaders :::  query', query2send);
+		clientOfDB.query(query2send, function(err, result) {
+		
+			if(err) {
+				console.error('DEBUG ::: sendMessageHeaders ::: error running query', err);	
 			}
-			var message = { list : messageHeaders };
-			io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client )); 			
-		} 
+			
+			try {
+			
+				if ( typeof result.rows == "undefined" || result.rows.length == 0){					
+					return;
+				}
+				
+				var messageHeaders = [];
+				result.rows.map(function(r){
+					var header2add = {	
+						msgID : r.msgid,
+						md5sum : "X",
+						size : 0
+					};
+					messageHeaders.push(header2add);
+				});
+				
+				var message = { list : messageHeaders };
+				io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client ));				
+				
+			}catch (ex) {
+				console.log("DEBUG ::: sendMessageHeaders  :::  exceptrion thrown " + ex  );						
+			}
+		
+		});	 
 		
 	};
 	
 	this.getMessageFromArchive = function(retrievalParameters , client) {
-		var message = null;
-	  	message = _.find(listOfMessages, function(m) {	
-			if (m.msgID == retrievalParameters.msgID 	&& 	
-				m.md5sum  == retrievalParameters.md5sum &&
-				m.size == retrievalParameters.size   	&&
-				m.to == client.publicClientID )
-				return true;	 
-		});   
-	  return message;
+		
+		var d = when.defer();
+	    
+	    var query2send = squel.select()
+							    .from("message")
+							    .where("msgid = '" + retrievalParameters.msgID + "'")							    
+							    .where("receiver = '" + client.publicClientID + "'")							    
+							    .toString();
+	    
+	  console.log('DEBUG ::: getMessageFromArchive ::: query2send:' + query2send );
+	  
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: getMessageFromArchive ::: error running query', err);	
+		    	return d.resolve(err);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined" || 
+			    	result.rows[0].socketid == null ){
+			    	//console.log('DEBUG ::: getMessageFromArchive ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
+			    	return  d.resolve(null);
+			    }
+		    		    
+			    var message = {};
+			    var entry = result.rows[0];
+			    
+			    message.msgID = entry.msgid;
+			    message.to = entry.receiver;
+			    message.from = entry.sender;
+			    message.messageBody = JSON.parse( entry.messagebody );
+			    message.timeStamp = entry.timestamp ;			    			   		    
+			    
+			    return  d.resolve(message);
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getMessageFromArchive  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;	  
+	  
 	};
 	
 	
 
 	this.archiveMessage = function(msg) {
-		/*
-		  	this.to = input.to;
-			this.from = input.from;
-			this.messageBody = input.messageBody;
-			this.msgID = "" ;
-			this.md5sum = "" ;
-			this.size = 0 ;
-			this.path2Attachment = null;
-			this.timeStamp = new Date(); 
-		*/
 		
+		var query2send = squel.insert()
+							    .into("message")
+							    .set("msgid", msg.msgID)
+							    .set("receiver", msg.to)
+							    .set("sender", msg.from)
+							    .set("messagebody", JSON.stringify(msg.messageBody) )
+							    .set("timestamp", msg.timeStamp)							    
+							    .toString() ;
+				    
+		console.log("DEBUG ::: archiveMessage  :::  query2send " + query2send );
+							    
+		clientOfDB.query(query2send, function(err, result) {
+		     
+			//clientOfDB.done();
+		    
+			if(err) {
+		    	console.error('DEBUG ::: archiveMessage :::error running query', err);	
+		    	console.error('DEBUG ::: archiveMessage ::: query error: ', query2send);
+		    }		    
+		    
+		});
 		
-		
-		listOfMessages.push(msg);
 	};
 
 	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
@@ -95,36 +159,73 @@ function PostMan(_io) {
 	
 	};
 	
-	this.archiveACK = function(messageACKparameters) {	
-		listOfACKs.push(messageACKparameters);
+	this.archiveACK = function(messageACKparameters) {
+		
+		//{msgID ,md5sum ,to ,from }
+		var query2send = squel.insert()
+			    .into("messageack")
+			    .set("msgid", messageACKparameters.msgID)
+			    .set("receiver", messageACKparameters.to)
+			    .set("sender", messageACKparameters.from)			    							    
+			    .toString() ;
+		
+		console.log("DEBUG ::: archiveACK  :::  query2send " + query2send );
+			    
+		clientOfDB.query(query2send, function(err, result) {
+			
+			//clientOfDB.done();
+			
+			if(err) {
+				console.error('DEBUG ::: archiveMessage :::error running query', err);	
+				console.error('DEBUG ::: archiveMessage ::: query error: ', query2send);
+			}		    
+		
+		});
+		
 	};
 
 	this.sendMessageACKs = function(client) {
-	
-		var thereAreACKs = false;
-		var listOfACKStoNotify = _.filter(	listOfACKs,	function(key) {	
-			if (key.from == client.publicClientID)
-				return thereAreACKs = true;	
+
+	    var query2send = squel.select()
+								.field("msgid")
+								.field("receiver")
+							    .from("messageack")							    
+							    .where("sender = '" + client.publicClientID + "'")							    
+							    .toString();
+	    
+	    console.log('DEBUG ::: sendMessageACKs :::  query ' + query2send);
+
+		clientOfDB.query(query2send, function(err, result) {
+		
+			if(err) {
+				console.error('DEBUG ::: sendMessageACKs ::: error running query', err);	
+			}
+			
+			try {
+			
+				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
+					return;				
+				
+				result.rows.map(function(r){
+					var deliveryReceipt = { 
+						msgID : r.msgID, 
+						md5sum : "", 
+						typeOfACK : "ACKfromAddressee",
+						to : r.receiver 	
+					};
+					io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) );
+				});								
+			
+			}catch (ex) {
+				console.log("DEBUG ::: sendMessageACKs  :::  exceptrion thrown " + ex  );						
+			}
+		
 		});
 		
-		if (thereAreACKs){
-			for(var i = 0; i < listOfACKStoNotify.length; i++){
-				var deliveryReceipt = { 
-					msgID : listOfACKStoNotify[i].msgID, 
-					md5sum : listOfACKStoNotify[i].md5sum, 
-					typeOfACK : "ACKfromAddressee",
-					to : listOfACKStoNotify[i].to 	
-				};
-								
-				io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) );
-			} // END FOR	
-		}else{
-			
-		}
-		
 	};
+};	
 
-};
+
 
 
 PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
@@ -147,6 +248,8 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 		var a = tokenHandshake.split(".");
 		var uClaim = crypto.b64utos(a[1]);
 		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
+		
+		//console.log("DEBUG ::: verifyHandshake  :::  tokenHandshake: " + JSON.stringify(decodedHandshake) + "client : " + JSON.stringify(client));
 		
 		if (decodedHandshake.token != client.currentChallenge){
 			verified = false;

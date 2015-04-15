@@ -274,11 +274,12 @@ io.sockets.on("connection", function (socket) {
 		var retrievalParameters = postMan.getMessageRetrievalParameters(input , client);		
 		if (retrievalParameters == null) return;		
 		
-		var message = postMan.getMessageFromArchive(retrievalParameters, client);		
-		if (message != null){
-			console.log('DEBUG ::: messageRetrieval ::: it is replying the messageRetrieval request ' );
-			socket.emit("messageFromServer", postMan.encrypt( message , client));	
-		}
+		postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
+			if (message != null){
+				console.log('DEBUG ::: messageRetrieval ::: it is replying the messageRetrieval request ' );
+				socket.emit("messageFromServer", postMan.encrypt( message , client));	
+			}
+		});
 		
 	});
 
@@ -344,7 +345,7 @@ io.sockets.on("connection", function (socket) {
 		var client = socket.visibleClient;	
 
 		var parameters = postMan.getProfileResponseParameters(input, client);		
-		if (parameters == null) return;		
+		if (parameters == null) return;	
 		
 		brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester).then(function(clientToPoll){ 
 
@@ -359,27 +360,26 @@ io.sockets.on("connection", function (socket) {
 		
 		var client = socket.visibleClient;		
 		
-		var publicClientID =  postMan.getpublicClientIDOfRequest(input, client);		
-		if (publicClientID == null) return;	
+		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
 		
-		var listOfPeople = brokerOfVisibles.getListOfPeopleAround(publicClientID);	
-		
-		socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
-		
-		var visible = {
-			publicClientID : client.publicClientID,
-			location : client.location,
-			nickName : client.nickName,
-  			commentary : client.commentary
-		}; 
-		
-		listOfPeople.map(function (c){
-			brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-				if ( client2BeNotified  != null ){
-					io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : [visible] } , client2BeNotified));
-				}
-			});	
-		});
+			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
+			
+			var visible = {
+				publicClientID : client.publicClientID,
+				location : client.location,
+				nickName : client.nickName,
+	  			commentary : client.commentary
+			}; 
+			
+			listOfPeople.map(function (c){
+				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
+					if ( client2BeNotified  != null ){
+						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : [visible] } , client2BeNotified));
+					}
+				});	
+			});
+			
+		});	
 		
   	});	
 

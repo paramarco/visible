@@ -26,23 +26,57 @@ function BrokerOfVisibles(_io) {
 	});	
 	
 	//XEP-0080: User Location:: distribute its Location to its "Visible"s	
-	this.getListOfPeopleAround = function(publicClientID) {
-		var listOfPeopleAround = _.filter( listOfClients, function(c) {	
-			return (	c.publicClientID 	!= publicClientID &&
-						c.socketid			!= null 			);	
-		});
-		var listOfVisibles = [];
-		listOfPeopleAround.map(function(c){
-			var visible = {
-				publicClientID : c.publicClientID,
-				location : c.location,
-				nickName : c.nickName,
-	  			commentary : c.commentary
-			}; 
-			listOfVisibles.push(visible);
-		});
-	
-		return listOfVisibles;
+	this.getListOfPeopleAround = function(client) {
+		
+		var d = when.defer();
+	    		
+	    var query2send = squel.select()
+	    						.field("publicclientid")
+	    						.field("nickname")
+	    						.field("commentary")
+	    						.field("ST_X(location::geometry)", "lat")
+	    						.field("ST_Y(location::geometry)", "lon")
+							    .from("client")
+							    .where("ST_DWithin(location, ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon +" " +client.location.lat + ")'), 1000000)")
+							    .where(" CAST(publicclientid AS varchar(40)) NOT LIKE '" + client.publicClientID + "'")
+							    .toString();	    
+	    
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: getListOfPeopleAround ::: error running query', err);	
+		    	return d.resolve(err);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined"){
+			    	console.log('DEBUG ::: getListOfPeopleAround ::: upss nobody around');
+			    	return  d.resolve([]);
+			    }			    
+			    
+				var listOfVisibles = [];
+				result.rows.map(function(r){
+					var visible = {
+						publicClientID : r.publicclientid,
+						location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
+						nickName : r.nickname,
+			  			commentary : r.commentary
+					}; 
+					listOfVisibles.push(visible);
+				});			   		
+			    
+			    return  d.resolve(listOfVisibles);
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getListOfPeopleAround  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+		
 	};
 	
 	this.getClientById = function(publicClientID) {
@@ -50,9 +84,21 @@ function BrokerOfVisibles(_io) {
 	    var d = when.defer();
 	    
 	    var query2send = squel.select()
+	    						.field("indexofcurrentkey")
+	    						.field("currentchallenge")
+	    						.field("publicclientid")
+	    						.field("socketid")
+	    						.field("membersince")
+	    						.field("nickname")
+	    						.field("commentary")
+	    						.field("myarrayofkeys")
+	    						.field("ST_X(location::geometry)", "lat")
+	    						.field("ST_Y(location::geometry)", "lon")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
+	    
+	    //console.log('DEBUG ::: getClientById ::: query2send :' + query2send );
 	    
 		clientOfDB.query(query2send, function(err, result) {
 		    
@@ -69,21 +115,37 @@ function BrokerOfVisibles(_io) {
 			    }
 		    		    
 			    var client = {};
-			    client.indexOfCurrentKey = result.rows[0].indexofcurrentkey;
-			    client.currentChallenge = result.rows[0].currentchallenge;
-			    client.publicClientID = result.rows[0].publicclientid;
-			    client.socketid = result.rows[0].socketid;
+			    var entry = result.rows[0];
 			    
-			    var location = {"lat":"48.0983425","lon":"11.5407508"};
-			    client.location = location;
+			    client.publicClientID = entry.publicclientid;
 			    
+			    if (entry.indexofcurrentkey == null)
+			    	client.indexOfCurrentKey = 0;
+			    else
+			    	client.indexOfCurrentKey = entry.indexofcurrentkey;
 			    
-			    client.memberSince = result.rows[0].membersince;
-			    client.nickName = result.rows[0].nickname;
-			    client.commentary = result.rows[0].commentary;
+			    if (entry.currentchallenge == null)
+			    	client.currentChallenge == "";
+			    else
+			    	client.currentChallenge = entry.currentchallenge;
+			    
+			    if (entry.socketid == null)
+			    	client.socketid = "";
+			    else
+			    	client.socketid = entry.socketid ; 
+			    
+			    client.memberSince = entry.membersince;
+			    client.nickName = entry.nickname;
+			    client.commentary = entry.commentary;
 
-			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );
-			   		    
+			    if (entry.location == null )
+			    	client.location = { "lat" : "", "lon" : "" };
+			    else
+			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
+			    
+			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );		   		
+
+			    
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
@@ -236,7 +298,7 @@ function BrokerOfVisibles(_io) {
 		    	
 			    if (typeof result.rows[0] == "undefined" || 
 			    	result.rows[0].socketid == null ){
-			    	console.log('DEBUG ::: isClientOnline ::: publicClientID not regietered or socket is set to null --> offline for client:' + publicClientID );
+			    	//console.log('DEBUG ::: isClientOnline ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
 			    	return  d.resolve(null);
 			    }
 		    		    

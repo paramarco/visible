@@ -9,7 +9,7 @@ function Message(input) {
 	this.md5sum = "" ;
 	this.size = 0 ;
 	this.path2Attachment = null;
-	this.timeStamp = new Date(); 
+	this.timeStamp = new Date().getTime(); 
 
 	switch (Object.keys(input).length )	{
 		case 3 :
