@@ -44,15 +44,20 @@ app.post('/login', function (req, res) {
 		} 
 		
 		client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
-		client.currentChallenge = uuid.v4();
+		client.currentChallenge = uuid.v4();		
+		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 		
-		brokerOfVisibles.updateClientsHandshake(client).then(function(){
-			// challenge forwarding to the Client	
-			//var token2AnswerEncripted = signed();
-			res.json({index: client.indexOfCurrentKey , challenge : client.currentChallenge });	
+		var clientUpdate = [ 
+             brokerOfVisibles.updateClientsLocation( client, ip ) ,
+		     brokerOfVisibles.updateClientsHandshake( client )
+		];
+		
+		when.all ( clientUpdate ).then(function(){
+			// challenge forwarding to the Client			
+			res.json({index: client.indexOfCurrentKey , challenge : client.currentChallenge });
+			
 		});	
-	
-		
+				
 	});
       
 });
@@ -76,7 +81,6 @@ app.post('/firstlogin', function (req, res) {
 });
 
 	
-//TODO #1 use SecureWebSockets instead of clear Websockets encription rocks
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
 //TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 
@@ -84,84 +88,11 @@ app.post('/firstlogin', function (req, res) {
 var util = require('util');
 //DEBUG END		##################
 
-	
 				
 var brokerOfVisibles = new BrokerOfVisibles(io);
 var postMan = new PostMan(io);
 
-//DEBUG temporary variables just for testing Performances
-/* 
-for (var i = 0 ; i<10000000; i++){
-	var newClient = new Client ();
-	listOfClients.push(newClient);	
-}
-*/
-/*
-var newClient = new Client ();
-listOfClients.push(newClient);
-var newClient = new Client ();
-listOfClients.push(newClient);
-var newClient = new Client ();
-listOfClients.push(newClient); 
-*/
-/*
-postMan.archiveMessage({ 
-	to : listOfClients[0],
-	from : listOfClients[1],
-	messageBody : "Lorem ipsum dolor sit amet",
-	msgID : "0",
-	md5sum : "edfefeeeeaeeb5e23323",
-	size : 1212,
-	path2Attachment : null,
-	timeStamp : new Date()	
-});
-postMan.archiveMessage({
-	to : listOfClients[0],
-	from : listOfClients[2],
-	messageBody : "Lorem ipsum dolor sit amet",
-	msgID : "1",
-	md5sum : "edfefeeeeaeeb5e23323",
-	size : 1212,
-	path2Attachment : null,
-	timeStamp : new Date()
-});
-
-postMan.archiveMessage({ 
-	to : listOfClients[1],
-	from : listOfClients[0],
-	messageBody : "spend more time with meeee",
-	msgID : "2",
-	md5sum : "edfefeeeeaeeb5e23323",
-	size : 1212,
-	path2Attachment : null,
-	timeStamp : new Date()	
-});
-
-postMan.archiveMessage({ 
-	to : listOfClients[1],
-	from : listOfClients[2],
-	messageBody : "Lorem ipsum dolor sit amet",
-	msgID : "3",
-	md5sum : "edfefeeeeaeeb5e23323",
-	size : 123213,
-	path2Attachment : null,
-	timeStamp : new Date()
-});
-
-postMan.archiveMessage({
-	to	 : listOfClients[1],
-	from : listOfClients[2],
-	messageBody : "Lorem ipsum dolor sit amet second",
-	msgID : "4",
-	md5sum : "edfefeeeeaeeb5e23323",
-	size : 123213,
-	path2Attachment : null,
-	timeStamp : new Date()	
-});
-*/
-
-
-//DEBUG END		##################					 					 					 	  
+		 					 					 	  
 
 io.use(function(socket, next){
 	
@@ -173,18 +104,35 @@ io.use(function(socket, next){
 	if ( joinServerParameters == null ){ return;}  	
 	//console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
 	
-	brokerOfVisibles.getClientById(joinServerParameters.publicClientID).then(function(client){
+	brokerOfVisibles.getClientById ( joinServerParameters.publicClientID ).then(function(client){
 
 		if (client == null){
 			console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
 			return null;
-		}
-		
-		socket.visibleClient = client;		
+		}			
 			
-		var verified = postMan.verifyHandshake(token,client);
+		var verified = postMan.verifyHandshake ( token , client );
 		
 	  	if (client && verified == true){
+	  		
+	  		
+	  		client.socketid = socket.id ;
+	  		
+	  		//if ( 	brokerOfVisibles.isLocationWellFormatted(joinServerParameters.location) && 
+	  		//	 !	brokerOfVisibles.areSameLocation( client.location, joinServerParameters.location ) ) {
+	  			
+	  			//client.location.lat = joinServerParameters.location.lat.toString() ;	
+	  			//client.location.lon = joinServerParameters.location.lon.toString() ;
+	  		//}
+	  		if (client.nickName != joinServerParameters.nickName){
+	  			client.nickName = joinServerParameters.nickName ;	
+	  		}	
+
+	  		// update DB
+	  		brokerOfVisibles.updateClientsProfile(client);		
+	  		
+	  		//attaches the client to the socket
+	  		socket.visibleClient = client;	
 	  		
 			if(client.socketid != null){
 				console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
@@ -202,23 +150,12 @@ io.use(function(socket, next){
 io.sockets.on("connection", function (socket) {
 	
 	if ( typeof socket.visibleClient == 'undefined'){
-		console.log("DEBUG ::: connection ::: socket.visibleClient undefined ::: %j", joinServerParameters );		
+		console.log("DEBUG ::: connection ::: socket.visibleClient undefined " );		
 		socket.disconnect();		
-	}		
-	var joinServerParameters = postMan.getJoinServerParameters(postMan.decodeHandshake(socket.handshake.query.token));	
-	if ( joinServerParameters == null ){
-		console.log("DEBUG ::: connection ::: invalid token  %j", socket.handshake.query.token );		
-		return;
 	}	
 	
-	console.log("DEBUG ::: onconnection ::: " + joinServerParameters.publicClientID);			
+	console.log("DEBUG ::: connection ::: client ", JSON.stringify(socket.visibleClient ) );
 	
-	socket.visibleClient.socketid = socket.id ;		
-	socket.visibleClient.location = joinServerParameters.location ;		
-	socket.visibleClient.nickName = joinServerParameters.nickName ;
-
-	// update DB
-	brokerOfVisibles.updateClientsProfile(socket.visibleClient);
 	
 	// XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
@@ -247,7 +184,6 @@ io.sockets.on("connection", function (socket) {
 		
 		var deliveryReceipt = { 
 			msgID : message.msgID, 
-			md5sum : message.md5sum, 
 			typeOfACK : "ACKfromServer", 
 			to : message.to
 		};
@@ -276,7 +212,6 @@ io.sockets.on("connection", function (socket) {
 		
 		postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
 			if (message != null){
-				console.log('DEBUG ::: messageRetrieval ::: it is replying the messageRetrieval request ' );
 				socket.emit("messageFromServer", postMan.encrypt( message , client));	
 			}
 		});
@@ -299,16 +234,15 @@ io.sockets.on("connection", function (socket) {
 					
 		brokerOfVisibles.isClientOnline(messageACKparameters.from).then(function(clientSender){									
 					
-			if ( typeof clientSender != null ){
+			if ( clientSender != null ){
 				
 				var deliveryReceipt = { 
 					msgID : messageACKparameters.msgID, 
-					md5sum : messageACKparameters.md5sum, 
 					typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
 					to : messageACKparameters.to 	
 				};
-											
-	 			io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ));
+				
+ 				io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ), postMan.deleteMessageAndACK(deliveryReceipt) );
 	 					
 	 		}else {
 	 			postMan.archiveACK(messageACKparameters);

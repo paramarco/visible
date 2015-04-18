@@ -126,29 +126,40 @@ ALTER TABLE public.client OWNER TO visible;
 -- Name: message; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
 --
 
-CREATE TABLE message (
-    msgid uuid,
-    receiver uuid,
-    sender uuid,
-    messagebody text,
-    "timestamp" bigint
+
+CREATE TABLE public.message
+(
+  msgid uuid,
+  receiver uuid,
+  sender uuid,
+  "timestamp" bigint,
+  messagebody json
+)
+WITH (
+  OIDS=FALSE
 );
+ALTER TABLE public.message  OWNER TO visible;
 
-
-ALTER TABLE public.message OWNER TO visible;
 
 --
 -- Name: messageack; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
 --
 
-CREATE TABLE messageack (
-    msgid uuid,
-    receiver uuid,
-    sender uuid
+-- Table: public.messageack
+
+-- DROP TABLE public.messageack;
+
+CREATE TABLE public.messageack
+(
+  msgid uuid,
+  receiver uuid,
+  sender uuid,
+  type text
+)
+WITH (
+  OIDS=FALSE
 );
-
-
-ALTER TABLE public.messageack OWNER TO visible;
+ALTER TABLE public.messageack  OWNER TO visible;
 
 --
 -- Name: publicClientID; Type: INDEX; Schema: public; Owner: visible; Tablespace: 

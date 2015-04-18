@@ -173,10 +173,9 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 		
 		if (deliveryReceipt == null ||
 			typeof deliveryReceipt.msgID !== 'string' 	|| 
-			typeof deliveryReceipt.md5sum !== 'string' 	||
 			typeof deliveryReceipt.typeOfACK !== 'string'||
 			typeof deliveryReceipt.to !== 'string'		||
-			Object.keys(deliveryReceipt).length != 4  ) {	
+			Object.keys(deliveryReceipt).length != 3  ) {	
 			return null;
 		}
 		
@@ -351,7 +350,6 @@ GUI.prototype.insertMessageInConversation = function(message) {
 			  			to : message.to, 
 			  			from : message.from,
 			  			msgID : message.msgID, 
-			  			md5sum : message.md5sum,
 			  			typeOfACK : "ReadfromAddressee"
 				  	};					
 					socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
@@ -727,8 +725,7 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 					}		
 				}
 			});
-			console.log("DEBUG ::: sendOfflineMessages  :::");
-			console.dir(listOfMessages);
+			console.log("DEBUG ::: sendOfflineMessages  :::" + JSON.stringify(listOfMessages) );
 		}else {			
 			olderDate = olderDate - 2628000000;
 			newerDate = newerDate - 2628000000;
@@ -819,7 +816,7 @@ function setNewContacts (input) {
 				location :  c.location,
 				path2photo : "./img/profile_black_195x195.png", 
 				nickName : c.nickName,
-				commentary : c.commentary								
+				commentary : (c.commentary == "") ? "is still thinking on a nick" : c.commentary								
 			});
 			
 			listOfContacts.push(newContact);
@@ -924,7 +921,6 @@ function connect_socket (result) {
   			to : messageFromServer.to, 
   			from : messageFromServer.from,
   			msgID : messageFromServer.msgID, 
-  			md5sum : messageFromServer.md5sum,
   			typeOfACK : "ACKfromAddressee"
   		};
   		//it could be implemented with callback as well....
@@ -955,7 +951,7 @@ function connect_socket (result) {
 		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
-		console.dir(listOfHeaders);
+		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
 
 		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
@@ -1104,13 +1100,13 @@ $(document).ready(function() {
             positionLoaded.resolve();
         }
         function fail(error) {        	        
-			app.myPosition = { coords : { latitude : "48.0983425" , longitude : "11.5407508"  } };
+			app.myPosition = { coords : { latitude : "" , longitude : ""  } };
         	positionLoaded.resolve();
         }
         // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
         navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
     } else {
-    	app.myPosition = { coords : { latitude : "48.098" , longitude : "11.540"  } };
+    	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
         positionLoaded.resolve();
     }		  
 	

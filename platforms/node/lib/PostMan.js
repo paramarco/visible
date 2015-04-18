@@ -13,6 +13,7 @@ function PostMan(_io) {
 	var listOfMessages = []; //array of Message.js (DB)
 	var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)	
 	var clientOfDB = null;
+	var self = this;
 
     //TODO : what about this?
     //call `done()` to release the client back to the pool
@@ -38,7 +39,6 @@ function PostMan(_io) {
 							    .where("receiver = '" + client.publicClientID + "'")							    
 							    .toString();
 		
-	    console.log ('DEBUG ::: sendMessageHeaders :::  query', query2send);
 		clientOfDB.query(query2send, function(err, result) {
 		
 			if(err) {
@@ -82,8 +82,6 @@ function PostMan(_io) {
 							    .where("receiver = '" + client.publicClientID + "'")							    
 							    .toString();
 	    
-	  console.log('DEBUG ::: getMessageFromArchive ::: query2send:' + query2send );
-	  
 		clientOfDB.query(query2send, function(err, result) {
 		    
 		    if(err) {
@@ -93,8 +91,7 @@ function PostMan(_io) {
 		    
 		    try {
 		    	
-			    if (typeof result.rows[0] == "undefined" || 
-			    	result.rows[0].socketid == null ){
+			    if (typeof result.rows[0] == "undefined"  ){
 			    	//console.log('DEBUG ::: getMessageFromArchive ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
 			    	return  d.resolve(null);
 			    }
@@ -105,13 +102,13 @@ function PostMan(_io) {
 			    message.msgID = entry.msgid;
 			    message.to = entry.receiver;
 			    message.from = entry.sender;
-			    message.messageBody = JSON.parse( entry.messagebody );
+			    message.messageBody = entry.messagebody ;
 			    message.timeStamp = entry.timestamp ;			    			   		    
 			    
 			    return  d.resolve(message);
 			    
 		    }catch (ex) {
-				console.log("DEBUG ::: getMessageFromArchive  :::  exceptrion thrown " + ex  );
+				console.log("DEBUG ::: getMessageFromArchive  :::  exception thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -166,11 +163,10 @@ function PostMan(_io) {
 			    .into("messageack")
 			    .set("msgid", messageACKparameters.msgID)
 			    .set("receiver", messageACKparameters.to)
-			    .set("sender", messageACKparameters.from)			    							    
+			    .set("sender", messageACKparameters.from)
+			    .set("type", messageACKparameters.typeOfACK)			    							    
 			    .toString() ;
 		
-		console.log("DEBUG ::: archiveACK  :::  query2send " + query2send );
-			    
 		clientOfDB.query(query2send, function(err, result) {
 			
 			//clientOfDB.done();
@@ -189,11 +185,11 @@ function PostMan(_io) {
 	    var query2send = squel.select()
 								.field("msgid")
 								.field("receiver")
+								.field("type")
 							    .from("messageack")							    
 							    .where("sender = '" + client.publicClientID + "'")							    
 							    .toString();
 	    
-	    console.log('DEBUG ::: sendMessageACKs :::  query ' + query2send);
 
 		clientOfDB.query(query2send, function(err, result) {
 		
@@ -208,12 +204,13 @@ function PostMan(_io) {
 				
 				result.rows.map(function(r){
 					var deliveryReceipt = { 
-						msgID : r.msgID, 
-						md5sum : "", 
-						typeOfACK : "ACKfromAddressee",
+						msgID : r.msgid, 
+						typeOfACK : r.type,
 						to : r.receiver 	
 					};
-					io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) );
+					console.log("DEBUG ::: sendMessageACKs  :::  MessageDeliveryReceipt sent " + JSON.stringify(deliveryReceipt)  );						
+
+					io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) , self.deleteMessageAndACK(deliveryReceipt) );
 				});								
 			
 			}catch (ex) {
@@ -223,6 +220,49 @@ function PostMan(_io) {
 		});
 		
 	};
+	
+	
+	this.deleteMessageAndACK = function(deliveryReceipt) {
+	    
+		 /*
+		  				var deliveryReceipt = { 
+						msgID : messageACKparameters.msgID, 
+						typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
+						to : messageACKparameters.to 	
+					};
+		  * 
+		  * */   
+		var query2send = squel.delete()
+						    .from("message")
+						    .where("msgid = '" + deliveryReceipt.msgID + "'")							    
+						    .where("receiver = '" + deliveryReceipt.to + "'")							    
+						    .toString() + " ; " +
+						 squel.delete()
+						    .from("messageack")
+						    .where("msgid = '" + deliveryReceipt.msgID + "'")							    
+						    .where("receiver = '" + deliveryReceipt.to + "'")
+						    .where("type = '" + deliveryReceipt.typeOfACK + "'")							    
+						    .toString() ;
+		   
+		console.error('DEBUG ::: deleteMessageAndACK ::: running query ' + query2send );	
+	
+		clientOfDB.query(query2send, function(err, result) {
+			try {
+		
+				if(err) {
+					console.error('DEBUG ::: deleteMessageAndACK ::: error running query', err);	
+				}						
+			
+			}catch (ex) {
+				console.log("DEBUG ::: deleteMessageAndACK  :::  exceptrion thrown " + ex  );						
+			}
+		
+		});	
+	
+	};
+	
+	
+	
 };	
 
 
@@ -236,10 +276,7 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 		//console.log("DEBUG ::: verifyHandshake  :::  begining" + JSON.stringify(client)  + "token: " + JSON.stringify(tokenHandshake));
 
 		
-		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
-		
-
-			
+		var key = client.myArrayOfKeys[client.indexOfCurrentKey];			
 		verified = crypto.jws.JWS.verify(tokenHandshake, key);
 		
 		//console.log("DEBUG ::: verifyHandshake  :::  tokenHandshake: " + JSON.stringify(tokenHandshake)  );
@@ -474,14 +511,14 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 		
 		if (deliveryACK == null ||
 			typeof deliveryACK.msgID !== 'string' || 
-			typeof deliveryACK.md5sum !== 'string' ||
 			typeof deliveryACK.to !== 'string' ||
 			typeof deliveryACK.from !== 'string' ||
 			typeof deliveryACK.typeOfACK !== 'string' ||
-			Object.keys(deliveryACK).length != 5  ) {	
+			Object.keys(deliveryACK).length != 4  ) {	
 				
-			console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check 1 " );
-			return null;}
+			console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
+			return null;
+		}
 		
 		return deliveryACK; 
 	}
@@ -510,7 +547,6 @@ PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {
 		return null;
 	}	
 };
-
 
 
 

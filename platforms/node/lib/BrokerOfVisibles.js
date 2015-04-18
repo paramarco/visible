@@ -34,8 +34,8 @@ function BrokerOfVisibles(_io) {
 	    						.field("publicclientid")
 	    						.field("nickname")
 	    						.field("commentary")
-	    						.field("ST_X(location::geometry)", "lat")
-	    						.field("ST_Y(location::geometry)", "lon")
+	    						.field("ST_X(location::geometry)", "lon")
+	    						.field("ST_Y(location::geometry)", "lat")
 							    .from("client")
 							    .where("ST_DWithin(location, ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon +" " +client.location.lat + ")'), 1000000)")
 							    .where(" CAST(publicclientid AS varchar(40)) NOT LIKE '" + client.publicClientID + "'")
@@ -57,11 +57,18 @@ function BrokerOfVisibles(_io) {
 			    
 				var listOfVisibles = [];
 				result.rows.map(function(r){
+					
+					if ( 	typeof r.commentary == "undefined" 	|| 
+							typeof r.commentary == "null"	 	||
+							r.commentary == null ) {
+						r.commentary = "";						
+					}
+				
 					var visible = {
 						publicClientID : r.publicclientid,
 						location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
 						nickName : r.nickname,
-			  			commentary : r.commentary
+			  			commentary :  r.commentary
 					}; 
 					listOfVisibles.push(visible);
 				});			   		
@@ -92,13 +99,12 @@ function BrokerOfVisibles(_io) {
 	    						.field("nickname")
 	    						.field("commentary")
 	    						.field("myarrayofkeys")
-	    						.field("ST_X(location::geometry)", "lat")
-	    						.field("ST_Y(location::geometry)", "lon")
+	    						.field("location")
+	    						.field("ST_X(location::geometry)", "lon")
+	    						.field("ST_Y(location::geometry)", "lat")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
-	    
-	    //console.log('DEBUG ::: getClientById ::: query2send :' + query2send );
 	    
 		clientOfDB.query(query2send, function(err, result) {
 		    
@@ -116,6 +122,7 @@ function BrokerOfVisibles(_io) {
 		    		    
 			    var client = {};
 			    var entry = result.rows[0];
+			    
 			    
 			    client.publicClientID = entry.publicclientid;
 			    
@@ -230,7 +237,7 @@ function BrokerOfVisibles(_io) {
 				console.error('DEBUG ::: updateClientsHandshake ::: query error: ', query2send);	
 			   	return d.resolve(null);
 			}		    
-	    
+
 			return  d.resolve(true);
     
 		});
@@ -238,6 +245,48 @@ function BrokerOfVisibles(_io) {
 		return d.promise;			
 	
 	};
+	
+	
+	this.updateClientsLocation = function(client , ip) {
+		
+		var d = when.defer();
+		
+		//get locationByIP
+		console.log ("DEBUG ::: updateClientsLocation ::: ip : " + ip);		
+		//client.location.lat = "48.0667";
+		//client.location.lon = "11.25";
+		var discoveredLocation = {
+			lat : "48.0983425",
+			lon : "12.5407508"
+		};
+		
+				
+		var query2send = squel.update()
+						    .table("client")
+					    	.set("location", "ST_GeographyFromText('SRID=4326;POINT(" + discoveredLocation.lon  + " " + discoveredLocation.lat + ")')" , {dontQuote: true} )					    	
+					    	.where("publicclientid = '" + client.publicClientID + "'")
+						    .toString();
+		
+		console.error('DEBUG ::: updateClientsLocation :::  query' + query2send);	
+
+
+		clientOfDB.query(query2send, function(err, result) {
+     
+			//clientOfDB.done();
+	
+			if(err) {
+				console.error('DEBUG ::: updateClientsLocation :::error running query', err);	
+				console.error('DEBUG ::: updateClientsLocation ::: query error: ', query2send);	
+			}
+
+			d.resolve(true);
+
+		});
+		
+		return d.promise;
+	
+	};
+	
 	
 	this.updateClientsProfile = function(client) {
 		
@@ -252,8 +301,8 @@ function BrokerOfVisibles(_io) {
 		clientOfDB.query(query2send, function(err, result) {		     
 			 
 			if(err) {
-				console.error('DEBUG ::: updateClientsHandshake :::error running query', err);	
-				console.error('DEBUG ::: updateClientsHandshake ::: query error: ', query2send);	
+				console.error('DEBUG ::: updateClientsProfile :::error running query', err);	
+				console.error('DEBUG ::: updateClientsProfile ::: query error: ', query2send);	
 			}
     
 		});		
@@ -283,8 +332,19 @@ function BrokerOfVisibles(_io) {
 	    var d = when.defer();
 	    
 	    var query2send = squel.select()
+	    						.field("indexofcurrentkey")
+	    						.field("currentchallenge")
+	    						.field("publicclientid")
+	    						.field("socketid")
+	    						.field("membersince")
+	    						.field("nickname")
+	    						.field("commentary")
+	    						.field("myarrayofkeys")
+	    						.field("location")
+	    						.field("ST_X(location::geometry)", "lon")
+	    						.field("ST_Y(location::geometry)", "lat")
 							    .from("client")
-							    .where("publicclientid = '" + publicClientID + "'")							    
+							    .where("publicclientid = '" + publicClientID + "'")								    
 							    .toString();
 	    
 		clientOfDB.query(query2send, function(err, result) {
@@ -303,41 +363,89 @@ function BrokerOfVisibles(_io) {
 			    }
 		    		    
 			    var client = {};
-			    client.indexOfCurrentKey = result.rows[0].indexofcurrentkey;
-			    client.currentChallenge = result.rows[0].currentchallenge;
-			    client.publicClientID = result.rows[0].publicclientid;
-			    client.socketid = result.rows[0].socketid;
+			    var entry = result.rows[0];
 			    
-			    var location = {"lat":"48.0983425","lon":"11.5407508"};
-			    client.location = location;			    
+			    client.publicClientID = entry.publicclientid;
 			    
-			    client.memberSince = result.rows[0].membersince;
-			    client.nickName = result.rows[0].nickname;
-			    client.commentary = result.rows[0].commentary;
-			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );
-			   		    
+			    if (entry.indexofcurrentkey == null)
+			    	client.indexOfCurrentKey = 0;
+			    else
+			    	client.indexOfCurrentKey = entry.indexofcurrentkey;
+			    
+			    if (entry.currentchallenge == null)
+			    	client.currentChallenge == "";
+			    else
+			    	client.currentChallenge = entry.currentchallenge;
+			    
+			    if (entry.socketid == null)
+			    	client.socketid = "";
+			    else
+			    	client.socketid = entry.socketid ; 
+			    
+			    client.memberSince = entry.membersince;
+			    client.nickName = entry.nickname;
+			    client.commentary = entry.commentary;
+
+			    if (entry.location == null )
+			    	client.location = { "lat" : "", "lon" : "" };
+			    else
+			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
+			    
+			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );	
+			    
+			    			   		    
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("DEBUG ::: getClientById  :::  exceptrion thrown " + ex  );
+				console.log("DEBUG ::: isClientOnline  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
 		  });
 		
 		return d.promise;
-		
-		
-		/*		
-	    var client =  _.find(listOfClients, function(client) {	
-	    	if (client.publicClientID === publicClientID && 
-	    		client.socketid != null   )
-				return true;	 
-		});
-		return client;
-		*/
+
 	};
 	
+};
+
+BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {	
+	try {    
+		/*
+		if (input == null ||
+			typeof input.publicClientID !== 'string' ||
+			Object.keys(input).length != 1 ) {
+			
+			console.log("DEBUG ::: isLocationWellFormatted ::: didnt pass the format check 1 :" + JSON.stringify( location ) );
+			return false;
+		}
+		*/
+		return true; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: isLocationWellFormatted ::: didnt pass the format check ex: " + ex  + ex.stack );
+		return false;
+	}	
+};
+
+
+BrokerOfVisibles.prototype.areSameLocation = function( oldLocation , newLocation ) {	
+	try {    
+		/*
+		if (input == null ||
+			typeof input.publicClientID !== 'string' ||
+			Object.keys(input).length != 2 ) {
+			
+			console.log("DEBUG ::: areSameLocation ::: didnt pass the format check 1 :" + JSON.stringify( oldLocation )  + JSON.stringify( newLocation ));
+			return false;
+		}
+		*/
+		return false; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: areSameLocation ::: didnt pass the format check ex: " + ex  + ex.stack );
+		return false;
+	}	
 };
 
 
