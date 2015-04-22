@@ -190,3 +190,37 @@ GRANT ALL ON TABLE client TO visible;
 --
 -- PostgreSQL database dump complete
 --
+
+
+-- Table: public.dbip_lookup
+
+-- DROP TABLE public.dbip_lookup;
+
+CREATE TABLE public.dbip_lookup
+(
+  ip_start inet,
+  ip_end inet,
+  country character(2),
+  stateprov character varying(80),
+  city character varying(80),
+  latitude double precision,
+  longitude double precision,
+  timezone_offset double precision,
+  timezone_name character varying(64)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.dbip_lookup
+  OWNER TO visible;
+
+-- Index: public.ip_start
+
+-- DROP INDEX public.ip_start;
+
+CREATE INDEX ip_start
+  ON public.dbip_lookup
+  USING btree
+  (ip_start);
+
+
