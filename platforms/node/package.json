@@ -14,6 +14,7 @@
     "pg": 			"~4.3.0", 
     "when": 		"~3.7.2",
     "squel": 		"~3.10.0",
+    "n-readlines": 	"~0.2.0",
     "shrinkwrap": 	"~0.0.3"
   },
   "repository": {

@@ -1,3 +1,7 @@
+//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
+//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
+
+
 var fs = require('fs');
 //var https = require('https');
 var http = require('http');
@@ -32,7 +36,11 @@ var	io 				= require("socket.io").listen(server),
 	Client			= require('./lib/Client.js'),
 	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
 	PostMan			= require('./lib/PostMan.js'),
-	Message			= require('./lib/Message.js');
+	Message			= require('./lib/Message.js'),
+	brokerOfVisibles = new BrokerOfVisibles(io),
+	postMan = new PostMan(io);
+
+
 
 app.post('/login', function (req, res) {
 	
@@ -46,6 +54,11 @@ app.post('/login', function (req, res) {
 		client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
 		client.currentChallenge = uuid.v4();		
 		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+		
+		// DEBUG
+		if ( ip == "127.0.0.1")
+			ip = "88.217.180.159";
+		// DEBUG
 		
 		var clientUpdate = [ 
              brokerOfVisibles.updateClientsLocation( client, ip ) ,
@@ -79,19 +92,6 @@ app.post('/firstlogin', function (req, res) {
 	});	
 	  
 });
-
-	
-//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
-//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
-
-//DEBUG			##################
-var util = require('util');
-//DEBUG END		##################
-
-				
-var brokerOfVisibles = new BrokerOfVisibles(io);
-var postMan = new PostMan(io);
-
 		 					 					 	  
 
 io.use(function(socket, next){
@@ -102,7 +102,6 @@ io.use(function(socket, next){
 	
 	var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
 	if ( joinServerParameters == null ){ return;}  	
-	//console.log("DEBUG ::: io.use :::  %j", joinServerParameters );
 	
 	brokerOfVisibles.getClientById ( joinServerParameters.publicClientID ).then(function(client){
 
@@ -113,17 +112,15 @@ io.use(function(socket, next){
 			
 		var verified = postMan.verifyHandshake ( token , client );
 		
-	  	if (client && verified == true){
-	  		
+	  	if (client && verified == true){  		
 	  		
 	  		client.socketid = socket.id ;
 	  		
-	  		//if ( 	brokerOfVisibles.isLocationWellFormatted(joinServerParameters.location) && 
-	  		//	 !	brokerOfVisibles.areSameLocation( client.location, joinServerParameters.location ) ) {
-	  			
-	  			//client.location.lat = joinServerParameters.location.lat.toString() ;	
-	  			//client.location.lon = joinServerParameters.location.lon.toString() ;
-	  		//}
+	  		if ( brokerOfVisibles.isLocationWellFormatted( joinServerParameters.location ) ) {	  			
+	  			client.location.lat = joinServerParameters.location.lat.toString() ;	
+	  			client.location.lon = joinServerParameters.location.lon.toString() ;	  				  			
+	  		}
+	  		
 	  		if (client.nickName != joinServerParameters.nickName){
 	  			client.nickName = joinServerParameters.nickName ;	
 	  		}	

@@ -251,37 +251,46 @@ function BrokerOfVisibles(_io) {
 		
 		var d = when.defer();
 		
-		//get locationByIP
-		console.log ("DEBUG ::: updateClientsLocation ::: ip : " + ip);		
-		//client.location.lat = "48.0667";
-		//client.location.lon = "11.25";
-		var discoveredLocation = {
-			lat : "48.0983425",
-			lon : "12.5407508"
-		};
+		var query2send = squel.select()	    						
+							    .from("dbip_lookup")
+							    .where("ip_start <= '" + ip + "'")
+							    .where("ip_end >= '" + ip + "'")								    
+							    .toString();		
 		
-				
-		var query2send = squel.update()
-						    .table("client")
-					    	.set("location", "ST_GeographyFromText('SRID=4326;POINT(" + discoveredLocation.lon  + " " + discoveredLocation.lat + ")')" , {dontQuote: true} )					    	
-					    	.where("publicclientid = '" + client.publicClientID + "'")
-						    .toString();
-		
-		console.error('DEBUG ::: updateClientsLocation :::  query' + query2send);	
-
-
 		clientOfDB.query(query2send, function(err, result) {
-     
-			//clientOfDB.done();
 	
-			if(err) {
+			if(err) 
 				console.error('DEBUG ::: updateClientsLocation :::error running query', err);	
-				console.error('DEBUG ::: updateClientsLocation ::: query error: ', query2send);	
+						
+		    if (typeof result.rows[0] == "undefined"){
+				console.log('DEBUG ::: updateClientsLocation ::: could not resolve location by IP');
+				return  d.resolve(false);
 			}
+				    
+			var entry = result.rows[0];
+			
+			var discoveredLocation = {
+				lat : entry.latitude,
+				lon : entry.longitude
+			};
+			
+			var query2send = squel.update()
+							    .table("client")
+						    	.set("location", "ST_GeographyFromText('SRID=4326;POINT(" + discoveredLocation.lon  + " " + discoveredLocation.lat + ")')" , {dontQuote: true} )					    	
+						    	.where("publicclientid = '" + client.publicClientID + "'")
+							    .toString();
+		
+			clientOfDB.query(query2send, function(err, result) {
+	     
+				if(err) {
+					console.error('DEBUG ::: updateClientsLocation :::error running query', err);	
+				}
+	
+				d.resolve(true);
+	
+			});			
 
-			d.resolve(true);
-
-		});
+		});		
 		
 		return d.promise;
 	
@@ -411,15 +420,15 @@ function BrokerOfVisibles(_io) {
 
 BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {	
 	try {    
-		/*
-		if (input == null ||
-			typeof input.publicClientID !== 'string' ||
-			Object.keys(input).length != 1 ) {
+		
+		if ( 	location.lat == '' ||
+				location.lon == '' ||
+			 	Object.keys(location).length != 2 ) {
 			
 			console.log("DEBUG ::: isLocationWellFormatted ::: didnt pass the format check 1 :" + JSON.stringify( location ) );
 			return false;
 		}
-		*/
+		
 		return true; 
 	}
 	catch (ex) {
@@ -428,25 +437,6 @@ BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {
 	}	
 };
 
-
-BrokerOfVisibles.prototype.areSameLocation = function( oldLocation , newLocation ) {	
-	try {    
-		/*
-		if (input == null ||
-			typeof input.publicClientID !== 'string' ||
-			Object.keys(input).length != 2 ) {
-			
-			console.log("DEBUG ::: areSameLocation ::: didnt pass the format check 1 :" + JSON.stringify( oldLocation )  + JSON.stringify( newLocation ));
-			return false;
-		}
-		*/
-		return false; 
-	}
-	catch (ex) {
-		console.log("DEBUG ::: areSameLocation ::: didnt pass the format check ex: " + ex  + ex.stack );
-		return false;
-	}	
-};
 
 
 

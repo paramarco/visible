@@ -224,14 +224,6 @@ function PostMan(_io) {
 	
 	this.deleteMessageAndACK = function(deliveryReceipt) {
 	    
-		 /*
-		  				var deliveryReceipt = { 
-						msgID : messageACKparameters.msgID, 
-						typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
-						to : messageACKparameters.to 	
-					};
-		  * 
-		  * */   
 		var query2send = squel.delete()
 						    .from("message")
 						    .where("msgid = '" + deliveryReceipt.msgID + "'")							    
@@ -244,8 +236,6 @@ function PostMan(_io) {
 						    .where("type = '" + deliveryReceipt.typeOfACK + "'")							    
 						    .toString() ;
 		   
-		console.error('DEBUG ::: deleteMessageAndACK ::: running query ' + query2send );	
-	
 		clientOfDB.query(query2send, function(err, result) {
 			try {
 		
