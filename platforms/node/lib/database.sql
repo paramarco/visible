@@ -1,3 +1,6 @@
+postgres@laptop:~$ createuser -d -E -i -l -P -r -s visible^C
+
+
 --
 -- PostgreSQL database dump
 --
