@@ -1,4 +1,6 @@
-postgres@laptop:~$ createuser -d -E -i -l -P -r -s visible^C
+postgres@laptop:~$ createuser -d -E -i -l -P -r -s visible
+
+C:\Program Files\PostgreSQL\9.3\bin>psql.exe -q -U visible -d visible.0.0.1.db < C:\dbip-location-2015-04.csv.sql
 
 
 --
