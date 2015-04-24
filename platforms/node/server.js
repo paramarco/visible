@@ -57,7 +57,8 @@ app.post('/login', function (req, res) {
 		
 		// DEBUG
 		if ( ip == "127.0.0.1")
-			ip = "88.217.180.159";
+			ip = "129.247.31.224";
+		//ip = "88.217.180.159";
 		// DEBUG
 		
 		var clientUpdate = [ 
@@ -157,7 +158,8 @@ io.sockets.on("connection", function (socket) {
 	// XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 	postMan.sendMessageHeaders(socket.visibleClient);	
-	postMan.sendMessageACKs(socket.visibleClient);	
+	postMan.sendMessageACKs(socket.visibleClient);
+	postMan.sendDetectedLocation(socket.visibleClient);
 					
 
 	

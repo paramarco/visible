@@ -231,6 +231,27 @@ Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {
 };
 
 
+Unwrapper.prototype.getParametersOfLocationFromServer = function(input) {	
+	try {    
+
+		var parameters = Unwrapper.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			typeof parameters.lat !== 'string' 	|| 
+			typeof parameters.lon !== 'string'
+		 ) {			
+			console.log("DEBUG ::: getParametersOfLocationFromServer  ::: didn't pass the type check "); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: getParametersOfLocationFromServer  :::  " + ex);
+		return null;
+	}	
+};
+
 
 
 Unwrapper.prototype.signToken = function(message) {	
@@ -808,8 +829,23 @@ function setNewContacts (input) {
 			lastProfileUpdate : null
 		};
 	
-		if (contact){			
-			profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;						
+		if (contact){
+			
+			//update what we already got....
+			contact.nickName = c.nickName ;
+			contact.commentary = c.commentary ;
+			contact.location.lat = parseFloat( c.location.lat );
+			contact.location.lon = parseFloat( c.location.lon );
+			
+			//PRE: only if it is a persistent contact
+			modifyContactOnDB(contact);
+			
+			if (profileRetrievalObject.lastProfileUpdate <= contact.lastProfileUpdate ){
+				return;
+			}else{
+				profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;				
+			}
+			
 		}else{			
 			var newContact = new ContactOfVisible({	
 				publicClientID : c.publicClientID  ,
@@ -998,7 +1034,7 @@ function connect_socket (result) {
 		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientIDofSender); })[0];
 		contact.path2photo = data.img;
 		contact.nickName = data.nickName ;
-		contact.commentary = data.commentary ;
+		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
 		if (app.currentChatWith == data.publicClientIDofSender){
@@ -1011,6 +1047,21 @@ function connect_socket (result) {
 		modifyContactOnDB(contact);
 
 	});//END ProfileFromServer
+	
+	
+	socket.on("locationFromServer", function(input) {
+		
+		var location = unWrapper.getParametersOfLocationFromServer(input); 
+		if (location == null) { return;	}		
+
+		if (app.myPosition.coords.latitude == ""){
+			
+			app.myPosition.coords.latitude = parseFloat( location.lat ); 
+			app.myPosition.coords.longitude = parseFloat( location.lon );			
+
+		}
+
+	});//END locationFromServer	
 	  
 	socket.on("notificationOfNewContact", setNewContacts);//END notificationOfNewContact
 	
@@ -1136,7 +1187,9 @@ $(document).on("click","#arrowBackInChatPage",function() {
 });
 
 $(document).on("click","#mapButtonInMainPage",function() {
-	$('body').pagecontainer('change', '#map-page');
+	if (app.myPosition.coords.latitude != "" ){
+		$('body').pagecontainer('change', '#map-page');
+	}
 });
 
 $(document).on("click","#chat-input-button",function() {

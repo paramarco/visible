@@ -131,8 +131,6 @@ function PostMan(_io) {
 							    .set("timestamp", msg.timeStamp)							    
 							    .toString() ;
 				    
-		console.log("DEBUG ::: archiveMessage  :::  query2send " + query2send );
-							    
 		clientOfDB.query(query2send, function(err, result) {
 		     
 			//clientOfDB.done();
@@ -221,6 +219,18 @@ function PostMan(_io) {
 		
 	};
 	
+	this.sendDetectedLocation = function(client) {
+
+		try{
+			
+			io.sockets.to(client.socketid).emit("locationFromServer", PostMan.prototype.encrypt( client.location, client )  );
+		
+		}catch (ex) {
+			console.log("DEBUG ::: sendDetectedLocation  :::  exception thrown " + ex  );						
+		}
+		
+	};
+	
 	
 	this.deleteMessageAndACK = function(deliveryReceipt) {
 	    
@@ -244,7 +254,7 @@ function PostMan(_io) {
 				}						
 			
 			}catch (ex) {
-				console.log("DEBUG ::: deleteMessageAndACK  :::  exceptrion thrown " + ex  );						
+				console.log("DEBUG ::: deleteMessageAndACK  :::  exception thrown " + ex  );						
 			}
 		
 		});	
