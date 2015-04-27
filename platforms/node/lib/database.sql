@@ -112,20 +112,30 @@ SET default_with_oids = false;
 -- Name: client; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
 --
 
-CREATE TABLE client (
-    publicclientid uuid NOT NULL,
-    indexofcurrentkey integer,
-    currentchallenge uuid,
-    socketid text,
-    membersince bigint,
-    nickname text,
-    commentary text,
-    location geography(Point,4326),
-    myarrayofkeys text
-);
-
-
+CREATE TABLE public.client
+(
+  publicclientid uuid NOT NULL,
+  indexofcurrentkey integer,
+  currentchallenge uuid,
+  socketid text,
+  membersince bigint,
+  nickname text,
+  commentary text,
+  location geography(Point,4326),
+  myarrayofkeys text,
+  handshaketoken uuid,
+  authtoken uuid,
+  serverskeypair json
+)
+WITH ( OIDS=FALSE );
 ALTER TABLE public.client OWNER TO visible;
+GRANT ALL ON TABLE public.client TO visible;
+
+-- Index: public."publicClientID"
+
+-- DROP INDEX public."publicClientID";
+
+CREATE UNIQUE INDEX "publicClientID" ON public.client USING btree (publicclientid);
 
 --
 -- Name: message; Type: TABLE; Schema: public; Owner: visible; Tablespace: 

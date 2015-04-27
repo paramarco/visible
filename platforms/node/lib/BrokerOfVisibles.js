@@ -187,15 +187,18 @@ function BrokerOfVisibles(_io) {
 		
 		var query2send = squel.insert()
 							    .into("client")
-							    .set("publicclientid", newClient.publicClientID)
-							    .set("indexofcurrentkey", null)
-							    .set("membersince", newClient.memberSince)
-							    .set("currentchallenge", null)
+							    .set("publicclientid", newClient.publicClientID )
+							    .set("indexofcurrentkey", null )
+							    .set("membersince", newClient.memberSince )
+							    .set("currentchallenge", newClient.currentChallenge )
 							    .set("socketid ", null)
 							    .set("nickname", null)
 							    .set("commentary", null)
 							    .set("location", null)
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
+							    .set("handshaketoken", newClient.handshakeToken)
+							    .set("authtoken", newClient.authToken)
+							    .set("serverskeypair", JSON.stringify(newClient.serversKeyPair ))
 							    .toString() ;
 							    
 		clientOfDB.query(query2send, function(err, result) {

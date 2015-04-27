@@ -41,6 +41,8 @@ var	io 				= require("socket.io").listen(server),
 	postMan = new PostMan(io);
 
 
+var forge = require('node-forge')({disableNativeCode: true});
+
 
 app.post('/login', function (req, res) {
 	
@@ -77,11 +79,32 @@ app.post('/login', function (req, res) {
 });
 
 
-app.post('/firstlogin', function (req, res) {
+app.post('/signin', function (req, res) {
+
+	console.log("DEBUG ::: signin ::: req.body.publicKeyClient.n " + JSON.stringify(req.body.n) );
 	
-	brokerOfVisibles.createNewClient().then(function (newClient){	
+	brokerOfVisibles.createNewClient().then(function (newClient){
+	
+		var bytes2encrypt = { 
+			//publicKeyServer : newClient.serversKeyPair.publicKey , 
+			publicKeyServer : "" ,
+			challenge : newClient.currentChallenge 
+		};		
 		
-		if (newClient != null){			
+		var publicKeyClient = forge.pki.rsa.setPublicKey( new forge.jsbn.BigInteger(req.body.n , 16) , new forge.jsbn.BigInteger(req.body.e , 16) ) ;
+	
+		var encrypted = publicKeyClient.encrypt( JSON.stringify(bytes2encrypt) , 'RSA-OAEP');
+	
+		var response = {
+			handshakeToken : newClient.handshakeToken , 
+			handshakeFromServer : encrypted 
+		};	
+		
+		res.json( response );
+		
+		/*
+		  
+		 if (newClient != null){			
 			var response = {
 				publicClientID : newClient.publicClientID , 
 				myArrayOfKeys : newClient.myArrayOfKeys 
@@ -89,6 +112,7 @@ app.post('/firstlogin', function (req, res) {
 					
 			res.json( response );
 		}
+		*/
 		
 	});	
 	  

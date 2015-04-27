@@ -1294,8 +1294,19 @@ $(document).on("click","#firstLoginInputButton",function() {
 		return;
 	}
 
-	$.post('http://127.0.0.1:8090/firstlogin').done(function (result) { 
+	var rsa = forge.pki.rsa;
+
+	// generate an RSA key pair synchronously
+	var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
 	
+	//console.log("DEBUG ::: firstLoginInputButton ::: keypair:" + JSON.stringify(keypair.publicKey.e) );
+	
+	var signinParamenter = { n : keypair.publicKey.n.toString(16) , e : keypair.publicKey.e.toString(16)  };
+
+	$.post('http://127.0.0.1:8090/signin', signinParamenter ).done(function (result) { 
+	
+	 	console.log("DEBUG ::: handshakeToken : " + result.handshakeToken );
+	/*
 		var myCurrentNick = $("#firstLoginNameField").val();
 	
 		//update internal DB
@@ -1317,7 +1328,8 @@ $(document).on("click","#firstLoginInputButton",function() {
 		app.lastProfileUpdate = new Date().getTime();
 		
 		//trigger configuration as already loaded
-		configLoaded.resolve();    		   		 
+		configLoaded.resolve(); 
+	*/   		   		 
 	});
 
 });
