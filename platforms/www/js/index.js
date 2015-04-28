@@ -1299,13 +1299,44 @@ $(document).on("click","#firstLoginInputButton",function() {
 	// generate an RSA key pair synchronously
 	var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
 	
-	//console.log("DEBUG ::: firstLoginInputButton ::: keypair:" + JSON.stringify(keypair.publicKey.e) );
+	/*var publicKeyClient = { 		
+		n : keypair.publicKey.n.toString(32) , 
+		e : keypair.publicKey.e.toString(32)		  
+	};
+	*/
+	var publicKeyClient = { n : keypair.publicKey.n.toString(32)	};
 	
-	var signinParamenter = { n : keypair.publicKey.n.toString(16) , e : keypair.publicKey.e.toString(16)  };
+ 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
 
-	$.post('http://127.0.0.1:8090/signin', signinParamenter ).done(function (result) { 
+
+	$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (xml) { 
+		
+		var handshakeToken = $(xml).find('handshakeToken').text();
+		var handshakeFromServer = $(xml).find('handshakeFromServer').text();
 	
-	 	console.log("DEBUG ::: handshakeToken : " + result.handshakeToken );
+	 	console.log("DEBUG ::: signin ::: handshakeToken : " + handshakeToken );
+	 	console.log("DEBUG ::: signin ::: handshakeFromServer : " + handshakeFromServer );
+	 	
+		 // decrypt data with a private key using RSAES-OAEP
+	 	//var decrypted = keypair.privateKey.decrypt( handshakeFromServer , 'RSA-OAEP' );
+	 	
+	 	console.log("DEBUG ::: signin ::: handshakeFromServer.length : " +  handshakeFromServer.length   );
+	 	
+	 	var decrypted = keypair.privateKey.decrypt( handshakeFromServer );
+	 	
+	 	console.log("DEBUG ::: signin ::: decrypted : " +  decrypted   );
+
+	 	/*
+	 	var publicKeyServer = forge.pki.rsa.setPublicKey( 
+	 		new forge.jsbn.BigInteger( decrypted.n , 256) , 
+	 		new forge.jsbn.BigInteger( decrypted.e , 256)
+	 	);
+	 	
+
+	 	
+	 	console.log("DEBUG ::: signi ::: publicKeyServer : " + JSON.stringify( publicKeyServer ) );
+	 	 */
+	 	
 	/*
 		var myCurrentNick = $("#firstLoginNameField").val();
 	
