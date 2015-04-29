@@ -1309,34 +1309,59 @@ $(document).on("click","#firstLoginInputButton",function() {
  	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
 
 
-	$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (xml) { 
-		
-		var handshakeToken = $(xml).find('handshakeToken').text();
-		var handshakeFromServer = $(xml).find('handshakeFromServer').text();
-	
-	 	console.log("DEBUG ::: signin ::: handshakeToken : " + handshakeToken );
-	 	console.log("DEBUG ::: signin ::: handshakeFromServer : " + handshakeFromServer );
+	$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (response) { 
 	 	
 		 // decrypt data with a private key using RSAES-OAEP
-	 	//var decrypted = keypair.privateKey.decrypt( handshakeFromServer , 'RSA-OAEP' );
-	 	
-	 	console.log("DEBUG ::: signin ::: handshakeFromServer.length : " +  handshakeFromServer.length   );
-	 	
-	 	var decrypted = keypair.privateKey.decrypt( handshakeFromServer );
-	 	
-	 	console.log("DEBUG ::: signin ::: decrypted : " +  decrypted   );
+		//var iv = $(xml).find('iv').text(); 
+		//var encrypted = $(xml).find('encrypted').text();
+		var iv = response.iv;
+		var encrypted = response.encrypted;
 
-	 	/*
-	 	var publicKeyServer = forge.pki.rsa.setPublicKey( 
-	 		new forge.jsbn.BigInteger( decrypted.n , 256) , 
-	 		new forge.jsbn.BigInteger( decrypted.e , 256)
-	 	);
+		
+		console.log("DEBUG ::: signin ::: encrypted.length : " +  encrypted.length   );
+		console.log("DEBUG ::: signin ::: encrypted : " +  encrypted   );		
+		 
+	 	var decrypted = keypair.privateKey.decrypt( encrypted , 'RSA-OAEP' );
 	 	
+	 	var symetricKey = $(decrypted).find('symetricKey').text();
+	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
+		var challenge = $(decrypted).find('challenge').text();
+		
 
+	 	console.log("DEBUG ::: signin ::: handshakeToken : " + handshakeToken );
+	 	console.log("DEBUG ::: signin ::: challenge : " + challenge );
+	 	console.log("DEBUG ::: signin ::: symetricKey : " +  symetricKey   );
+	 	console.log("DEBUG ::: signin ::: iv : " +  iv   );
 	 	
-	 	console.log("DEBUG ::: signi ::: publicKeyServer : " + JSON.stringify( publicKeyServer ) );
-	 	 */
+	 	//TODO integrar dentro de encrypt/decript
+	 	app.symetricKey2use = symetricKey;
+	 	//TODO change to array of IV
+	 	app.myArrayOfKeys[0] = iv;
 	 	
+	 	var handshakeRequest = {
+	 		handshakeToken : handshakeToken,
+	 		encrypted : unWrapper.encrypt( challenge )
+	 	};
+
+	 	$.post('http://127.0.0.1:8090/handshake', handshakeRequest ).done(function (answer) {
+	 		
+	 		
+	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( unWrapper.decrypt( answer ) ) );
+	 	});
+/*	 	var bytes2encrypt = 	
+			"<xml>" + 
+				"<symetricKey>" + newClient.myArrayOfKeys[1] + "</symetricKey>" +
+				"<challenge>" + newClient.currentChallenge + "</challenge>" +
+				"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
+			"</xml>" ;
+
+		$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (encrypted) {
+			
+			
+			
+		});
+
+*/	 	
 	/*
 		var myCurrentNick = $("#firstLoginNameField").val();
 	

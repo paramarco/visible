@@ -166,6 +166,86 @@ function BrokerOfVisibles(_io) {
 		
 	};
 	
+	this.getClientByHandshakeToken = function(handshakeToken) {
+		
+	    var d = when.defer();
+	    
+	    var query2send = squel.select()
+	    						.field("indexofcurrentkey")
+	    						.field("currentchallenge")
+	    						.field("publicclientid")
+	    						.field("socketid")
+	    						.field("membersince")
+	    						.field("nickname")
+	    						.field("commentary")
+	    						.field("myarrayofkeys")
+	    						.field("location")
+	    						.field("ST_X(location::geometry)", "lon")
+	    						.field("ST_Y(location::geometry)", "lat")
+							    .from("client")
+							    .where("handshaketoken = '" + handshakeToken + "'")							    
+							    .toString();
+	    
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: getClientById ::: error running query', err);	
+		    	return d.resolve(err);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined"){
+			    	console.log('DEBUG ::: getClientById ::: I dont know any publicClientID like this');
+			    	return  d.resolve(null);
+			    }
+		    		    
+			    var client = {};
+			    var entry = result.rows[0];
+			    
+			    
+			    client.publicClientID = entry.publicclientid;
+			    
+			    if (entry.indexofcurrentkey == null)
+			    	client.indexOfCurrentKey = 0;
+			    else
+			    	client.indexOfCurrentKey = entry.indexofcurrentkey;
+			    
+			    if (entry.currentchallenge == null)
+			    	client.currentChallenge == "";
+			    else
+			    	client.currentChallenge = entry.currentchallenge;
+			    
+			    if (entry.socketid == null)
+			    	client.socketid = "";
+			    else
+			    	client.socketid = entry.socketid ; 
+			    
+			    client.memberSince = entry.membersince;
+			    client.nickName = entry.nickname;
+			    client.commentary = entry.commentary;
+
+			    if (entry.location == null )
+			    	client.location = { "lat" : "", "lon" : "" };
+			    else
+			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
+			    
+			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );		   		
+
+			    
+			    return  d.resolve(client);
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getClientById  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+		
+	};
+	
 	this.getClientBySocketId = function(socketId) {	
 		
 		/*
@@ -198,7 +278,6 @@ function BrokerOfVisibles(_io) {
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("authtoken", newClient.authToken)
-							    .set("serverskeypair", JSON.stringify(newClient.serversKeyPair ))
 							    .toString() ;
 							    
 		clientOfDB.query(query2send, function(err, result) {

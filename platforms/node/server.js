@@ -81,7 +81,6 @@ app.post('/login', function (req, res) {
 
 app.post('/signin', function (req, res) {
 
-	console.log("DEBUG ::: signin ::: req.body.n " + JSON.stringify(req.body.n) );
 	
 	brokerOfVisibles.createNewClient().then(function (newClient){
 	
@@ -90,50 +89,62 @@ app.post('/signin', function (req, res) {
 			new forge.jsbn.BigInteger("2001" , 32) 
 		);
 		
-		console.log("DEBUG ::: signin ::: serversKeyPair " + newClient.serversKeyPair.publicKey.n.toString(32) + "   " +  newClient.serversKeyPair.publicKey.e.toString(32) );
-
-		
-		var bytes2encrypt = { 
-			n : newClient.serversKeyPair.publicKey.n.toString(32) , 
-			e : newClient.serversKeyPair.publicKey.e.toString(32),			 
-		};		
+		var bytes2encrypt = 
+			"<xml>"		+	
+				"<symetricKey>" + newClient.myArrayOfKeys[1] + "</symetricKey>" + 
+				"<challenge>" + newClient.currentChallenge + "</challenge>" +
+				"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
+			"</xml>" ;
 			
-		//var encrypted = publicKeyClient.encrypt( JSON.stringify(bytes2encrypt) , 'RSA-OAEP');
-		var encrypted = publicKeyClient.encrypt( JSON.stringify(bytes2encrypt) );
-	
-		/*
-		var response = {
-			handshakeToken : newClient.handshakeToken , 
-			handshakeFromServer : encrypted,
-			challenge : newClient.currentChallenge
-		};
-		*/
-		var response = 	"<xml>" + 
-							"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
-							"<handshakeFromServer>" + encrypted + "</handshakeFromServer>" +
-							"<challenge>" + newClient.currentChallenge + "</challenge>" +
-						"</xml>" ;
+		console.log("DEBUG ::: signin ::: bytes2encrypt " + bytes2encrypt );
+		console.log("DEBUG ::: signin ::: bytes2encrypt " + bytes2encrypt.length );
+			
+		var encrypted = publicKeyClient.encrypt( bytes2encrypt , 'RSA-OAEP');
 		
-		console.log("DEBUG ::: signin ::: res.json " + response );
-
+		console.log("DEBUG ::: signin ::: encrypted " + encrypted.length );
+		
+		//TODO
+		var response = 	{ 
+			//iv : newClient.myArrayOfIV[0]  , 
+			iv : newClient.myArrayOfKeys[0]  ,
+			encrypted : encrypted 
+		}
 		
 		res.json( response );
-		
-		/*
-		  
-		 if (newClient != null){			
-			var response = {
-				publicClientID : newClient.publicClientID , 
-				myArrayOfKeys : newClient.myArrayOfKeys 
-			};
-					
-			res.json( response );
-		}
-		*/
+
 		
 	});	
 	  
 });
+
+app.post('/handshake', function (req, res) {
+	
+	console.log("DEBUG ::: signin ::: req.body.handshakeToken " + req.body.handshakeToken );
+	console.log("DEBUG ::: signin ::: req.body.encrypted " + req.body.encrypted );
+	
+	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function (client){
+
+		if (client != null){			
+			//TODO verify that the chanllenge from the client corresponds to the one in the server & verify
+						
+			var answer = {
+				publicClientID : client.publicClientID , 
+				myArrayOfKeys : client.myArrayOfKeys 
+			};
+			client.indexOfCurrentKey = 1 ;		
+			res.json( postMan.encrypt( answer , client ) );
+		}
+		
+		
+	});	
+
+	  
+});
+
+
+
+
+
 		 					 					 	  
 
 io.use(function(socket, next){

@@ -19,9 +19,19 @@ function Client() {
                         forge.random.getBytesSync(32),
                         forge.random.getBytesSync(32),
                         forge.random.getBytesSync(32)];
+                        
+  this.myArrayOfIV = 	[forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32),
+                        forge.random.getBytesSync(32)];
   this.handshakeToken = uuid.v4();
   this.authToken = uuid.v4();
-  this.serversKeyPair = forge.pki.rsa.generateKeyPair({bits: 2048, e: 0x10001});
+//  this.serversKeyPair = forge.pki.rsa.generateKeyPair({bits: 2048, e: 0x10001});
  
 
 };
