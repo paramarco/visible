@@ -570,6 +570,7 @@ function loadMyConfig(){
      		app.myPhotoPath = cursor.value.myPhotoPath; 
 			app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
 			app.lastProfileUpdate = cursor.value.lastProfileUpdate;
+			app.handshakeToken = cursor.value.handshakeToken;
 	
 			$('#imageProfile').picEdit({
 	     		//defaultImage: app.myPhotoPath,
@@ -587,7 +588,8 @@ function loadMyConfig(){
          				myCurrentNick : app.myCurrentNick, 
          				myPhotoPath : app.myPhotoPath , 
          				myArrayOfKeys : app.myArrayOfKeys ,
-         				lastProfileUpdate : new Date().getTime()
+         				lastProfileUpdate : new Date().getTime(),
+         				handshakeToken : app.handshakeToken
          			}); 			
 	     		}
 	     	});
@@ -1092,7 +1094,8 @@ var app = {
 	publicClientID : null,
 	myPosition : null,
 	lastProfileUpdate : null,
-	symetricKey2use : null
+	symetricKey2use : null,
+	handshakeToken : null
 };
 
 
@@ -1311,28 +1314,16 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 	$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (response) { 
 	 	
-		 // decrypt data with a private key using RSAES-OAEP
-		//var iv = $(xml).find('iv').text(); 
-		//var encrypted = $(xml).find('encrypted').text();
 		var iv = response.iv;
 		var encrypted = response.encrypted;
-
-		
-		console.log("DEBUG ::: signin ::: encrypted.length : " +  encrypted.length   );
-		console.log("DEBUG ::: signin ::: encrypted : " +  encrypted   );		
-		 
+	
+		 // decrypt data with a private key using RSAES-OAEP		 
 	 	var decrypted = keypair.privateKey.decrypt( encrypted , 'RSA-OAEP' );
 	 	
 	 	var symetricKey = $(decrypted).find('symetricKey').text();
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
-		
-
-	 	console.log("DEBUG ::: signin ::: handshakeToken : " + handshakeToken );
-	 	console.log("DEBUG ::: signin ::: challenge : " + challenge );
-	 	console.log("DEBUG ::: signin ::: symetricKey : " +  symetricKey   );
-	 	console.log("DEBUG ::: signin ::: iv : " +  iv   );
-	 	
+			 	
 	 	//TODO integrar dentro de encrypt/decript
 	 	app.symetricKey2use = symetricKey;
 	 	//TODO change to array of IV
@@ -1340,52 +1331,42 @@ $(document).on("click","#firstLoginInputButton",function() {
 	 	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
-	 		encrypted : unWrapper.encrypt( challenge )
+	 		encrypted : unWrapper.encrypt( { challenge : challenge }  )
 	 	};
 
 	 	$.post('http://127.0.0.1:8090/handshake', handshakeRequest ).done(function (answer) {
+		 		
+	 		var result = unWrapper.decrypt( answer );
 	 		
+	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( result ) );
 	 		
-	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( unWrapper.decrypt( answer ) ) );
+			var myCurrentNick = $("#firstLoginNameField").val();
+			
+			//update internal DB
+			var transaction = db.transaction(["myConfig"],"readwrite");	
+			var store = transaction.objectStore("myConfig");
+			var request = store.add({
+					index : 0,	
+					publicClientID : result.publicClientID , 
+					myCurrentNick : myCurrentNick, 
+					myPhotoPath : app.myPhotoPath , 
+					myArrayOfKeys : result.myArrayOfKeys ,
+					lastProfileUpdate : new Date().getTime(),
+					handshakeToken : handshakeToken
+			});
+			
+			//update app object	
+			app.publicClientID = result.publicClientID;
+			app.myCurrentNick = myCurrentNick;
+			app.myArrayOfKeys = result.myArrayOfKeys;
+			app.lastProfileUpdate = new Date().getTime();
+			app.handshakeToken = handshakeToken;
+			
+			//trigger configuration as already loaded
+			configLoaded.resolve(); 	 		
+	 		
 	 	});
-/*	 	var bytes2encrypt = 	
-			"<xml>" + 
-				"<symetricKey>" + newClient.myArrayOfKeys[1] + "</symetricKey>" +
-				"<challenge>" + newClient.currentChallenge + "</challenge>" +
-				"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
-			"</xml>" ;
 
-		$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (encrypted) {
-			
-			
-			
-		});
-
-*/	 	
-	/*
-		var myCurrentNick = $("#firstLoginNameField").val();
-	
-		//update internal DB
-		var transaction = db.transaction(["myConfig"],"readwrite");	
-		var store = transaction.objectStore("myConfig");
-		var request = store.add({
-				index : 0,	
-				publicClientID : result.publicClientID , 
-				myCurrentNick : myCurrentNick, 
-				myPhotoPath : app.myPhotoPath , 
-				myArrayOfKeys : result.myArrayOfKeys ,
-				lastProfileUpdate : new Date().getTime()
-		});
-		
-		//update app object	
-		app.publicClientID = result.publicClientID;
-		app.myCurrentNick = myCurrentNick;
-		app.myArrayOfKeys = result.myArrayOfKeys;
-		app.lastProfileUpdate = new Date().getTime();
-		
-		//trigger configuration as already loaded
-		configLoaded.resolve(); 
-	*/   		   		 
 	});
 
 });

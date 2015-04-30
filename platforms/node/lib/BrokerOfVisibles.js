@@ -277,7 +277,6 @@ function BrokerOfVisibles(_io) {
 							    .set("location", null)
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
-							    .set("authtoken", newClient.authToken)
 							    .toString() ;
 							    
 		clientOfDB.query(query2send, function(err, result) {

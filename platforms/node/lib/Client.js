@@ -2,7 +2,7 @@ var	uuid	= require('node-uuid');
 var forge = require('node-forge')({disableNativeCode: true});
 
 function Client() {
-  this.indexOfCurrentKey = 0;
+  this.indexOfCurrentKey = 1;
   this.currentChallenge = uuid.v4();
   this.publicClientID = uuid.v4();
   this.socketid = null;
@@ -30,9 +30,6 @@ function Client() {
                         forge.random.getBytesSync(32),
                         forge.random.getBytesSync(32)];
   this.handshakeToken = uuid.v4();
-  this.authToken = uuid.v4();
-//  this.serversKeyPair = forge.pki.rsa.generateKeyPair({bits: 2048, e: 0x10001});
- 
 
 };
 
