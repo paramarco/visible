@@ -6,6 +6,7 @@ var conString = "postgres://visible:paramarco@localhost/visible.0.0.1.db";
 var when = require('when');
 var squel = require("squel");
 
+
 function BrokerOfVisibles(_io) {
 	var io = _io;
 	var this_ = this;
@@ -102,6 +103,7 @@ function BrokerOfVisibles(_io) {
 	    						.field("location")
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
+	    						.field("lastprofileupdate")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
@@ -150,7 +152,8 @@ function BrokerOfVisibles(_io) {
 			    else
 			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
 			    
-			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );		   		
+			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );		   		
+			    client.lastProfileUpdate = entry.lastprofileupdate;
 
 			    
 			    return  d.resolve(client);
@@ -182,6 +185,7 @@ function BrokerOfVisibles(_io) {
 	    						.field("location")
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
+	    						.field("lastprofileupdate")
 							    .from("client")
 							    .where("handshaketoken = '" + handshakeToken + "'")							    
 							    .toString();
@@ -189,14 +193,14 @@ function BrokerOfVisibles(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 		    
 		    if(err) {
-		    	console.error('DEBUG ::: getClientById ::: error running query', err);	
+		    	console.error('DEBUG ::: getClientByHandshakeToken ::: error running query', err);	
 		    	return d.resolve(err);
 		    }
 		    
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('DEBUG ::: getClientById ::: I dont know any publicClientID like this');
+			    	console.log('DEBUG ::: getClientByHandshakeToken ::: I dont know any publicClientID like this');
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -230,13 +234,14 @@ function BrokerOfVisibles(_io) {
 			    else
 			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
 			    
-			    client.myArrayOfKeys = JSON.parse( result.rows[0].myarrayofkeys );		   		
-
-			    
+			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
+			    client.lastProfileUpdate = entry.lastprofileupdate;
+			    	
+	    
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("DEBUG ::: getClientById  :::  exceptrion thrown " + ex  );
+				console.log("DEBUG ::: getClientByHandshakeToken  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -268,7 +273,7 @@ function BrokerOfVisibles(_io) {
 		var query2send = squel.insert()
 							    .into("client")
 							    .set("publicclientid", newClient.publicClientID )
-							    .set("indexofcurrentkey", null )
+							    .set("indexofcurrentkey", newClient.indexOfCurrentKey )
 							    .set("membersince", newClient.memberSince )
 							    .set("currentchallenge", newClient.currentChallenge )
 							    .set("socketid ", null)
@@ -277,6 +282,7 @@ function BrokerOfVisibles(_io) {
 							    .set("location", null)
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
+							    .set("lastprofileupdate", newClient.lastProfileUpdate)
 							    .toString() ;
 							    
 		clientOfDB.query(query2send, function(err, result) {
@@ -380,11 +386,18 @@ function BrokerOfVisibles(_io) {
 	
 	this.updateClientsProfile = function(client) {
 		
+		if ( client.commentary != null )
+			client.commentary = BrokerOfVisibles.prototype.sanitize(client.commentary);
+		if ( client.nickName != null )
+			client.nickName = BrokerOfVisibles.prototype.sanitize(client.nickName);
+		
 		var query2send = squel.update()
 							    .table("client")
 							    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")')" , {dontQuote: true} )
 							    .set("socketid", client.socketid)
 							    .set("nickname", client.nickName)
+							    .set("commentary", client.commentary)
+							    .set("lastprofileupdate", client.lastProfileUpdate)
 							    .where("publicclientid = '" + client.publicClientID + "'")
 							    .toString();
 		
@@ -516,6 +529,30 @@ BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {
 		console.log("DEBUG ::: isLocationWellFormatted ::: didnt pass the format check ex: " + ex  + ex.stack );
 		return false;
 	}	
+};
+
+BrokerOfVisibles.prototype.sanitize = function(html) {
+	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+	
+	var tagOrComment = new RegExp(
+	    '<(?:'
+	    // Comment body.
+	    + '!--(?:(?:-*[^->])*--+|-?)'
+	    // Special "raw text" elements whose content should be elided.
+	    + '|script\\b' + tagBody + '>[\\s\\S]*?</script\\s*'
+	    + '|style\\b' + tagBody + '>[\\s\\S]*?</style\\s*'
+	    // Regular name
+	    + '|/?[a-z]'
+	    + tagBody
+	    + ')>',
+	    'gi');
+	
+	var oldHtml;
+	do {
+		oldHtml = html;
+		html = html.replace(tagOrComment, '');
+	} while (html !== oldHtml);
+	return html.replace(/</g, '&lt;').replace(/\'/g, "&#39") ;
 };
 
 

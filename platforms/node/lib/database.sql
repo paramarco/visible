@@ -125,7 +125,7 @@ CREATE TABLE public.client
   myarrayofkeys text,
   handshaketoken uuid,
   authtoken uuid,
-  serverskeypair json
+  lastprofileupdate bigint
 )
 WITH ( OIDS=FALSE );
 ALTER TABLE public.client OWNER TO visible;

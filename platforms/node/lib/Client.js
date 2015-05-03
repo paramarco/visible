@@ -30,6 +30,9 @@ function Client() {
                         forge.random.getBytesSync(32),
                         forge.random.getBytesSync(32)];
   this.handshakeToken = uuid.v4();
+  //newer than 2015
+  this.lastProfileUpdate = 1420070401000;
+  
 
 };
 

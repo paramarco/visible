@@ -1,3 +1,20 @@
+//TODO globals DICTIONARY
+
+//TODO EMOTICONS
+
+//TODO fix delay during first handshake...
+
+//TODO encryption of headers for message from server...only store encrypted
+
+//TODO load HTML without seeing the menu CSS
+
+//TODO make CCS style independent of JQUERY version
+
+//TODO upload photo on profile smaller than 100KB
+
+//TODO button "who is visible around me" --> experiment with the radius
+
+//TODO to fix both sides encrypted in function connect_socket (result) { 
 
 
 function ContactOfVisible(contact2create) {
@@ -7,7 +24,8 @@ function ContactOfVisible(contact2create) {
 	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
 	this.number = 0;
-	this.lastProfileUpdate = new Date().getTime();
+	this.lastProfileUpdate = config.beginingOf2015;
+	this.counterOfUnreadSMS = 0;
 };
 
 
@@ -215,8 +233,7 @@ Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {
 		var parameters = Unwrapper.prototype.decrypt(input);
 		
 		if (parameters == null ||
-			typeof parameters.publicClientIDofSender !== 'string' 	 
-		 ) {
+			typeof parameters.publicClientIDofSender !== 'string'	 ) {
 			
 			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check "); 
 			return null;
@@ -238,8 +255,8 @@ Unwrapper.prototype.getParametersOfLocationFromServer = function(input) {
 		
 		if (parameters == null ||
 			typeof parameters.lat !== 'string' 	|| 
-			typeof parameters.lon !== 'string'
-		 ) {			
+			typeof parameters.lon !== 'string' 	 ) {
+							
 			console.log("DEBUG ::: getParametersOfLocationFromServer  ::: didn't pass the type check "); 
 			return null;
 		}
@@ -267,16 +284,46 @@ Unwrapper.prototype.signToken = function(message) {
 };
 
 
-Unwrapper.prototype.encrypt = function(message) {
+Unwrapper.prototype.encryptHandshake = function(message) {
 	try {    
+		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
+		
+		console.log("DEBUG ::: encryptHandshake ::: iv " +  app.symetricKey2use  );
 
-		cipher.start({iv: app.myArrayOfKeys[0] });
+		cipher.start({iv: app.symetricKey2use });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
 		cipher.finish();		
 		
-		return cipher.output.data ;
+		var envelope =  cipher.output.data  ;
+					
+		return envelope ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		return null;
+	}	
+};
+
+
+Unwrapper.prototype.encrypt = function(message) {
+	try {    
+		console.log("DEBUG ::: Unwrapper.prototype.encrypt ::: " + JSON.stringify(message) );
+
+		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
+		var iv = Math.floor((Math.random() * 7) + 0);
+		
+		//console.log("DEBUG ::: encrypt ::: iv " +  iv  );
+		
+		cipher.start({iv: app.myArrayOfKeys[iv] });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		var envelope =  iv +  cipher.output.data  ;
+		
+		return envelope ;
 
 	}
 	catch (ex) {	
@@ -290,8 +337,10 @@ Unwrapper.prototype.decrypt = function(encrypted) {
 
 		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
 
-		decipher.start({iv: app.myArrayOfKeys[0]});
-		decipher.update(forge.util.createBuffer(encrypted));
+		var iv = parseInt(encrypted.substring(0,1));
+
+		decipher.start({iv: app.myArrayOfKeys[iv] });
+		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();		
 		
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
@@ -299,6 +348,26 @@ Unwrapper.prototype.decrypt = function(encrypted) {
 	}
 	catch (ex) {	
 		console.log("DEBUG ::: decrypt  :::  " + ex);
+		return null;
+	}	
+};
+
+Unwrapper.prototype.decryptHandshake = function(encrypted) {	
+	try {    
+
+		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
+
+		var iv = app.symetricKey2use
+
+		decipher.start({iv: iv });
+		decipher.update(forge.util.createBuffer( encrypted ) );
+		decipher.finish();		
+		
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: decryptHandshake  :::  " + ex);
 		return null;
 	}	
 };
@@ -402,13 +471,16 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	var timeStampOfMessage = new Date(message.timeStamp);
 	
 	var html2insert = 	
-	'<div class="activity">'+
-	'	<span class="posted_at">  <div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div> '+ timeStampOfMessage.toLocaleString() + '</span>'+
-	'	<div class="readable">'+
-	'		<span class="user">    '+ authorOfMessage   +'  </span>'+
-	'		<span class="content">    '+ htmlOfContent +'  </span>'+
-	'	</div>' +
-	'</div>		' ;
+		'<div class="activity">'+
+		'	<span class="posted_at">'+
+		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+ 
+				timeStampOfMessage.toLocaleString() +
+		 '</span>'+
+		'	<div class="readable">'+
+		'		<span class="user">    '+ authorOfMessage   +'  </span>'+
+		'		<span class="content">    '+ htmlOfContent +'  </span>'+
+		'	</div>' +
+		'</div>		' ;
 	
 	var $newMsg = $(html2insert);
 	
@@ -464,13 +536,15 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 		contact.commentary = "I'm visible!" ;
 	}	
 	
-	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
-						'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
-						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
-						'	<h2>'+ contact.nickName   + '</h2> '+
-						'	<p>' + contact.commentary + '</p></a>'+
-						'	<a id="linkAddNewContact' + contact.publicClientID + '" ></a>'+
-						'</li>';
+	var html2insert = 	
+		'<li id="' + contact.publicClientID + '">'+
+		'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+		'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'	<h2>'+ contact.nickName   + '</h2> '+
+		'	<p>' + contact.commentary + '</p></a>'+
+		'	<a id="linkAddNewContact' + contact.publicClientID + '" ></a>'+
+		'</li>';
+		
 	$("#listOfContactsInMapPage").append(html2insert);
 
 	$('#listOfContactsInMapPage').listview().listview('refresh');
@@ -487,38 +561,64 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	if (isNewContact){
 		attributesOfLink += ' onclick="addNewContact(\'' + contact.publicClientID + '\');" ' +
 							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
-	}
-	
+	}	
 	if (contact.commentary == ""){
 		contact.commentary = "I'm visible!" ;
 	}
-	
-	
-	var html2insert = 	'<li id="' + contact.publicClientID + '">'+
-						'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
-						'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
-						'	<h2>'+ contact.nickName   + '</h2> '+
-						'	<p>' + contact.commentary + '</p></a>'+
-						'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
-						'</li>';
+	var htmlOfCounter = "";
+	if ( contact.counterOfUnreadSMS > 0 ){
+		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class="ui-li-count">'+ contact.counterOfUnreadSMS + '</span>';
+	}else{
+		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class=""></span>';
+	}
+		
+	var html2insert = 	
+		'<li id="' + contact.publicClientID + '">'+
+		'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'		<h2>'+ contact.nickName   + '</h2> '+
+		'		<p>' + contact.commentary + '</p>'+
+				htmlOfCounter	+   
+		' 	</a>'+
+		'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
+		'</li>';
+				
 	$("#listOfContactsInMainPage").append(html2insert);
 
-	$('#listOfContactsInMainPage').listview().listview('refresh');
-	
+	$('#listOfContactsInMainPage').listview().listview('refresh');	
 
 };
 
+GUI.prototype.showCounterOfContact = function(contact) {
+	
+	console.log("DEBUG ::: showCounterOfContact ::: contact.counterOfUnreadSMS: " + JSON.stringify(contact));
+	if ( contact.counterOfUnreadSMS > 0 ){
+		$("#counterOf_" + contact.publicClientID ).text(contact.counterOfUnreadSMS);		
+		$("#counterOf_" + contact.publicClientID ).attr("class", "ui-li-count");
+	} else{
+		$("#counterOf_" + contact.publicClientID ).text("");
+		$("#counterOf_" + contact.publicClientID ).attr("class", "");
+	}
+	
+	$('#listOfContactsInMainPage').listview().listview('refresh');	
+};
+
+
+//stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
 GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
 	
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
-		//stop when there is more than 20 SMS in the list and searching for newer than 2015
-		if (listOfMessages.length > 20 || olderDate < 1420070401000 ){			
+		
+		if (listOfMessages.length > config.limitBackwardMessages || 
+			olderDate < config.beginingOf2015 ){
+							
 			listOfMessages.map(function(message){			
 				gui.insertMessageInConversation(message);
 			});
+			
 		}else {			
-			olderDate = olderDate - 2628000000;
-			newerDate = newerDate - 2628000000;
+			olderDate = olderDate - config.oneMonth;
+			newerDate = newerDate - config.oneMonth;
 			gui.printMessagesOf(publicClientID, olderDate, newerDate, listOfMessages.concat(list));
 		}
 	});
@@ -533,11 +633,11 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 				
 
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
-	// 2592000000 is a month in miliseconds
 	var newerDate = new Date().getTime();	
-	var olderDate = new Date(newerDate - 2592000000).getTime();
+	var olderDate = new Date(newerDate - config.oneMonth).getTime();
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
@@ -553,6 +653,13 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		}catch (e){
 			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
 		}		
+	}
+	
+	if (contact.counterOfUnreadSMS > 0){
+		contact.counterOfUnreadSMS = 0;
+		gui.showCounterOfContact(contact);
+		//only if it is a persistent contact
+		modifyContactOnDB(contact);
 	}	
 	
 };
@@ -731,12 +838,13 @@ MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
 	return deferred.promise();
 };
 
-//TODO for the moment it does only sends the last 30 messages that were sent off-line 
 MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMessages) {
 	
 	mailBox.getMessagesSentOffline(olderDate, newerDate).done(function(list){
-		//stop when there is more than 30 SMS in the list and searching for newer than 2015
-		if (listOfMessages.length > 30 || olderDate < 1420070401000 ){			
+
+		if (listOfMessages.length > config.limitOfflineMessages2Get || 
+			olderDate < config.beginingOf2015 ){
+							
 			listOfMessages.map(function(message){			
 				//sends message	
 				if (typeof socket != "undefined" && socket.connected == true){
@@ -748,18 +856,15 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 					}		
 				}
 			});
-			console.log("DEBUG ::: sendOfflineMessages  :::" + JSON.stringify(listOfMessages) );
+			
 		}else {			
-			olderDate = olderDate - 2628000000;
-			newerDate = newerDate - 2628000000;
+			olderDate = olderDate - config.oneMonth;
+			newerDate = newerDate - config.oneMonth;
 			mailBox.sendOfflineMessages( olderDate, newerDate, listOfMessages.concat(list));
 		}
 	});
 	
 };
-
-
-
 
 //    this function assumes that the contact is already inserted on the Array listOfContacts
 
@@ -769,15 +874,18 @@ function addNewContact (publicClientID) {
 	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
 	
 	$("#popupDiv").remove();
-	var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-						'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-						'	<p><br></p> <p> new contact saved !	</p> '+
-						'</div>';
+	var prompt2show = 	
+		'<div id="popupDiv" data-role="popup"> '+
+		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+		'	<p><br></p> <p> new contact saved !	</p> '+
+		'</div>';
 	$("#listOfContactsInMainPage").append(prompt2show);
 	$("#listOfContactsInMainPage").trigger("create");
 	$("#popupDiv").popup("open");
 	
-	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	var contact = listOfContacts.filter(function(c){ 
+		return (c.publicClientID == publicClientID); 
+	})[0];
 	
 	if (contact){		
 		try {
@@ -822,7 +930,9 @@ function setNewContacts (input) {
 				
 	data.map(function(c){
 		
-		var contact = listOfContacts.filter(function(elem){ return (c.publicClientID == elem.publicClientID); })[0];
+		var contact = listOfContacts.filter(function(elem){ 
+			return (c.publicClientID == elem.publicClientID); 
+		})[0];
 				
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
@@ -857,6 +967,8 @@ function setNewContacts (input) {
 				commentary : (c.commentary == "") ? "is still thinking on a nick" : c.commentary								
 			});
 			
+			console.log("DEBUG ::: setNewContacts :: new contact:  " + JSON.stringify(newContact));
+			
 			listOfContacts.push(newContact);
 			GUI.prototype.insertContactInMainPage(newContact,true);			
 		}	
@@ -864,7 +976,9 @@ function setNewContacts (input) {
 	});
 }
 
-function loadMaps(){	
+function loadMaps(){
+	
+	if (typeof map != "undefined")  return;	
 	
 	map = L.map('map-canvas');
 	
@@ -888,36 +1002,32 @@ function loadMaps(){
 
 function connect_socket (result) {    
 
-	var mytoken = result.challenge;
 	app.symetricKey2use = app.myArrayOfKeys[result.index];
 	
-	var token2sign = { 	
-		token: mytoken , 
-  		publicClientID: app.publicClientID,
-  		nickName : app.myCurrentNick ,
-  		location : { 
-  			lat : app.myPosition.coords.latitude.toString() , 
-  			lon : app.myPosition.coords.longitude.toString()
-  		}
+	var token2sign = { 			
+		handshakeToken : app.handshakeToken ,
+		challenge :  encodeURI( unWrapper.encrypt( { challengeClear : result.challenge } ) )
   	};
-  	// encript token, JSON Web Token http://jwt.io/	
-	
-  	var tokenSigned = unWrapper.signToken(token2sign);
 
-	socket = io.connect('http://127.0.0.1:8090' , { secure: true, query: 'token=' + tokenSigned	});
+  	var tokenSigned = unWrapper.signToken(token2sign); 	
+
+	socket = io.connect(
+		'http://' + config.ipServerSockets +  ":" + config.portServerSockets ,
+		{ 
+			secure: true, 
+			query: 'token=' + tokenSigned	
+		}
+	);
 	
 	socket.on('connect', function () {	
-		socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( { publicClientID : app.publicClientID } ) );
 	
-		// 2592000000 is a month in miliseconds
 		var newerDate = new Date().getTime();	
-		var olderDate = new Date(newerDate - 2592000000).getTime();
+		var olderDate = new Date(newerDate - config.oneMonth).getTime();
 
 		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 
 	});
 
-  //TODO #15 ask server for the status of those messages without the corresponding MessageDeliveryReceipt
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
 
   		var deliveryReceipt = unWrapper.getDeliveryReceipt(inputDeliveryReceipt);
@@ -976,6 +1086,17 @@ function connect_socket (result) {
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
   		 			gui.insertMessageInConversation(messageFromServer);
+  		  		}else{
+  		  			console.log("DEBUG ::: messageFromServer ::: not chanting with");
+  		  			var contact = listOfContacts.filter(function(c){ 
+  		  				return (c.publicClientID == messageFromServer.from); 
+  		  			})[0];
+
+					contact.counterOfUnreadSMS++ ;
+					gui.showCounterOfContact(contact);	
+					//only if it is a persistent contact
+					modifyContactOnDB(contact);
+  		  			
   		  		}  				
   			}  		
   		});	
@@ -991,7 +1112,7 @@ function connect_socket (result) {
 		
 		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
 
-		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
+		//XEP-0013: Flexible Off-line Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();				
@@ -1004,7 +1125,7 @@ function connect_socket (result) {
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
-		},8000); // loop requesting for a message every 8 seconds
+		}, config.periodMessageRetrieval); 
 	   
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
@@ -1012,6 +1133,10 @@ function connect_socket (result) {
 	socket.on("RequestForProfile", function(input) {
 		
 		var requestParameters = unWrapper.getParametersOfProfileRequest(input);
+		
+		console.log("DEBUG ::: RequestForProfile ::: requestParameters.lastProfileUpdate : " + requestParameters.lastProfileUpdate );
+		console.log("DEBUG ::: RequestForProfile ::: app.lastProfileUpdate : " + app.lastProfileUpdate );
+
 		
 		if ( requestParameters != null && 
 			(	requestParameters.lastProfileUpdate == null || 
@@ -1056,12 +1181,19 @@ function connect_socket (result) {
 		var location = unWrapper.getParametersOfLocationFromServer(input); 
 		if (location == null) { return;	}		
 
-		if (app.myPosition.coords.latitude == ""){
-			
+		if (app.myPosition.coords.latitude == ""){			
 			app.myPosition.coords.latitude = parseFloat( location.lat ); 
 			app.myPosition.coords.longitude = parseFloat( location.lon );			
+		}			
 
-		}
+		var whoIsAround = { 
+			location : { 
+	  			lat : app.myPosition.coords.latitude.toString() , 
+				lon : app.myPosition.coords.longitude.toString()
+	  		}
+		};
+		
+		socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( whoIsAround ) );		
 
 	});//END locationFromServer	
 	  
@@ -1082,6 +1214,7 @@ var map;
 var db;
 var socket;
 var listOfContacts = [];
+var config = new Config();
 var gui = new GUI();
 var unWrapper = new Unwrapper();
 var mailBox = new MailBox();
@@ -1115,7 +1248,7 @@ var positionLoaded  = new $.Deferred();
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
 
-	$.post('http://127.0.0.1:8090/login', { publicClientID: app.publicClientID })
+	$.post('http://127.0.0.1:8090/login', { handshakeToken: app.handshakeToken })
 		.done(function (result) { 
 			connect_socket(result);  
 		})
@@ -1158,7 +1291,7 @@ $(document).ready(function() {
         	positionLoaded.resolve();
         }
         // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
-        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 6000});
+        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 1000});
     } else {
     	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
         positionLoaded.resolve();
@@ -1301,44 +1434,42 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 	// generate an RSA key pair synchronously
 	var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
-	
-	/*var publicKeyClient = { 		
-		n : keypair.publicKey.n.toString(32) , 
-		e : keypair.publicKey.e.toString(32)		  
+	var publicKeyClient = { 
+		n : keypair.publicKey.n.toString(32)
 	};
-	*/
-	var publicKeyClient = { n : keypair.publicKey.n.toString(32)	};
 	
- 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
+// 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
 
 
 	$.post('http://127.0.0.1:8090/signin', publicKeyClient ).done(function (response) { 
 	 	
-		var iv = response.iv;
-		var encrypted = response.encrypted;
-	
+		console.log("DEBUG ::: signin ::: response : " + JSON.stringify(response) );
+
 		 // decrypt data with a private key using RSAES-OAEP		 
-	 	var decrypted = keypair.privateKey.decrypt( encrypted , 'RSA-OAEP' );
+	 	var decrypted = keypair.privateKey.decrypt( response , 'RSA-OAEP' );
 	 	
 	 	var symetricKey = $(decrypted).find('symetricKey').text();
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
+		
+/*		console.log("DEBUG ::: signin ::: symetricKey:" +  symetricKey);
+		console.log("DEBUG ::: signin ::: challenge:" + challenge );
+		console.log("DEBUG ::: signin ::: handshakeToken:" +  handshakeToken ); */
 			 	
-	 	//TODO integrar dentro de encrypt/decript
 	 	app.symetricKey2use = symetricKey;
-	 	//TODO change to array of IV
-	 	app.myArrayOfKeys[0] = iv;
 	 	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
-	 		encrypted : unWrapper.encrypt( { challenge : challenge }  )
+	 		encrypted : encodeURI( unWrapper.encryptHandshake( { challenge : challenge }  ) )
 	 	};
+	 	
+//	 	console.log("DEBUG ::: handshakeRequest.handshake " + JSON.stringify(handshakeRequest) );
 
 	 	$.post('http://127.0.0.1:8090/handshake', handshakeRequest ).done(function (answer) {
 		 		
-	 		var result = unWrapper.decrypt( answer );
+	 		var result = unWrapper.decryptHandshake( answer );
 	 		
-	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( result ) );
+//	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( result ) );
 	 		
 			var myCurrentNick = $("#firstLoginNameField").val();
 			

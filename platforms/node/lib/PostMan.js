@@ -267,30 +267,33 @@ function PostMan(_io) {
 
 
 
+//verifies if it was signed with the current symmetric key of the client (number of the challenge)
+//verifies if it the content of the handshake has the challenge (token of the challenge)
 
 PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 	var verified = false;
-	try {
-		//verifies if it was signed with the current symmetric key of the client (number of the challenge)
-		
-		//console.log("DEBUG ::: verifyHandshake  :::  begining" + JSON.stringify(client)  + "token: " + JSON.stringify(tokenHandshake));
-
-		
+	try {		
 		var key = client.myArrayOfKeys[client.indexOfCurrentKey];			
 		verified = crypto.jws.JWS.verify(tokenHandshake, key);
 		
-		//console.log("DEBUG ::: verifyHandshake  :::  tokenHandshake: " + JSON.stringify(tokenHandshake)  );
 
-		//verifies if it the content of the handshake has the challenge (token of the challenge)
 		var a = tokenHandshake.split(".");
 		var uClaim = crypto.b64utos(a[1]);
 		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 		
-		//console.log("DEBUG ::: verifyHandshake  :::  tokenHandshake: " + JSON.stringify(decodedHandshake) + "client : " + JSON.stringify(client));
 		
-		if (decodedHandshake.token != client.currentChallenge){
+		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge) , client );
+		
+//		console.log("DEBUG ::: verifyHandshake  :::  decryptedChallenge: " + JSON.stringify(decryptedChallenge) );
+
+//		console.log("DEBUG ::: verifyHandshake  :::  decodedHandshake: " + JSON.stringify(decodedHandshake) );
+		
+//		console.log("DEBUG ::: verifyHandshake  ::: client : " + JSON.stringify(client));
+
+		
+		if (decryptedChallenge.challengeClear != client.currentChallenge){
 			verified = false;
-			console.log("DEBUG ::: verifyHandshake  :::  token different than challenge "  );
+			console.log("DEBUG ::: verifyHandshake  :::  challenge different than current challenge "  );
 		}
 	} 
 	catch (ex) {	
@@ -324,12 +327,9 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 
 	try {
 				
-		if (typeof joinParameters.token !== 'string' || 
-			typeof joinParameters.publicClientID !== 'string' ||
-			typeof joinParameters.location.lat  !== 'string' ||
-			typeof joinParameters.location.lon  !== 'string' ||
-			typeof joinParameters.nickName  !== 'string' ||
-			Object.keys(joinParameters).length != 4 ) {	
+		if (typeof joinParameters.handshakeToken !== 'string' || 
+			typeof joinParameters.challenge !== 'string' ||
+			Object.keys(joinParameters).length != 2 ) {	
 				joinParameters = null;
 				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking "  ); 
 		}	
@@ -341,6 +341,28 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 
 	return joinParameters; 	
 };
+
+PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
+	var parameters = null;
+
+	try {
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );
+				
+		if (typeof parameters.location.lat  !== 'string' ||
+			typeof parameters.location.lon  !== 'string' ||
+			Object.keys(parameters).length != 1) {	
+				parameters = null;
+				console.log("DEBUG ::: getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
+		}	
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: getRequestWhoIsaround  :::  exceptrion thrown :"  + ex); 
+		parameters = null;	
+	}
+
+	return parameters; 	
+};
+
 
 
 
@@ -446,18 +468,20 @@ PostMan.prototype.encrypt = function(message , client) {
 		
 		if ( typeof message.messageBody == "string")	{
 			message.messageBody = PostMan.prototype.sanitize(message.messageBody);
-			//message.messageBody = encodeURI(message.messageBody);
 		}
 		
 		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
-		var iv = client.myArrayOfKeys[0];
-				
+		var iv = Math.floor((Math.random() * 7) + 0);
+
+		
 		var cipher = forge.cipher.createCipher('AES-CBC', key );
-		cipher.start({iv: iv});
+		cipher.start({ iv : client.myArrayOfKeys[iv] });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
 		cipher.finish();		
 		
-		return cipher.output.data ;
+		var envelope =  iv +  cipher.output.data  ;
+		
+		return envelope ;
 
 	}
 	catch (ex) {	
@@ -469,14 +493,57 @@ PostMan.prototype.encrypt = function(message , client) {
 PostMan.prototype.decrypt = function(encrypted, client) {
 	
 	var decipher = forge.cipher.createDecipher('AES-CBC', client.myArrayOfKeys[client.indexOfCurrentKey] );
+	
+	var iv = parseInt(encrypted.substring(0,1));
 
-	decipher.start({iv: client.myArrayOfKeys[0]});
-	decipher.update(forge.util.createBuffer(encrypted));
+	decipher.start({iv: client.myArrayOfKeys[iv] });
+	decipher.update(forge.util.createBuffer( encrypted.substring(1) ) );
 	decipher.finish();
-
+	
 	return crypto.jws.JWS.readSafeJSONString(decipher.output.data);	
 	
 };
+
+PostMan.prototype.decryptHandshake = function(encrypted, client) {
+	
+	var decipher = forge.cipher.createDecipher('AES-CBC', client.myArrayOfKeys[client.indexOfCurrentKey] );
+	
+	var iv = client.myArrayOfKeys[client.indexOfCurrentKey];
+
+	decipher.start({iv: iv });
+	decipher.update(forge.util.createBuffer( encrypted ) );
+	decipher.finish();
+	
+	return crypto.jws.JWS.readSafeJSONString(decipher.output.data);	
+	
+};
+
+PostMan.prototype.encryptHandshake = function(message , client) {	
+
+	try {
+		
+		if ( typeof message.messageBody == "string")	{
+			message.messageBody = PostMan.prototype.sanitize(message.messageBody);
+		}
+		
+		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
+		var iv = key;
+
+		var cipher = forge.cipher.createCipher('AES-CBC', key );
+		cipher.start({ iv : iv });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		return cipher.output.data ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		return null;
+	}	
+};
+
+
 
 
 

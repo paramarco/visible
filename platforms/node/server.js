@@ -13,10 +13,15 @@ var when = require('when');
 
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
-var credentials = {key: privateKey, cert: certificate, requestCert: false};
+var credentials = {
+	key: privateKey, 
+	cert: certificate, 
+	requestCert: false
+};
 
 app.use(cors());
 app.use(express.bodyParser());
+
 
 app.configure(function() {
 	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
@@ -25,10 +30,13 @@ app.configure(function() {
 
 //var server = https.createServer(credentials, app);
 var server = http.createServer(app);
-server.listen(	app.get('port'),
-					app.get('ipaddr'), 
-					function(){	console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));	}
-			);
+server.listen(	
+	app.get('port'),
+	app.get('ipaddr'), 
+	function(){	
+		console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));
+	}
+);
 			
 var	io 				= require("socket.io").listen(server), 
 	_ 				= require('underscore')._ ,
@@ -37,19 +45,18 @@ var	io 				= require("socket.io").listen(server),
 	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
 	PostMan			= require('./lib/PostMan.js'),
 	Message			= require('./lib/Message.js'),
+	forge = require('node-forge')({disableNativeCode: true}),
 	brokerOfVisibles = new BrokerOfVisibles(io),
 	postMan = new PostMan(io);
 
 
-var forge = require('node-forge')({disableNativeCode: true});
-
 
 app.post('/login', function (req, res) {
 	
-	brokerOfVisibles.getClientById(req.body.publicClientID).then(function(client){
+	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
 		
 		if (client == null ){
-	  		console.log('DEBUG ::: login ::: I dont know any publicClientID like this');
+	  		console.log('DEBUG ::: login ::: I dont know any client with this handshakeToken' + req.body.handshakeToken );	  		
 			return;
 		} 
 		
@@ -68,8 +75,8 @@ app.post('/login', function (req, res) {
 		     brokerOfVisibles.updateClientsHandshake( client )
 		];
 		
+		// challenge forwarding to the Client
 		when.all ( clientUpdate ).then(function(){
-			// challenge forwarding to the Client			
 			res.json({index: client.indexOfCurrentKey , challenge : client.currentChallenge });
 			
 		});	
@@ -97,14 +104,7 @@ app.post('/signin', function (req, res) {
 			
 		var encrypted = publicKeyClient.encrypt( bytes2encrypt , 'RSA-OAEP');
 		
-		//TODO use one of the IV instead
-		var response = 	{ 
-			//iv : newClient.myArrayOfIV[0]  , 
-			iv : newClient.myArrayOfKeys[0]  ,
-			encrypted : encrypted 
-		}
-		
-		res.json( response );
+		res.json( encrypted );
 
 	});	
 	  
@@ -112,24 +112,27 @@ app.post('/signin', function (req, res) {
 
 app.post('/handshake', function (req, res) {
 	
-	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function (client){
+	var handshakeToken = req.body.handshakeToken;
+	var encrypted = decodeURI(req.body.encrypted);
+	
+	brokerOfVisibles.getClientByHandshakeToken(handshakeToken).then(function (client){
 
 		if (client != null){			
-			//TODO verify that the challenge from the client corresponds to the one in the server & verify
-			client.indexOfCurrentKey = 1 ;
+
+			var decrypted = postMan.decryptHandshake( encrypted , client );
 			
-			var decrypted = postMan.decrypt( req.body.encrypted , client );
+			console.log("DEBUG ::: handshake ::: decrypted " + JSON.stringify(decrypted) );
 			
 			if ( decrypted.challenge == client.currentChallenge ){
 				var answer = {
 					publicClientID : client.publicClientID , 
-					myArrayOfKeys : client.myArrayOfKeys 
+					myArrayOfKeys : client.myArrayOfKeys 					 
 				};
 							
-				res.json( postMan.encrypt( answer , client ) );
+				res.json( postMan.encryptHandshake( answer , client ) );
 				
 			}else {
-				console.log("DEBUG ::: handshake ::: challenge != client.currentChallenge ... ups" + challenge );
+				console.log("DEBUG ::: handshake ::: challenge != client.currentChallenge " + challenge );
 			}
 		}		
 	});		  
@@ -145,7 +148,7 @@ io.use(function(socket, next){
 	var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
 	if ( joinServerParameters == null ){ return;}  	
 	
-	brokerOfVisibles.getClientById ( joinServerParameters.publicClientID ).then(function(client){
+	brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
 
 		if (client == null){
 			console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
@@ -157,15 +160,6 @@ io.use(function(socket, next){
 	  	if (client && verified == true){  		
 	  		
 	  		client.socketid = socket.id ;
-	  		
-	  		if ( brokerOfVisibles.isLocationWellFormatted( joinServerParameters.location ) ) {	  			
-	  			client.location.lat = joinServerParameters.location.lat.toString() ;	
-	  			client.location.lon = joinServerParameters.location.lon.toString() ;	  				  			
-	  		}
-	  		
-	  		if (client.nickName != joinServerParameters.nickName){
-	  			client.nickName = joinServerParameters.nickName ;	
-	  		}	
 
 	  		// update DB
 	  		brokerOfVisibles.updateClientsProfile(client);		
@@ -173,7 +167,7 @@ io.use(function(socket, next){
 	  		//attaches the client to the socket
 	  		socket.visibleClient = client;	
 	  		
-			if(client.socketid != null){
+			if(client.socketid == ""){
 				console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
 			}
 			next();
@@ -191,17 +185,24 @@ io.sockets.on("connection", function (socket) {
 	if ( typeof socket.visibleClient == 'undefined'){
 		console.log("DEBUG ::: connection ::: socket.visibleClient undefined " );		
 		socket.disconnect();		
-	}	
+	}
+	var client = socket.visibleClient;	
 	
-	console.log("DEBUG ::: connection ::: client ", JSON.stringify(socket.visibleClient ) );
+	console.log("DEBUG ::: connection ::: client " + client.publicClientID );
 	
-	
+	//TODO RequestForProfile
 	// XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-	postMan.sendMessageHeaders(socket.visibleClient);	
-	postMan.sendMessageACKs(socket.visibleClient);
-	postMan.sendDetectedLocation(socket.visibleClient);
-					
+	postMan.sendMessageHeaders(client);	
+	postMan.sendMessageACKs(client);
+	postMan.sendDetectedLocation(client);
+	
+	var requestParameters = {
+		publicClientIDofRequester : "SERVER",
+		lastProfileUpdate : client.lastProfileUpdate				
+	};
+	
+	socket.emit("RequestForProfile", postMan.encrypt( requestParameters , client ));				
 
 	
 	socket.on('disconnect', function() {
@@ -321,6 +322,17 @@ io.sockets.on("connection", function (socket) {
 		var parameters = postMan.getProfileResponseParameters(input, client);		
 		if (parameters == null) return;	
 		
+		if (parameters.publicClientIDofRequester == "SERVER") {
+			client.nickName = parameters.nickName;
+			client.commentary = parameters.commentary;		
+			client.lastProfileUpdate = new Date().getTime();
+			
+			brokerOfVisibles.updateClientsProfile(client);
+			return;		
+
+		}
+		
+		
 		brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester).then(function(clientToPoll){ 
 
 			if ( clientToPoll != null ){
@@ -332,8 +344,19 @@ io.sockets.on("connection", function (socket) {
 	
 	socket.on('RequestOfListOfPeopleAround', function (input) {
 		
-		var client = socket.visibleClient;		
-		
+		var client = socket.visibleClient;
+			
+		var parameters = postMan.getRequestWhoIsaround(input, client);
+		if (parameters == null) return;	
+
+				  		
+  		if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
+  			client.location.lat = parameters.location.lat.toString() ;	
+  			client.location.lon = parameters.location.lon.toString() ;
+  			// update DB
+	  		brokerOfVisibles.updateClientsProfile(client);		  				  			
+  		}
+  		
 		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
 		
 			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
