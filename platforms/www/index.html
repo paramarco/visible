@@ -16,6 +16,8 @@
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="css/picedit.css" />		
 		<link rel="stylesheet" type="text/css" href="css/leaflet.css" />
+		<link rel="stylesheet" type="text/css" href="css/jquery.emojipicker.css" />
+		<link rel="stylesheet" type="text/css" href="css/jquery.emojipicker.tw.css" />
 				
         <title>Visible</title>
     </head>
@@ -470,7 +472,7 @@
 					<a href="" data-role="button" ><img src="img/multimedia_50x37.png" width="100%" class="button"></a>					
 				 </div>
 				<div class="ui-block-80percent">							
-					<textarea  name="textarea" id="chat-input" ></textarea>
+					<textarea  id="chat-input" ></textarea>
 														
 				</div>
 			   <button id="chat-input-button" type="submit" data-theme="a">send</button>	
@@ -481,6 +483,7 @@
 				</div> -->
 			</div><!-- /footer -->
 		</div><!-- /page chat-page-->		
+		
 		
 		
 		<script src="js/config.js"></script>
@@ -517,9 +520,13 @@
 		<script src="js/socket.io-1.0.6.js"></script> 
 		<script src="js/picedit.js"></script>	
 	    <script src="js/leaflet.js"></script>	    
-	    <script src="js/IndexedDBShim.js"></script>	    		    
+	    <script src="js/IndexedDBShim.js"></script>
+	    
+	    <script src="js/jquery.emojipicker.js"></script>
+	    <script src="js/jquery.emojipicker.tw.js"></script>  	    		    
 		<script src="js/index.js"></script>
-		<script src="js/md5.js"></script>         
+		<script src="js/md5.js"></script> 
+		      
 
     </body>
 </html>

@@ -1295,7 +1295,17 @@ $(document).ready(function() {
     } else {
     	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
         positionLoaded.resolve();
-    }		  
+    }		
+	
+	$('#chat-input').emojiPicker({
+	    width: '300px',
+	    height: '200px',
+	    button: false
+	});
+	
+
+
+
 	
 });//END $(document).ready()
 
@@ -1506,4 +1516,9 @@ $("#profileNameField").on("input", function() {
 	app.myCurrentNick = $("#profileNameField").val();	
   	$("#nickNameInProfile").text(app.myCurrentNick);
   	app.lastProfileUpdate = new Date().getTime();
+});
+
+$('#chat-input-button').click(function(e) {
+    e.preventDefault();
+    $('#chat-input').emojiPicker('toggle');
 });
