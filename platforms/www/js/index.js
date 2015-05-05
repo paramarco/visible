@@ -1265,7 +1265,6 @@ $(document).ready(function() {
 	
 	documentReady.resolve();	
 	
-
 	var theme =  $.mobile.loader.prototype.options.theme,
 	msgText =  $.mobile.loader.prototype.options.text,
 	textVisible =  $.mobile.loader.prototype.options.textVisible,
@@ -1297,14 +1296,14 @@ $(document).ready(function() {
         positionLoaded.resolve();
     }		
 	
+	$('#chat-input').css("width", $(document).width() * 0.75 );
+	$('#chat-input').css("height", 51  );
+	
 	$('#chat-input').emojiPicker({
 	    width: '300px',
 	    height: '200px',
 	    button: false
 	});
-	
-
-
 
 	
 });//END $(document).ready()
@@ -1340,7 +1339,9 @@ $(document).on("click","#mapButtonInMainPage",function() {
 
 $(document).on("click","#chat-input-button",function() {
 
-	var textMessage = $("#chat-input").val();
+	//var textMessage = $("#chat-input").val();
+	var textMessage = $("#chat-input").html();
+	
 	if (textMessage == '') {	return;	}
 	
 	var message2send = new Message(	{ 	
@@ -1361,7 +1362,8 @@ $(document).on("click","#chat-input-button",function() {
 	gui.insertMessageInConversation(message2send);
 
 	// clear chat-input	
-	document.getElementById('chat-input').value='';
+	//document.getElementById('chat-input').value='';
+	$("#chat-input").empty();
 	
 	//sends message	
 	if (typeof socket != "undefined" && socket.connected == true){
