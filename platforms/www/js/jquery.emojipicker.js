@@ -186,9 +186,10 @@
     },
 
     emojiClicked: function(e) {
+    	
       var emojiShortcode = $(e.target).attr('class').split('emoji-')[1];
       var emojiUnicode = toUnicode(findEmoji(emojiShortcode).unicode);
-
+		console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
       insertAtCaret(this.element, emojiUnicode);
     },
 

@@ -664,6 +664,66 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 };
 
+GUI.prototype.showEmojis = function() {
+	
+//	
+    $('#chat-input').emojiPicker('toggle');
+    
+};
+
+GUI.prototype.showImagePic = function() {
+	
+	$("#popupDivMultimedia").remove();
+	var prompt2show = 	
+		'<div id="popupDivMultimedia" data-role="popup"> '+
+		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+		'	<input type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+		'</div>';
+	$("#chat-page-content").append(prompt2show);
+	$("#chat-page-content").trigger("create");
+	
+	$('#picPopupDivMultimedia').picEdit({
+ 		imageUpdated: function(img){ 
+		 			
+			var message2send = new Message(	{ 	
+				to : app.currentChatWith, 
+				from : app.publicClientID , 
+				messageBody : { messageType : "multimedia", src : img.src }
+			});
+			message2send.setACKfromServer(false);
+			message2send.setACKfromServer(false);
+			message2send.setChatWith(app.currentChatWith); 
+		
+			//stores to DB
+			mailBox.storeMessage(message2send); 
+			
+			//print message on the GUI
+			gui.insertMessageInConversation(message2send);
+					
+			$("#popupDivMultimedia").remove();
+			$.mobile.silentScroll($(document).height());
+			
+			//sends message	
+			if (typeof socket != "undefined" && socket.connected == true){
+				try{
+					socket.emit('messagetoserver', unWrapper.encrypt(message2send));
+					
+				}catch (e){
+					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
+				}		
+			}			
+ 		}// END imageUpdated
+ 	});// END picEdit construct
+	
+		
+	$("#popupDivMultimedia").popup("open");
+	
+	
+};
+
+
+
+
 function loadMyConfig(){
 	
 	var singleKeyRange = IDBKeyRange.only(0);  
@@ -1304,6 +1364,8 @@ $(document).ready(function() {
 	    height: '200px',
 	    button: false
 	});
+	
+	$("#chat-multimedia-button").bind("click", gui.showImagePic );
 
 	
 });//END $(document).ready()
@@ -1339,8 +1401,8 @@ $(document).on("click","#mapButtonInMainPage",function() {
 
 $(document).on("click","#chat-input-button",function() {
 
-	//var textMessage = $("#chat-input").val();
-	var textMessage = $("#chat-input").html();
+	var textMessage = $("#chat-input").val();
+	
 	
 	if (textMessage == '') {	return;	}
 	
@@ -1362,8 +1424,8 @@ $(document).on("click","#chat-input-button",function() {
 	gui.insertMessageInConversation(message2send);
 
 	// clear chat-input	
-	//document.getElementById('chat-input').value='';
-	$("#chat-input").empty();
+	document.getElementById('chat-input').value='';
+	//$("#chat-input").empty();
 	
 	//sends message	
 	if (typeof socket != "undefined" && socket.connected == true){
@@ -1373,57 +1435,13 @@ $(document).on("click","#chat-input-button",function() {
 			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
 		}		
 	}
+	
+			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+		$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
+		$("#chat-multimedia-button").bind( "click", gui.showImagePic );	
 
 });
 
-$(document).on("click","#chat-multimedia-button",function() {
-		
-	$("#popupDivMultimedia").remove();
-	var prompt2show = 	'<div id="popupDivMultimedia" data-role="popup"> '+
-			'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-			'	<input type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
-			'</div>';
-	$("#chat-page-content").append(prompt2show);
-	$("#chat-page-content").trigger("create");
-	
-	$('#picPopupDivMultimedia').picEdit({
- 		imageUpdated: function(img){ 
-		 			
-			var message2send = new Message(	{ 	
-				to : app.currentChatWith, 
-				from : app.publicClientID , 
-				messageBody : { messageType : "multimedia", src : img.src }
-			});
-			message2send.setACKfromServer(false);
-			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith); 
-		
-			//stores to DB
-			mailBox.storeMessage(message2send); 
-			
-			//print message on the GUI
-			gui.insertMessageInConversation(message2send);
-					
-			$("#popupDivMultimedia").remove();
-			$.mobile.silentScroll($(document).height());
-			
-			//sends message	
-			if (typeof socket != "undefined" && socket.connected == true){
-				try{
-					socket.emit('messagetoserver', unWrapper.encrypt(message2send));
-					
-				}catch (e){
-					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
-				}		
-			}			
- 		}// END imageUpdated
- 	});// END picEdit construct
-	
-		
-	$("#popupDivMultimedia").popup("open");
-	
-	
-});
 
 
 $(document).on("click","#firstLoginInputButton",function() {
@@ -1520,7 +1538,23 @@ $("#profileNameField").on("input", function() {
   	app.lastProfileUpdate = new Date().getTime();
 });
 
-$('#chat-input-button').click(function(e) {
-    e.preventDefault();
-    $('#chat-input').emojiPicker('toggle');
+
+$('#chat-input').on("input", function() {
+	var textMessage = $("#chat-input").val();
+	if (textMessage == '') {
+		$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
+	}else{
+		$('#chat-multimedia-image').attr("src", "img/list_36x36.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+	}
+
 });
+
+$('#chat-input').focus(function() {
+	$('#chat-multimedia-image').attr("src", "img/list_36x36.png");
+	$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+});
+
+
+
