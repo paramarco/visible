@@ -349,7 +349,7 @@ function BrokerOfVisibles(_io) {
 			if(err) 
 				console.error('DEBUG ::: updateClientsLocation :::error running query', err);	
 						
-		    if (typeof result.rows[0] == "undefined"){
+		    if (typeof result == "undefined"){
 				console.log('DEBUG ::: updateClientsLocation ::: could not resolve location by IP');
 				return  d.resolve(false);
 			}

@@ -6,18 +6,15 @@
         <!-- WARNING: for iOS 7, remove the width=device-width and height=device-height attributes. See https://issues.apache.org/jira/browse/CB-4323 -->
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
        	<link rel="stylesheet" type="text/css" href="css/visible_1.0.0.css" />
-		<!--	<link rel="stylesheet" type="text/css" href="css/visible_1.0.0.min.css" />-->
-
         <link rel="stylesheet" type="text/css" href="css/jquery.mobile.icons.min.css" />
-		 <link rel="stylesheet" href="css/jquery.mobile.structure-1.4.2.min.css" /> 
-		<!--<link rel="stylesheet" href="css/jquery.mobile.structure-1.4.2.css" /> -->
-		
+		<link rel="stylesheet" href="css/jquery.mobile.structure-1.4.2.min.css" />		
 		<link rel="stylesheet" type="text/css" href="css/font-face.css">
 		<link rel="stylesheet" type="text/css" href="css/application.css" media="all" />
 		<link rel="stylesheet" type="text/css" href="css/picedit.css" />		
 		<link rel="stylesheet" type="text/css" href="css/leaflet.css" />
 		<link rel="stylesheet" type="text/css" href="css/jquery.emojipicker.css" />
 		<link rel="stylesheet" type="text/css" href="css/jquery.emojipicker.tw.css" />
+		<script src="js/twemoji.min.js"></script>
 				
         <title>Visible</title>
     </head>
@@ -33,34 +30,12 @@
 			  </div>
 			</div><!-- /header -->
 			<div data-role="content" data-theme="a" >
-                <input type="search" name="search-5" id="search-5" value="" placeholder="who is visible?">				
 				
-				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">
-					
-					
-					
-					
+				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">		
 		
 			<!--
-				<div class="activity" id="activity-1221"><span class="posted_at">1 month ago</span>
-					<img class="avatar" src="img/logo.png">				
-					<div class="readable">
-					  <span class="user">
-					    scenefz
-					  </span>					
-					  <span class="content">
-					    <div class="image-preview">
-					  		<a target="_blank" href="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636">
-					    		<img id="image-embed" class="image-embed" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636">
-					  		</a>
-					  		<div class="name">click her to see </div>
-						</div>
-					  </span>					
-					</div>				
-				</div>
 				
-				
-				<div class="activity" id="activity-2165">
+				<div class="activity" id="">
 					<span class="posted_at">1 month ago</span>
 					<img class="avatar" src="https://secure.gravatar.com/avatar/9bd2beb44be76b3073c12cbc5ffcad5d?s=30&amp;d=identicon">				
 					<div class="readable">
@@ -79,423 +54,18 @@
 -->
 				</ul>
 			</div><!-- /content -->
-			<div data-role="panel" id="mypanel" data-display="overlay">
-			    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li id="link2profileFromMyPanel" data-icon="false">
-						<a href="#profile">
-							<img src="img/profile_black_195x195.png" >
-							<h2>Profile</h2>								
-						</a>
-					</li>
-					<li data-icon="false">
-						<a href="#createGroup" >							
-							<img src="img/group_black_195x195.png" >
-							<h2>Groups</h2>
-						</a>
-					</li>
-					<li data-icon="false">
-						<a href="#manageVisibles" >							
-							<img src="img/visibles_black_195x195.png" >
-							<h2>Visibles</h2>
-						</a>
-					</li>
 
-					<li data-icon="false">
-						<a href="#activateAccount" >							
-							<img src="img/account_black_195x195.png" >
-							<h2>Account</h2>
-						</a>
-					</li>
-				</ul>
-			</div><!-- /panel -->
-		</div><!-- /MainPage-->
+		</div><!-- /MainPage-->		
 
-
-		<div data-role="page" data-theme="a" id="visibleFirstTime">
-			<div data-role="header" data-position="fixed">							
-			  <div class="ui-grid-d" >
-			    <div class="ui-block-a">	</div>
-			    <div class="ui-block-b"><p><strong>Welcome! please insert your settings below</strong></p></div>
-			    <div class="ui-block-c"></div>
-			    <div class="ui-block-d"><a href="" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-			    <div class="ui-block-e"><a href="" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
-			  </div>
-			</div><!-- /header -->
-			
-
-			<div id="contentOfvisibleFirstTime" data-role="content" data-theme="a">	
-										
-				<form action="" method="post" enctype="multipart/form-data" id="xid" >	
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">
-						<input type="file" accept="image/*;capture=camera" name="imageOnVisibleFirstTime" id="imageOnVisibleFirstTime" class="picedit_box">	
-			    	</ul>				    
-					<ul data-role="listview" data-inset="true" data-divider-theme="a">	
-						<div data-role="fieldcontain">
-	                         <label for="firstLoginNameField">my nick Name:</label>
-	                         <input id="firstLoginNameField" type="text" name="firstLoginNameField" value="">
-						</div>						
-					</ul>
-				</form>
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<li id="firstLoginInputButton">
-						<a href="#">
-							<h2 align="center" >I want to be visible!</h2>
-						</a>											
-					</li>
-				</ul>	
-			</div><!-- /content  -->			
-		</div><!-- /page profile-->
-
-
-
-		<div data-role="page" data-theme="a" id="manageVisibles">
-			<div data-role="header" data-position="fixed">							
-			  <div class="ui-grid-d" >
-			    <div class="ui-block-a">
-			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
-			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
-		    		</a>
-	    		</div>
-			    <div class="ui-block-b"></div>
-			    <div class="ui-block-c"></div>
-			    <div class="ui-block-d"></div>
-			    <div class="ui-block-e"></div>
-			  </div>
-			</div><!-- /header -->
-			
-			<div data-role="content" data-theme="b">
-				Are you visible for...?
-				<ul data-role="listview" data-inset="true" data-divider-theme="b">
-					<li>						
-						<h2>Anybody</h2>
-						<p>should you switch this off, then only your contacts would see you online, is not that borring?</p>	
-						<select name="flip-mini" id="flip-mini" data-role="slider" data-mini="true">
-							<option value="on">On</option>
-							<option value="off">Off</option>							
-						</select>
-					</li>							
-				</ul>
-			</div><!-- /content -->			
-		</div><!-- /page manageVisibles-->
-
-		<div data-role="page" data-theme="a" id="createGroup">
-			<div data-role="header" data-position="fixed">							
-			  <div class="ui-grid-d" >
-			    <div class="ui-block-a">
-			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
-			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
-		    		</a>
-		    	</div>
-			    <div class="ui-block-b"></div>
-			    <div class="ui-block-c"></div>
-			    <div class="ui-block-d"></div>
-			    <div class="ui-block-e"></div>
-			  </div>
-			</div><!-- /header -->
-			<div data-role="content" data-theme="a">							
-				<ul data-role="listview" data-inset="true" data-divider-theme="a">
-					<li>
-						<h1>Not implemented yet</h1>
-					</li>					
-				</ul>
-			</div><!-- /content -->
-		</div><!-- /page createGroup-->
-		
-		
-		<div data-role="page" data-theme="a" id="profile">
-			<div data-role="header" data-position="fixed">							
-			  <div class="ui-grid-d" >
-			    <div class="ui-block-a">
-			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
-			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
-		    		</a> 		    		
-	    		</div>
-			    <div class="ui-block-b">	<h2 id="nickNameInProfile"></h2> </div>
-			    <div class="ui-block-c"></div>
-			    <div class="ui-block-d"></div>
-			    <div class="ui-block-e"></div>
-			  </div>
-			</div><!-- /header --> 	
-			<div data-role="content" data-theme="a">			
-				<div id="picEditDiv">
-					<form action="" method="post" enctype="multipart/form-data" id="xid" >	
-						<input type="file" accept="image/*;capture=camera" name="image" id="imageProfile" class="picedit_box">
-					</form>
-				</div>			    
-				<div data-role="fieldcontain">
-					 <label for="profileNameField">my nick Name:</label>
-					 <input id="profileNameField" type="text" name="profileNameField" value="">
-				</div>  
-			</div><!-- /content -->
-		</div><!-- /page profile-->
-		
-		<div data-role="page" data-cache="false" id="map-page" data-url="map-page">
-			<div data-role="header" data-position="fixed">							
-			  <div class="ui-grid-d" >
-			    <div class="ui-block-a">
-			    	<a href="#" data-rel="back" data-role="button" class="ui-nodisc-icon icon-list">
-			    		<img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">
-		    		</a> 
-	    		</div>
-			    <div class="ui-block-b"></div>
-			    <div class="ui-block-c"></div>
-			    <div class="ui-block-e"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-			    <div class="ui-block-e"><a id="mapButtonInmap-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
-			  </div>
-			</div><!-- /header -->
-			
-			<div role="main" id="map-canvas" >
-		        	<!-- map loads here...  -->
-		  	</div>
-		  					
-			<div data-role="content" data-theme="a">				 
-				<ul id="listOfContactsInMapPage" data-role="listview" data-inset="true" data-divider-theme="b">					
-				</ul>
-			</div><!-- /content -->
-			<div data-role="panel" id="mypanel-map-page" data-display="overlay">
-				    <ul data-role="listview" data-inset="true" data-divider-theme="b">
-						<li data-icon="false">
-							<a href="#profile">
-								<img src="img/profile_black_195x195.png" >
-								<h2>Profile</h2>								
-							</a>
-						</li>
-						<li data-icon="false">
-							<a href="#createGroup" >							
-								<img src="img/group_black_195x195.png" >
-								<h2>Groups</h2>
-							</a>
-						</li>
-						<li data-icon="false">
-							<a href="#manageVisibles" >							
-								<img src="img/visibles_black_195x195.png" >
-								<h2>Visibles</h2>
-							</a>
-						</li>
-
-						<li data-icon="false">
-							<a href="#activateAccount" >							
-								<img src="img/account_black_195x195.png" >
-								<h2>Account</h2>
-							</a>
-						</li>
-					</ul>
-			</div><!-- /panel -->
-		</div><!-- /page map-page-->
-		
-		<div data-role="page" id="chat-page" data-url="chat-page" >
-			<div data-role="header" data-position="fixed">
-				<div class="ui-grid-d">
-					<div class="ui-block-a"><a id="arrowBackInChatPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-				    <div class="ui-block-b">
-				    	
-				    	
-				    	 <!--<a id="arrowBackInChatPage" data-role="button" class="ui-nodisc-icon icon-list">
-				    		<img id="imgOfChat-page-header" src="img/arrow-left_22x36.png" alt="lists" class="button ui-li-icon ui-corner-none ">				    		
-				    	</a>-->
-				    	
-				   	<a href="#MainPage" data-role="button" class="imgOfChat-page" data-inline="false">
-				       		<img id="imgOfChat-page-header" src="" class="imgOfChat-page-header">
-				    </a> 
-				       	
-				       	<strong id="nameOfChatThreadInChatPage"></strong>
-			       	</div>
-				    <div class="ui-block-c"><strong id="nameOfChatThreadInChatPage"></strong></div>
-				    <div class="ui-block-d"><a href="#MainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/bubble_36x36.png" alt="lists" class="button ui-li-icon ui-corner-none "></a></div>
-				    <div class="ui-block-e"><a id="mapButtonInchat-page" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
-			  	</div>
-			</div><!-- /header -->
-		<!--  	<div  data-role="content" data-theme="a">  -->
-			<div id="chat-page-content" role="main" class="ui-content">
-
-		<!--		<div class="pagination">
-					<i class="icon-spinner icon-spin icon-2x"></i>Loading previous messages
-				</div>
-		-->
-	<!--			<div class="activity" id="activity-5150">
-					<span class="posted_at">7 hours ago</span>
-					<img class="avatar" src="img/logo.png">
-					<div class="readable">
-						<span class="user">    tttest  </span>
-						<span class="content">    test  </span>
-					</div>
-				</div>
-				
-				<div class="activity" id="activity-1221"><span class="posted_at">1 month ago</span>
-					<img class="avatar" src="http://img.diytrade.com/cdimg/1456476/32322505/0/1366351312/2013_new_Sexy_Silicone_Bust_Self-adhesive_Front_Closure_backless_Strapless_Bra.jpg">				
-					<div class="readable">
-					  <span class="user">
-					    scenefz
-					  </span>					
-					  <span class="content">
-					    <div class="image-preview">
-					  		<a target="_blank" href="http://img.diytrade.com/cdimg/1456476/32322505/0/1366351312/2013_new_Sexy_Silicone_Bust_Self-adhesive_Front_Closure_backless_Strapless_Bra.jpg">
-					    		<img class="image-embed" src="img/logo.png">
-					  		</a>
-					  	<div class="name">click her to see the bra...</div>
-						</div>
-					  </span>					
-					</div>				
-				</div>
-				<div class="activity" id="activity-1365"><span class="posted_at">1 month ago</span>
-					<img class="avatar" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636?s=30&amp;d=identicon">					
-					<div class="readable">
-					  <span class="user">
-					    luciomor
-					  </span>					
-					  <span class="content">
-					    vai
-					  </span>					
-					</div>				
-				</div>
-				<div class="activity" id="activity-1366"><span class="posted_at">1 month ago</span>
-					<img class="avatar" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636?s=30&amp;d=identicon">
-					
-					<div class="readable">
-					  <span class="user">Kandan bot</span>
-					
-					  <span class="content">
-					    luciomor uploaded <a href="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636?s=30&amp;d=identicon">1374148_665127126840542_2021776746_n.jpg</a>
-					  </span>
-					</div>				
-				</div>
-
-				<div class="activity" id="activity-1489"><span class="posted_at">1 month ago</span>
-				<img class="avatar" src="https://secure.gravatar.com/avatar/9908d2ca5936aea6c4e5ce09404ffbaa?s=30&amp;d=identicon">
-				
-				<div class="readable">
-				  <span class="user">
-				    kakang
-				  </span>
-				
-				  <span class="content">
-				    alus euy jri ni ieu 
-				  </span>
-				
-				</div>
-				
-				
-				</div><div class="activity" id="activity-1870"><span class="posted_at">1 month ago</span>
-				<img class="avatar" src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21?s=30&amp;d=identicon">
-				
-				<div class="readable">
-				  <span class="user">
-				    d-day
-				  </span>
-				
-				  <span class="content">
-"LoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLoremLorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-				  </span>
-				
-				</div>
-				
-				
-				</div><div class="activity" id="activity-1871"><span class="posted_at">1 month ago</span>
-				<img class="avatar" src="https://secure.gravatar.com/avatar/3ba98ee0711caa720c5dd3f60f256b21?s=30&amp;d=identicon">
-				
-				<div class="readable">
-				  <span class="user">
-				    d-day
-				  </span>
-				
-				  <span class="content">
-				   "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
-				  </span>
-				
-				</div>
-				
-				
-				</div><div class="activity" id="activity-2165"><span class="posted_at">1 month ago</span>
-				<img class="avatar" src="https://secure.gravatar.com/avatar/9bd2beb44be76b3073c12cbc5ffcad5d?s=30&amp;d=identicon">
-				
-				<div class="readable">
-				  <span class="user">
-				    janesmith
-				  </span>
-				
-				  <span class="content">
-				    <div class="youtube-preview">
-				      <iframe width="560" height="315" src="http://www.youtube.com/embed/yrFETnz8wFg" frameborder="0" allowfullscreen="">
-				      </iframe>
-				  <div class="name">http://www.youtube.com/watch?v=yrFETnz8wFg</div>
-				</div>
-				  </span>
-				
-				</div>
-				
-				
-				</div><div class="activity" id="activity-2702"><span class="posted_at">1 month ago</span>
-				<img class="avatar" src="https://secure.gravatar.com/avatar/d3d7292e6401f0b1ab254ffaffbc3636?s=30&amp;d=identicon">
-				
-				<div class="readable">
-				  <span class="user">
-				    robaone
-				  </span>
-				
-				  <span class="content">
-				    <div class="youtube-preview">
-				      <iframe width="560" height="315" src="http://www.youtube.com/embed/yrFETnz8wFg" frameborder="0" allowfullscreen="">
-				      </iframe>
-				  <div class="name">http://www.youtube.com/watch?v=yrFETnz8wFg</div>
-				</div>
-				  </span>
-				
-				</div>
-				
-				
-				</div>
-				<div class="activity current_user" id="activity-5056"><span class="posted_at">2 days ago</span>
-					<img class="avatar" src="https://secure.gravatar.com/avatar/b8adf56b77e9408ebbb4e2eb8b89e722?s=30&amp;d=identicon">
-				
-					<div class="readable">
-					  <span class="user">
-					    holahola
-					  </span>					
-					  <span class="content">
-					    <div class="youtube-preview">
-					      	<iframe width="560" height="315" src="http://www.youtube.com/embed/NK5aCJnpa3o" frameborder="0" allowfullscreen="">
-					      	</iframe>
-					  		<div class="name">http://www.youtube.com/watch?v=NK5aCJnpa3o</div>
-						</div>
-					  </span>
-					
-					</div>				
-				</div>
-
-				<div id="popupDivMultimedia" data-role="popup"> 
-					<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>
-					<div id="picPopupDivMultimedia"></div>	
-				</div>-->
-			</div><!-- /content -->
-			<div data-role="footer" data-position="fixed">				
-				<div id="chat-multimedia-button" class="ui-block-20percent" >					
-					<a href="" data-role="button" ><img id="chat-multimedia-image" src="img/multimedia_50x37.png" width="100%" class="button"></a>					
-				 </div>
-				<div class="ui-block-80percent">							
-					<textarea  id="chat-input" class="textarea-chat"></textarea> 
-				   <!--  <div  contentEditable="true" class="textarea-chat"> </div>  -->									
-				</div>
-			   <button id="chat-input-button" type="submit" data-theme="a">send</button>	
-			
-				<!-- <div>
-					<textarea id="chat-input" ></textarea>
-					<button id="chat-input-button" class="post">Post</button>
-				</div> -->
-			</div><!-- /footer -->
-		</div><!-- /page chat-page-->		
-		
-		
-		
+	
 		<script src="js/config.js"></script>
 
 		<script src="js/jsrsasign-4.1.4-all-min.js"></script>
 		<script src="js/json-sans-eval-min.js"></script>
-		<script src="js/jws-3.0.min.js"></script>
-		
+		<script src="js/jws-3.0.min.js"></script>		
 		<script src="js/asn1.js"></script>
 		<script src="js/cipher.js"></script>
-		<script src="js/cipherModes.js"></script>
-		
+		<script src="js/cipherModes.js"></script>		
 		<script src="js/md.js"></script>
 		<script src="js/sha1.js"></script>		
 		<script src="js/sha512.js"></script>		
@@ -505,12 +75,9 @@
 		<script src="js/prng.js"></script>
 		<script src="js/random.js"></script>
 		<script src="js/aes.js"></script>
-
 		<script src="js/jsbn.js"></script>
-
 		<script src="js/pki.js"></script>
 		<script src="js/rsa.js"></script>
-
 		<script src="js/prime.js"></script>
 		<script src="js/pkcs1.js"></script>
 

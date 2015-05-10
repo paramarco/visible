@@ -558,7 +558,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.msgID !== 'string'	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didn't pass the format check "  );
+			console.log("DEBUG ::: getMessage  ::: didn't pass the format check : "  + JSON.stringify(inputMessage));
 			return null;
 		}
 

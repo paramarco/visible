@@ -1,20 +1,16 @@
 //TODO globals DICTIONARY
 
-//TODO EMOTICONS
-
 //TODO fix delay during first handshake...
 
-//TODO encryption of headers for message from server...only store encrypted
-
-//TODO load HTML without seeing the menu CSS
-
-//TODO make CCS style independent of JQUERY version
-
-//TODO upload photo on profile smaller than 100KB
+//TODO upload photo on profile smaller than 100KB and blocking loggin until finished..asuring the image is rendered.
 
 //TODO button "who is visible around me" --> experiment with the radius
 
 //TODO to fix both sides encrypted in function connect_socket (result) { 
+	
+//TODO only show the newest SMS retrieve older when scrolling up
+
+//TODO resize text area when window changes height or width
 
 
 function ContactOfVisible(contact2create) {
@@ -235,7 +231,7 @@ Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {
 		if (parameters == null ||
 			typeof parameters.publicClientIDofSender !== 'string'	 ) {
 			
-			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check "); 
+			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check " + JSON.stringify(parameters) ); 
 			return null;
 		}
 		
@@ -403,7 +399,7 @@ GUI.prototype.sanitize = function(html) {
 };
 
 
-GUI.prototype.insertMessageInConversation = function(message) {
+GUI.prototype.insertMessageInConversation = function(message, isReverse) {
 
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
@@ -456,6 +452,7 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	if ( typeof message.messageBody == "string")	{
 		htmlOfContent = this.sanitize(message.messageBody);
 		htmlOfContent = decodeURI(htmlOfContent);
+		htmlOfContent = twemoji.parse(htmlOfContent);
 		
 	}else if (typeof message.messageBody == "object"){
 		if (message.messageBody.messageType == "multimedia"){
@@ -487,14 +484,21 @@ GUI.prototype.insertMessageInConversation = function(message) {
 	if (message.from != app.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); // //FFFAF0 // FDF5E6
 	}
-	$("#chat-page-content").append($newMsg);
-	$("#chat-page-content").trigger("create");
+	if (isReverse){
+		console.log("DEBUG ::: insertMessageInConversation ::: isReverse");
 
-	$.mobile.silentScroll($(document).height()); 
-			
-	$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
-
+		$("#chat-page-content").prepend($newMsg);
+//		$("#chat-page-content").trigger("create");
+		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
+	}else{
+		$("#chat-page-content").append($newMsg);
+		$("#chat-page-content").trigger("create");
+		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
+		setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 200 );		
+	}
+		
 	
+
 };
 
 GUI.prototype.loadContacts = function() {
@@ -609,21 +613,49 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 	
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 		
-		if (listOfMessages.length > config.limitBackwardMessages || 
-			olderDate < config.beginingOf2015 ){
+		if (//listOfMessages.length > config.limitBackwardMessages || 
+			//olderDate < config.beginingOf2015
+				true){
 							
 			listOfMessages.map(function(message){			
 				gui.insertMessageInConversation(message);
 			});
+			//gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
+			gui.printOldMessagesOf(publicClientID, newerDate - config.oneMonth , newerDate);
 			
-		}else {			
+		}else {	
+			console.log("DEBUG ::: printMessagesOf ::: else");		
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
+
 			gui.printMessagesOf(publicClientID, olderDate, newerDate, listOfMessages.concat(list));
 		}
 	});
 	
 };
+
+GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate ) {
+	
+	console.log("DEBUG ::: printOldMessagesOf ::: else");
+	
+	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
+
+		list.reverse().map(function(message){	
+			console.log("DEBUG ::: printOldMessagesOf ::: else" + JSON.stringify(message));
+			gui.insertMessageInConversation(message,true);
+			
+		});
+		
+		if ( olderDate > config.beginingOf2015 ){
+			olderDate = olderDate - config.oneMonth;
+			newerDate = newerDate - config.oneMonth;
+
+			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
+		}
+	});	
+};
+
+
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
 	
@@ -637,7 +669,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
 	var newerDate = new Date().getTime();	
-	var olderDate = new Date(newerDate - config.oneMonth).getTime();
+	var olderDate = new Date(newerDate - 4000000).getTime();
+//	var olderDate = new Date(newerDate - config.oneMonth).getTime();
+//	var olderDate = new Date(newerDate - config.oneDay).getTime();
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
@@ -660,15 +694,19 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		gui.showCounterOfContact(contact);
 		//only if it is a persistent contact
 		modifyContactOnDB(contact);
-	}	
+	}
+	
+	
+	
+		
 	
 };
 
 GUI.prototype.showEmojis = function() {
-	
-//	
     $('#chat-input').emojiPicker('toggle');
-    
+    setTimeout(function (){
+   		$.mobile.silentScroll($(document).height());
+   	}, 200);    
 };
 
 GUI.prototype.showImagePic = function() {
@@ -721,6 +759,256 @@ GUI.prototype.showImagePic = function() {
 	
 };
 
+GUI.prototype.loadAsideMenuMainPage = function() {
+
+	var strVar="";
+	strVar += "<div data-role=\"panel\" id=\"mypanel\" data-display=\"overlay\">";
+	strVar += "    <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "		<li id=\"link2profileFromMyPanel\" data-icon=\"false\">";
+	strVar += "			<a href=\"#profile\">";
+	strVar += "				<img src=\"img\/profile_black_195x195.png\" >";
+	strVar += "				<h2>Profile<\/h2>							";
+	strVar += "			<\/a>";
+	strVar += "		<\/li>";
+	strVar += "		<li data-icon=\"false\">";
+	strVar += "			<a href=\"#createGroup\" >							";
+	strVar += "				<img src=\"img\/group_black_195x195.png\" >";
+	strVar += "				<h2>Groups<\/h2>";
+	strVar += "			<\/a>";
+	strVar += "		<\/li>";
+	strVar += "		<li data-icon=\"false\">";
+	strVar += "			<a href=\"#manageVisibles\" >							";
+	strVar += "				<img src=\"img\/visibles_black_195x195.png\" >";
+	strVar += "				<h2>Visibles<\/h2>";
+	strVar += "			<\/a>";
+	strVar += "		<\/li>";
+	strVar += "";
+	strVar += "		<li data-icon=\"false\">";
+	strVar += "			<a href=\"#activateAccount\" >							";
+	strVar += "				<img src=\"img\/account_black_195x195.png\" >";
+	strVar += "				<h2>Account<\/h2>";
+	strVar += "			<\/a>";
+	strVar += "		<\/li>";
+	strVar += "	<\/ul>";
+	strVar += "<\/div><!-- \/panel -->"; 
+		
+	$("#MainPage").append(strVar); 
+	$('#MainPage').trigger('create'); 
+};
+
+
+GUI.prototype.loadPageVisibleFirstTime = function() {
+
+	var strVar="";
+	strVar += "<div data-role=\"page\" data-theme=\"a\" id=\"visibleFirstTime\"> ";
+	strVar += "	<div data-role=\"header\" data-position=\"fixed\"> 					";
+	strVar += "	  <div class=\"ui-grid-d\" > ";
+	strVar += "	    <div class=\"ui-block-a\">	<\/div> ";
+	strVar += "	    <div class=\"ui-block-b\"><p><strong>Welcome! please insert your settings below<\/strong><\/p><\/div> ";
+	strVar += "	    <div class=\"ui-block-c\"><\/div> ";
+	strVar += "	    <div class=\"ui-block-d\"><a href=\"\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div> ";
+	strVar += "	    <div class=\"ui-block-e\"><a href=\"\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div> ";
+	strVar += "	  <\/div> ";
+	strVar += "	<\/div><!-- \/header --> ";
+	strVar += "	<div id=\"contentOfvisibleFirstTime\" data-role=\"content\" data-theme=\"a\">	 										";
+	strVar += "		<form action=\"\" method=\"post\" enctype=\"multipart\/form-data\" id=\"xid\" > 	";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
+	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\">	 ";
+	strVar += "	    	<\/ul> 				    ";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> 	";
+	strVar += "				<div data-role=\"fieldcontain\"> ";
+	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label> ";
+	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
+	strVar += "				<\/div>	 					";
+	strVar += "			<\/ul> ";
+	strVar += "		<\/form> ";
+	strVar += "		<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
+	strVar += "			<li id=\"firstLoginInputButton\"> ";
+	strVar += "				<a href=\"#\"> ";
+	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2> ";
+	strVar += "				<\/a>			 								";
+	strVar += "			<\/li> ";
+	strVar += "		<\/ul> 	";
+	strVar += "	<\/div><!-- \/content  -->	 		";
+	strVar += "<\/div><!-- \/page profile-->";
+		
+	$("body").append(strVar); 
+	
+};
+
+
+GUI.prototype.loadBody = function() { 		
+	var strVar="";
+	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"manageVisibles\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a>";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->		";
+	strVar += "			<div data-role=\"content\" data-theme=\"b\">	Are you visible for...?";
+	strVar += "				<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "					<li>						";
+	strVar += "						<h2>Anybody<\/h2>";
+	strVar += "						<p>should you switch this off, then only your contacts would see you online, is not that borring?<\/p>	";
+	strVar += "						<select name=\"flip-mini\" id=\"flip-mini\" data-role=\"slider\" data-mini=\"true\">";
+	strVar += "							<option value=\"on\">On<\/option>";
+	strVar += "							<option value=\"off\">Off<\/option>							";
+	strVar += "						<\/select>";
+	strVar += "					<\/li>							";
+	strVar += "				<\/ul>";
+	strVar += "			<\/div><!-- \/content -->			";
+	strVar += "		<\/div><!-- \/page manageVisibles-->";
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a>";
+	strVar += "		    	<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">							";
+	strVar += "				<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
+	strVar += "					<li>";
+	strVar += "						<h1>Not implemented yet<\/h1>";
+	strVar += "					<\/li>					";
+	strVar += "				<\/ul>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page createGroup-->";
+	strVar += "		";
+	strVar += "		";
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"profile\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a> 		    		";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\">	<h2 id=\"nickNameInProfile\"><\/h2> <\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header --> 	";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">			";
+	strVar += "				<div id=\"picEditDiv\">";
+	strVar += "					<form action=\"\" method=\"post\" enctype=\"multipart\/form-data\" id=\"xid\" >	";
+	strVar += "						<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
+	strVar += "					<\/form>";
+	strVar += "				<\/div>			    ";
+	strVar += "				<div data-role=\"fieldcontain\">";
+	strVar += "					 <label for=\"profileNameField\">my nick Name:<\/label>";
+	strVar += "					 <input id=\"profileNameField\" type=\"text\" name=\"profileNameField\" value=\"\">";
+	strVar += "				<\/div>  ";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page profile-->";
+	strVar += "		";
+	strVar += "		<div data-role=\"page\" data-cache=\"false\" id=\"map-page\" data-url=\"map-page\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a> ";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			";
+	strVar += "			<div role=\"main\" id=\"map-canvas\" >";
+	strVar += "		        	<!-- map loads here...  -->";
+	strVar += "		  	<\/div>";
+	strVar += "		  					";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">				 ";
+	strVar += "				<ul id=\"listOfContactsInMapPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">					";
+	strVar += "				<\/ul>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "			<div data-role=\"panel\" id=\"mypanel-map-page\" data-display=\"overlay\">";
+	strVar += "				    <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "						<li data-icon=\"false\">";
+	strVar += "							<a href=\"#profile\">";
+	strVar += "								<img src=\"img\/profile_black_195x195.png\" >";
+	strVar += "								<h2>Profile<\/h2>								";
+	strVar += "							<\/a>";
+	strVar += "						<\/li>";
+	strVar += "						<li data-icon=\"false\">";
+	strVar += "							<a href=\"#createGroup\" >							";
+	strVar += "								<img src=\"img\/group_black_195x195.png\" >";
+	strVar += "								<h2>Groups<\/h2>";
+	strVar += "							<\/a>";
+	strVar += "						<\/li>";
+	strVar += "						<li data-icon=\"false\">";
+	strVar += "							<a href=\"#manageVisibles\" >							";
+	strVar += "								<img src=\"img\/visibles_black_195x195.png\" >";
+	strVar += "								<h2>Visibles<\/h2>";
+	strVar += "							<\/a>";
+	strVar += "						<\/li>";
+	strVar += "";
+	strVar += "						<li data-icon=\"false\">";
+	strVar += "							<a href=\"#activateAccount\" >							";
+	strVar += "								<img src=\"img\/account_black_195x195.png\" >";
+	strVar += "								<h2>Account<\/h2>";
+	strVar += "							<\/a>";
+	strVar += "						<\/li>";
+	strVar += "					<\/ul>";
+	strVar += "			<\/div><!-- \/panel -->";
+	strVar += "		<\/div><!-- \/page map-page-->";
+	strVar += "		";
+	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "				<div class=\"ui-grid-d\">";
+	strVar += "					<div class=\"ui-block-a\"><a id=\"arrowBackInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "				    <div class=\"ui-block-b\">";
+	strVar += "					   	<a href=\"#MainPage\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
+	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
+	strVar += "				   		<\/a> 				       	";
+	strVar += "				       	<strong id=\"nameOfChatThreadInChatPage\"><\/strong>";
+	strVar += "			       	<\/div>";
+	strVar += "				    <div class=\"ui-block-c\"><strong id=\"nameOfChatThreadInChatPage\"><\/strong><\/div>";
+	strVar += "				    <div class=\"ui-block-d\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInchat-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			  	<\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div id=\"chat-page-content\" role=\"main\" class=\"ui-content\">";
+	strVar += "				<!--	<div class=\"pagination\">";
+	strVar += "							<i class=\"icon-spinner icon-spin icon-2x\"><\/i>Loading previous messages";
+	strVar += "						<\/div>		-->";
+	strVar += "";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
+	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
+	strVar += "					<a href=\"\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\" width=\"100%\" class=\"button\"><\/a>					";
+	strVar += "				 <\/div>";
+	strVar += "				<div class=\"ui-block-80percent\">							";
+	strVar += "					<textarea  id=\"chat-input\" class=\"textarea-chat\"> <\/textarea> 				   								";
+	strVar += "				<\/div>";
+	strVar += "			   <button id=\"chat-input-button\" type=\"submit\" data-theme=\"a\">send<\/button>			";
+	strVar += "			<\/div><!-- \/footer -->";
+	strVar += "		<\/div><!-- \/page chat-page-->		";
+			
+	$("body").append(strVar); 
+	
+};
+
+
+
 
 
 
@@ -765,6 +1053,8 @@ function loadMyConfig(){
 			configLoaded.resolve();  
      		return;
      	}else{
+     	
+     		gui.loadPageVisibleFirstTime();
      		// 	login for the first time configLoaded.resolve(); 
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
 			
@@ -808,13 +1098,10 @@ function init() {
 	};
 		
 	this.indexedDBHandler.onsuccess = function (event,caca) {
-		db = event.target.result;
-		
-		loadMyConfig();
-				
+		db = event.target.result;		
+		loadMyConfig();				
 		gui.loadContacts(); 			
-	};
-    
+	};    
 
 }
 
@@ -1323,7 +1610,8 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 
 $(document).ready(function() {	
 	
-	documentReady.resolve();	
+	gui.loadBody();
+	gui.loadAsideMenuMainPage();		
 	
 	var theme =  $.mobile.loader.prototype.options.theme,
 	msgText =  $.mobile.loader.prototype.options.text,
@@ -1337,7 +1625,9 @@ $(document).ready(function() {
 		theme: theme,
 		textonly: textonly,
 		html: html
-	});	  
+	});
+	
+	documentReady.resolve();	  
 	  
 	if ( navigator.geolocation ) {
         function success(pos) {
@@ -1350,11 +1640,12 @@ $(document).ready(function() {
         	positionLoaded.resolve();
         }
         // Find the users current position.  Cache the location for 5 minutes, timeout after 6 seconds
-        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 1000});
+        navigator.geolocation.getCurrentPosition(success, fail, {maximumAge: 500000, enableHighAccuracy:true, timeout: 5000});
     } else {
     	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
         positionLoaded.resolve();
-    }		
+    }
+	
 	
 	$('#chat-input').css("width", $(document).width() * 0.75 );
 	$('#chat-input').css("height", 51  );
@@ -1366,13 +1657,67 @@ $(document).ready(function() {
 	});
 	
 	$("#chat-multimedia-button").bind("click", gui.showImagePic );
+	
+		$("#profileNameField").on("input", function() {
+		app.myCurrentNick = $("#profileNameField").val();	
+	  	$("#nickNameInProfile").text(app.myCurrentNick);
+	  	app.lastProfileUpdate = new Date().getTime();
+	});
+
+
+	$('#chat-input').on("input", function() {
+		var textMessage = $("#chat-input").val();
+		if (textMessage == '') {
+			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
+		}else{
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		}
+	});
+	
+	$('#chat-input').focus(function() {
+		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+	});
+
+
+   /*  
+	
+	var $win = $(window);
+
+     $win.scroll(function () {
+     	console.log ("DEBUG ::: scroll ::: " + $( window ).scrollTop() );
+         if ($win.scrollTop() == 0)
+             alert('Scrolled to Page Top');
+         else if ($win.height() + $win.scrollTop()
+                        == $(document).height()) {
+             alert('Scrolled to Page Bottom');
+         }
+     });
+     */
+    
+
+/*
+	$('body').bind('touchmove', function(e) { 
+	    console.log("DEBUG ::: scroll ::: " + $(this).scrollTop()); // Replace this with your code.
+	});
+	*/
+	//TODO
+	    $(window).scroll(function() {
+          console.log("DEBUG ::: scroll ::: "); // Replace this with your code.
+
+    	});
+    	
 
 	
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
 	$.mobile.silentScroll($(document).height());	
-	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");				
+	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
+	
+					
 });
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 	$("#nickNameInProfile").html(app.myCurrentNick);
@@ -1436,9 +1781,9 @@ $(document).on("click","#chat-input-button",function() {
 		}		
 	}
 	
-			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-		$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
-		$("#chat-multimedia-button").bind( "click", gui.showImagePic );	
+	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
+	$("#chat-multimedia-button").bind( "click", gui.showImagePic );	
 
 });
 
@@ -1532,29 +1877,6 @@ $(document).on("click","#firstLoginInputButton",function() {
 
 });
 
-$("#profileNameField").on("input", function() {
-	app.myCurrentNick = $("#profileNameField").val();	
-  	$("#nickNameInProfile").text(app.myCurrentNick);
-  	app.lastProfileUpdate = new Date().getTime();
-});
-
-
-$('#chat-input').on("input", function() {
-	var textMessage = $("#chat-input").val();
-	if (textMessage == '') {
-		$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
-	}else{
-		$('#chat-multimedia-image').attr("src", "img/list_36x36.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	}
-
-});
-
-$('#chat-input').focus(function() {
-	$('#chat-multimedia-image').attr("src", "img/list_36x36.png");
-	$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-});
 
 
 
