@@ -4,13 +4,17 @@
 
 //TODO upload photo on profile smaller than 100KB and blocking loggin until finished..asuring the image is rendered.
 
+//TODO try to get profile from server instead of from user --> dynamic...in server
+
 //TODO button "who is visible around me" --> experiment with the radius
 
 //TODO to fix both sides encrypted in function connect_socket (result) { 
 	
-//TODO only show the newest SMS retrieve older when scrolling up
-
 //TODO resize text area when window changes height or width
+
+//TODO viralization with email
+
+//TODO license page paybody and so on...
 
 
 function ContactOfVisible(contact2create) {
@@ -399,7 +403,7 @@ GUI.prototype.sanitize = function(html) {
 };
 
 
-GUI.prototype.insertMessageInConversation = function(message, isReverse) {
+GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX) {
 
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
@@ -482,23 +486,18 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse) {
 	var $newMsg = $(html2insert);
 	
 	if (message.from != app.publicClientID){
-		$newMsg.css("background", "#FFFFE0"); // //FFFAF0 // FDF5E6
+		$newMsg.css("background", "#FFFFE0"); 
 	}
 	if (isReverse){
-		console.log("DEBUG ::: insertMessageInConversation ::: isReverse");
-
 		$("#chat-page-content").prepend($newMsg);
-//		$("#chat-page-content").trigger("create");
-		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
 	}else{
 		$("#chat-page-content").append($newMsg);
 		$("#chat-page-content").trigger("create");
-		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
-		setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 200 );		
 	}
-		
-	
-
+	if (withFX){
+		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
+		setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 330 ); 		
+	}
 };
 
 GUI.prototype.loadContacts = function() {
@@ -610,25 +609,25 @@ GUI.prototype.showCounterOfContact = function(contact) {
 
 //stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
 GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
-	
+
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 		
-		if (//listOfMessages.length > config.limitBackwardMessages || 
-			//olderDate < config.beginingOf2015
-				true){
+		var newList = listOfMessages.concat(list);
+		
+		if (newList.length > config.limitBackwardMessages || 
+			olderDate < config.beginingOf2015 ){
 							
-			listOfMessages.map(function(message){			
-				gui.insertMessageInConversation(message);
+			newList.map(function(message){			
+				gui.insertMessageInConversation(message,false,true);
 			});
-			//gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
-			gui.printOldMessagesOf(publicClientID, newerDate - config.oneMonth , newerDate);
+			
+			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
 			
 		}else {	
-			console.log("DEBUG ::: printMessagesOf ::: else");		
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
-
-			gui.printMessagesOf(publicClientID, olderDate, newerDate, listOfMessages.concat(list));
+			
+			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
 		}
 	});
 	
@@ -636,14 +635,10 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 
 GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate ) {
 	
-	console.log("DEBUG ::: printOldMessagesOf ::: else");
-	
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 
 		list.reverse().map(function(message){	
-			console.log("DEBUG ::: printOldMessagesOf ::: else" + JSON.stringify(message));
-			gui.insertMessageInConversation(message,true);
-			
+			gui.insertMessageInConversation(message,true,false);			
 		});
 		
 		if ( olderDate > config.beginingOf2015 ){
@@ -651,10 +646,12 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 			newerDate = newerDate - config.oneMonth;
 
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
+		}else {
+			$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
+			setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 330 ); 
 		}
 	});	
 };
-
 
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
@@ -669,9 +666,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
 	var newerDate = new Date().getTime();	
-	var olderDate = new Date(newerDate - 4000000).getTime();
-//	var olderDate = new Date(newerDate - config.oneMonth).getTime();
-//	var olderDate = new Date(newerDate - config.oneDay).getTime();
+	var olderDate = new Date(newerDate - config.oneMonth).getTime();
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
@@ -694,11 +689,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		gui.showCounterOfContact(contact);
 		//only if it is a persistent contact
 		modifyContactOnDB(contact);
-	}
-	
-	
-	
-		
+	}		
 	
 };
 
@@ -736,7 +727,7 @@ GUI.prototype.showImagePic = function() {
 			mailBox.storeMessage(message2send); 
 			
 			//print message on the GUI
-			gui.insertMessageInConversation(message2send);
+			gui.insertMessageInConversation(message2send,false,true);
 					
 			$("#popupDivMultimedia").remove();
 			$.mobile.silentScroll($(document).height());
@@ -1007,9 +998,49 @@ GUI.prototype.loadBody = function() {
 	
 };
 
+GUI.prototype.chatInputHandler = function() {
 
+	var textMessage = $("#chat-input").val();	
+	
+	if (	textMessage == '' || 
+			( (textMessage.match(/\n/g)||[]).length == textMessage.length  ) ){
+		document.getElementById('chat-input').value='';
+		return;
+	}
+	
+	var message2send = new Message(	{ 	
+		to : app.currentChatWith, 
+		from : app.publicClientID , 
+		messageBody : gui.sanitize(textMessage) 
+	});
+	message2send.setACKfromServer(false);
+	message2send.setACKfromServer(false);
+	message2send.setChatWith(app.currentChatWith); 
+	message2send.convertToUTF();	
 
+	//stores to DB
+	mailBox.storeMessage(message2send); 
+	
+	//print message on the GUI
+	gui.insertMessageInConversation(message2send,false,true);
 
+	// clear chat-input	
+	document.getElementById('chat-input').value='';
+	
+	//sends message	
+	if (typeof socket != "undefined" && socket.connected == true){
+		try{			 
+			socket.emit('messagetoserver', unWrapper.encrypt(message2send) );
+		}catch (e){
+			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
+		}		
+	}
+	
+	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
+	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
+
+};
 
 
 function loadMyConfig(){
@@ -1432,7 +1463,7 @@ function connect_socket (result) {
   				mailBox.storeMessage(messageFromServer); 
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
-  		 			gui.insertMessageInConversation(messageFromServer);
+  		 			gui.insertMessageInConversation(messageFromServer,false,true);
   		  		}else{
   		  			console.log("DEBUG ::: messageFromServer ::: not chanting with");
   		  			var contact = listOfContacts.filter(function(c){ 
@@ -1676,48 +1707,22 @@ $(document).ready(function() {
 		}
 	});
 	
+	$( "#chat-input" ).keyup(function( event ) {
+		if (event.keyCode == 13){
+			gui.chatInputHandler();
+		}	
+	});
+	
 	$('#chat-input').focus(function() {
 		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
 		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 	});
-
-
-   /*  
-	
-	var $win = $(window);
-
-     $win.scroll(function () {
-     	console.log ("DEBUG ::: scroll ::: " + $( window ).scrollTop() );
-         if ($win.scrollTop() == 0)
-             alert('Scrolled to Page Top');
-         else if ($win.height() + $win.scrollTop()
-                        == $(document).height()) {
-             alert('Scrolled to Page Bottom');
-         }
-     });
-     */
-    
-
-/*
-	$('body').bind('touchmove', function(e) { 
-	    console.log("DEBUG ::: scroll ::: " + $(this).scrollTop()); // Replace this with your code.
-	});
-	*/
-	//TODO
-	    $(window).scroll(function() {
-          console.log("DEBUG ::: scroll ::: "); // Replace this with your code.
-
-    	});
-    	
-
 	
 });//END $(document).ready()
 
 $(document).on("pageshow","#chat-page",function(event){ // When entering pagetwo
 	$.mobile.silentScroll($(document).height());	
-	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
-	
-					
+	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
 });
 $(document).on("pageshow","#profile",function(event){ // When entering pagetwo
 	$("#nickNameInProfile").html(app.myCurrentNick);
@@ -1729,8 +1734,7 @@ $("body").on('pagecontainertransition', function( event, ui ) {
 		app.currentChatWith = null;
     }    
     if (ui.options.target == "#map-page"){				
-		loadMaps();
-		//gui.loadContactsOnMapPage();		 
+		loadMaps();				 
     }
 });
 
@@ -1744,48 +1748,7 @@ $(document).on("click","#mapButtonInMainPage",function() {
 	}
 });
 
-$(document).on("click","#chat-input-button",function() {
-
-	var textMessage = $("#chat-input").val();
-	
-	
-	if (textMessage == '') {	return;	}
-	
-	var message2send = new Message(	{ 	
-		to : app.currentChatWith, 
-		from : app.publicClientID , 
-		messageBody : gui.sanitize(textMessage) 
-	});
-	message2send.setACKfromServer(false);
-	message2send.setACKfromServer(false);
-	message2send.setChatWith(app.currentChatWith); 
-	message2send.convertToUTF();
-	
-
-	//stores to DB
-	mailBox.storeMessage(message2send); 
-	
-	//print message on the GUI
-	gui.insertMessageInConversation(message2send);
-
-	// clear chat-input	
-	document.getElementById('chat-input').value='';
-	//$("#chat-input").empty();
-	
-	//sends message	
-	if (typeof socket != "undefined" && socket.connected == true){
-		try{			 
-			socket.emit('messagetoserver', unWrapper.encrypt(message2send) );
-		}catch (e){
-			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
-		}		
-	}
-	
-	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
-	$("#chat-multimedia-button").bind( "click", gui.showImagePic );	
-
-});
+$(document).on("click","#chat-input-button", gui.chatInputHandler );
 
 
 

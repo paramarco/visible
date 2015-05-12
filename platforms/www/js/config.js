@@ -9,6 +9,6 @@ function Config ()  {
 	this.beginingOf2015 = 1420070401000; // 2015 UNIX EPOC
 	this.oneMonth = 2628000000; // one month in milliseconds UNIX EPOC
 	this.oneDay = 86400000;
-	this.limitBackwardMessages = 1; 
+	this.limitBackwardMessages = 0; 
 	this.periodMessageRetrieval = 8000;    
 }

@@ -4,6 +4,9 @@
 	background: white;
 	border-radius : .3125em ;/*{global-radii-buttons}*/
 	float: right;
+	resize: none;
+	word-wrap:break-word;
+	max-height : 54px;
 } 
 .ui-block-20percent{
 	width: 20%;
