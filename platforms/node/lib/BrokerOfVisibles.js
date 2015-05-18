@@ -251,14 +251,73 @@ function BrokerOfVisibles(_io) {
 		
 	};
 	
-	this.getClientBySocketId = function(socketId) {	
+	this.getProfileByID = function( publicClientID ) {	
 		
-		/*
-	    var client =  _.find(listOfClients, function(c) {	
-	    	return c.socketid  == socketId;	
-	    }); 
-	    return client;
-	    */
+		var d = when.defer();
+	    
+	    var query2send = squel.select()
+    						.field("nickname")
+    						.field("commentary")
+    						.field("lastprofileupdate")
+						    .from("client")
+						    .where("publicclientid = '" + publicClientID + "'")
+						    .toString();
+	    
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: getProfileByID ::: error running query', err);	
+		    	return d.resolve(null);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined"){
+			    	console.log('DEBUG ::: getProfileByID ::: I dont know any publicClientID like this');
+			    	return  d.resolve(null);
+			    }
+		    		    
+			    var profile = {};
+			    var entry = result.rows[0];			    
+			    
+			    profile.publicClientID = publicClientID;
+			    profile.nickName = entry.nickname;
+			    profile.commentary = entry.commentary;
+			    profile.lastProfileUpdate = entry.lastprofileupdate;
+			    
+    			var query2send = squel.select()
+    				.field("photo")
+				    .from("profilesphoto")				    	
+			    	.where("publicclientid = '" + publicClientID + "'")
+				    .toString();
+		
+				clientOfDB.query(query2send, function(err, result) {
+		     
+					if(err) {
+						console.error('DEBUG ::: getProfileByID ::: error running query', err);	
+					}
+					
+					if (typeof result.rows[0] == "undefined"){
+				    	console.log('DEBUG ::: getProfileByID ::: I dont know any publicClientID like this');
+				    	return  d.resolve(null);
+				    }
+		    		    
+			  		profile.img = result.rows[0].photo;
+		
+					return d.resolve(profile);
+		
+				});				    	
+	    
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getProfileByID  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+
 	};
 	
 	this.createNewClient = function() {
@@ -284,6 +343,12 @@ function BrokerOfVisibles(_io) {
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("lastprofileupdate", newClient.lastProfileUpdate)
 							    .toString() ;
+			query2send += " ; " ;
+			query2send += squel.insert()
+						    .into("profilesphoto")
+						    .set("publicclientid", newClient.publicClientID )								
+						    .set("photo", null)									
+						    .toString() ;
 							    
 		clientOfDB.query(query2send, function(err, result) {
 		     
@@ -411,7 +476,25 @@ function BrokerOfVisibles(_io) {
 		});		
 	
 	};
+
+	this.updateClientsPhoto = function( client, img ) {
+		
+		var query2send = squel.update()
+						    .table("profilesphoto")
+						    .set("photo", img )
+						    .where("publicclientid = '" + client.publicClientID + "'")
+						    .toString();
+		
+		clientOfDB.query(query2send, function(err, result) {		     
+			 
+			if(err) {
+				console.error('DEBUG ::: updateClientsPhoto :::error running query', err);	
+				console.error('DEBUG ::: updateClientsPhoto ::: query error: ', query2send);	
+			}
+    
+		});		
 	
+	};	
 	
 	
 	

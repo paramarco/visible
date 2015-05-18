@@ -211,8 +211,8 @@ Unwrapper.prototype.getParametersOfProfileRequest = function(input) {
 		var parameters = Unwrapper.prototype.decrypt(input);
 		
 		if (parameters == null ||
-			typeof parameters.publicClientIDofRequester !== 'string' 	|| 
-			Object.keys(parameters).length != 2  ) {
+			typeof parameters.lastProfileUpdate !== 'number' 	|| 
+			Object.keys(parameters).length != 1  ) {
 			
 			console.log("DEBUG ::: getParametersOfProfileRequest  ::: didn't pass the type check " + JSON.stringify(parameters)); 
 			return null;
@@ -1514,19 +1514,17 @@ function connect_socket (result) {
 		
 		console.log("DEBUG ::: RequestForProfile ::: requestParameters.lastProfileUpdate : " + requestParameters.lastProfileUpdate );
 		console.log("DEBUG ::: RequestForProfile ::: app.lastProfileUpdate : " + app.lastProfileUpdate );
-
 		
 		if ( requestParameters != null && 
-			(	requestParameters.lastProfileUpdate == null || 
-				requestParameters.lastProfileUpdate <  app.lastProfileUpdate ) ){		
+			 requestParameters.lastProfileUpdate <  app.lastProfileUpdate  ){
+			 			
 			var profileResponseObject = {	
 				publicClientIDofSender : app.publicClientID, 
-				publicClientIDofRequester : requestParameters.publicClientIDofRequester,
 				img : app.myPhotoPath,
 				nickName: app.myCurrentNick,
-				commentary : "I'm super visible!!"	
+				commentary : app.myCommentary
 			};				
-			socket.emit("ProfileResponse", unWrapper.encrypt(profileResponseObject)	);
+			socket.emit("ProfileUpdate", unWrapper.encrypt(profileResponseObject)	);
 		}	
 			   
 	});//END RequestForProfile	
@@ -1600,6 +1598,7 @@ var app = {
     // Application Constructor
     currentChatWith : null,
     myCurrentNick : null,
+    myCommentary : "",
     myPhotoPath : null,
     myArrayOfKeys : [],
 	publicClientID : null,

@@ -239,3 +239,20 @@ CREATE INDEX ip_start
   (ip_start);
 
 
+-- Table: public.profilesphoto
+
+-- DROP TABLE public.profilesphoto;
+
+CREATE TABLE public.profilesphoto
+(
+  publicclientid uuid NOT NULL,
+  photo text,
+  CONSTRAINT profilesphoto_pkey PRIMARY KEY (publicclientid)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.profilesphoto
+  OWNER TO visible;
+
+

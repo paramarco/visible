@@ -198,7 +198,6 @@ io.sockets.on("connection", function (socket) {
 	postMan.sendDetectedLocation(client);
 	
 	var requestParameters = {
-		publicClientIDofRequester : "SERVER",
 		lastProfileUpdate : client.lastProfileUpdate				
 	};
 	
@@ -300,45 +299,31 @@ io.sockets.on("connection", function (socket) {
 		var parameters = postMan.getProfileRetrievalParameters(input, client);		
 		if (parameters == null) return;	
 				
-		brokerOfVisibles.isClientOnline(parameters.publicClientID2getImg).then(function(clientToPoll){
-		
-			if ( clientToPoll != null ){
-				var requestParameters = {
-					publicClientIDofRequester : parameters.publicClientIDofRequester,
-					lastProfileUpdate : parameters.lastProfileUpdate				
-				};
-				
-				io.sockets.to(clientToPoll.socketid).emit("RequestForProfile", postMan.encrypt(requestParameters , clientToPoll ));
+		brokerOfVisibles.getProfileByID( parameters.publicClientID2getImg ).then(function(profile){
+			
+			if ( profile == null) return;
+			
+			if ( parameters.lastProfileUpdate < profile.lastProfileUpdate ){
+				socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );
 			}
 			
 		});
 		
 	});
 	
-	socket.on("ProfileResponse", function(input) {	
+	socket.on("ProfileUpdate", function(input) {	
 		
 		var client = socket.visibleClient;	
 
 		var parameters = postMan.getProfileResponseParameters(input, client);		
 		if (parameters == null) return;	
 		
-		if (parameters.publicClientIDofRequester == "SERVER") {
-			client.nickName = parameters.nickName;
-			client.commentary = parameters.commentary;		
-			client.lastProfileUpdate = new Date().getTime();
-			
-			brokerOfVisibles.updateClientsProfile(client);
-			return;		
-
-		}
+		client.nickName = parameters.nickName;
+		client.commentary = parameters.commentary;		
+		client.lastProfileUpdate = new Date().getTime();
 		
-		
-		brokerOfVisibles.isClientOnline(parameters.publicClientIDofRequester).then(function(clientToPoll){ 
-
-			if ( clientToPoll != null ){
-				io.sockets.to(clientToPoll.socketid).emit("ProfileFromServer", postMan.encrypt(parameters , clientToPoll ));
-			}
-		});
+		brokerOfVisibles.updateClientsProfile( client );
+		brokerOfVisibles.updateClientsPhoto( client, parameters.img );		
 		
 	});	
 	
