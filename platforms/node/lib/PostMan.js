@@ -282,7 +282,7 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 		
 		
-		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge) , client );
+		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge ) , client );
 		
 //		console.log("DEBUG ::: verifyHandshake  :::  decryptedChallenge: " + JSON.stringify(decryptedChallenge) );
 
@@ -305,14 +305,14 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 
 
 PostMan.prototype.decodeHandshake = function(sJWS) {
-	var decodedHandshake= null;
+	var decodedHandshake = null;
 	try {
 		var a = sJWS.split(".");
 		//var uHeader = b64utos(a[0]);
 		var uClaim = crypto.b64utos(a[1]);
 
 		//var pHeader = KJUR.jws.JWS.readSafeJSONString(uHeader);
-		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);	
+		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 	} 
 	catch (ex) {	
 		console.log("DEBUG ::: decodeHandshake  :::  exception thrown "  + ex.toString() ); 
@@ -327,11 +327,15 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 
 	try {
 				
-		if (typeof joinParameters.handshakeToken !== 'string' || 
-			typeof joinParameters.challenge !== 'string' ||
+		if (typeof joinParameters == 'undefined' || 
+			joinParameters == null || 
+			PostMan.prototype.isUUID(joinParameters.handshakeToken) == false ||
+			typeof joinParameters.challenge !== 'string'  ||
+			joinParameters.challenge.length > 360 ||
 			Object.keys(joinParameters).length != 2 ) {	
+				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking " ); 
 				joinParameters = null;
-				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking "  ); 
+				
 		}	
 	} 
 	catch (ex) {	
@@ -350,7 +354,8 @@ PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 				
 		if (typeof parameters.location.lat  !== 'string' ||
 			typeof parameters.location.lon  !== 'string' ||
-			Object.keys(parameters).length != 1) {	
+			Object.keys(parameters).length != 1 ||
+			Object.keys(parameters.location).length != 2) {	
 				parameters = null;
 				console.log("DEBUG ::: getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
 		}	
@@ -372,10 +377,8 @@ PostMan.prototype.getMessageRetrievalParameters = function(encryptedInput , clie
 		retrievalParameters = PostMan.prototype.decrypt(encryptedInput, client );	
 	
 		if (retrievalParameters == null ||
-			typeof retrievalParameters.msgID !== 'string' || 
-			typeof retrievalParameters.md5sum !== 'string' ||
-			typeof retrievalParameters.size !== 'number' ||
-			Object.keys(retrievalParameters).length != 3 ) {
+			PostMan.prototype.isUUID(retrievalParameters.msgID) == false ||
+			Object.keys(retrievalParameters).length != 1 ) {
 			
 			console.log("DEBUG ::: getMessageRetrievalParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
@@ -396,9 +399,10 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
 	
 		if (parameters == null ||
-			typeof parameters.publicClientIDofSender !== 'string' || 
-			typeof parameters.nickName !== 'string'  
-			 ) {
+			PostMan.prototype.isUUID(parameters.publicClientIDofSender) == false  || 
+			typeof parameters.nickName !== 'string' ||
+			typeof parameters.img !== 'string' ||
+			typeof parameters.commentary !== 'string' 	 ) {
 			
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
@@ -418,11 +422,12 @@ PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , clie
 		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
 	
 		if (parameters == null ||
-			typeof parameters.publicClientID2getImg !== 'string' || 
-			typeof parameters.publicClientIDofRequester !== 'string'			 
-			 ) {
+			PostMan.prototype.isUUID(parameters.publicClientID2getImg) == false  || 
+			PostMan.prototype.isUUID(parameters.publicClientIDofRequester) == false  ||
+			! (typeof parameters.lastProfileUpdate == 'number' ||  parameters.lastProfileUpdate == null ) || 	 
+			Object.keys(parameters).length != 3) {
 			
-			console.log("DEBUG ::: getProfileRetrievalParameters  :::  didn't pass the format check "   );
+			console.log("DEBUG ::: getProfileRetrievalParameters  :::  didn't pass the format check "  + JSON.stringify(parameters) );
 			retrievalParameters = null; 
 		}
 		return parameters;
@@ -554,11 +559,11 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 		inputMessage = PostMan.prototype.decrypt(encrypted, client);
 		
 		if (inputMessage == null ||
-			typeof inputMessage.to !== 'string' || 
-			typeof inputMessage.from !== 'string' ||
-			typeof inputMessage.msgID !== 'string'	) 	{	
+			PostMan.prototype.isUUID(inputMessage.to) == false || 
+			PostMan.prototype.isUUID(inputMessage.from) == false ||
+			PostMan.prototype.isUUID(inputMessage.msgID) == false 	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didn't pass the format check : "  + JSON.stringify(inputMessage));
+			console.log("DEBUG ::: getMessage  ::: didn't pass the format check " );
 			return null;
 		}
 
@@ -577,9 +582,9 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 		var deliveryACK = PostMan.prototype.decrypt(encrypted, client);
 		
 		if (deliveryACK == null ||
-			typeof deliveryACK.msgID !== 'string' || 
-			typeof deliveryACK.to !== 'string' ||
-			typeof deliveryACK.from !== 'string' ||
+			PostMan.prototype.isUUID(deliveryACK.msgID) == false  || 
+			PostMan.prototype.isUUID(deliveryACK.to) == false  ||
+			PostMan.prototype.isUUID(deliveryACK.from) == false  ||
 			typeof deliveryACK.typeOfACK !== 'string' ||
 			Object.keys(deliveryACK).length != 4  ) {	
 				
@@ -615,6 +620,26 @@ PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {
 	}	
 };
 
+PostMan.prototype.isUUID = function(uuid) {	
+
+	if (typeof uuid == 'string')
+		return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+	else
+		return	false;
+
+};
+
+PostMan.prototype.isRSAmodulus = function(modulus) {	
+
+	if (typeof modulus == 'string' &&
+		modulus.length < 417 ){
+		return true;	
+	}else{		
+		console.log("DEBUG ::: isRSAmodulus ::: didnt pass the format check ...." );
+		return false;		
+	}
+
+};
 
 
 module.exports = PostMan;

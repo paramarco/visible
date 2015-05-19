@@ -1,5 +1,9 @@
+//MVP
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
 //TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
+//TODO refactor in two servers
+//TODO setup redis
+//TODO get user/pass and server of DB by parameter
 
 
 var fs = require('fs');
@@ -53,6 +57,8 @@ var	io 				= require("socket.io").listen(server),
 
 app.post('/login', function (req, res) {
 	
+	if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
+	
 	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
 		
 		if (client == null ){
@@ -77,7 +83,10 @@ app.post('/login', function (req, res) {
 		
 		// challenge forwarding to the Client
 		when.all ( clientUpdate ).then(function(){
-			res.json({index: client.indexOfCurrentKey , challenge : client.currentChallenge });
+			res.json({
+				index: client.indexOfCurrentKey , 
+				challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client )
+			});
 			
 		});	
 				
@@ -87,6 +96,8 @@ app.post('/login', function (req, res) {
 
 
 app.post('/signin', function (req, res) {
+	
+	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
 	
 	brokerOfVisibles.createNewClient().then(function (newClient){
 	
@@ -111,6 +122,8 @@ app.post('/signin', function (req, res) {
 });
 
 app.post('/handshake', function (req, res) {
+	
+	if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
 	
 	var handshakeToken = req.body.handshakeToken;
 	var encrypted = decodeURI(req.body.encrypted);
@@ -190,7 +203,6 @@ io.sockets.on("connection", function (socket) {
 	
 	console.log("DEBUG ::: connection ::: client " + client.publicClientID );
 	
-	//TODO RequestForProfile
 	// XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 	postMan.sendMessageHeaders(client);	
@@ -198,7 +210,7 @@ io.sockets.on("connection", function (socket) {
 	postMan.sendDetectedLocation(client);
 	
 	var requestParameters = {
-		lastProfileUpdate : client.lastProfileUpdate				
+		lastProfileUpdate : parseInt(client.lastProfileUpdate)				
 	};
 	
 	socket.emit("RequestForProfile", postMan.encrypt( requestParameters , client ));				
@@ -298,12 +310,13 @@ io.sockets.on("connection", function (socket) {
 		
 		var parameters = postMan.getProfileRetrievalParameters(input, client);		
 		if (parameters == null) return;	
-				
+		
 		brokerOfVisibles.getProfileByID( parameters.publicClientID2getImg ).then(function(profile){
 			
 			if ( profile == null) return;
 			
-			if ( parameters.lastProfileUpdate < profile.lastProfileUpdate ){
+			if ( parameters.lastProfileUpdate == null ||
+				 parameters.lastProfileUpdate < profile.lastProfileUpdate ){
 				socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );
 			}
 			
