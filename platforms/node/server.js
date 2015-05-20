@@ -214,7 +214,6 @@ io.sockets.on("connection", function (socket) {
 	};
 	
 	socket.emit("RequestForProfile", postMan.encrypt( requestParameters , client ));				
-
 	
 	socket.on('disconnect', function() {
 		
@@ -314,7 +313,7 @@ io.sockets.on("connection", function (socket) {
 		brokerOfVisibles.getProfileByID( parameters.publicClientID2getImg ).then(function(profile){
 			
 			if ( profile == null) return;
-			
+	
 			if ( parameters.lastProfileUpdate == null ||
 				 parameters.lastProfileUpdate < profile.lastProfileUpdate ){
 				socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );

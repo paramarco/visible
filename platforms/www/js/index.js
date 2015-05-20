@@ -5,9 +5,8 @@
 
 //TODO resize text area when window changes height or width
 
-//TODO & set limit of size, upload photo on profile smaller than 100KB and blocking loggin until finished..asuring the image is rendered.
-
-//TODO set limit of size for images of around 20MB ...
+//TODO set a limit of size 3MB per outgoing SMS, attempt to auto compress the image , upload photo on profile smaller than 100KB 
+//TODO blocking login until compressing is finished.. ensure the image is rendered.
 
 //TODO viralization with email
 
@@ -35,9 +34,8 @@ function Message(input) {
 	this.from = input.from;
 	this.messageBody = input.messageBody;
 	this.msgID = "" ;
-	this.md5sum = "" ;
+//	this.md5sum = "" ;
 	this.size = 0 ;
-	this.path2Attachment = null;
 	this.timeStamp = new Date().getTime();
 	this.markedAsRead = false; 
 	this.chatWith = null;
@@ -47,15 +45,13 @@ function Message(input) {
 	switch (Object.keys(input).length )	{
 		case 3 :
 			this.assignMsgID();
-			this.assignmd5sum();
+//			this.assignmd5sum();
 			this.calculateSize();
-			this.path2Attachment = null;
 			break;
 		default:	
 			this.msgID = input.msgID;
-			this.md5sum = input.md5sum ;
+//			this.md5sum = input.md5sum ;
 			this.size = input.size;
-			this.path2Attachment = input.path2Attachment;
 			break;			
 	}
 };
@@ -76,11 +72,19 @@ Message.prototype.assignMsgID = function () {
 Message.prototype.getMsgID = function(){
 	return this.msgID;
 };
+/*
 Message.prototype.assignmd5sum = function(){
 	this.md5sum = window.md5(this.from + this.to + this.messageBody);
 };
+*/
+//this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
+
 Message.prototype.calculateSize = function(){
-	this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
+	
+	if (typeof this.messageBody == 'string' )
+		this.size = this.messageBody.length;
+	else
+		this.size = this.messageBody.src.length;	
 };
 
 Message.prototype.convertToUTF = function(){
@@ -142,9 +146,8 @@ Unwrapper.prototype.getListOfHeaders = function(encryptedList) {
 
 		for (var i = 0; i < listOfHeaders.length; i++){
 			if (typeof listOfHeaders[i].msgID !== 'string' || 
-				typeof listOfHeaders[i].md5sum !== 'string' ||
 				typeof listOfHeaders[i].size !== 'number'||
-				Object.keys(listOfHeaders[i]).length != 3  ) {	
+				Object.keys(listOfHeaders[i]).length != 2  ) {	
 				return null;
 			}
 		}
@@ -167,8 +170,8 @@ Unwrapper.prototype.getParametersOfSetNewContacts = function(encryptedList) {
 
 		for (var i = 0; i < listOfContacts.length; i++){
 			if (typeof listOfContacts[i].publicClientID !== 'string' || 
-				typeof listOfContacts[i].nickName !== 'string' ||
-				!(typeof listOfContacts[i].commentary == 'string' || typeof listOfContacts[i].commentary !== 'null' )||
+				!(typeof listOfContacts[i].nickName == 'string' ||  listOfContacts[i].nickName == null ) ||				
+				!(typeof listOfContacts[i].commentary == 'string' || listOfContacts[i].commentary == null ) ||
 				typeof listOfContacts[i].location !== 'object'||
 				Object.keys(listOfContacts[i]).length != 4  ) {	
 				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfContacts)); 
@@ -1237,10 +1240,7 @@ Application.prototype.sendProfileUpdate = function() {
 				img : app.myPhotoPath,
 				commentary : app.myCommentary,
 				nickName: app.myCurrentNick				
-			};
-			
-			console.log('DEBUG ::: sendProfileUpdate ::: come on!!!' + app.myCommentary);
-
+			};			
 			
 			socket.emit("ProfileUpdate", unWrapper.encrypt(profileResponseObject)	);
 

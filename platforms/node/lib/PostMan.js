@@ -6,12 +6,12 @@ var pg = require('pg');
 var conString = "postgres://visible:paramarco@localhost/visible.0.0.1.db";
 var when = require('when');
 var squel = require("squel");
-
+var config = require('./Config.js');
 
 function PostMan(_io) {
 	var io = _io; //pointer to io.sockets
 	var listOfMessages = []; //array of Message.js (DB)
-	var listOfACKs = []; //array of {msgID ,md5sum ,to ,from } (DB)	
+	var listOfACKs = []; //array of {msgID ,to ,from } (DB)	
 	var clientOfDB = null;
 	var self = this;
 
@@ -29,8 +29,7 @@ function PostMan(_io) {
 
 	
 	
-	//TODO #6 XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-	//TODO #6.1 get data from server DB, only messageHeaders = [{ msgID , md5sum , size}];
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 	this.sendMessageHeaders = function(client) {
 		
 	    var query2send = squel.select()
@@ -55,7 +54,6 @@ function PostMan(_io) {
 				result.rows.map(function(r){
 					var header2add = {	
 						msgID : r.msgid,
-						md5sum : "X",
 						size : 0
 					};
 					messageHeaders.push(header2add);
@@ -77,10 +75,10 @@ function PostMan(_io) {
 		var d = when.defer();
 	    
 	    var query2send = squel.select()
-							    .from("message")
-							    .where("msgid = '" + retrievalParameters.msgID + "'")							    
-							    .where("receiver = '" + client.publicClientID + "'")							    
-							    .toString();
+						    .from("message")
+						    .where("msgid = '" + retrievalParameters.msgID + "'")							    
+						    .where("receiver = '" + client.publicClientID + "'")							    
+						    .toString();
 	    
 		clientOfDB.query(query2send, function(err, result) {
 		    
@@ -156,7 +154,6 @@ function PostMan(_io) {
 	
 	this.archiveACK = function(messageACKparameters) {
 		
-		//{msgID ,md5sum ,to ,from }
 		var query2send = squel.insert()
 			    .into("messageack")
 			    .set("msgid", messageACKparameters.msgID)
@@ -400,9 +397,9 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 	
 		if (parameters == null ||
 			PostMan.prototype.isUUID(parameters.publicClientIDofSender) == false  || 
-			typeof parameters.nickName !== 'string' ||
-			typeof parameters.img !== 'string' ||
-			typeof parameters.commentary !== 'string' 	 ) {
+			PostMan.prototype.lengthTest(parameters.nickName , config.MAX_SIZE_NICKNAME ) == false ||
+			PostMan.prototype.lengthTest(parameters.img , config.MAX_SIZE_IMG ) == false ||
+			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ) {
 			
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
@@ -438,13 +435,9 @@ PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , clie
 	}
 };
 
-
-
-
-
 PostMan.prototype.sanitize = function(html) {
-	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
 	
+	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
 	var tagOrComment = new RegExp(
 	    '<(?:'
 	    // Comment body.
@@ -456,15 +449,40 @@ PostMan.prototype.sanitize = function(html) {
 	    + '|/?[a-z]'
 	    + tagBody
 	    + ')>',
-	    'gi');
-	
+	    'gi');	
 	var oldHtml;
 	do {
 		oldHtml = html;
 		html = html.replace(tagOrComment, '');
 	} while (html !== oldHtml);
-	return html.replace(/</g, '&lt;');
+	return html.replace(/</g, '&lt;').replace(/\'/g, "&#39");
 };
+
+PostMan.prototype.escape = function (str) {
+    return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {
+        switch (char) {
+            case "\0":
+                return "\\0";
+            case "\x08":
+                return "\\b";
+            case "\x09":
+                return "\\t";
+            case "\x1a":
+                return "\\z";
+            case "\n":
+                return "\\n";
+            case "\r":
+                return "\\r";
+            case "\"":
+            case "'":
+            case "\\":
+            case "%":
+                return "\\"+char; // prepends a backslash to backslash, percent,
+                                  // and double/single quotes
+        }
+    });
+};
+
 
 
 PostMan.prototype.encrypt = function(message , client) {	
@@ -496,6 +514,11 @@ PostMan.prototype.encrypt = function(message , client) {
 };
 
 PostMan.prototype.decrypt = function(encrypted, client) {
+	
+	if (encrypted.length > config.MAX_SIZE_SMS){
+		console.log("DEBUG ::: decrypt :::  size of SMS:" + encrypted.length );
+		return null;
+	} 
 	
 	var decipher = forge.cipher.createDecipher('AES-CBC', client.myArrayOfKeys[client.indexOfCurrentKey] );
 	
@@ -557,15 +580,30 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 	try {
 
 		inputMessage = PostMan.prototype.decrypt(encrypted, client);
-		
-		if (inputMessage == null ||
+
+		if (inputMessage == null ||			
 			PostMan.prototype.isUUID(inputMessage.to) == false || 
 			PostMan.prototype.isUUID(inputMessage.from) == false ||
-			PostMan.prototype.isUUID(inputMessage.msgID) == false 	) 	{	
+			PostMan.prototype.isUUID(inputMessage.msgID) == false ||
+			PostMan.prototype.isUUID(inputMessage.chatWith) == false ||
+			typeof inputMessage.size !== 'number' ||
+			typeof inputMessage.timeStamp !== 'number' ||
+			typeof inputMessage.markedAsRead !== 'boolean' ||
+			typeof inputMessage.ACKfromServer !== 'boolean' ||
+			typeof inputMessage.ACKfromAddressee !== 'boolean' ||
+			Object.keys(inputMessage).length != 10	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didn't pass the format check " );
+			console.log("DEBUG ::: getMessage  ::: didn't pass the format check 1" );
+			return null;
+		}	
+
+		if ( inputMessage.size > config.MAX_SIZE_IMG ||
+			PostMan.prototype.lengthTest(inputMessage.messageBody , config.MAX_SIZE_IMG ) == false 	) 	{	
+			
+			console.log("DEBUG ::: getMessage  ::: didn't pass the format check 2" );
 			return null;
 		}
+		
 
 		var message = new Message(inputMessage);			 	
 		
@@ -585,7 +623,7 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 			PostMan.prototype.isUUID(deliveryACK.msgID) == false  || 
 			PostMan.prototype.isUUID(deliveryACK.to) == false  ||
 			PostMan.prototype.isUUID(deliveryACK.from) == false  ||
-			typeof deliveryACK.typeOfACK !== 'string' ||
+			PostMan.prototype.isACKtype(deliveryACK.typeOfACK) == false ||
 			Object.keys(deliveryACK).length != 4  ) {	
 				
 			console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
@@ -631,14 +669,41 @@ PostMan.prototype.isUUID = function(uuid) {
 
 PostMan.prototype.isRSAmodulus = function(modulus) {	
 
-	if (typeof modulus == 'string' &&
-		modulus.length < 417 ){
+	if (typeof modulus == 'string' && modulus.length < config.MAX_SIZE_MODULUS ){
 		return true;	
 	}else{		
 		console.log("DEBUG ::: isRSAmodulus ::: didnt pass the format check ...." );
 		return false;		
 	}
 
+};
+
+PostMan.prototype.isACKtype = function(typeOfACK) {	
+	if ( typeof typeOfACK == 'string' &&
+		 ( 	typeOfACK == 'ACKfromServer' || 
+			typeOfACK == 'ACKfromAddressee' || 
+			typeOfACK == 'ReadfromAddressee'	) ) {			
+		return true;
+	}else{
+		console.log("DEBUG ::: isACKtype ::: didnt pass the format check ");
+		return false;		
+	}
+};
+
+PostMan.prototype.lengthTest = function( obj , sizeLimit ) {
+	try { 
+		if ( typeof obj == 'string' && obj.length < sizeLimit )
+			return true;
+		else if (typeof obj == 'object' && obj.src.length < sizeLimit){
+			return true;
+		}else{
+			console.log("DEBUG ::: lengthTest ::: is too big ");
+			return false;
+		}
+	}catch (ex) {
+		console.log("DEBUG ::: lengthTest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return false;
+	}
 };
 
 
