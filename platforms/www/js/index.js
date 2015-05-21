@@ -121,7 +121,7 @@ Unwrapper.prototype.getMessageFromServer = function(encrypted) {
 			typeof inputMessage.from !== 'string' ||
 			typeof inputMessage.msgID !== 'string' ){
 				
-			console.log("DEBUG ::: getMessageFromServer  :::  " + decipher.output.data);
+			console.log("DEBUG ::: getMessageFromServer  :::  " + inputMessage);
 			return null;
 		}
 		
@@ -717,6 +717,8 @@ GUI.prototype.showImagePic = function() {
 	$("#chat-page-content").trigger("create");
 	
 	$('#picPopupDivMultimedia').picEdit({
+		maxWidth : config.MAX_WIDTH_IMG ,
+		maxHeight : config.MAX_HEIGHT_IMG ,
  		imageUpdated: function(img){ 
 		 			
 			var message2send = new Message(	{ 	
@@ -1266,6 +1268,8 @@ Application.prototype.loadMyConfig = function(){
 			app.handshakeToken = cursor.value.handshakeToken;
 	
 			$('#imageProfile').picEdit({
+				maxWidth : config.MAX_WIDTH_IMG ,
+				maxHeight : config.MAX_HEIGHT_IMG ,
 	     		//defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(img){
 	     			
@@ -1300,6 +1304,8 @@ Application.prototype.loadMyConfig = function(){
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
 			
 	     	$('#imageOnVisibleFirstTime').picEdit({
+	     		maxWidth : config.MAX_WIDTH_IMG ,
+				maxHeight : config.MAX_HEIGHT_IMG ,
 	     		imageUpdated: function(img){
 	     			app.myPhotoPath = img.src;	     			
 	     		}

@@ -328,11 +328,10 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 			joinParameters == null || 
 			PostMan.prototype.isUUID(joinParameters.handshakeToken) == false ||
 			typeof joinParameters.challenge !== 'string'  ||
-			joinParameters.challenge.length > 360 ||
+			joinParameters.challenge.length > config.MAX_SIZE_CHALLENGE ||
 			Object.keys(joinParameters).length != 2 ) {	
 				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking " ); 
-				joinParameters = null;
-				
+				joinParameters = null;				
 		}	
 	} 
 	catch (ex) {	
