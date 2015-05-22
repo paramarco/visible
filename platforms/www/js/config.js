@@ -11,6 +11,8 @@ function Config ()  {
 	this.oneDay = 86400000;
 	this.limitBackwardMessages = 0; 
 	this.periodMessageRetrieval = 8000;
-	this.MAX_WIDTH_IMG = 300;
-	this.MAX_HEIGHT_IMG = 300;     
+	this.MAX_WIDTH_IMG = 500;
+	this.MAX_HEIGHT_IMG = 500;
+	this.MAX_WIDTH_IMG_PROFILE = 300;
+	this.MAX_HEIGHT_IMG_PROFILE = 300;      
 }

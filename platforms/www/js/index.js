@@ -5,7 +5,6 @@
 
 //TODO resize text area when window changes height or width
 
-//TODO set a limit of size 3MB per outgoing SMS, attempt to auto compress the image , upload photo on profile smaller than 100KB 
 //TODO blocking login until compressing is finished.. ensure the image is rendered.
 
 //TODO viralization with email
@@ -719,6 +718,7 @@ GUI.prototype.showImagePic = function() {
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : config.MAX_WIDTH_IMG ,
 		maxHeight : config.MAX_HEIGHT_IMG ,
+		navToolsEnabled : false,
  		imageUpdated: function(img){ 
 		 			
 			var message2send = new Message(	{ 	
@@ -1205,6 +1205,10 @@ function Application() {
 
 Application.prototype.init = function() {
 	
+	gui.loadBody();
+	gui.loadAsideMenuMainPage();
+	app.locateMyPosition();
+	
 	this.indexedDBHandler = window.indexedDB.open("instaltic.visible.v0.4",4);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
@@ -1268,9 +1272,10 @@ Application.prototype.loadMyConfig = function(){
 			app.handshakeToken = cursor.value.handshakeToken;
 	
 			$('#imageProfile').picEdit({
-				maxWidth : config.MAX_WIDTH_IMG ,
-				maxHeight : config.MAX_HEIGHT_IMG ,
-	     		//defaultImage: app.myPhotoPath,
+				maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+				maxHeight : config.MAX_HEIGHT_PROFILE ,
+				navToolsEnabled : true,
+	     		defaultImage: app.myPhotoPath,
 	     		imageUpdated: function(img){
 	     			
 	   				app.myPhotoPath = img.src;
@@ -1304,8 +1309,9 @@ Application.prototype.loadMyConfig = function(){
      	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
 			
 	     	$('#imageOnVisibleFirstTime').picEdit({
-	     		maxWidth : config.MAX_WIDTH_IMG ,
-				maxHeight : config.MAX_HEIGHT_IMG ,
+	     		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+				maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+				navToolsEnabled : true,
 	     		imageUpdated: function(img){
 	     			app.myPhotoPath = img.src;	     			
 	     		}
@@ -1752,7 +1758,7 @@ var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
 var app = new Application();
 
-app.init();
+
 
 
 /***********************************************************************************************
@@ -1783,11 +1789,9 @@ $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(functi
 	
 });
 
-$(document).ready(function() {	
-	
-	gui.loadBody();
-	gui.loadAsideMenuMainPage();
-	app.locateMyPosition();
+$(document).ready(function() {
+		
+	app.init();
 	
 	var theme =  $.mobile.loader.prototype.options.theme,
 	msgText =  $.mobile.loader.prototype.options.text,
@@ -1831,13 +1835,17 @@ $(document).ready(function() {
 		}
 	});
 	
-	$( "#chat-input" ).keyup(function( event ) {
+	$("#chat-input").keyup(function( event ) {
 		if (event.keyCode == 13){
 			gui.chatInputHandler();
 		}	
 	});
 	
 	$('#chat-input').focus(function() {
+		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+	});
+	$('#chat-input').click(function() {
 		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
 		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 	});
