@@ -2,6 +2,7 @@
  *  Project: PicEdit
  *  Description: Creates an image upload box with tools to edit the image on the front-end before uploading it to the server
  *  Author: Andy V.
+ *  Co-Author: Marco Vereda
  *  License: MIT
  */
 
@@ -328,25 +329,27 @@
 		resize_image: function () {
 			if(!this._image) return this._hideAllNav(1);
 			var _this = this;
-			this.set_loading(1).delay(200).promise().done(function() {
-				//perform resize begin
-				var canvas = document.createElement('canvas');
-				var ctx = canvas.getContext("2d");
-				canvas.width = _this._variables.resize_width;
-				canvas.height = _this._variables.resize_height;
-				ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
-				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+			this.set_loading(1);
+			var canvas = document.createElement('canvas');
+			var ctx = canvas.getContext("2d");
+			canvas.width = _this._viewport.width;
+			canvas.height = _this._viewport.height;
+			ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
+			_this._create_image_with_datasrc(
+				canvas.toDataURL("image/jpeg", 0.7),				 
+				function() {
 					_this.hide_messagebox();
-				});
-			});
+				},
+				false,
+				false,
+				true
+			);
+			
 			this._hideAllNav();
 		},
 		// Open video element and start capturing live video from camera to later make a photo
 		camera_open: function() {
 			var getUserMedia;
-//			var browserUserMedia = navigator.webkitGetUserMedia	||	// WebKit
-//									 navigator.mozGetUserMedia	||	// Mozilla FireFox
-//									 navigator.getUserMedia;			// 2013...
 			var browserUserMedia = 	(	navigator.getUserMedia ||
 					                   	navigator.webkitGetUserMedia ||
 					                    navigator.mozGetUserMedia ||
@@ -417,50 +420,37 @@
 			this._cropping.cropbox.removeClass("active");
 		},
 		// Create and update image from datasrc
-		_create_image_with_datasrc: function(datasrc, callback, file, dataurl) {
+		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
-			if(file) {
-				img.file = file;
-				img.width = _this.options.maxWidth;
-				img.height = _this.options.maxHeight;
-			}
+			if(file) img.file = file;
 			img.src = datasrc;
 			img.onload = function() {
-				var imageAux = null;
+				var imageAux = null;				
+				if ( typeof img.file != "undefined" &&	img.file.type == "image/gif"){
+					dataurl = false;
+					withoutcall2resize = true;					
+				}				
 				if(dataurl) {
-					console.log("DEBUG ::: eeheyeyeyey");
-
                     var canvas = document.createElement('canvas');
                     var ctx = canvas.getContext('2d');                    
                    	canvas.width = img.width;
                 	canvas.height = img.height;                    
-                    if(_this.options.maxWidth != 'auto' && img.width > _this.options.maxWidth) canvas.width = _this.options.maxWidth;
-					if(_this.options.maxHeight != 'auto' && img.height > _this.options.maxHeight) canvas.height = _this.options.maxHeight;
-                    ctx.drawImage(img, 0, 0,canvas.width,canvas.height);
-                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
                     imageAux = document.createElement("img");
                     imageAux.src = canvas.toDataURL('image/png');
-                   /*
-                    var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    img.src = canvas.toDataURL('image/png');
-                    */
-                }
-				if ( imageAux != null){
-					_this._image = imageAux;
+                }				
+				_this._image = ( imageAux != null) ? imageAux : img;				
+				_this._resizeViewport();				
+				if ( withoutcall2resize ){
+					_this._paintCanvas();
+					_this.options.imageUpdated(_this._image);
+					_this._mainbuttons.removeClass("active");
+					if(callback && typeof(callback) == "function") callback();	
 				}else{
-					_this._image = img;
-				}
-				_this._resizeViewport();
-				_this._paintCanvas();
-				_this.options.imageUpdated(_this._image);
-				_this._mainbuttons.removeClass("active");
-				if(callback && typeof(callback) == "function") callback();
+					_this.resize_image();										
+				}			
 			};
 		},
 		// Functions to controll cropping functionality (drag & resize cropping box)
