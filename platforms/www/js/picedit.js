@@ -29,7 +29,8 @@
 			maxHeight: 'auto',				// Max height parameter
 			aspectRatio: true,				// Preserve aspect ratio
             defaultImage: false,            // Default image to be used with the plugin
-            navToolsEnabled: true
+            navToolsEnabled: true,
+            porup2remove : false
         };
 
     // The actual plugin constructor
@@ -236,7 +237,7 @@
             	canvas.height = img.height;                    
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
                 imageAux = document.createElement("img");
-                imageAux.src = canvas.toDataURL('image/png');               				
+                imageAux.src = canvas.toDataURL('image/jpg', 0.7);               				
 				_this._image = imageAux;				
 				_this._resizeViewport();
 				_this._paintCanvas();
@@ -353,15 +354,27 @@
 			canvas.width = _this._viewport.width;
 			canvas.height = _this._viewport.height;
 			ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
-			_this._create_image_with_datasrc(
-				canvas.toDataURL("image/jpeg", 0.7),				 
-				function() {
-					_this.hide_messagebox();
-				},
-				false,
-				false,
-				true
-			);
+			if (_this._getImageFormat(_this._image) == "image/png"){
+				_this._create_image_with_datasrc(
+					canvas.toDataURL("image/png"),				 
+					function() {
+						_this.hide_messagebox();
+					},
+					false,
+					false,
+					true
+				);				
+			}else{
+				_this._create_image_with_datasrc(
+					canvas.toDataURL("image/jpeg", 0.7),				 
+					function() {
+						_this.hide_messagebox();
+					},
+					false,
+					false,
+					true
+				);				
+			}
 			
 			this._hideAllNav();
 		},
@@ -440,6 +453,7 @@
 		},
 		// Create and update image from datasrc
 		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
+			if (this.options.porup2remove)	$(this.options.porup2remove).remove();
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
@@ -456,9 +470,13 @@
                     var ctx = canvas.getContext('2d');                    
                    	canvas.width = img.width;
                 	canvas.height = img.height;                    
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
-                    imageAux = document.createElement("img");
-                    imageAux.src = canvas.toDataURL('image/png');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    imageAux = document.createElement("img");                    
+                    if ( _this._getImageFormat(img) == "image/png"){
+                    	imageAux.src = canvas.toDataURL("image/png");
+                    }else{
+                    	imageAux.src = canvas.toDataURL("image/jpg", 0.7);
+                    }
                 }				
 				_this._image = ( imageAux != null) ? imageAux : img;				
 				_this._resizeViewport();				
@@ -472,7 +490,21 @@
 				}			
 			};
 		},
-		// Functions to controll cropping functionality (drag & resize cropping box)
+			// Functions to control cropping functionality (drag & resize cropping box)
+		_getImageFormat: function(img) {
+			var format = "image/jpg";
+			if ( typeof img.file != "undefined"){
+				if ( img.file.type == "image/gif")	format = "image/gif";
+				if ( img.file.type == "image/png")	format = "image/png";									
+			}
+			if ( typeof img.src != "undefined"){
+				if ( img.src.substr(0, 14) == "data:image/gif")	format = "image/gif";
+				if ( img.src.substr(0, 14) == "data:image/png")	format = "image/png";									
+			}
+				
+			return format;
+		},
+		// Functions to control cropping functionality (drag & resize cropping box)
 		_bindSelectionDrag: function() {
 			var _this = this;
 			var eventbox = this._cropping.cropframe;

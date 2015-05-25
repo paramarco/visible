@@ -3,18 +3,7 @@
 //TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 //TODO refactor in two servers
 //TODO setup redis
-//TODO get user/pass and server of DB by parameter
-
-
-var fs = require('fs');
-//var https = require('https');
-var http = require('http');
-var express = require('express');
-var app = express();
-var cors = require('cors');
-var	uuid = require('node-uuid');
-var when = require('when');
-
+/*
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
 var credentials = {
@@ -22,29 +11,22 @@ var credentials = {
 	cert: certificate, 
 	requestCert: false
 };
+*/
 
-app.use(cors());
-app.use(express.bodyParser());
+var fs = require('fs');
+var http = require('http');//var https = require('https');
+var express = require('express');
+var app = express();
+var cors = require('cors');
+var	uuid = require('node-uuid');
+var when = require('when');
+var readline = require('readline');
+var server = http.createServer(app); //var server = https.createServer(credentials, app);
 
-
-app.configure(function() {
-	app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
-});
-
-//var server = https.createServer(credentials, app);
-var server = http.createServer(app);
-server.listen(	
-	app.get('port'),
-	app.get('ipaddr'), 
-	function(){	
-		console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));
-	}
-);
-			
 var	io 				= require("socket.io").listen(server), 
 	_ 				= require('underscore')._ ,
 	Room			= require('./lib/Group.js'),
+	config 			= require('./lib/Config.js'),
 	Client			= require('./lib/Client.js'),
 	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
 	PostMan			= require('./lib/PostMan.js'),
@@ -53,7 +35,8 @@ var	io 				= require("socket.io").listen(server),
 	brokerOfVisibles = new BrokerOfVisibles(io),
 	postMan = new PostMan(io);
 
-
+app.use(cors());
+app.use(express.bodyParser());
 
 app.post('/login', function (req, res) {
 	
@@ -81,19 +64,21 @@ app.post('/login', function (req, res) {
 		     brokerOfVisibles.updateClientsHandshake( client )
 		];
 		
+		var server2connect = postMan.getRightServer2connect();
+		console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
+		
 		// challenge forwarding to the Client
 		when.all ( clientUpdate ).then(function(){
 			res.json({
 				index: client.indexOfCurrentKey , 
-				challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client )
-			});
-			
+				challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client ),
+				server2connect : postMan.encrypt( server2connect , client )
+			});			
 		});	
 				
 	});
       
 });
-
 
 app.post('/signin', function (req, res) {
 	
@@ -150,7 +135,6 @@ app.post('/handshake', function (req, res) {
 		}		
 	});		  
 });
-
 
 io.use(function(socket, next){
 	
@@ -377,4 +361,36 @@ io.sockets.on("connection", function (socket) {
 		
   	});	
 
+});
+
+
+rl = readline.createInterface(process.stdin, process.stdout);
+rl.question('What is the user of the DataBase ? ', function(user) {	
+	rl.question('What is the password of the DataBase ? ', function(pass) {
+		
+		var DBConnectionEstablished = [
+			postMan.initDBConnection(user, pass),
+			brokerOfVisibles.initDBConnection(user, pass)
+		];
+		
+		when.all ( DBConnectionEstablished ).then(function(){
+			app.configure(function() {
+				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
+			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
+			});
+			
+			server.listen(	
+				app.get('port'),
+				app.get('ipaddr'), 
+				function(){	
+					console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));
+				}
+			);
+		});
+		
+	});
+});
+rl.on('close', function() {
+  console.log('upss! the terminal was closed');
+  //process.exit(0);
 });

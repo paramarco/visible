@@ -3,7 +3,6 @@ var Message	= require('./Message.js');
 var crypto = require('jsrsasign');
 var forge = require('node-forge')({disableNativeCode: true});
 var pg = require('pg');
-var conString = "postgres://visible:paramarco@localhost/visible.0.0.1.db";
 var when = require('when');
 var squel = require("squel");
 var config = require('./Config.js');
@@ -14,20 +13,24 @@ function PostMan(_io) {
 	var listOfACKs = []; //array of {msgID ,to ,from } (DB)	
 	var clientOfDB = null;
 	var self = this;
+	var lastServerAsigned = 0;
 
     //TODO : what about this?
     //call `done()` to release the client back to the pool
     //done();
     //client.end();
-	pg.connect(conString, function(err, client, done) {
-		if(err) {
-			return console.error('DEBUG ::: PostMan  ::: error fetching client from pool', err);
-		}
-		clientOfDB = client;
-		
-	});	
-
-	
+	this.initDBConnection = function (user, pass){
+		var d = when.defer();
+		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
+		pg.connect(conString, function(err, client, done) {
+			if(err) {
+				return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
+			}
+			clientOfDB = client;
+			return d.resolve(true);
+		});	
+		return d.promise;	
+	};
 	
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
 	this.sendMessageHeaders = function(client) {
@@ -258,7 +261,15 @@ function PostMan(_io) {
 	
 	};
 	
-	
+	this.getRightServer2connect = function() {
+		lastServerAsigned = lastServerAsigned + 1;
+		if (lastServerAsigned >= config.listOfServerSockets.length){
+			lastServerAsigned = 0;
+		}
+		console.log("DEBUG ::: getRightServer2connect  :::  " + lastServerAsigned + " ... " + JSON.stringify(config.listOfServerSockets[lastServerAsigned])   );						
+
+		return config.listOfServerSockets[lastServerAsigned];
+	};	
 	
 };	
 

@@ -5,7 +5,9 @@
 
 //TODO resize text area when window changes height or width
 
-//TODO blocking login until compressing is finished.. ensure the image is rendered.
+//TODO connect to right server (by parameter from server)
+
+//TODO insert a good image when the user adss a new contact 
 
 //TODO viralization with email
 
@@ -457,10 +459,28 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}		
 	}
 	var htmlOfContent = "";
+	var htmlOfVideoPreview ="";
 	if ( typeof message.messageBody == "string")	{
 		htmlOfContent = this.sanitize(message.messageBody);
 		htmlOfContent = decodeURI(htmlOfContent);
+		var parsedLinks = this.parseLinks(htmlOfContent);
+		htmlOfContent = parsedLinks.htmlOfContent;
 		htmlOfContent = twemoji.parse(htmlOfContent);
+
+		parsedLinks.mediaLinks.map(function(link){			
+			var srcPath = null;
+			if (link.type == "youtube"){
+				srcPath = "http://www.youtube.com/embed/" + link.id ;		
+			}else{
+				srcPath = "https://player.vimeo.com/video/" + link.id ;
+			}
+			if (srcPath != null){
+				htmlOfVideoPreview += 
+					'<div class="youtube-preview">'+
+				     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""> </iframe>'+
+			  		'</div>';				
+			}
+		});
 		
 	}else if (typeof message.messageBody == "object"){
 		if (message.messageBody.messageType == "multimedia"){
@@ -483,7 +503,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		 '</span>'+
 		'	<div class="readable">'+
 		'		<span class="user">    '+ authorOfMessage   +'  </span>'+
-		'		<span class="content">    '+ htmlOfContent +'  </span>'+
+		'		<span class="content">    '+ htmlOfContent + htmlOfVideoPreview +'  </span>'+
 		'	</div>' +
 		'</div>		' ;
 	
@@ -622,7 +642,7 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 			olderDate < config.beginingOf2015 ){
 							
 			newList.map(function(message){			
-				gui.insertMessageInConversation(message,false,true);
+				gui.insertMessageInConversation(message, false, true);
 			});
 			
 			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
@@ -642,7 +662,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 
 		list.reverse().map(function(message){	
-			gui.insertMessageInConversation(message,true,false);			
+			gui.insertMessageInConversation(message, true, false);			
 		});
 		
 		if ( olderDate > config.beginingOf2015 ){
@@ -651,6 +671,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
 		}else {
+			gui.hideLoadingSpinner();
 			$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
 			setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 330 ); 
 		}
@@ -663,6 +684,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
+    gui.showLoadingSpinner();
 				
 
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
@@ -719,6 +741,7 @@ GUI.prototype.showImagePic = function() {
 		maxWidth : config.MAX_WIDTH_IMG ,
 		maxHeight : config.MAX_HEIGHT_IMG ,
 		navToolsEnabled : false,
+		porup2remove : '#popupDivMultimedia',
  		imageUpdated: function(img){ 
 		 			
 			var message2send = new Message(	{ 	
@@ -736,7 +759,6 @@ GUI.prototype.showImagePic = function() {
 			//print message on the GUI
 			gui.insertMessageInConversation(message2send,false,true);
 					
-			$("#popupDivMultimedia").remove();
 			$.mobile.silentScroll($(document).height());
 			
 			//sends message	
@@ -1075,8 +1097,151 @@ GUI.prototype.loadMaps = function(){
 };
 
 
+GUI.prototype.bindDOMevents = function(){
+	
+	$("body").on('pagecontainertransition', function( event, ui ) {
+	    if (ui.options.target == "#MainPage"){
+			$("#chat-page-content").empty();
+			app.currentChatWith = null;
+			if (app.profileIsChanged){
+				app.lastProfileUpdate = new Date().getTime();
+				app.profileIsChanged = false;			
+				app.sendProfileUpdate();						
+			}
+	    }    
+	    if (ui.options.target == "#map-page"){		
+			gui.loadMaps();				 
+	    }
+	    gui.hideLoadingSpinner();
+	});
+	
+	$(document).on("pageshow","#chat-page",function(event){ 
+		$.mobile.silentScroll($(document).height());	
+		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
+	});
+	
+	$('#chat-input').css("width", $(document).width() * 0.75 );
+	$('#chat-input').css("height", 51  );
+	
+	$('#chat-input').emojiPicker({
+	    width: '300px',
+	    height: '200px',
+	    button: false
+	});
+	
+	$('#chat-input').on("input", function() {
+		var textMessage = $("#chat-input").val();
+		if (textMessage == '') {
+			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
+		}else{
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		}
+	});
+	
+	$("#chat-input").keyup(function( event ) {
+		if (event.keyCode == 13){
+			gui.chatInputHandler();
+		}	
+	});
+	
+	$('#chat-input').focus(function() {
+		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+	});
+	$('#chat-input').click(function() {
+		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+	});
+	
+	$(document).on("click","#chat-input-button", gui.chatInputHandler );
+	
+	$("#chat-multimedia-button").bind("click", gui.showImagePic );
+	
+	$(document).on("click","#arrowBackInChatPage",function() {
+		$('body').pagecontainer('change', '#MainPage');
+	});
+	
+	$(document).on("pageshow","#profile",function(event){ 
+		$("#nickNameInProfile").html(app.myCurrentNick);
+	});
+	
+	$(document).on("click","#arrowBackProfilePage",function() {
+		$('body').pagecontainer('change', '#MainPage');
+	});
+	
+	$("#profileNameField").on("input", function() {
+		app.myCurrentNick = $("#profileNameField").val();	
+		$("#nickNameInProfile").text(app.myCurrentNick);
+		app.profileIsChanged = true;
+	});
 
+	$(document).on("click","#mapButtonInMainPage",function() {
+		if (app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#map-page');
+		}
+	});
+	
+	$(document).on("click","#firstLoginInputButton", app.firstLogin );	
+	
+	documentReady.resolve(); 
+		
+};
 
+GUI.prototype.showLoadingSpinner = function(){
+	$.mobile.loading( 'show', {
+		text: $.mobile.loader.prototype.options.text,
+		textVisible: $.mobile.loader.prototype.options.textVisible,
+		theme: $.mobile.loader.prototype.options.theme,
+		textonly: false,
+		html: ""
+	});	
+};
+
+GUI.prototype.hideLoadingSpinner = function(){
+	$.mobile.loading( "hide" );
+};
+
+GUI.prototype.testUrlForMedia = function(url) {
+	var success = false;
+	var media   = {};
+	var youtube_Reg = /https?:\/\/(?:www\.)?(?:(?:youtu\.be\/)|(?:(?:(?:youtube-nocookie\.com\/|youtube\.com\/|youtu\.be\/).*)(?:(?:v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))))([^#\&\?]*).*/;
+	var match = url.match(youtube_Reg);
+	if (match){
+		media.type  = "youtube";
+	    media.id    = match[1].split(" ")[0];
+	    media.url 	= url;
+	    success = true;
+	}else{
+		var vimeo_Reg = /https?:\/\/(?:www\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/;
+		var match = url.match(vimeo_Reg);
+		if (match) {
+		    media.type  = "vimeo";
+		    media.id    = match[3];
+		    media.url 	= url;
+		    success = true;
+		}			
+	} 
+	if (success) return media; else return false;
+	
+};
+
+GUI.prototype.parseLinks = function(htmlOfContent) {
+	var result = {};
+	result.mediaLinks = [];
+	var urlRegEx = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-]*)?\??(?:[\-\+=&;%@\.\w]*)#?(?:[\.\!\/\\\w]*))?)/g;
+	function convert(match)
+	{
+		var link2media = gui.testUrlForMedia(match);
+		if (link2media){
+			result.mediaLinks.push(link2media);
+		}
+	    return "<a href='" + match + "'>" + match + "</a>";
+	}
+	result.htmlOfContent = htmlOfContent.replace(urlRegEx, convert);
+	return result;
+};
 
 
 
@@ -1327,18 +1492,37 @@ Application.prototype.loadMyConfig = function(){
 	};
 };
 
+Application.prototype.login2server = function(){
+	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
+		.done(function (result) { 
+			app.connect2server(result);
+		})
+		.fail(function() {
+			console.log ("DEBUG ::: http POST /login :: trying to reconnect" );
+		})
+		.always(function() {
+			gui.hideLoadingSpinner();
+		});	
+};
+
 Application.prototype.connect2server = function(result){
 	
 	app.symetricKey2use = app.myArrayOfKeys[result.index];
 	
-	var challengeClear = unWrapper.decrypt(result.challenge).challenge ;	
-	
+	var challengeClear = unWrapper.decrypt(result.challenge).challenge;	
 	var token2sign = { 			
 		handshakeToken : app.handshakeToken ,
 		challenge :  encodeURI( unWrapper.encrypt( { challengeClear : challengeClear } ) )
   	};
+  	var tokenSigned = unWrapper.signToken(token2sign);
+  	
+  	var remoteServer = unWrapper.decrypt(result.server2connect);
+  	if (remoteServer != null) {
+  		config.ipServerSockets = remoteServer.ipServerSockets;
+  		config.portServerSockets = remoteServer.portServerSockets;
+  		console.log ("DEBUG ::: connect2server ::: overrides the config :" + JSON.stringify(remoteServer) );
 
-  	var tokenSigned = unWrapper.signToken(token2sign); 	
+  	} 
 
 	socket = io.connect(
 		'http://' + config.ipServerSockets +  ":" + config.portServerSockets ,
@@ -1424,8 +1608,7 @@ Application.prototype.connect2server = function(result){
 					contact.counterOfUnreadSMS++ ;
 					gui.showCounterOfContact(contact);	
 					//only if it is a persistent contact
-					contactsHandler.modifyContactOnDB(contact);
-  		  			
+					contactsHandler.modifyContactOnDB(contact);  		  			
   		  		}  				
   			}  		
   		}); 
@@ -1625,9 +1808,6 @@ Application.prototype.locateMyPosition = function(){
     }	
 };
 
-
-
-
 //END Class Application
 
 
@@ -1738,15 +1918,12 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 };
 
 
-	
-
 
 /***********************************************************************************************
  * *********************************************************************************************
  * **************				MAIN		 						****************************
  * *********************************************************************************************
  * *********************************************************************************************/
-
 
 var db;
 var socket;
@@ -1757,8 +1934,6 @@ var unWrapper = new Unwrapper();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
 var app = new Application();
-
-
 
 
 /***********************************************************************************************
@@ -1773,128 +1948,16 @@ var positionLoaded  = new $.Deferred();
 
 
 $.when( documentReady, mainPageReady, configLoaded , positionLoaded).done(function(){
-
-	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
-		.done(function (result) { 
-			app.connect2server(result);
-		})
-		.fail(function() {
-			console.log ("DEBUG ::: http POST /login :: trying to reconnect" );
-		})
-		.always(function() {
-			$.mobile.loading( "hide" );
-		});	
-	
-	$("body").pagecontainer("change", "#MainPage");
+		
+	app.login2server();	
 	
 });
 
 $(document).ready(function() {
 		
-	app.init();
-	
-	var theme =  $.mobile.loader.prototype.options.theme,
-	msgText =  $.mobile.loader.prototype.options.text,
-	textVisible =  $.mobile.loader.prototype.options.textVisible,
-	textonly = false,
-	html = "";
-
-	$.mobile.loading( 'show', {
-		text: msgText,
-		textVisible: textVisible,
-		theme: theme,
-		textonly: textonly,
-		html: html
-	});	
-	
-	$('#chat-input').css("width", $(document).width() * 0.75 );
-	$('#chat-input').css("height", 51  );
-	
-	$('#chat-input').emojiPicker({
-	    width: '300px',
-	    height: '200px',
-	    button: false
-	});
-	
-	$("#chat-multimedia-button").bind("click", gui.showImagePic );
-	
-	$("#profileNameField").on("input", function() {
-		app.myCurrentNick = $("#profileNameField").val();	
-		$("#nickNameInProfile").text(app.myCurrentNick);
-		app.profileIsChanged = true;
-	});
-
-	$('#chat-input').on("input", function() {
-		var textMessage = $("#chat-input").val();
-		if (textMessage == '') {
-			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
-		}else{
-			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-		}
-	});
-	
-	$("#chat-input").keyup(function( event ) {
-		if (event.keyCode == 13){
-			gui.chatInputHandler();
-		}	
-	});
-	
-	$('#chat-input').focus(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	$('#chat-input').click(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	
-	documentReady.resolve();  
-	
-});//END $(document).ready()
-
-$(document).on("pageshow","#chat-page",function(event){ 
-	$.mobile.silentScroll($(document).height());	
-	$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
+	gui.showLoadingSpinner();		
+	app.init();	
+	gui.bindDOMevents();	
+		
 });
-$(document).on("pageshow","#profile",function(event){ 
-	$("#nickNameInProfile").html(app.myCurrentNick);
-});
-
-$("body").on('pagecontainertransition', function( event, ui ) {
-    if (ui.options.target == "#MainPage"){
-		$("#chat-page-content").empty();
-		app.currentChatWith = null;
-		if (app.profileIsChanged){
-			app.lastProfileUpdate = new Date().getTime();
-			app.profileIsChanged = false;			
-			app.sendProfileUpdate();						
-		}
-    }    
-    if (ui.options.target == "#map-page"){		
-		gui.loadMaps();				 
-    }
-});
-
-$(document).on("click","#arrowBackInChatPage",function() {
-	$('body').pagecontainer('change', '#MainPage');
-});
-
-$(document).on("click","#mapButtonInMainPage",function() {
-	if (app.myPosition.coords.latitude != "" ){
-		$('body').pagecontainer('change', '#map-page');
-	}
-});
-
-$(document).on("click","#arrowBackProfilePage",function() {
-	$('body').pagecontainer('change', '#MainPage');
-});
-
-$(document).on("click","#chat-input-button", gui.chatInputHandler );
-
-$(document).on("click","#firstLoginInputButton", app.firstLogin );
-
-
-
 

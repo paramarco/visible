@@ -1,8 +1,6 @@
 var _ 				= require('underscore')._ 
 	Client			= require('./Client.js');
-
 var pg = require('pg');
-var conString = "postgres://visible:paramarco@localhost/visible.0.0.1.db";
 var when = require('when');
 var squel = require("squel");
 
@@ -17,14 +15,18 @@ function BrokerOfVisibles(_io) {
     //call `done()` to release the client back to the pool
     //done();
     //client.end();
-
-	pg.connect(conString, function(err, client, done) {
-		if(err) {
-			return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
-		}
-		clientOfDB = client;
-	    
-	});	
+	this.initDBConnection = function (user, pass){
+		var d = when.defer();
+		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
+		pg.connect(conString, function(err, client, done) {
+			if(err) {
+				return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
+			}
+			clientOfDB = client;
+			return d.resolve(true);
+		});	
+		return d.promise;	
+	};	
 	
 	//XEP-0080: User Location:: distribute its Location to its "Visible"s	
 	this.getListOfPeopleAround = function(client) {
