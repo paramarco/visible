@@ -1185,6 +1185,10 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(document).on("click","#firstLoginInputButton", app.firstLogin );	
 	
+//	$(window).unload(function() {
+//		db.close();
+//	});
+	
 	documentReady.resolve(); 
 		
 };
@@ -1734,21 +1738,25 @@ Application.prototype.firstLogin = function(){
 
 		 // decrypt data with a private key using RSAES-OAEP		 
 	 	var decrypted = keypair.privateKey.decrypt( response , 'RSA-OAEP' );
-	 	
+	 		 	
 	 	var symetricKey = $(decrypted).find('symetricKey').text();
+	 	app.symetricKey2use = symetricKey;
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
 		var encryptedChallenge4handshake = unWrapper.encryptHandshake({ challenge : challenge });
-/*		console.log("DEBUG ::: signin ::: symetricKey:" +  symetricKey);
+		
+		console.log("DEBUG ::: signin ::: symetricKey:" +  symetricKey);
 		console.log("DEBUG ::: signin ::: challenge:" + challenge );
-		console.log("DEBUG ::: signin ::: handshakeToken:" +  handshakeToken ); */
+		console.log("DEBUG ::: signin ::: handshakeToken:" +  handshakeToken ); 
 			 	
-	 	app.symetricKey2use = symetricKey;
 	 	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
 	 		encrypted : encodeURI( encryptedChallenge4handshake )
 	 	};
+	 	
+	 	console.log("DEBUG ::: signin ::: handshakeRequest:" +  JSON.stringify(handshakeRequest) );
+	 	
 	 	//type cheking before going to the next step
 	 	if (typeof decrypted == "undefined" || decrypted == null ||
 	 		typeof symetricKey == "undefined" || symetricKey == null ||
@@ -1759,7 +1767,7 @@ Application.prototype.firstLogin = function(){
 	 		app.firstLogin();
 	 		return;
 	 	}
-//	 	console.log("DEBUG ::: handshakeRequest.handshake " + JSON.stringify(handshakeRequest) );
+
 	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
 		 		
 	 		var result = unWrapper.decryptHandshake( answer );
