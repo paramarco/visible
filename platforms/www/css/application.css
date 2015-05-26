@@ -1,4 +1,21 @@
- 
+.darkink h2 {
+	  height: auto!important;
+	  letter-spacing: -0.01em;
+	  background-color: #fff;
+	  -webkit-margin-end: 0px;
+	  -webkit-margin-start: 0px;
+	  -webkit-margin-after: 0.83em;
+	  -webkit-margin-before: 0.83em;
+	  display: block;
+	  box-sizing: border-box;
+	  margin-top: 20px;
+	  margin-bottom: 10px;
+	  line-height: 1.30em;
+	  font-weight: 300;
+	  font-size: 30px;
+	  text-shadow: none;
+	  color: #333333;	
+}
 .textarea-chat {  
 
 	background: white;

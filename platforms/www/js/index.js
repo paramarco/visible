@@ -2,10 +2,10 @@
 //TODO globals DICTIONARY
 
 //TODO fix commentary & visibility on server
+//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
+//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 
 //TODO resize text area when window changes height or width
-
-//TODO connect to right server (by parameter from server)
 
 //TODO insert a good image when the user adss a new contact 
 
@@ -1702,6 +1702,7 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.firstLogin = function(){
 	
+	var goOn = true;
 	var myCurrentNick = $("#firstLoginNameField").val();
 	
 	if ( myCurrentNick == "" || myCurrentNick == undefined || app.myPhotoPath == null) {
@@ -1716,6 +1717,8 @@ Application.prototype.firstLogin = function(){
 		return;
 	}
 
+	gui.showLoadingSpinner();
+	
 	var rsa = forge.pki.rsa;
 
 	// generate an RSA key pair synchronously
@@ -1723,9 +1726,7 @@ Application.prototype.firstLogin = function(){
 	var publicKeyClient = { 
 		n : keypair.publicKey.n.toString(32)
 	};
-	
-// 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
-
+ 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
 
 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/signin', publicKeyClient ).done(function (response) { 
 	 	
@@ -1737,7 +1738,7 @@ Application.prototype.firstLogin = function(){
 	 	var symetricKey = $(decrypted).find('symetricKey').text();
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
-		
+		var encryptedChallenge4handshake = unWrapper.encryptHandshake({ challenge : challenge });
 /*		console.log("DEBUG ::: signin ::: symetricKey:" +  symetricKey);
 		console.log("DEBUG ::: signin ::: challenge:" + challenge );
 		console.log("DEBUG ::: signin ::: handshakeToken:" +  handshakeToken ); */
@@ -1746,16 +1747,31 @@ Application.prototype.firstLogin = function(){
 	 	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
-	 		encrypted : encodeURI( unWrapper.encryptHandshake( { challenge : challenge }  ) )
+	 		encrypted : encodeURI( encryptedChallenge4handshake )
 	 	};
-	 	
+	 	//type cheking before going to the next step
+	 	if (typeof decrypted == "undefined" || decrypted == null ||
+	 		typeof symetricKey == "undefined" || symetricKey == null ||
+	 		typeof handshakeToken == "undefined" || handshakeToken == null ||
+	 		typeof challenge == "undefined" || challenge == null ||
+	 		typeof encryptedChallenge4handshake == "undefined" || encryptedChallenge4handshake == null ){
+			console.log("DEBUG ::: signin ::: another attemp....." );
+	 		app.firstLogin();
+	 		return;
+	 	}
 //	 	console.log("DEBUG ::: handshakeRequest.handshake " + JSON.stringify(handshakeRequest) );
-
 	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
 		 		
 	 		var result = unWrapper.decryptHandshake( answer );
 	 		
-//	 		console.log ("DEBUG ::: handshake ::: " + JSON.stringify( result ) );
+		 	//type cheking before going to the next step
+		 	if (typeof result == "undefined" || result == null ){
+		 		console.log("DEBUG ::: handshake ::: another attemp....." );
+		 		app.firstLogin();
+		 		return;
+		 	}
+	 		
+	 		console.log ("DEBUG ::: handshake ::: done!!!" + JSON.stringify( result ) );
 	 		
 			var myCurrentNick = $("#firstLoginNameField").val();
 			
@@ -1780,11 +1796,12 @@ Application.prototype.firstLogin = function(){
 			app.handshakeToken = handshakeToken;
 			
 			//trigger configuration as already loaded
-			configLoaded.resolve(); 	 		
+			configLoaded.resolve();
+			$('body').pagecontainer('change', '#MainPage');
 	 		
 	 	});
 
-	});	
+	});	 
 };
 
 Application.prototype.locateMyPosition = function(){
@@ -1822,7 +1839,7 @@ ContactsHandler.prototype.addNewContact = function(publicClientID) {
 	var prompt2show = 	
 		'<div id="popupDiv" data-role="popup"> '+
 		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-		'	<p><br></p> <p> new contact saved !	</p> '+
+		'	<p> new contact saved ! <br> ;-)	</p> '+
 		'</div>';
 	$("#listOfContactsInMainPage").append(prompt2show);
 	$("#listOfContactsInMainPage").trigger("create");

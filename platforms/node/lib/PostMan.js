@@ -262,6 +262,7 @@ function PostMan(_io) {
 	};
 	
 	this.getRightServer2connect = function() {
+		/*
 		lastServerAsigned = lastServerAsigned + 1;
 		if (lastServerAsigned >= config.listOfServerSockets.length){
 			lastServerAsigned = 0;
@@ -269,6 +270,8 @@ function PostMan(_io) {
 		console.log("DEBUG ::: getRightServer2connect  :::  " + lastServerAsigned + " ... " + JSON.stringify(config.listOfServerSockets[lastServerAsigned])   );						
 
 		return config.listOfServerSockets[lastServerAsigned];
+		*/
+		return config.listOfServerSockets[1];
 	};	
 	
 };	

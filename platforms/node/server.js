@@ -1,8 +1,8 @@
 //MVP
-//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
-//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
+
 //TODO refactor in two servers
 //TODO setup redis
+//TODO ngix ready
 /*
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
@@ -118,7 +118,10 @@ app.post('/handshake', function (req, res) {
 		if (client != null){			
 
 			var decrypted = postMan.decryptHandshake( encrypted , client );
-			
+			if (typeof decrypted == "undefined" || decrypted == null ){
+				res.json( { error : null } );
+				return;
+			}
 			console.log("DEBUG ::: handshake ::: decrypted " + JSON.stringify(decrypted) );
 			
 			if ( decrypted.challenge == client.currentChallenge ){
