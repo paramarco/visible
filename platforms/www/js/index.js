@@ -2,12 +2,12 @@
 //TODO globals DICTIONARY
 
 //TODO fix commentary & visibility on server
+
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
+
 //TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 
 //TODO resize text area when window changes height or width
-
-//TODO insert a good image when the user adss a new contact 
 
 //TODO viralization with email
 
@@ -292,9 +292,7 @@ Unwrapper.prototype.encryptHandshake = function(message) {
 	try {    
 		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
 
-		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
-		
-		console.log("DEBUG ::: encryptHandshake ::: iv " +  app.symetricKey2use  );
+		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
 
 		cipher.start({iv: app.symetricKey2use });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
@@ -816,47 +814,6 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	$('#MainPage').trigger('create'); 
 };
 
-
-GUI.prototype.loadPageVisibleFirstTime = function() {
-
-	var strVar="";
-	strVar += "<div data-role=\"page\" data-theme=\"a\" id=\"visibleFirstTime\"> ";
-	strVar += "	<div data-role=\"header\" data-position=\"fixed\"> 					";
-	strVar += "	  <div class=\"ui-grid-d\" > ";
-	strVar += "	    <div class=\"ui-block-a\">	<\/div> ";
-	strVar += "	    <div class=\"ui-block-b\"><p><strong>Welcome! please insert your settings below<\/strong><\/p><\/div> ";
-	strVar += "	    <div class=\"ui-block-c\"><\/div> ";
-	strVar += "	    <div class=\"ui-block-d\"><a href=\"\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div> ";
-	strVar += "	    <div class=\"ui-block-e\"><a href=\"\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div> ";
-	strVar += "	  <\/div> ";
-	strVar += "	<\/div><!-- \/header --> ";
-	strVar += "	<div id=\"contentOfvisibleFirstTime\" data-role=\"content\" data-theme=\"a\">	 										";
-	strVar += "		<form action=\"\" method=\"post\" enctype=\"multipart\/form-data\" id=\"xid\" > 	";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
-	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\">	 ";
-	strVar += "	    	<\/ul> 				    ";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> 	";
-	strVar += "				<div data-role=\"fieldcontain\"> ";
-	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label> ";
-	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
-	strVar += "				<\/div>	 					";
-	strVar += "			<\/ul> ";
-	strVar += "		<\/form> ";
-	strVar += "		<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
-	strVar += "			<li id=\"firstLoginInputButton\"> ";
-	strVar += "				<a href=\"#\"> ";
-	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2> ";
-	strVar += "				<\/a>			 								";
-	strVar += "			<\/li> ";
-	strVar += "		<\/ul> 	";
-	strVar += "	<\/div><!-- \/content  -->	 		";
-	strVar += "<\/div><!-- \/page profile-->";
-		
-	$("body").append(strVar); 
-	
-};
-
-
 GUI.prototype.loadBody = function() { 		
 	var strVar="";
 	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"manageVisibles\">";
@@ -1247,6 +1204,42 @@ GUI.prototype.parseLinks = function(htmlOfContent) {
 	return result;
 };
 
+GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
+	
+	$('#listOfContactsInMainPage').hide();
+	
+	var strVar="";
+	strVar += "		<form hidden id=\"formInFirstLogin\" action=\"\" method=\"post\" enctype=\"multipart\/form-data\" id=\"xid\" >";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
+	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\"> ";
+	strVar += "	    	<\/ul>";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
+	strVar += "				<div data-role=\"fieldcontain\">";
+	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label>";
+	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
+	strVar += "				<\/div>";
+	strVar += "			<\/ul>";
+	strVar += "		<\/form>";
+	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
+	strVar += "			<li id=\"firstLoginInputButton\">";
+	strVar += "				<a href=\"#\">";
+	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
+	strVar += "				<\/a>";
+	strVar += "			<\/li>";
+	strVar += "		<\/ul>	";
+	
+	$("#contentOfMainPage").append(strVar);	
+	$("#contentOfMainPage").trigger("create");
+	
+	$("#formInFirstLogin").show();
+	$("#listInFirstLogin").show();
+};
+
+GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
+	$("#formInFirstLogin").remove();
+	$("#listInFirstLogin").remove();
+	$('#listOfContactsInMainPage').show();
+};
 
 
 function MailBox() {
@@ -1473,9 +1466,7 @@ Application.prototype.loadMyConfig = function(){
      		return;
      	}else{
      	
-     		gui.loadPageVisibleFirstTime();
-     		// 	login for the first time configLoaded.resolve(); 
-     	    //	will be triggered after inserting the relevant settings (#firstLoginInputButton).onclick
+     		gui.loadVisibleFirstTimeOnMainPage();
 			
 	     	$('#imageOnVisibleFirstTime').picEdit({
 	     		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
@@ -1488,7 +1479,6 @@ Application.prototype.loadMyConfig = function(){
      	         	    
 	     	$("#link2profileFromMyPanel").remove();
      	   	$.mobile.loading( "hide" ); 
-     	   	$("body").pagecontainer("change", "#visibleFirstTime");
      	   	
      	   	return;
      		
@@ -1706,7 +1696,6 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.firstLogin = function(){
 	
-	var goOn = true;
 	var myCurrentNick = $("#firstLoginNameField").val();
 	
 	if ( myCurrentNick == "" || myCurrentNick == undefined || app.myPhotoPath == null) {
@@ -1730,8 +1719,7 @@ Application.prototype.firstLogin = function(){
 	var publicKeyClient = { 
 		n : keypair.publicKey.n.toString(32)
 	};
- 	console.log("DEBUG ::: signin ::: publicKeyClient : " + JSON.stringify(publicKeyClient) );
-
+ 
 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/signin', publicKeyClient ).done(function (response) { 
 	 	
 		console.log("DEBUG ::: signin ::: response : " + JSON.stringify(response) );
@@ -1744,18 +1732,11 @@ Application.prototype.firstLogin = function(){
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
 		var encryptedChallenge4handshake = unWrapper.encryptHandshake({ challenge : challenge });
-		
-		console.log("DEBUG ::: signin ::: symetricKey:" +  symetricKey);
-		console.log("DEBUG ::: signin ::: challenge:" + challenge );
-		console.log("DEBUG ::: signin ::: handshakeToken:" +  handshakeToken ); 
-			 	
-	 	
+ 	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
 	 		encrypted : encodeURI( encryptedChallenge4handshake )
 	 	};
-	 	
-	 	console.log("DEBUG ::: signin ::: handshakeRequest:" +  JSON.stringify(handshakeRequest) );
 	 	
 	 	//type cheking before going to the next step
 	 	if (typeof decrypted == "undefined" || decrypted == null ||
@@ -1778,9 +1759,7 @@ Application.prototype.firstLogin = function(){
 		 		app.firstLogin();
 		 		return;
 		 	}
-	 		
-	 		console.log ("DEBUG ::: handshake ::: done!!!" + JSON.stringify( result ) );
-	 		
+		
 			var myCurrentNick = $("#firstLoginNameField").val();
 			
 			//update internal DB
@@ -1804,8 +1783,8 @@ Application.prototype.firstLogin = function(){
 			app.handshakeToken = handshakeToken;
 			
 			//trigger configuration as already loaded
-			configLoaded.resolve();
-			$('body').pagecontainer('change', '#MainPage');
+			configLoaded.resolve();			
+			gui.removeVisibleFirstTimeOnMainPage();		
 	 		
 	 	});
 
@@ -1832,7 +1811,6 @@ Application.prototype.locateMyPosition = function(){
         positionLoaded.resolve();
     }	
 };
-
 //END Class Application
 
 
@@ -1846,8 +1824,9 @@ ContactsHandler.prototype.addNewContact = function(publicClientID) {
 	$("#popupDiv").remove();
 	var prompt2show = 	
 		'<div id="popupDiv" data-role="popup"> '+
-		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-		'	<p> new contact saved ! <br> ;-)	</p> '+
+		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
+		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
+		'	<p class="darkink"> new contact saved ! <br> ;-) </p> '+
 		'</div>';
 	$("#listOfContactsInMainPage").append(prompt2show);
 	$("#listOfContactsInMainPage").trigger("create");
