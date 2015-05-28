@@ -3,15 +3,13 @@
 
 //TODO fix commentary & visibility on server
 
-//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
+//TODO unify development with typeOf cordova == "undefined" ....
+
+//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
 //TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 
-//TODO resize text area when window changes height or width
-
 //TODO viralization with email
-
-//TODO license page paybody and so on...
 
 //non MVP
 
@@ -237,7 +235,10 @@ Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {
 		var parameters = Unwrapper.prototype.decrypt(input);
 		
 		if (parameters == null ||
-			typeof parameters.publicClientID !== 'string'	 ) {
+			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
+			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
+			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
+			typeof parameters.img !== 'string' || parameters.img == null ) {
 			
 			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check " + JSON.stringify(parameters) ); 
 			return null;
@@ -987,9 +988,9 @@ GUI.prototype.loadBody = function() {
 GUI.prototype.chatInputHandler = function() {
 
 	var textMessage = $("#chat-input").val();	
-	
-	if (	textMessage == '' || 
-			( (textMessage.match(/\n/g)||[]).length == textMessage.length  ) ){
+	textMessage = textMessage.replace(/\n/g, "");
+
+	if ( textMessage == '' ){
 		document.getElementById('chat-input').value='';
 		return;
 	}
@@ -1142,9 +1143,17 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(document).on("click","#firstLoginInputButton", app.firstLogin );	
 	
-//	$(window).unload(function() {
-//		db.close();
-//	});
+	$(window).on("debouncedresize", function( event ) {
+
+		$('#chat-input').css("width", $(document).width() * 0.75 );
+		$('#chat-input').css("height", 51  );
+		$('#chat-input').emojiPicker({
+		    width: '300px',
+		    height: '200px',
+		    button: false
+		});
+		
+	});
 	
 	documentReady.resolve(); 
 		
@@ -1656,11 +1665,8 @@ Application.prototype.connect2server = function(result){
 		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
-		if (app.currentChatWith == data.publicClientID){
-			$("#imgOfChat-page-header").attr("src", data.img);	
-		}
-		
-		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);
+		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
+		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
 		
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
@@ -1671,9 +1677,11 @@ Application.prototype.connect2server = function(result){
 	socket.on("locationFromServer", function(input) {
 		
 		var location = unWrapper.getParametersOfLocationFromServer(input); 
-		if (location == null) { return;	}		
+		if (location == null) { 
+			console.log("DEBUG ::: locationFromServer  :::  something went wrong");
+		}		
 
-		if (app.myPosition.coords.latitude == ""){			
+		if (app.myPosition.coords.latitude == "" && location != null){			
 			app.myPosition.coords.latitude = parseFloat( location.lat ); 
 			app.myPosition.coords.longitude = parseFloat( location.lon );			
 		}			
@@ -1684,7 +1692,8 @@ Application.prototype.connect2server = function(result){
 				lon : app.myPosition.coords.longitude.toString()
 	  		}
 		};
-		
+		console.log("DEBUG ::: locationFromServer  :::  RequestOfListOfPeopleAround : " + JSON.stringify(whoIsAround));
+
 		socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( whoIsAround ) );		
 
 	});//END locationFromServer	

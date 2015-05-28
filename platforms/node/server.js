@@ -1,4 +1,5 @@
 //MVP
+//TODO check rigth format of input postMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 
 //TODO refactor in two servers
 //TODO setup redis
@@ -331,7 +332,9 @@ io.sockets.on("connection", function (socket) {
 		var client = socket.visibleClient;
 			
 		var parameters = postMan.getRequestWhoIsaround(input, client);
-		if (parameters == null) return;	
+		if (parameters == null) {
+			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: " + JSON.stringify(client) );
+		}	
 
 				  		
   		if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
@@ -351,6 +354,9 @@ io.sockets.on("connection", function (socket) {
 				nickName : client.nickName,
 	  			commentary : client.commentary
 			}; 
+			
+			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: notificationOfNewContact of this Client: " + JSON.stringify(visible) );
+
 			
 			listOfPeople.map(function (c){
 				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){

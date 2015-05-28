@@ -355,7 +355,7 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 
 	return joinParameters; 	
 };
-
+//TODO check rigth format of input
 PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 	var parameters = null;
 
