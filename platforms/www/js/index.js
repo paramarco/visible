@@ -1,8 +1,6 @@
 //MVP
 //TODO globals DICTIONARY
 
-//TODO fix commentary & visibility on server
-
 //TODO unify development with typeOf cordova == "undefined" ....
 
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
@@ -1358,6 +1356,49 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 	
 };
 
+function Dictionary(){
+	var _this = this;
+	this.AvailableLiterals = {
+		English : { value: _this.Literals_En },
+    	Deutsch : { value: _this.Literals_De },
+    	italiano : { value: _this.Literals_It },
+    	espa\u00f1ol : { value: _this.Literals_Es },
+    	fran\u00e7ais : { value: _this.Literals_Fr },
+    	portugu\u00EAs : { value: _this.Literals_Pt }
+    };
+	this.Literals_En = {
+		label_1: "",
+		label_2: "",
+		label_3: ""
+	};
+	this.Literals_De = {
+			label_1: "",
+			label_2: "",
+			label_3: ""
+	};
+	this.Literals_It = {
+			label_1: "",
+			label_2: "",
+			label_3: ""
+	}; 
+	this.Literals_Es = {
+			label_1: "",
+			label_2: "",
+			label_3: ""
+	}; 
+	this.Literals_Fr = {
+			label_1: "",
+			label_2: "",
+			label_3: ""
+	}; 
+	this.Literals_Pt = {
+			label_1: "",
+			label_2: "",
+			label_3: ""
+	}; 
+}
+
+
 
 function Application() {
 	this.currentChatWith = null,
@@ -1371,7 +1412,7 @@ function Application() {
 	this.symetricKey2use = null,
 	this.handshakeToken = null,
 	this.profileIsChanged = false,
-	this.map = null;
+	this.map = null;	
 };
 
 Application.prototype.init = function() {
@@ -1820,6 +1861,51 @@ Application.prototype.locateMyPosition = function(){
         positionLoaded.resolve();
     }	
 };
+
+Application.prototype.setLanguage = function(language) {
+	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
+		console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
+	}else{
+		console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
+		language.value = "English" ;
+	}
+	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
+	//gui.setLocalLabels(); --> document.getElementById("element").innerHTML = dictionary.Literals.label_1;
+};
+
+
+Application.prototype.initialize = function() {
+	Application.prototype.bindEvents();
+};
+// Bind Event Listeners
+Application.prototype.bindEvents = function() {
+    document.addEventListener('deviceready', Application.prototype.onDeviceReady, false);
+    document.addEventListener('backbutton', function(){}, false);
+    document.addEventListener('menubutton', function(){}, false);
+    document.addEventListener('searchbutton', function(){}, false);
+    document.addEventListener('startcallbutton', function(){}, false);
+    document.addEventListener('endcallbutton', function(){}, false);
+    document.addEventListener("pause", function(){}, false);
+    
+};
+// deviceready Event Handler 
+Application.prototype.onDeviceReady = function() {
+    app.receivedEvent();
+};
+// Update DOM on a Received Event
+Application.prototype.receivedEvent = function() {
+   // Now safe to use the Cordova API
+	try{
+		//get the language of the Device			
+		navigator.globalization.getPreferredLanguage(
+			Application.prototype.setLanguage,
+			function () {}
+		);
+	}catch(err){
+    	console.log("DEBUG ::: Application.prototype.receivedEvent :::  " + err.message );
+    }	
+}
+
 //END Class Application
 
 
@@ -1946,6 +2032,7 @@ var gui = new GUI();
 var unWrapper = new Unwrapper();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
+var dictionary = new Dictionary();	
 var app = new Application();
 
 
