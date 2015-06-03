@@ -131,6 +131,15 @@ div.ui-mobile-viewport {
 	font-size: 1em;
 	margin: 0;
 	text-align: center;
+	margin-left : auto;
+	  margin-right : auto;
+	  margin-top: 20px;
+	  margin-bottom: 10px;
+	  line-height: 1.30em;
+	  font-weight: 300;
+	  font-size: 25px;
+	  text-shadow: none;
+	color: #FF9720;
 }
 .ui-loader .ui-icon-loading {
 	background-color: #000;
@@ -2252,6 +2261,7 @@ fieldset.ui-controlgroup {
 }
 .ui-listview,
 .ui-listview > li {
+	background-color : white;	
 	margin: 0;
 	padding: 0;
 	list-style: none;
