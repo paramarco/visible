@@ -6,7 +6,7 @@ function Message(input) {
 	this.msgID = "" ;
 //	this.md5sum = "" ;
 	this.size = 0 ;
-	this.timeStamp = new Date().getTime(); 
+	this.timestamp = new Date().getTime(); 
 
 	switch (Object.keys(input).length )	{
 		case 3 :

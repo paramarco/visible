@@ -104,7 +104,7 @@ function PostMan(_io) {
 			    message.to = entry.receiver;
 			    message.from = entry.sender;
 			    message.messageBody = entry.messagebody ;
-			    message.timeStamp = entry.timestamp ;			    			   		    
+			    message.timestamp = entry.timestamp ;			    			   		    
 			    
 			    return  d.resolve(message);
 			    
@@ -129,7 +129,7 @@ function PostMan(_io) {
 							    .set("receiver", msg.to)
 							    .set("sender", msg.from)
 							    .set("messagebody", JSON.stringify(msg.messageBody) )
-							    .set("timestamp", msg.timeStamp)							    
+							    .set("timestamp", msg.timestamp)							    
 							    .toString() ;
 				    
 		clientOfDB.query(query2send, function(err, result) {
@@ -600,13 +600,14 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 			PostMan.prototype.isUUID(inputMessage.msgID) == false ||
 			PostMan.prototype.isUUID(inputMessage.chatWith) == false ||
 			typeof inputMessage.size !== 'number' ||
-			typeof inputMessage.timeStamp !== 'number' ||
+			typeof inputMessage.timestamp !== 'number' ||
 			typeof inputMessage.markedAsRead !== 'boolean' ||
 			typeof inputMessage.ACKfromServer !== 'boolean' ||
 			typeof inputMessage.ACKfromAddressee !== 'boolean' ||
 			Object.keys(inputMessage).length != 10	) 	{	
 			
 			console.log("DEBUG ::: getMessage  ::: didn't pass the format check 1" );
+			
 			return null;
 		}	
 

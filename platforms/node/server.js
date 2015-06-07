@@ -57,6 +57,10 @@ app.post('/login', function (req, res) {
 		// DEBUG
 		if ( ip == "127.0.0.1")
 			ip = "129.247.31.224";
+		
+		if ( /192/.test(ip))
+			ip = "80.187.98.215";
+		
 		//ip = "88.217.180.159";
 		// DEBUG
 		
@@ -82,6 +86,8 @@ app.post('/login', function (req, res) {
 });
 
 app.post('/signin', function (req, res) {
+	
+	console.log("DEBUG ::: yes there is connectivity");
 	
 	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
 	
@@ -385,7 +391,8 @@ rl.question('What is the user of the DataBase ? ', function(user) {
 		when.all ( DBConnectionEstablished ).then(function(){
 			app.configure(function() {
 				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1");
+			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
+			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.137.209");
 			});
 			
 			server.listen(	

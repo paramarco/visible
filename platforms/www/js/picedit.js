@@ -201,11 +201,11 @@
 				});
 				// Define formdata element
 				this._theformdata = false;
-				this._theform = $(this.inputelement).parents("form");
+				//this._theform = $(this.inputelement).parents("form");
                 // Bind form submit event
-				if(this._theform.length) {
-					this._theform.on("submit", function(){ return _this._formsubmit(); });
-				}
+				//if(this._theform.length) {
+				//	this._theform.on("submit", function(){ return _this._formsubmit(); });
+				//}
 				// Call helper functions
 				this._bindControlButtons();
 				this._bindInputVariables();
@@ -293,7 +293,28 @@
 		},
 		// Perform image load when user clicks on image button
 		load_image: function () {
-			this._fileinput.click();
+			var _this = this;
+			
+			if (typeof cordova == "undefined" || cordova == null ){
+				this._fileinput.click();
+			}else{
+				
+				var cameraOptions = { 
+					destinationType : navigator.camera.DestinationType.FILE_URI,
+					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
+				};
+				navigator.camera.getPicture(	
+					function (datasrc){ 
+						//_this._videobox.addClass("active");
+						_this._create_image_with_datasrc(datasrc, false, true);
+						//_this._videobox.removeClass("active");
+					}, 
+					function(message){
+						console.log('DEBUG ::: picEdit.load_image ::: Captured Failed because: ' + message); 
+					},
+					cameraOptions
+			    );
+			}
 		},
 		// Open pen tool and start drawing
 		pen_tool_open: function () {
@@ -380,51 +401,80 @@
 		},
 		// Open video element and start capturing live video from camera to later make a photo
 		camera_open: function() {
-			var getUserMedia;
-			var browserUserMedia = 	(	navigator.getUserMedia ||
-					                   	navigator.webkitGetUserMedia ||
-					                    navigator.mozGetUserMedia ||
-					                    navigator.msGetUserMedia	);
-			if (!browserUserMedia) return this.set_messagebox("Sorry, your browser doesn't support WebRTC!");
+			
 			var _this = this;
-			getUserMedia = browserUserMedia.bind(navigator);
-			getUserMedia({
-					audio: false,
-					video: true
-				},
-				function(stream) {
-					var videoElement = _this._videobox.find("video")[0];
-					videoElement.src = URL.createObjectURL(stream);
-					//resize viewport
-					videoElement.onloadedmetadata = function() {
-						if(videoElement.videoWidth && videoElement.videoHeight) {
-							if(!_this._image) _this._image = {};
-							_this._image.width = videoElement.videoWidth;
-							_this._image.height = videoElement.videoHeight;
-							_this._resizeViewport();
-						}
-					};
-					_this._videobox.addClass("active");
-				},
-				function(err) {
-					return _this.set_messagebox("No video source detected! Please allow camera access!");
-				}
-			);
+			
+			if (typeof cordova == "undefined" || cordova == null ){
+
+				var getUserMedia;
+				var browserUserMedia = 	(	navigator.getUserMedia ||
+						                   	navigator.webkitGetUserMedia ||
+						                    navigator.mozGetUserMedia ||
+						                    navigator.msGetUserMedia	);
+				if (!browserUserMedia) return this.set_messagebox("Sorry, your browser doesn't support WebRTC!");
+				
+				getUserMedia = browserUserMedia.bind(navigator);
+				getUserMedia({
+						audio: false,
+						video: true
+					},
+					function(stream) {
+						var videoElement = _this._videobox.find("video")[0];
+						videoElement.src = URL.createObjectURL(stream);
+						//resize viewport
+						videoElement.onloadedmetadata = function() {
+							if(videoElement.videoWidth && videoElement.videoHeight) {
+								if(!_this._image) _this._image = {};
+								_this._image.width = videoElement.videoWidth;
+								_this._image.height = videoElement.videoHeight;
+								_this._resizeViewport();
+							}
+						};
+						_this._videobox.addClass("active");
+					},
+					function(err) {
+						return _this.set_messagebox("No video source detected! Please allow camera access!");
+					}
+				);
+			}else{
+				var cameraOptions = { 
+					//quality : 75,
+					destinationType : navigator.camera.DestinationType.FILE_URI,
+					sourceType : navigator.camera.PictureSourceType.CAMERA
+					//encodingType: navigator.camera.EncodingType.JPEG,
+					//targetWidth: 300,
+					//targetHeight: 300,
+					//saveToPhotoAlbum: true
+				};
+				navigator.camera.getPicture(	
+					function (datasrc){ 
+						_this._create_image_with_datasrc(datasrc, false, true);
+					}, 
+					function(message){
+						console.log('DEBUG ::: camera.getPicture ::: Captured Failed because: ' + message); 
+					},
+					cameraOptions
+			    );
+			}
 		},
 		camera_close: function() {
-			this._videobox.removeClass("active");
+			if (typeof cordova == "undefined" || cordova == null ){
+				this._videobox.removeClass("active");
+			}
 		},
 		take_photo: function() {
-			var _this = this;
-			var live = this._videobox.find("video")[0];
-			var canvas = document.createElement('canvas');
-			var ctx = canvas.getContext("2d");
-			canvas.width = live.clientWidth;
-			canvas.height = live.clientHeight;
-			ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
-			this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
-				_this._videobox.removeClass("active");
-			});
+			if (typeof cordova == "undefined" || cordova == null ){
+				var _this = this;
+				var live = this._videobox.find("video")[0];
+				var canvas = document.createElement('canvas');
+				var ctx = canvas.getContext("2d");
+				canvas.width = live.clientWidth;
+				canvas.height = live.clientHeight;
+				ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+					_this._videobox.removeClass("active");
+				});
+			}
 		},
 		// Crop the image
 		crop_image: function() {
@@ -477,7 +527,8 @@
                     }else{
                     	imageAux.src = canvas.toDataURL("image/jpg", 0.7);
                     }
-                }				
+                }
+				
 				_this._image = ( imageAux != null) ? imageAux : img;				
 				_this._resizeViewport();				
 				if ( withoutcall2resize ){
@@ -751,45 +802,10 @@
 		},
 		// form submitted
 		_formsubmit: function() {
-			if(!window.FormData) this.set_messagebox("Sorry, the FormData API is not supported!");
-			else {
-				var _this = this;
-				this.set_loading().delay(200).promise().done(function() {
-					_this._theformdata = new FormData(_this._theform[0]);
-					if(_this._image) {
-						var inputname = $(_this.inputelement).prop("name") || "file";
-						var inputblob = _this._dataURItoBlob(_this._image.src);
-						if(!_this._filename) _this._filename = inputblob.type.replace("/", ".");
-						else _this._filename = _this._filename.match(/^[^\.]*/) + "." + inputblob.type.match(/[^\/]*$/);
-						_this._theformdata.append(inputname, inputblob, _this._filename);
-					}
-					//send request
-					var request = new XMLHttpRequest();
-                    request.onprogress = function(e) {
-                        if(e.lengthComputable) var total = e.total;
-                        else var total = Math.ceil(inputblob.size * 1.3);
-                        var progress = Math.ceil(((e.loaded)/total)*100);
-                        if (progress > 100) progress = 100;
-                        _this.set_messagebox("Please Wait... Uploading... " + progress + "% Uploaded.", false, false);
-                    };
-					request.open(_this._theform.prop("method"), _this._theform.prop("action"), true);
-					request.onload = function(e) {
-						if(this.status != 200) {
-                            _this.set_messagebox("Server did not accept data!");
-                        }
-                        else {
-                            if(_this.options.redirectUrl === true) window.location.reload();
-						    else if(_this.options.redirectUrl) window.location = _this.options.redirectUrl;
-						    else _this.set_messagebox("Data successfully submitted!");
-                        }
-						_this.options.formSubmitted(this);
-					};
-					request.send(_this._theformdata);
-				});
-			}
-			return false;
+			//gui.firstLogin();
+			
 		},
-		_dataURItoBlob: function(dataURI) {
+		/*_dataURItoBlob: function(dataURI) {
 			if(!dataURI) return null;
 			else var mime = dataURI.match(/^data\:(.+?)\;/);
 			var byteString = atob(dataURI.split(',')[1]);
@@ -799,7 +815,7 @@
 				ia[i] = byteString.charCodeAt(i);
 			}
 			return new Blob([ab], {type: mime[1]});
-		},
+		},*/
 		// Prepare the template here
 		_template: function(navToolsEnabled) {
 			var template;

@@ -2,6 +2,7 @@
  *  Project: PicEdit
  *  Description: Creates an image upload box with tools to edit the image on the front-end before uploading it to the server
  *  Author: Andy V.
+ *  Co-Author: Marco Vereda Manchego
  *  License: MIT
  */
 
@@ -23,13 +24,13 @@
         defaults = {
 			imageUpdated: function(img){},	// Image updated callback function
 			formSubmitted: function(res){},	// After form was submitted callback function
-			nameOfevent2trigger: function(){},
-			targetedDiv : function(){},
 			redirectUrl: false,				// Page url for redirect on form submit
-			maxWidth: 400,					// Max width parameter
+			maxWidth: 'auto',				// Max width parameter | 'auto'
 			maxHeight: 'auto',				// Max height parameter
 			aspectRatio: true,				// Preserve aspect ratio
-            defaultImage: true             // Default image to be used with the plugin
+            defaultImage: false,            // Default image to be used with the plugin
+            navToolsEnabled: true,
+            porup2remove : false
         };
 
     // The actual plugin constructor
@@ -54,7 +55,7 @@
 
         /* Prepare the template */
         /*unhide_in_prod*/
-         this._template(); 
+         this._template(this.options.navToolsEnabled); 
         /*unhide_in_prod*/
 
         /*hide_in_prod*/ /* 
@@ -77,7 +78,7 @@
                     this._fileinput = $(this.inputelement);
                 else {
                     // Create a reference to the file input box
-                    $(this.inputelement).after('<input type="file" style="display:none" accept="image/*">');
+                    $(this.inputelement).after('<input type="file" style="display:none" accept="image/*;capture=camera">');
 				    this._fileinput = $(this.inputelement).next("input");
                 }
                 // Show regular file upload on old browsers
@@ -130,7 +131,8 @@
 					}
 					var reader = new FileReader();
 					reader.onload = function(e) { 
-						_this._create_image_with_datasrc(e.target.result, false, file); 
+						//_this._create_image_with_datasrc(e.target.result, false, file, true); 
+						_this._create_image_with_datasrc(e.target.result, false, file);
 					};
 					reader.readAsDataURL(file);
 				 }
@@ -149,8 +151,7 @@
 				});
 				// Bind onchange event to the fileinput to pre-process the image selected
 				$(this._fileinput).on("change", function() {
-					//build_img_from_file(this.files);
-					console.log("DEBUG :::  this._fileinput :: onchange trigerred");
+					build_img_from_file(this.files);
 				});
 				// If Firefox (doesn't support clipboard object), create DIV to catch pasted image
 				if (!window.Clipboard) { // Firefox
@@ -168,7 +169,6 @@
 				}
 				// Bind onpaste event to capture images from the the clipboard
 				$(document).on("paste", function(event) {
-
 					var items = (event.clipboardData  || event.originalEvent.clipboardData).items;
 					var blob;
 					if(!items) {
@@ -201,11 +201,11 @@
 				});
 				// Define formdata element
 				this._theformdata = false;
-				this._theform = $(this.inputelement).parents("form");
+				//this._theform = $(this.inputelement).parents("form");
                 // Bind form submit event
-				if(this._theform.length) {
-					this._theform.on("submit", function(){ return _this._formsubmit(); });
-				}
+				//if(this._theform.length) {
+				//	this._theform.on("submit", function(){ return _this._formsubmit(); });
+				//}
 				// Call helper functions
 				this._bindControlButtons();
 				this._bindInputVariables();
@@ -224,14 +224,31 @@
             return true;    //otherwise return true
         },
         // Set the default Image
-        set_default_image: function (path) {
-            this._create_image_with_datasrc_without_imageUpdated(path, false, false, true);
+        set_default_image: function (datasrc) { 
+            var _this = this;
+			var img = document.createElement("img");
+            img.setAttribute('crossOrigin', 'anonymous');			
+			img.src = datasrc;
+			img.onload = function() {
+				var imageAux = null;				
+				var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');                    
+               	canvas.width = img.width;
+            	canvas.height = img.height;                    
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
+                imageAux = document.createElement("img");
+                imageAux.src = canvas.toDataURL('image/jpg', 0.7);               				
+				_this._image = imageAux;				
+				_this._resizeViewport();
+				_this._paintCanvas();
+				_this._mainbuttons.removeClass("active");				
+			};           
         },
 		// Remove all notification copy and hide message box
 		hide_messagebox: function () {
 			var msgbox = this._messagebox;
 			msgbox.removeClass("active no_close_button");
-			setTimeout(function() {msgbox.children("div").html("");}, 200);
+			setTimeout(function() {msgbox.children("div").html("")}, 200);
 		},
 		// Open a loading spinner message box or working... message box
 		set_loading: function (message) {
@@ -276,29 +293,28 @@
 		},
 		// Perform image load when user clicks on image button
 		load_image: function () {
-			//this._fileinput.click();
 			var _this = this;
-			var cameraOptions = { 
-				quality : 75,
-				destinationType : navigator.camera.DestinationType.FILE_URI,
-				sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY,
-				allowEdit : true,
-				encodingType: navigator.camera.EncodingType.JPEG,
-				targetWidth: 300,
-				targetHeight: 300,
-				saveToPhotoAlbum: true
-			};
-			navigator.camera.getPicture(	
-				function (datasrc){ 
-					//_this._videobox.addClass("active");
-					_this._create_image_with_datasrc_without_imageUpdated(datasrc, false, false , true);
-					//_this._videobox.removeClass("active");
-				}, 
-				function(message){
-					console.log('Captured Failed because: ' + message); 
-				},
-				cameraOptions
-		    );
+			
+			if (typeof cordova == "undefined" || cordova == null ){
+				this._fileinput.click();
+			}else{
+				
+				var cameraOptions = { 
+					destinationType : navigator.camera.DestinationType.FILE_URI,
+					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
+				};
+				navigator.camera.getPicture(	
+					function (datasrc){ 
+						//_this._videobox.addClass("active");
+						_this._create_image_with_datasrc(datasrc, false, true);
+						//_this._videobox.removeClass("active");
+					}, 
+					function(message){
+						console.log('DEBUG ::: picEdit.load_image ::: Captured Failed because: ' + message); 
+					},
+					cameraOptions
+			    );
+			}
 		},
 		// Open pen tool and start drawing
 		pen_tool_open: function () {
@@ -351,66 +367,127 @@
 		},
 		// Resize the image
 		resize_image: function () {
-
 			if(!this._image) return this._hideAllNav(1);
 			var _this = this;
-			this.set_loading(1).delay(200).promise().done(function() {
-				//perform resize begin
-				var canvas = document.createElement('canvas');
-				var ctx = canvas.getContext("2d");
-				canvas.width = _this._variables.resize_width;
-				canvas.height = _this._variables.resize_height;
-				ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
-				_this._create_image_with_datasrc(canvas.toDataURL("image/png"), function() {
-					_this.hide_messagebox();
-				});
-			});
+			this.set_loading(1);
+			var canvas = document.createElement('canvas');
+			var ctx = canvas.getContext("2d");
+			canvas.width = _this._viewport.width;
+			canvas.height = _this._viewport.height;
+			ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
+			if (_this._getImageFormat(_this._image) == "image/png"){
+				_this._create_image_with_datasrc(
+					canvas.toDataURL("image/png"),				 
+					function() {
+						_this.hide_messagebox();
+					},
+					false,
+					false,
+					true
+				);				
+			}else{
+				_this._create_image_with_datasrc(
+					canvas.toDataURL("image/jpeg", 0.7),				 
+					function() {
+						_this.hide_messagebox();
+					},
+					false,
+					false,
+					true
+				);				
+			}
+			
 			this._hideAllNav();
 		},
 		// Open video element and start capturing live video from camera to later make a photo
 		camera_open: function() {
+			
 			var _this = this;
-			var cameraOptions = { 
-				quality : 75,
-				destinationType : navigator.camera.DestinationType.FILE_URI,
-				sourceType : navigator.camera.PictureSourceType.CAMERA,
-				allowEdit : true,
-				encodingType: navigator.camera.EncodingType.JPEG,
-				targetWidth: 450,
-				targetHeight: 450,
-				saveToPhotoAlbum: true
-			};
-			navigator.camera.getPicture(	
-				function (datasrc){ 
-					_this._create_image_with_datasrc_without_imageUpdated(datasrc, false, false , true);
-				}, 
-				function(message){
-					console.log('Captured Failed because: ' + message); 
-				},
-				cameraOptions
-		    );
 			
-			//this._videobox.addClass("active");
-			
+			if (typeof cordova == "undefined" || cordova == null ){
+
+				var getUserMedia;
+				var browserUserMedia = 	(	navigator.getUserMedia ||
+						                   	navigator.webkitGetUserMedia ||
+						                    navigator.mozGetUserMedia ||
+						                    navigator.msGetUserMedia	);
+				if (!browserUserMedia) return this.set_messagebox("Sorry, your browser doesn't support WebRTC!");
+				
+				getUserMedia = browserUserMedia.bind(navigator);
+				getUserMedia({
+						audio: false,
+						video: true
+					},
+					function(stream) {
+						var videoElement = _this._videobox.find("video")[0];
+						videoElement.src = URL.createObjectURL(stream);
+						//resize viewport
+						videoElement.onloadedmetadata = function() {
+							if(videoElement.videoWidth && videoElement.videoHeight) {
+								if(!_this._image) _this._image = {};
+								_this._image.width = videoElement.videoWidth;
+								_this._image.height = videoElement.videoHeight;
+								_this._resizeViewport();
+							}
+						};
+						_this._videobox.addClass("active");
+					},
+					function(err) {
+						return _this.set_messagebox("No video source detected! Please allow camera access!");
+					}
+				);
+			}else{
+				var cameraOptions = { 
+					//quality : 75,
+					destinationType : navigator.camera.DestinationType.FILE_URI,
+					sourceType : navigator.camera.PictureSourceType.CAMERA
+					//encodingType: navigator.camera.EncodingType.JPEG,
+					//targetWidth: 300,
+					//targetHeight: 300,
+					//saveToPhotoAlbum: true
+				};
+				navigator.camera.getPicture(	
+					function (datasrc){ 
+						_this._create_image_with_datasrc(datasrc, false, true);
+					}, 
+					function(message){
+						console.log('DEBUG ::: camera.getPicture ::: Captured Failed because: ' + message); 
+					},
+					cameraOptions
+			    );
+			}
 		},
 		camera_close: function() {
-			//this._videobox.removeClass("active");
+			if (typeof cordova == "undefined" || cordova == null ){
+				this._videobox.removeClass("active");
+			}
 		},
 		take_photo: function() {
-
+			if (typeof cordova == "undefined" || cordova == null ){
+				var _this = this;
+				var live = this._videobox.find("video")[0];
+				var canvas = document.createElement('canvas');
+				var ctx = canvas.getContext("2d");
+				canvas.width = live.clientWidth;
+				canvas.height = live.clientHeight;
+				ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+					_this._videobox.removeClass("active");
+				});
+			}
 		},
 		// Crop the image
 		crop_image: function() {
-
 			var crop = this._calculateCropWindow();
 			var _this = this;
 			this.set_loading(1).delay(200).promise().done(function() {
 				var canvas = document.createElement('canvas');
 				var ctx = canvas.getContext("2d");
-				canvas.width = crop.width;
-				canvas.height = crop.height;
-				ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, crop.width, crop.height);
-				_this._create_image_with_datasrc(canvas.toDataURL("image/png"), function() {
+				canvas.width = _this._image.width; //canvas.width = crop.width;
+				canvas.height = _this._image.height; //canvas.height = crop.height;
+				//ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, crop.width, crop.height);
+				ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, _this._image.width, _this._image.height);
+				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
 					_this.hide_messagebox();
 				});
 			});
@@ -425,57 +502,60 @@
 			this._cropping.cropbox.removeClass("active");
 		},
 		// Create and update image from datasrc
-		_create_image_with_datasrc: function(datasrc, callback, file, dataurl) {
+		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
+			if (this.options.porup2remove)	$(this.options.porup2remove).remove();
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
 			if(file) img.file = file;
 			img.src = datasrc;
 			img.onload = function() {
+				var imageAux = null;				
+				if ( typeof img.file != "undefined" &&	img.file.type == "image/gif"){
+					dataurl = false;
+					withoutcall2resize = true;					
+				}				
 				if(dataurl) {
                     var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    img.src = canvas.toDataURL('image/png');
+                    var ctx = canvas.getContext('2d');                    
+                   	canvas.width = img.width;
+                	canvas.height = img.height;                    
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    imageAux = document.createElement("img");                    
+                    if ( _this._getImageFormat(img) == "image/png"){
+                    	imageAux.src = canvas.toDataURL("image/png");
+                    }else{
+                    	imageAux.src = canvas.toDataURL("image/jpg", 0.7);
+                    }
                 }
-                _this._image = img;
-				_this._resizeViewport();
-				_this._paintCanvas();
-				_this.options.imageUpdated(_this._image);
-				_this._mainbuttons.removeClass("active");
-				if(callback && typeof(callback) == "function") callback();
+				
+				_this._image = ( imageAux != null) ? imageAux : img;				
+				_this._resizeViewport();				
+				if ( withoutcall2resize ){
+					_this._paintCanvas();
+					_this.options.imageUpdated(_this._image);
+					_this._mainbuttons.removeClass("active");
+					if(callback && typeof(callback) == "function") callback();	
+				}else{
+					_this.resize_image();										
+				}			
 			};
 		},
-		// Create and update image from datasrc
-		_create_image_with_datasrc_without_imageUpdated: function(datasrc, callback, file, dataurl) {
-			var _this = this;
-			var img = document.createElement("img");
-            if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
-			if(file) img.file = file;
-			img.src = datasrc;
-			img.onload = function() {
-				if(dataurl) {
-                    var canvas = document.createElement('canvas');
-                    var ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    img.src = canvas.toDataURL('image/png');
-                }
-                _this._image = img;
-				_this._resizeViewport();
-				_this._paintCanvas();
-				//_this.options.imageUpdated(_this._image);
-				_this._mainbuttons.removeClass("active");
-				//if(callback && typeof(callback) == "function") callback();
-				console.log("DEBUG ::: value of _this.options.targetedDiv : " + _this.options.targetedDiv);
-				console.log("DEBUG ::: value of _this.options.nameOfevent2trigger : " + _this.options.nameOfevent2trigger);
-				$(_this.options.targetedDiv).trigger( _this.options.nameOfevent2trigger, img.src );
-			};
+			// Functions to control cropping functionality (drag & resize cropping box)
+		_getImageFormat: function(img) {
+			var format = "image/jpg";
+			if ( typeof img.file != "undefined"){
+				if ( img.file.type == "image/gif")	format = "image/gif";
+				if ( img.file.type == "image/png")	format = "image/png";									
+			}
+			if ( typeof img.src != "undefined"){
+				if ( img.src.substr(0, 14) == "data:image/gif")	format = "image/gif";
+				if ( img.src.substr(0, 14) == "data:image/png")	format = "image/png";									
+			}
+				
+			return format;
 		},
-		// Functions to controll cropping functionality (drag & resize cropping box)
+		// Functions to control cropping functionality (drag & resize cropping box)
 		_bindSelectionDrag: function() {
 			var _this = this;
 			var eventbox = this._cropping.cropframe;
@@ -549,7 +629,6 @@
 			this._variables.prev_pos = pos;
 		},
 		_painter_merge_drawing: function() {
-
 			var canvas = document.createElement('canvas');
 			var ctx = canvas.getContext("2d");
 			var _this = this;
@@ -559,14 +638,14 @@
 			ctx.drawImage(this._painter_canvas, 0, 0, canvas.width, canvas.height);
 			if(canvas.width > 1280 && canvas.height > 800) {
 				this.set_loading().delay(200).promise().done(function() {
-					_this._create_image_with_datasrc(canvas.toDataURL("image/png"), function() {
+					_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
 						_this.pen_tool_params_set();
 						_this.hide_messagebox();
 					});
 				});
 			}
 			else {
-				this._create_image_with_datasrc(canvas.toDataURL("image/png"), function() {
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
 					_this.pen_tool_params_set();
 				});
 			}
@@ -639,7 +718,7 @@
 			ctx.translate(cx, cy);
 			ctx.rotate(rads);
 			ctx.drawImage(this._image, -this._image.width / 2, -this._image.height / 2);
-			this._image.src = canvas.toDataURL("image/png");
+			this._image.src = canvas.toDataURL("image/jpeg", 0.7);
 			this._paintCanvas();
 			this.options.imageUpdated(this._image);
 		},
@@ -723,45 +802,10 @@
 		},
 		// form submitted
 		_formsubmit: function() {
-			if(!window.FormData) this.set_messagebox("Sorry, the FormData API is not supported!");
-			else {
-				var _this = this;
-				this.set_loading().delay(200).promise().done(function() {
-					_this._theformdata = new FormData(_this._theform[0]);
-					if(_this._image) {
-						var inputname = $(_this.inputelement).prop("name") || "file";
-						var inputblob = _this._dataURItoBlob(_this._image.src);
-						if(!_this._filename) _this._filename = inputblob.type.replace("/", ".");
-						else _this._filename = _this._filename.match(/^[^\.]*/) + "." + inputblob.type.match(/[^\/]*$/);
-						_this._theformdata.append(inputname, inputblob, _this._filename);
-					}
-					//send request
-					var request = new XMLHttpRequest();
-                    request.onprogress = function(e) {
-                        if(e.lengthComputable) var total = e.total;
-                        else var total = Math.ceil(inputblob.size * 1.3);
-                        var progress = Math.ceil(((e.loaded)/total)*100);
-                        if (progress > 100) progress = 100;
-                        _this.set_messagebox("Please Wait... Uploading... " + progress + "% Uploaded.", false, false);
-                    };
-					request.open(_this._theform.prop("method"), _this._theform.prop("action"), true);
-					request.onload = function(e) {
-						if(this.status != 200) {
-                            _this.set_messagebox("Server did not accept data!");
-                        }
-                        else {
-                            if(_this.options.redirectUrl === true) window.location.reload();
-						    else if(_this.options.redirectUrl) window.location = _this.options.redirectUrl;
-						    else _this.set_messagebox("Data successfully submitted!");
-                        }
-						_this.options.formSubmitted(this);
-					};
-					request.send(_this._theformdata);
-				});
-			}
-			return false;
+			//gui.firstLogin();
+			
 		},
-		_dataURItoBlob: function(dataURI) {
+		/*_dataURItoBlob: function(dataURI) {
 			if(!dataURI) return null;
 			else var mime = dataURI.match(/^data\:(.+?)\;/);
 			var byteString = atob(dataURI.split(',')[1]);
@@ -771,12 +815,15 @@
 				ia[i] = byteString.charCodeAt(i);
 			}
 			return new Blob([ab], {type: mime[1]});
-		},
+		},*/
 		// Prepare the template here
-		_template: function() {
-			console.log("DEBUG ::: pasa por _template  ");
-
-			var template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div><\/div><\/div><div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"><\/div><div class="picedit_nav_elements"><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-pencil" title="Pen Tool"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_3"> <label class="picedit_colors"> <span title="Black" class="picedit_control picedit_action picedit_black active" data-action="toggle_button" data-variable="pen_color" data-value="black"></span> <span title="Red" class="picedit_control picedit_action picedit_red" data-action="toggle_button" data-variable="pen_color" data-value="red"></span> <span title="Green" class="picedit_control picedit_action picedit_green" data-action="toggle_button" data-variable="pen_color" data-value="green"></span> </label> <label> <span class="picedit_separator"></span> </label> <label class="picedit_sizes"> <span title="Large" class="picedit_control picedit_action picedit_large" data-action="toggle_button" data-variable="pen_size" data-value="16"></span> <span title="Medium" class="picedit_control picedit_action picedit_medium" data-action="toggle_button" data-variable="pen_size" data-value="8"></span> <span title="Small" class="picedit_control picedit_action picedit_small" data-action="toggle_button" data-variable="pen_size" data-value="3"></span> </label> <\/div><\/div><\/div><div class="picedit_element"><span class="picedit_control picedit_action ico-picedit-insertpicture" title="Crop" data-action="crop_open"></span> <\/div><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-redo" title="Rotate"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_1"> <label> <span>90° CW</span> <span class="picedit_control picedit_action ico-picedit-redo" data-action="rotate_cw"></span> </label> <label> <span>90° CCW</span> <span class="picedit_control picedit_action ico-picedit-undo" data-action="rotate_ccw"></span> </label> <\/div><\/div><\/div><div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-arrow-maximise" title="Resize"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_2"> <label><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="resize_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action=""></span> </label> <label> <span>Width (px)</span> <input type="text" class="picedit_input" data-variable="resize_width" value="0"> </label> <label class="picedit_nomargin"> <span class="picedit_control ico-picedit-link" data-action="toggle_button" data-variable="resize_proportions"></span> </label> <label> <span>Height (px)</span> <input type="text" class="picedit_input" data-variable="resize_height" value="0"> </label> <\/div><\/div><\/div></div></div><div class="picedit_canvas_box"><div class="picedit_painter"><canvas></canvas></div><div class="picedit_canvas"><canvas></canvas></div><div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"><\/div><div class="picedit_control ico-picedit-camera" data-action="camera_open"><\/div><div class="center">or copy/paste image here</div></div></div><div class="picedit_video"> <video autoplay></video><div class="picedit_video_controls"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div><div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div><div class="picedit_drag_resize_box"><div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div></div><div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div></div>';
+		_template: function(navToolsEnabled) {
+			var template;
+			if (navToolsEnabled)
+				template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div> <\/div><\/div> <div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"> <\/div> <div class="picedit_nav_elements"> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-pencil" title="Pen Tool"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_3"> <label class="picedit_colors"> <span title="Black" class="picedit_control picedit_action picedit_black active" data-action="toggle_button" data-variable="pen_color" data-value="black"></span> <span title="Red" class="picedit_control picedit_action picedit_red" data-action="toggle_button" data-variable="pen_color" data-value="red"></span> <span title="Green" class="picedit_control picedit_action picedit_green" data-action="toggle_button" data-variable="pen_color" data-value="green"></span> </label> <label> <span class="picedit_separator"></span> </label> <label class="picedit_sizes"> <span title="Large" class="picedit_control picedit_action picedit_large" data-action="toggle_button" data-variable="pen_size" data-value="16"></span> <span title="Medium" class="picedit_control picedit_action picedit_medium" data-action="toggle_button" data-variable="pen_size" data-value="8"></span> <span title="Small" class="picedit_control picedit_action picedit_small" data-action="toggle_button" data-variable="pen_size" data-value="3"></span> </label> <\/div><\/div><\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-insertpicture" title="Crop" data-action="crop_open"></span> <\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-redo" title="Rotate"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_1"> <label> <span>90° CW</span> <span class="picedit_control picedit_action ico-picedit-redo" data-action="rotate_cw"></span> </label> <label> <span>90° CCW</span> <span class="picedit_control picedit_action ico-picedit-undo" data-action="rotate_ccw"></span> </label> <\/div><\/div><\/div> </div> </div> <div class="picedit_canvas_box"> <div class="picedit_painter"> <canvas></canvas> </div> <div class="picedit_canvas"> <canvas></canvas> </div> <div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"> <\/div> <div class="picedit_control ico-picedit-camera" data-action="camera_open"> <\/div> <div class="center">' + dictionary.Literals.label_14 + '</div> </div> </div> <div class="picedit_video"> <video autoplay></video> <div class="picedit_video_controls"> <span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div> <div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div> <div class="picedit_drag_resize_box"> <div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div> </div> <div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div> </div>';
+			else
+				template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div> <\/div><\/div> <div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"> <\/div> <div class="picedit_nav_elements"> <div class="picedit_element"> <\/div> <div class="picedit_element"> <\/div> <div class="picedit_element"> <\/div> </div> </div> <div class="picedit_canvas_box"> <div class="picedit_painter"> <canvas></canvas> </div> <div class="picedit_canvas"> <canvas></canvas> </div> <div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"> <\/div> <div class="picedit_control ico-picedit-camera" data-action="camera_open"> <\/div> <div class="center">' + dictionary.Literals.label_14 + '</div> </div> </div> <div class="picedit_video"> <video autoplay></video> <div class="picedit_video_controls"> <span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div> <div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div> <div class="picedit_drag_resize_box"> <div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div> </div> <div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div> </div>';
+			
 			var _this = this;
 			$(this.inputelement).hide().after(template).each(function() {
 				_this.element = $(_this.inputelement).next(".picedit_box");
