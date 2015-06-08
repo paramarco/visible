@@ -1,8 +1,13 @@
 //MVP
 //TODO fix null when a new contact comes & commentary & profile image
-//TODO icons on nav menu....and on mobile back button
+
+//TODO icons on nav menu....
+
 //TODO make changes in profile persistent
+
 //TODO show mini profile of Contacts
+
+//TODO check how to reduce batery consumption
 
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
@@ -22,7 +27,6 @@ function ContactOfVisible(contact2create) {
 	this.nickName = contact2create.nickName;
 	this.location = contact2create.location;
 	this.commentary = contact2create.commentary;
-	//this.number = 0;
 	this.lastProfileUpdate = config.beginingOf2015;
 	this.counterOfUnreadSMS = 0;
 };
@@ -34,7 +38,6 @@ function Message(input) {
 	this.from = input.from;
 	this.messageBody = input.messageBody;
 	this.msgID = "" ;
-//	this.md5sum = "" ;
 	this.size = 0 ;
 	this.timestamp = new Date().getTime();
 	this.markedAsRead = false; 
@@ -45,12 +48,10 @@ function Message(input) {
 	switch (Object.keys(input).length )	{
 		case 3 :
 			this.assignMsgID();
-//			this.assignmd5sum();
 			this.calculateSize();
 			break;
 		default:	
 			this.msgID = input.msgID;
-//			this.md5sum = input.md5sum ;
 			this.size = input.size;
 			break;			
 	}
@@ -103,7 +104,6 @@ Message.prototype.setACKfromServer = function(bool){
 Message.prototype.setACKfromAddressee = function(bool){
 	this.ACKfromAddressee = bool;
 };
-
 
 //END Class Message
 
@@ -1304,6 +1304,46 @@ GUI.prototype.firstLogin = function() {
 
 };
 
+GUI.prototype.showLocalNotification = function(msg) {
+	
+	var contact = listOfContacts.filter(function(c){ 
+		return (c.publicClientID == msg.from); 
+	})[0];
+	
+	if (app.inBackground && contact && typeof cordova != "undefined" ){			
+		
+		cordova.plugins.notification.local.getTriggered( function (notifications) {
+			
+			console.log("DEBUG ::: showLocalNotification ::: notifications: " + JSON.stringify(notifications) );
+			
+			if (notifications.length > 0){
+		    	cordova.plugins.notification.local.update({
+		    	    id: 1,
+		    	    title: dictionary.Literals.label_16,
+		    	    text: notifications[1].text + ", " + contact.nickName
+		    	});		    	
+		    }else{
+				cordova.plugins.notification.local.schedule({
+				    id: 1,
+				    title: dictionary.Literals.label_16,
+				    text: contact.nickName		    
+				});	
+		    }		    
+		});
+				
+	}	
+};
+
+GUI.prototype.hideLocalNotifications = function() {
+	cordova.plugins.notification.local.clearAll(function() {
+		console.log("DEBUG ::: hideLocalNotifications ::: notifications cleared ");
+	}, this);
+};
+
+GUI.prototype.backButtonHandler = function() {	
+	$('body').pagecontainer('change', '#MainPage');	
+};
+
 
 
 function MailBox() {
@@ -1429,7 +1469,8 @@ function Application() {
 	this.handshakeToken = null,
 	this.profileIsChanged = false,
 	this.map = null;
-	this.connecting = false;	
+	this.connecting = false;
+	this.inBackground = false;
 };
 
 Application.prototype.init = function() {
@@ -1732,7 +1773,7 @@ Application.prototype.connect2server = function(result){
   			msgID : messageFromServer.msgID, 
   			typeOfACK : "ACKfromAddressee"
   		};
-  		//it could be implemented with callback as well....
+
   		socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
   		
   		//double check to avoid saving messages twice...(which should never be received...)
@@ -1757,7 +1798,9 @@ Application.prototype.connect2server = function(result){
 					gui.showCounterOfContact(contact);	
 					//only if it is a persistent contact
 					contactsHandler.modifyContactOnDB(contact);  		  			
-  		  		}  				
+  		  		}
+  				
+  				gui.showLocalNotification(messageFromServer);  				
   			}  		
   		}); 
 		
@@ -2060,12 +2103,15 @@ Application.prototype.initializeDevice = function() {
 // Bind Event Listeners
 Application.prototype.bindEvents = function() {
     document.addEventListener('deviceready', Application.prototype.onDeviceReady, false);
-    document.addEventListener('backbutton', function(){}, false);
+    document.addEventListener('backbutton', function(){ gui.backButtonHandler(); }, false);
     document.addEventListener('menubutton', function(){}, false);
     document.addEventListener('searchbutton', function(){}, false);
     document.addEventListener('startcallbutton', function(){}, false);
     document.addEventListener('endcallbutton', function(){}, false);
-    document.addEventListener("pause", function(){}, false);
+    //The event fires when an application is put into the background
+    document.addEventListener("pause", function(){ app.inBackground = true; }, false);
+    //The event fires when an application is retrieved from the background
+    document.addEventListener("resume", function(){ app.inBackground = false; gui.hideLocalNotifications(); }, false);
     document.addEventListener("online", this.onOnlineCustom, false);
     
 };
@@ -2216,7 +2262,8 @@ function Dictionary(){
 		label_12: "is still thinking on a nice commentary",
 		label_13: "I'm new on Visible!",
 		label_14: "or drag and drop an image here",
-		label_15: "new contact saved ! <br> ;-) "
+		label_15: "new contact saved ! <br> ;-) ",
+		label_16: "you got some new messages from:"
 
 	};
 	this.Literals_De = {
@@ -2234,7 +2281,8 @@ function Dictionary(){
 		label_12: "Denkt immer noch an einen sch&ouml;nen Kommentar",
 		label_13: "Ich bin neu auf Visible!",
 		label_14: "Oder per Drag & Drop ein Bild hier",
-		label_15: "Neuer Kontakt gespeichert! <br> ;-)"
+		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
+		label_16: "you got some new messages from:"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
@@ -2251,7 +2299,8 @@ function Dictionary(){
 		label_12: "&egrave; ancora pensando a un bel commento",
 		label_13: "Sono nuovo su Visible!",
 		label_14: "oppure trascinare l'immagine qui",
-		label_15: "novo contacto guardado! <br>;-)"
+		label_15: "novo contacto guardado! <br>;-)",
+		label_16: "you got some new messages from:"
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
@@ -2268,7 +2317,8 @@ function Dictionary(){
 		label_12: "sigue aun pensando en un comentario bonito ;-)",
 		label_13: "soy nuevo en Visible!",
 		label_14: "o bien arrastra una imagen aqu&iacute;",
-		label_15: "nuevo contacto guardado! <br>;-)"			
+		label_15: "nuevo contacto guardado! <br>;-)",
+		label_16: "you got some new messages from:"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
@@ -2285,7 +2335,8 @@ function Dictionary(){
 		label_12: "est encore la r&eacute;flexion sur une belle commentaires",
 		label_13: "Je suis nouveau sur Visible!",
 		label_14: "ou glissez-déposez une image ici",
-		label_15: "nouveau contact sauvegard&eacute;! <br>;-)"
+		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
+		label_16: "you got some new messages from:"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -2302,7 +2353,8 @@ function Dictionary(){
 		label_12: "ainda est&aacute; pensando em um coment&aacute;rio agrad&aacute;vel",
 		label_13: "Eu sou novo no Visible!",
 		label_14: "ou arrastar e soltar uma imagem aqui",
-		label_15: "novo contacto guardado! <br>;-)"
+		label_15: "novo contacto guardado! <br>;-)",
+		label_16: "you got some new messages from:"
 	};
 	
 	this.AvailableLiterals = {

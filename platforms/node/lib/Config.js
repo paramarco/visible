@@ -8,11 +8,11 @@ config.MAX_SIZE_MODULUS = 417;
 config.MAX_SIZE_CHALLENGE = 360;
 config.listOfServerSockets = [
 	{
-		ipServerSockets	: "192.168.137.209",
+		ipServerSockets	: "127.0.0.1",
 		portServerSockets : "80"
 	},
 	{
-		ipServerSockets	: "192.168.137.209",
+		ipServerSockets	: "127.0.0.1",
 		portServerSockets : "8090"		
 	},
 	{
