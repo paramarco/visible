@@ -1,8 +1,8 @@
 function Config ()  {  
 
-	this.ipServerAuth = "192.168.137.209";		
+	this.ipServerAuth = "192.168.178.94";		
 	this.portServerAuth	= "8090";
-	this.ipServerSockets = "192.168.137.209";		
+	this.ipServerSockets = "192.168.178.94";		
 	this.portServerSockets	= "8090";
 		
 	this.limitOfflineMessages2Get = 30; 

@@ -1312,15 +1312,24 @@ GUI.prototype.showLocalNotification = function(msg) {
 	
 	if (app.inBackground && contact && typeof cordova != "undefined" ){			
 		
-		cordova.plugins.notification.local.getTriggered( function (notifications) {
+		cordova.plugins.notification.local.get(1, function (notifications) {
 			
 			console.log("DEBUG ::: showLocalNotification ::: notifications: " + JSON.stringify(notifications) );
 			
-			if (notifications.length > 0){
+			if (notifications.text != "" ){
+				
+				var text2show;
+				
+				if (notifications.text.indexOf(contact.nickName) != -1 ) {
+					text2show = notifications.text;	
+				}else{
+					text2show = notifications.text + ", " + contact.nickName ;
+				}				
+
 		    	cordova.plugins.notification.local.update({
 		    	    id: 1,
 		    	    title: dictionary.Literals.label_16,
-		    	    text: notifications[1].text + ", " + contact.nickName
+		    	    text: text2show
 		    	});		    	
 		    }else{
 				cordova.plugins.notification.local.schedule({
