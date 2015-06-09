@@ -1,6 +1,6 @@
 //MVP
-//TODO check rigth format of input postMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 
+//TODO show visibles in a parametric radio area
 //TODO refactor in two servers
 //TODO setup redis
 //TODO ngix ready
@@ -391,8 +391,8 @@ rl.question('What is the user of the DataBase ? ', function(user) {
 		when.all ( DBConnectionEstablished ).then(function(){
 			app.configure(function() {
 				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
-			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.94");
+			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
+			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.94");
 			});
 			
 			server.listen(	

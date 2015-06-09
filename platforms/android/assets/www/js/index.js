@@ -1,17 +1,16 @@
 //MVP
-//TODO fix null when a new contact comes & commentary & profile image
 
-//TODO icons on nav menu....
+//TODO promote recent conversations to the top 
+
+//TODO  check how to use instanceof ....
+
+//TODO fix null when a new contact comes & commentary & profile image
 
 //TODO make changes in profile persistent
 
-//TODO show mini profile of Contacts
-
-//TODO check how to reduce batery consumption
+//TODO try to save img as files in mobile version(save to file as they're received)
 
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
-
-//TODO #8 Apache Cordova Plugin for Android,Windows,Iphone to show incoming messages in the upper menu bar
 
 //TODO viralization with email
 
@@ -19,6 +18,9 @@
 
 //TODO a wall of my news
 //TODO chineese,arab, japaneese
+//TODO check how to reduce batery consumption
+//TODO viralization via SMS from the user's contacts
+
 
 
 function ContactOfVisible(contact2create) {
@@ -381,6 +383,7 @@ Unwrapper.prototype.decryptHandshake = function(encrypted) {
 //END Class UnWrapper
 
 function GUI() {
+	this.localNotificationText = "";	
 };
 
 
@@ -958,14 +961,14 @@ GUI.prototype.loadBody = function() {
 	strVar += "				<div class=\"ui-grid-d\">";
 	strVar += "					<div class=\"ui-block-a\"><a id=\"arrowBackInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\">";
-	strVar += "					   	<a href=\"#MainPage\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
+	strVar += "					   	<a id=\"link2profileOfContact\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
 	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
 	strVar += "				   		<\/a> 				       	";
 	strVar += "				       	<strong id=\"nameOfChatThreadInChatPage\"><\/strong>";
 	strVar += "			       	<\/div>";
 	strVar += "				    <div class=\"ui-block-c\"><strong id=\"nameOfChatThreadInChatPage\"><\/strong><\/div>";
 	strVar += "				    <div class=\"ui-block-d\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
-	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInchat-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  	<\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div id=\"chat-page-content\" role=\"main\" class=\"ui-content\">";
@@ -1062,9 +1065,10 @@ GUI.prototype.loadMaps = function(){
 GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
-	    if (ui.options.target == "#MainPage"){
-			$("#chat-page-content").empty();
+	    if (ui.options.target == "#MainPage"){			
+	    	$("#chat-page-content").empty();
 			app.currentChatWith = null;
+			
 			if (app.profileIsChanged){
 				app.lastProfileUpdate = new Date().getTime();
 				app.profileIsChanged = false;			
@@ -1073,7 +1077,8 @@ GUI.prototype.bindDOMevents = function(){
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
-	    }
+	    } 
+	    
 	    gui.hideLoadingSpinner();
 	});
 	
@@ -1145,6 +1150,12 @@ GUI.prototype.bindDOMevents = function(){
 		}
 	});
 	
+	$(document).on("click","#mapButtonInChatPage",function() {
+		if ( app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#map-page');
+		}
+	});
+	
 	$(document).on("click","#firstLoginInputButton", gui.firstLogin );	
 	
 	$(window).on("debouncedresize", function( event ) {
@@ -1158,6 +1169,9 @@ GUI.prototype.bindDOMevents = function(){
 		});
 		
 	});
+	
+	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );
+
 	
 	documentReady.resolve(); 
 		
@@ -1312,30 +1326,29 @@ GUI.prototype.showLocalNotification = function(msg) {
 	
 	if (app.inBackground && contact && typeof cordova != "undefined" ){			
 		
-		cordova.plugins.notification.local.get(1, function (notifications) {
+		cordova.plugins.notification.local.isPresent( 1 , function (present) {
 			
-			console.log("DEBUG ::: showLocalNotification ::: notifications: " + JSON.stringify(notifications) );
+			console.log("DEBUG ::: showLocalNotification ::: notification 1 : " + present ? "present" : "not found" );			
+								
+			if (gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "") {
+				gui.localNotificationText +=  ", " + contact.nickName ;
+			}
+			var text2show = gui.localNotificationText;
 			
-			if (notifications.text != "" ){
+			if (present){				
 				
-				var text2show;
-				
-				if (notifications.text.indexOf(contact.nickName) != -1 ) {
-					text2show = notifications.text;	
-				}else{
-					text2show = notifications.text + ", " + contact.nickName ;
-				}				
-
 		    	cordova.plugins.notification.local.update({
 		    	    id: 1,
 		    	    title: dictionary.Literals.label_16,
-		    	    text: text2show
-		    	});		    	
+		    	    text: text2show  
+		    	});
+		    	
 		    }else{
+		    	
 				cordova.plugins.notification.local.schedule({
 				    id: 1,
 				    title: dictionary.Literals.label_16,
-				    text: contact.nickName		    
+				    text: text2show		    
 				});	
 		    }		    
 		});
@@ -1352,6 +1365,44 @@ GUI.prototype.hideLocalNotifications = function() {
 GUI.prototype.backButtonHandler = function() {	
 	$('body').pagecontainer('change', '#MainPage');	
 };
+
+GUI.prototype.showProfileOfContact = function() {	
+	
+	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
+	if (typeof contact == "undefined" || contact == null) return;
+		
+	$("#ProfileOfContact-page").remove();
+	
+	var strVar = "";
+	strVar += "		<div data-role=\"page\" data-cache=\"false\" id=\"ProfileOfContact-page\" >";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a> ";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
+	strVar += "				<img src=\"" + contact.path2photo + "\" class=\"profileImage\">";
+	strVar += "				<ul data-role=\"listview\">";
+	strVar += "  				<li>";
+	strVar += "    					<h3>" + contact.nickName  + "<\/h3>";
+	strVar += "    					<p>" + contact.commentary  + "<\/p>";
+	strVar += "  				<\/li>";
+	strVar += "				<\/ul>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
+	
+	$("body").append(strVar);	
+	$('body').pagecontainer('change', '#ProfileOfContact-page');	
+};
+
 
 
 
@@ -1688,7 +1739,7 @@ Application.prototype.login2server = function(){
 		.fail(function() {
 			app.connecting = false; 
 			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-			setTimeout(function(){ app.login2server(); },5000);
+			setTimeout(function(){ app.login2server(); },30000);
 		})
 		.always(function() {
 			gui.hideLoadingSpinner();
@@ -2291,7 +2342,7 @@ function Dictionary(){
 		label_13: "Ich bin neu auf Visible!",
 		label_14: "Oder per Drag & Drop ein Bild hier",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
-		label_16: "you got some new messages from:"
+		label_16: "Sie einige neue Nachrichten erhalten von:"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
@@ -2309,7 +2360,7 @@ function Dictionary(){
 		label_13: "Sono nuovo su Visible!",
 		label_14: "oppure trascinare l'immagine qui",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "you got some new messages from:"
+		label_16: "hai ricevuto qualche nuovo messaggio:"
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
@@ -2327,7 +2378,7 @@ function Dictionary(){
 		label_13: "soy nuevo en Visible!",
 		label_14: "o bien arrastra una imagen aqu&iacute;",
 		label_15: "nuevo contacto guardado! <br>;-)",
-		label_16: "you got some new messages from:"			
+		label_16: "has recibido mensajes nuevos de:"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
@@ -2345,7 +2396,7 @@ function Dictionary(){
 		label_13: "Je suis nouveau sur Visible!",
 		label_14: "ou glissez-déposez une image ici",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
-		label_16: "you got some new messages from:"
+		label_16: "vous avez re&ccedil;u de nouveaux messages de:"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -2363,7 +2414,7 @@ function Dictionary(){
 		label_13: "Eu sou novo no Visible!",
 		label_14: "ou arrastar e soltar uma imagem aqui",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "you got some new messages from:"
+		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: "
 	};
 	
 	this.AvailableLiterals = {
