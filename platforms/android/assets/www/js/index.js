@@ -31,6 +31,7 @@ function ContactOfVisible(contact2create) {
 	this.commentary = contact2create.commentary;
 	this.lastProfileUpdate = config.beginingOf2015;
 	this.counterOfUnreadSMS = 0;
+	this.timeLastSMS = 0;
 };
 
 
@@ -1328,10 +1329,11 @@ GUI.prototype.showLocalNotification = function(msg) {
 		
 		cordova.plugins.notification.local.isPresent( 1 , function (present) {
 			
-			console.log("DEBUG ::: showLocalNotification ::: notification 1 : " + present ? "present" : "not found" );			
-								
-			if (gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "") {
+			if (gui.localNotificationText != "" && gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "" 	) {					
 				gui.localNotificationText +=  ", " + contact.nickName ;
+			}
+			if (gui.localNotificationText == "" ){
+				gui.localNotificationText += contact.nickName ;
 			}
 			var text2show = gui.localNotificationText;
 			
@@ -1359,6 +1361,7 @@ GUI.prototype.showLocalNotification = function(msg) {
 GUI.prototype.hideLocalNotifications = function() {
 	cordova.plugins.notification.local.clearAll(function() {
 		console.log("DEBUG ::: hideLocalNotifications ::: notifications cleared ");
+		gui.localNotificationText = "";
 	}, this);
 };
 
@@ -1403,8 +1406,23 @@ GUI.prototype.showProfileOfContact = function() {
 	$('body').pagecontainer('change', '#ProfileOfContact-page');	
 };
 
+GUI.prototype.setTimeLastSMS = function(contact) {	
+	$("#"+contact.publicClientID).data('sortby', contact.timeLastSMS) ;
+};
 
+GUI.prototype.sortContacts = function() {	
+	var ul = $('ul#listOfContactsInMainPage'),
+	    li = ul.children('li');
+	    
+	    li.detach().sort(function(a,b) {
+	        return $(a).data('sortby') + $(b).data('sortby');  
+	    });
+	    
+	    ul.append(li);
+	
+	//console.log("DEBUG ::: setTimeLastSMS ::: sortby : " + $("#"+contact.publicClientID).data('sortby') );
 
+};
 
 function MailBox() {
 };
@@ -1845,22 +1863,27 @@ Application.prototype.connect2server = function(result){
   				messageFromServer.setChatWith(messageFromServer.from); 	
   				//stores in IndexDB			
   				mailBox.storeMessage(messageFromServer); 
+  				
+  				var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
+  				if (typeof contact == "undefined" || contact == null ) return;
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
   		 			gui.insertMessageInConversation(messageFromServer,false,true);
   		  		}else{
-  		  			console.log("DEBUG ::: messageFromServer ::: not chanting with");
-  		  			var contact = listOfContacts.filter(function(c){ 
-  		  				return (c.publicClientID == messageFromServer.from); 
-  		  			})[0];
-
 					contact.counterOfUnreadSMS++ ;
-					gui.showCounterOfContact(contact);	
-					//only if it is a persistent contact
-					contactsHandler.modifyContactOnDB(contact);  		  			
+					gui.showCounterOfContact(contact);  		  			
   		  		}
+  		  		
+  		  		contact.timeLastSMS = messageFromServer.timestamp;
+  		  		
+  		  		gui.setTimeLastSMS(contact);
+  		  		//only if it is a persistent contact
+				contactsHandler.modifyContactOnDB(contact);
   				
-  				gui.showLocalNotification(messageFromServer);  				
+  				gui.showLocalNotification(messageFromServer);
+  				
+  				gui.sortContacts();    				
+				
   			}  		
   		}); 
 		
