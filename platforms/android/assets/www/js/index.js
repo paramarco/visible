@@ -1,9 +1,5 @@
 //MVP
 
-//TODO promote recent conversations to the top 
-
-//TODO  check how to use instanceof ....
-
 //TODO fix null when a new contact comes & commentary & profile image
 
 //TODO make changes in profile persistent
@@ -606,7 +602,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	}
 		
 	var html2insert = 	
-		'<li id="' + contact.publicClientID + '">'+
+		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
 		'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
 		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 		'		<h2>'+ contact.nickName   + '</h2> '+
@@ -617,6 +613,8 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 		'</li>';
 				
 	$("#listOfContactsInMainPage").append(html2insert);
+	
+	gui.sortContacts();
 
 	$('#listOfContactsInMainPage').listview().listview('refresh');	
 
@@ -1415,13 +1413,10 @@ GUI.prototype.sortContacts = function() {
 	    li = ul.children('li');
 	    
 	    li.detach().sort(function(a,b) {
-	        return $(a).data('sortby') + $(b).data('sortby');  
+	        return ( $(a).data('sortby') < $(b).data('sortby') ) ;  
 	    });
-	    
+	    ul.empty();	    
 	    ul.append(li);
-	
-	//console.log("DEBUG ::: setTimeLastSMS ::: sortby : " + $("#"+contact.publicClientID).data('sortby') );
-
 };
 
 function MailBox() {
@@ -1880,10 +1875,10 @@ Application.prototype.connect2server = function(result){
   		  		//only if it is a persistent contact
 				contactsHandler.modifyContactOnDB(contact);
   				
-  				gui.showLocalNotification(messageFromServer);
-  				
-  				gui.sortContacts();    				
+				gui.sortContacts();
 				
+  				gui.showLocalNotification(messageFromServer);
+	
   			}  		
   		}); 
 		

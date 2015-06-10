@@ -1,3 +1,42 @@
+/* simplfy type check
+function hasSameProps( obj1, obj2 ) {
+    var obj1Props = Object.keys( obj1 ),
+        obj2Props = Object.keys( obj2 );
+
+    if ( obj1Props.length == obj2Props.length ) {
+        return obj1Props.every( function( prop ) {
+          return obj2Props.indexOf( prop ) >= 0;
+        });
+    }
+
+    return false;
+}
+Object.prototype.equals = function(x)
+{
+    for(p in this)
+    {
+    	switch(typeof(this[p]))
+    	{
+    		case 'object':
+    			if (!this[p].equals(x[p])) { return false }; break;
+    		case 'function':
+    			if (typeof(x[p])=='undefined' || (p != 'equals' && this[p].toString() != x[p].toString())) { return false; }; break;
+    		default:
+    			if (this[p] != x[p]) { return false; }
+    	}
+    }
+
+    for(p in x)
+    {
+    	if(typeof(this[p])=='undefined') {return false;}
+    }
+
+    return true;
+}
+
+*/
+
+
 var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 var crypto = require('jsrsasign');
@@ -285,22 +324,13 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 	var verified = false;
 	try {		
 		var key = client.myArrayOfKeys[client.indexOfCurrentKey];			
-		verified = crypto.jws.JWS.verify(tokenHandshake, key);
-		
+		verified = crypto.jws.JWS.verify(tokenHandshake, key);		
 
 		var a = tokenHandshake.split(".");
 		var uClaim = crypto.b64utos(a[1]);
-		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
-		
+		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);		
 		
 		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge ) , client );
-		
-//		console.log("DEBUG ::: verifyHandshake  :::  decryptedChallenge: " + JSON.stringify(decryptedChallenge) );
-
-//		console.log("DEBUG ::: verifyHandshake  :::  decodedHandshake: " + JSON.stringify(decodedHandshake) );
-		
-//		console.log("DEBUG ::: verifyHandshake  ::: client : " + JSON.stringify(client));
-
 		
 		if (decryptedChallenge.challengeClear != client.currentChallenge){
 			verified = false;
