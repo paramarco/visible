@@ -2,7 +2,9 @@
 
 //TODO fix null when a new contact comes & commentary & profile image
 
-//TODO make changes in profile persistent
+//TODO resize in profile min height of 150px
+
+//TODO show gallery for images, open on that were the user clicks
 
 //TODO try to save img as files in mobile version(save to file as they're received)
 
@@ -616,7 +618,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	
 	gui.sortContacts();
 
-	$('#listOfContactsInMainPage').listview().listview('refresh');	
+		
 
 };
 
@@ -1067,12 +1069,8 @@ GUI.prototype.bindDOMevents = function(){
 	    if (ui.options.target == "#MainPage"){			
 	    	$("#chat-page-content").empty();
 			app.currentChatWith = null;
-			
-			if (app.profileIsChanged){
-				app.lastProfileUpdate = new Date().getTime();
-				app.profileIsChanged = false;			
-				app.sendProfileUpdate();						
-			}
+			gui.profileUpdateHandler();
+
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
@@ -1417,6 +1415,25 @@ GUI.prototype.sortContacts = function() {
 	    });
 	    ul.empty();	    
 	    ul.append(li);
+	    $('#listOfContactsInMainPage').listview().listview('refresh');
+};
+
+GUI.prototype.profileUpdateHandler = function() {
+		
+	if (app.profileIsChanged){
+		app.lastProfileUpdate = new Date().getTime();
+		app.profileIsChanged = false;			
+		app.sendProfileUpdate();
+		app.updateConfig({
+			index : 0,	
+			publicClientID : app.publicClientID , 
+			myCurrentNick : app.myCurrentNick, 
+			myPhotoPath : app.myPhotoPath , 
+			myArrayOfKeys : app.myArrayOfKeys ,
+			lastProfileUpdate : app.lastProfileUpdate ,
+			handshakeToken : app.handshakeToken
+		});					
+	}
 };
 
 function MailBox() {
@@ -1583,9 +1600,7 @@ Application.prototype.openDB = function() {
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
-		}
-				
-			
+		}			
 	};
 		
 	this.indexedDBHandler.onsuccess = function (event,caca) {
@@ -1602,10 +1617,7 @@ Application.prototype.openDB = function() {
 	
 	this.indexedDBHandler.onerror = function(){
 		
-		console.log("DEBUG ::: Database error ::: app.init  ");
-
-		
-		
+		console.log("DEBUG ::: Database error ::: app.init  ");	
 
  		gui.loadVisibleFirstTimeOnMainPage();
 		
@@ -1657,8 +1669,6 @@ Application.prototype.loadMyConfig = function(){
 			var cursor = e.target.result;
 	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {
 	     		
-	 			console.log("DEBUG ::: loadMyConfig ::: cursor.value " + JSON.stringify(cursor.value) ); 
-
 				app.publicClientID = cursor.value.publicClientID;
 	     		app.myCurrentNick = cursor.value.myCurrentNick;
 	     		app.myPhotoPath = cursor.value.myPhotoPath; 
@@ -1676,27 +1686,12 @@ Application.prototype.loadMyConfig = function(){
 		   				app.myPhotoPath = img.src;
 		   				app.lastProfileUpdate = new Date().getTime();
 		   				app.profileIsChanged = true;
-				   		//update internal DB
-		     			var transaction = db.transaction(["myconfig"],"readwrite");	
-		     			var store = transaction.objectStore("myconfig");
-		     			
-	     				var request = store.put({
-	     					index : 0,	
-	         				publicClientID : app.publicClientID , 
-	         				myCurrentNick : app.myCurrentNick, 
-	         				myPhotoPath : app.myPhotoPath , 
-	         				myArrayOfKeys : app.myArrayOfKeys ,
-	         				lastProfileUpdate : new Date().getTime(),
-	         				handshakeToken : app.handshakeToken
-	         			});
-	     				
-	     				
+
 		     		}
 		     	});
 				
 				//	trigger configuration as already loaded     		
 				configLoaded.resolve(); 
-				console.log("DEBUG ::: loadMyConfig ::: triggeres configLoaded"); 
 	     		return;
 	     	}else{
 	     	
@@ -1987,8 +1982,6 @@ Application.prototype.handshake = function(handshakeRequest){
 			app.lastProfileUpdate = new Date().getTime();
 			app.handshakeToken = handshakeRequest.handshakeToken;
 			
-
-
 	 		//update internal DB
 			var transaction = db.transaction(["myconfig"],"readwrite");	
 			var store = transaction.objectStore("myconfig");
@@ -2157,6 +2150,15 @@ Application.prototype.setLanguage = function(language) {
 	gui.setLocalLabels(); 
 };
 
+Application.prototype.updateConfig = function(object) {
+	//update internal DB
+	var transaction = db.transaction(["myconfig"],"readwrite");	
+	var store = transaction.objectStore("myconfig");
+	var request = store.put(object);
+	
+};
+
+
 
 Application.prototype.onOnlineCustom =  function() {
 	
@@ -2169,7 +2171,6 @@ Application.prototype.onOnlineCustom =  function() {
 	});
 	
 };
-
 
 Application.prototype.initializeDevice = function() {
 	if (typeof cordova == "undefined" || cordova == null ){
@@ -2207,6 +2208,10 @@ Application.prototype.receivedEvent = function() {
     	console.log("DEBUG ::: Application.prototype.receivedEvent ::: exception " + err.message );
     }	
 };
+
+
+
+
 
 
 
