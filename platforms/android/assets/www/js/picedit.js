@@ -27,6 +27,8 @@
 			redirectUrl: false,				// Page url for redirect on form submit
 			maxWidth: 'auto',				// Max width parameter | 'auto'
 			maxHeight: 'auto',				// Max height parameter
+			minWidth: 'auto',				// Max width parameter | 'auto'
+			minHeight: 'auto',				// Max height parameter
 			aspectRatio: true,				// Preserve aspect ratio
             defaultImage: false,            // Default image to be used with the plugin
             navToolsEnabled: true,
@@ -733,6 +735,10 @@
 			};
 			if(this.options.maxWidth != 'auto' && img.width > this.options.maxWidth) viewport.width = this.options.maxWidth;
 			if(this.options.maxHeight != 'auto' && img.height > this.options.maxHeight) viewport.height = this.options.maxHeight;
+			
+			if(this.options.minWidth != 'auto' && img.width < this.options.minWidth) viewport.width = this.options.minWidth;
+			if(this.options.minHeight != 'auto' && img.height < this.options.minHeight) viewport.height = this.options.minHeight;
+			
 			//calculate appropriate viewport size and resize the canvas
 			if(this.options.aspectRatio) {
 				var resizeWidth = img.width;

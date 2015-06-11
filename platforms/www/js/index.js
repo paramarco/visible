@@ -1,19 +1,16 @@
 //MVP
 
-//TODO fix null when a new contact comes & commentary & profile image
+//TODO FIX null when a new contact comes & commentary & profile image
 
-//TODO resize in profile min height of 150px
-
-//TODO show gallery for images, open on that were the user clicks
-
-//TODO try to save img as files in mobile version(save to file as they're received)
+//TODO push notifications
 
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
-//TODO viralization with email
-
 //non MVP
 
+//TODO FIX shareButtons for the galery
+//TODO viralization with email & SMS (plugin)
+//TODO try to save img as files in mobile version(save to file as they're received)
 //TODO a wall of my news
 //TODO chineese,arab, japaneese
 //TODO check how to reduce batery consumption
@@ -410,6 +407,44 @@ GUI.prototype.sanitize = function(html) {
 	return html.replace(/</g, '&lt;');
 };
 
+GUI.prototype.insertImgInGallery = function(index, src) {
+
+	var img = new Image();
+	img.src = src;
+	img.onload = function() {
+	    var height = img.height; 
+		var width =  img.width; 
+		app.listOfImages4Gallery[index] = {
+			src: src,
+		    w: width,
+		    h: height
+		};
+	}
+	
+};
+
+
+GUI.prototype.showGallery = function(index) {	
+	
+	var pswpElement = document.querySelectorAll('.pswp')[0];
+	
+	var options = {};
+	options.index = parseInt(index);
+	options.mainClass = 'pswp--minimal--dark';
+	options.barsSize = {top:0,bottom:0};
+	options.captionEl = false;
+	options.fullscreenEl = false;
+	options.shareEl = false;
+	options.bgOpacity = 0.85;
+	options.tapToClose = false;
+	options.tapToToggleControls = false;
+
+	var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, app.listOfImages4Gallery, options);
+	gallery.init();		
+	
+};
+
+
 
 GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX) {
 
@@ -487,13 +522,18 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		});
 		
 	}else if (typeof message.messageBody == "object"){
-		if (message.messageBody.messageType == "multimedia"){
+		if (message.messageBody.messageType == "multimedia"){		
+			
 			htmlOfContent = '<div class="image-preview"> ' + 
-						  	'	<a target="_blank" href="">  ' +   
-						    '		<img class="image-embed" src="' + message.messageBody.src  + '">' +
+						  	'	<a target="_blank" href="#">  ' +   
+						    '		<img class="image-embed" data-indexInGallery=' + app.indexOfImages4Gallery + ' src="' + message.messageBody.src  + '" onclick="gui.showGallery('+app.indexOfImages4Gallery+');">' +
 						  	'	</a>' + 
 						  	'	<div class="name"></div>' + 
-							'</div>' ; 		
+							'</div>' ;
+			
+			gui.insertImgInGallery(app.indexOfImages4Gallery , message.messageBody.src);
+			app.indexOfImages4Gallery = app.indexOfImages4Gallery + 1;
+			
 		}		
 	}
 	
@@ -690,8 +730,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
-    gui.showLoadingSpinner();
-				
+    gui.showLoadingSpinner();			
 
 	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	
@@ -721,7 +760,56 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		gui.showCounterOfContact(contact);
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
-	}		
+	}
+	
+	gui.loadGalleryInDOM();	
+	
+};
+
+GUI.prototype.loadGalleryInDOM = function() {
+	var strVar="";
+	strVar += "    <div id=\"gallery\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">";
+	strVar += "        <div class=\"pswp__bg\"><\/div>";
+	strVar += "        <div class=\"pswp__scroll-wrap\">";
+	strVar += "          <div class=\"pswp__container\">";
+	strVar += "			<div class=\"pswp__item\"><\/div>";
+	strVar += "			<div class=\"pswp__item\"><\/div>";
+	strVar += "			<div class=\"pswp__item\"><\/div>";
+	strVar += "          <\/div>";
+	strVar += "          <div class=\"pswp__ui pswp__ui--hidden\">";
+	strVar += "            <div class=\"pswp__top-bar\">";
+	strVar += "				<div class=\"pswp__counter\"><\/div>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--zoom\" title=\"Zoom in\/out\"><\/button>";
+	strVar += "				<div class=\"pswp__preloader\">";
+	strVar += "					<div class=\"pswp__preloader__icn\">";
+	strVar += "					  <div class=\"pswp__preloader__cut\">";
+	strVar += "					    <div class=\"pswp__preloader__donut\"><\/div>";
+	strVar += "					  <\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
+	strVar += "            <\/div>	<!-- <div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> -->";
+	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
+	strVar += "	            <div class=\"pswp__share-tooltip\">";
+	strVar += "					<!-- <a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
+	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
+	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
+	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
+	strVar += "	            <\/div>";
+	strVar += "	        <\/div>";
+	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\"><\/button>";
+	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\"><\/button>";
+	strVar += "            <div class=\"pswp__caption\">";
+	strVar += "              <div class=\"pswp__caption__center\">";
+	strVar += "              <\/div>";
+	strVar += "            <\/div>";
+	strVar += "          <\/div>";
+	strVar += "        <\/div>";
+	strVar += "    <\/div>";
+	
+	$("#chat-page-content").append(strVar);
 	
 };
 
@@ -1067,8 +1155,13 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
 	    if (ui.options.target == "#MainPage"){			
+	    	
 	    	$("#chat-page-content").empty();
 			app.currentChatWith = null;
+			app.listOfImages4Gallery = null;
+			app.listOfImages4Gallery = [];
+			app.indexOfImages4Gallery = 0;
+			
 			gui.profileUpdateHandler();
 
 	    }    
@@ -1168,9 +1261,9 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );
-
 	
-	documentReady.resolve(); 
+	documentReady.resolve();
+
 		
 };
 
@@ -1263,6 +1356,20 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 	$("#contentOfMainPage").append(strVar);	
 	$("#contentOfMainPage").trigger("create");
 	
+ 	$('#imageOnVisibleFirstTime').picEdit({
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		navToolsEnabled : true,
+ 		imageUpdated: function(img){
+ 			app.myPhotoPath = img.src;	     			
+ 		}
+ 	});  	
+	         	    
+ 	$("#link2profileFromMyPanel").remove();
+	$.mobile.loading( "hide" );
+	
 	$("#formInFirstLogin").show();
 	$("#listInFirstLogin").show();
 };
@@ -1288,6 +1395,7 @@ GUI.prototype.setLocalLabels = function() {
 	//dictionary.Literals.label_12; ( dinamically inserted into the DOM , the commentary...)
 	//dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
 	//dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
+	//label_15 saved contact, label_16 notification title
 };
 
 GUI.prototype.firstLogin = function() {	
@@ -1561,6 +1669,9 @@ function Application() {
 	this.map = null;
 	this.connecting = false;
 	this.inBackground = false;
+	this.listOfImages4Gallery = [] ;
+	this.indexOfImages4Gallery = 0;
+	
 };
 
 Application.prototype.init = function() {
@@ -1617,21 +1728,8 @@ Application.prototype.openDB = function() {
 	
 	this.indexedDBHandler.onerror = function(){
 		
-		console.log("DEBUG ::: Database error ::: app.init  ");	
-
+		console.log("DEBUG ::: Database error ::: app.init  ");
  		gui.loadVisibleFirstTimeOnMainPage();
-		
-     	$('#imageOnVisibleFirstTime').picEdit({
-     		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-			maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-			navToolsEnabled : true,
-     		imageUpdated: function(img){
-     			app.myPhotoPath = img.src;	     			
-     		}
-     	});  	
- 	         	    
-     	$("#link2profileFromMyPanel").remove();
- 	   	$.mobile.loading( "hide" ); 
 		
 	};
 	this.indexedDBHandler.onblocked = function(){
@@ -1678,7 +1776,9 @@ Application.prototype.loadMyConfig = function(){
 		
 				$('#imageProfile').picEdit({
 					maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-					maxHeight : config.MAX_HEIGHT_PROFILE ,
+					maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+					minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+					minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 					navToolsEnabled : true,
 		     		defaultImage: app.myPhotoPath,
 		     		imageUpdated: function(img){
@@ -1695,41 +1795,16 @@ Application.prototype.loadMyConfig = function(){
 	     		return;
 	     	}else{
 	     	
-	     		gui.loadVisibleFirstTimeOnMainPage();
-				
-		     	$('#imageOnVisibleFirstTime').picEdit({
-		     		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-					maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-					navToolsEnabled : true,
-		     		imageUpdated: function(img){
-		     			app.myPhotoPath = img.src;	     			
-		     		}
-		     	});  	
-	     	         	    
-		     	$("#link2profileFromMyPanel").remove();
-	     	   	$.mobile.loading( "hide" ); 
-	     	   	
+	     		gui.loadVisibleFirstTimeOnMainPage();	     	   	
 	     	   	return;
 	     		
 	     	}
 		};
 		
 	}catch(e){
-		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");
-		   
-		   gui.loadVisibleFirstTimeOnMainPage();
 		
-	     	$('#imageOnVisibleFirstTime').picEdit({
-	     		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-				maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-				navToolsEnabled : true,
-	     		imageUpdated: function(img){
-	     			app.myPhotoPath = img.src;	     			
-	     		}
-	     	});  	
-	 	         	    
-	     	$("#link2profileFromMyPanel").remove();
-	 	   	$.mobile.loading( "hide" ); 
+		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");		   
+		   gui.loadVisibleFirstTimeOnMainPage(); 
 	}
 	
 
