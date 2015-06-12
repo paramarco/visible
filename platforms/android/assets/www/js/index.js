@@ -4,11 +4,15 @@
 
 //TODO push notifications
 
+//TODO reconnect just after app is resumed
+
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
 //non MVP
 
+//TODO have our own emoticons
 //TODO FIX shareButtons for the galery
+//TODO pay with paypal
 //TODO viralization with email & SMS (plugin)
 //TODO try to save img as files in mobile version(save to file as they're received)
 //TODO a wall of my news
@@ -1064,7 +1068,6 @@ GUI.prototype.loadBody = function() {
 	strVar += "				<!--	<div class=\"pagination\">";
 	strVar += "							<i class=\"icon-spinner icon-spin icon-2x\"><\/i>Loading previous messages";
 	strVar += "						<\/div>		-->";
-	strVar += "";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
@@ -1076,6 +1079,37 @@ GUI.prototype.loadBody = function() {
 	strVar += "			   <button id=\"chat-input-button\" type=\"submit\" data-theme=\"a\">send<\/button>			";
 	strVar += "			<\/div><!-- \/footer -->";
 	strVar += "		<\/div><!-- \/page chat-page-->		";
+	
+	strVar += "		<div data-role=\"page\" id=\"activateAccount\" data-url=\"activateAccount\" >";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "				<div class=\"ui-grid-d\">";
+	strVar += "					<div class=\"ui-block-a\"><a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "				    <div class=\"ui-block-b\"><\/div>";
+	strVar += "				    <div class=\"ui-block-c\"><\/div>";
+	strVar += "				    <div class=\"ui-block-d\"><\/div>";
+	strVar += "				    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  	<\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div id=\"activateAccount-content\" role=\"main\" class=\"ui-content\">";
+	strVar += "				<h1 class=\"darkink\"> User account Activation  <\/h1>          "   ;
+	strVar += "				<div class=\"ui-field-contain\">";
+	strVar += "    				<fieldset data-role=\"controlgroup\">";
+	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1a\" value=\"oneYear\" checked=\"checked\">";
+	strVar += "        				<label for=\"radio-choice-v-1a\">License valid for a year<\/label>";
+	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1b\" value=\"fourYears\">";
+	strVar += "        				<label for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
+	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
+	strVar += "        				<label for=\"Backup\">Back-up functionality<\/label>";
+	strVar += "        				<input type=\"checkbox\" name=\"NGOdonation\" id=\"NGOdonation\">";
+	strVar += "        				<label for=\"NGOdonation\">Donation for associated NGOs<\/label>";
+	strVar += "        				<input type=\"checkbox\" name=\"FSIdonation\" id=\"FSIdonation\">";
+	strVar += "        				<label for=\"FSIdonation\">Donation for our Open Source Initiative<\/label>";
+	strVar += "    				<\/fieldset>";
+	strVar += "				<\/div>";
+	strVar += "				<h3 class=\"darkink\"> Total : <spam id=\"price\"> 1 &euro;<\/spam><\/h3>";
+	strVar += "				<button id=\"buyButton\">Buy<\/button>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/activateAccount page-->		";
 			
 	$("body").append(strVar); 
 	
@@ -1245,6 +1279,13 @@ GUI.prototype.bindDOMevents = function(){
 			$('body').pagecontainer('change', '#map-page');
 		}
 	});
+	
+	$(document).on("click","#buyButton", app.processPayment );	
+	
+	$(document).on("change","input[name='license-choice']", gui.updatePurchasePrice );
+	$(document).on("change","#NGOdonation", gui.updatePurchasePrice );
+	$(document).on("change","#FSIdonation", gui.updatePurchasePrice );
+	$(document).on("change","#Backup", gui.updatePurchasePrice );	
 	
 	$(document).on("click","#firstLoginInputButton", gui.firstLogin );	
 	
@@ -1544,6 +1585,33 @@ GUI.prototype.profileUpdateHandler = function() {
 	}
 };
 
+
+GUI.prototype.getPurchaseDetails = function() {
+	var purchase = {};
+	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
+	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
+	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
+	purchase.isBackupChecked = $("#Backup").is(':checked');
+	
+	return purchase;
+};
+
+GUI.prototype.updatePurchasePrice = function() {
+	var purchase = gui.getPurchaseDetails();
+	var price = 0;
+	
+	if(purchase.licenseDurationChoosen == "fourYears") price = price + 3;
+	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
+	if(purchase.isNGOdonationChecked) price = price + 1;
+	if(purchase.isFSIdonationChecked) price = price + 1;
+	if(purchase.isBackupChecked) price = price + 1;
+
+	
+	$("#price").html(price + "\u20AC");
+	
+};
+
+
 function MailBox() {
 };
 
@@ -1684,6 +1752,21 @@ Application.prototype.init = function() {
 	
 	
 };
+
+Application.prototype.processPayment= function() {
+	
+	if (typeof cordova == "undefined" || cordova == null ){
+		console.log("DEBUG ::: processPayment :::  ");
+		
+		var purchase = gui.getPurchaseDetails();	
+
+	}else{
+		$.when( deviceReady ).done(function(){
+						
+		});		
+	}	
+};
+
 
 
 Application.prototype.loadPersistentData = function() {
@@ -2413,7 +2496,7 @@ function Dictionary(){
 		label_5: "my nick Name:",
 		label_6: "Not implemented yet",
 		label_7: "send",
-		label_8: "you visible for...",
+		label_8: "who can see me...",
 		label_9: "Anybody",
 		label_10: "should you switch this off, then only your contacts would see you online, is not that boring?",
 		label_11: "Here you are",
