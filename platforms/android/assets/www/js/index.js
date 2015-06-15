@@ -1,15 +1,12 @@
 //MVP
 
 //TODO FIX null when a new contact comes & commentary & profile image
-
-//TODO push notifications
-
 //TODO reconnect just after app is resumed
-
 //TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
 //non MVP
 
+//TODO push notifications
 //TODO have our own emoticons
 //TODO FIX shareButtons for the galery
 //TODO pay with paypal

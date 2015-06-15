@@ -391,8 +391,8 @@ rl.question('What is the user of the DataBase ? ', function(user) {
 		when.all ( DBConnectionEstablished ).then(function(){
 			app.configure(function() {
 				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
-			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.28");
+			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
+			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.28");
 			});
 			
 			server.listen(	

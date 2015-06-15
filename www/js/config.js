@@ -1,8 +1,8 @@
 function Config ()  {  
 
-	this.ipServerAuth = "127.0.0.1";		
+	this.ipServerAuth = "192.168.178.28";		
 	this.portServerAuth	= "8090";
-	this.ipServerSockets = "127.0.0.1";		
+	this.ipServerSockets = "192.168.178.28";		
 	this.portServerSockets	= "8090";
 		
 	this.limitOfflineMessages2Get = 30; 
@@ -14,5 +14,7 @@ function Config ()  {
 	this.MAX_WIDTH_IMG = 500;
 	this.MAX_HEIGHT_IMG = 500;
 	this.MAX_WIDTH_IMG_PROFILE = 300;
-	this.MAX_HEIGHT_IMG_PROFILE = 300;      
+	this.MAX_HEIGHT_IMG_PROFILE = 300;
+	this.MIN_WIDTH_IMG_PROFILE = 140;
+	this.MIN_HEIGHT_IMG_PROFILE = 140;
 }
