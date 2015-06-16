@@ -335,9 +335,10 @@ io.sockets.on("connection", function (socket) {
 		
 		brokerOfVisibles.updateClientsProfile( client );
 		brokerOfVisibles.updateClientsPhoto( client, parameters.img );
-		
-		
-		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
+	
+		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
+			
+			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
 			
 			var visible = {
 				publicClientID : client.publicClientID,
@@ -345,21 +346,19 @@ io.sockets.on("connection", function (socket) {
 				nickName : client.nickName,
 	  			commentary : client.commentary
 			}; 
-			
-			console.log("DEBUG ::: ProfileUpdate  ::: notificationOfNewContact of this Client: " + JSON.stringify(visible) );
-
+			var list2send = [];
+			list2send.push(visible);
 			
 			listOfPeople.map(function (c){
 				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-					if ( client2BeNotified  != null ){
-						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : [visible] } , client2BeNotified));
+					if ( client2BeNotified  != null ){						
+						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
 					}
 				});	
 			});
 			
+			
 		});
-		
-		
 		
 	});	
 	
@@ -368,6 +367,7 @@ io.sockets.on("connection", function (socket) {
 		var client = socket.visibleClient;
 		
 		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: client.nickName: " + JSON.stringify(client.nickName) + "client.commentary: " + JSON.stringify(client.commentary) );
+		
 		if (client.nickName == null){
 			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
 			return;
@@ -396,14 +396,13 @@ io.sockets.on("connection", function (socket) {
 				nickName : client.nickName,
 	  			commentary : client.commentary
 			}; 
-			
-			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: notificationOfNewContact of this Client: " + JSON.stringify(visible) );
-
+			var list2send = [];
+			list2send.push(visible);
 			
 			listOfPeople.map(function (c){
 				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-					if ( client2BeNotified  != null ){
-						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : [visible] } , client2BeNotified));
+					if ( client2BeNotified  != null ){						
+						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
 					}
 				});	
 			});

@@ -2090,11 +2090,11 @@ Application.prototype.connect2server = function(result){
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		if ( contact.path2photo != "" ) kids[0].attr("src", data.img);
-		if ( contact.nickName != "" ) kids[1].find(".h2").text(contact.nickName);
-		if ( contact.commentary != "" ) kids[2].find(".p").text(contact.commentary);
+		//if ( contact.path2photo != "" ) kids[0].attr("src", data.img);
+		//if ( contact.nickName != "" ) kids[1].find(".h2").text(contact.nickName);
+		//if ( contact.commentary != "" ) kids[2].find(".p").text(contact.commentary);
 		
-		console.log("DEBUG ::: ProfileFromServer ::: " + JSON.stringify(kids) );
+		//console.log("DEBUG ::: ProfileFromServer ::: " + JSON.stringify(kids) );
 		
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
