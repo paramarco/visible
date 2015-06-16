@@ -1,9 +1,14 @@
 //MVP
 
+
 //TODO show visibles in a parametric radio area
 //TODO refactor in two servers
 //TODO setup redis
 //TODO ngix ready
+
+//NON MVP
+//TODO push notifications (platform side)
+
 /*
 var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
@@ -329,17 +334,48 @@ io.sockets.on("connection", function (socket) {
 		client.lastProfileUpdate = new Date().getTime();
 		
 		brokerOfVisibles.updateClientsProfile( client );
-		brokerOfVisibles.updateClientsPhoto( client, parameters.img );		
+		brokerOfVisibles.updateClientsPhoto( client, parameters.img );
+		
+		
+		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
+			
+			var visible = {
+				publicClientID : client.publicClientID,
+				location : client.location,
+				nickName : client.nickName,
+	  			commentary : client.commentary
+			}; 
+			
+			console.log("DEBUG ::: ProfileUpdate  ::: notificationOfNewContact of this Client: " + JSON.stringify(visible) );
+
+			
+			listOfPeople.map(function (c){
+				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
+					if ( client2BeNotified  != null ){
+						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : [visible] } , client2BeNotified));
+					}
+				});	
+			});
+			
+		});
+		
+		
 		
 	});	
 	
 	socket.on('RequestOfListOfPeopleAround', function (input) {
 		
 		var client = socket.visibleClient;
+		
+		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: client.nickName: " + JSON.stringify(client.nickName) + "client.commentary: " + JSON.stringify(client.commentary) );
+		if (client.nickName == null){
+			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
+			return;
+		} 
 			
 		var parameters = postMan.getRequestWhoIsaround(input, client);
 		if (parameters == null) {
-			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: " + JSON.stringify(client) );
+			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: "  );
 		}	
 
 				  		
@@ -391,8 +427,8 @@ rl.question('What is the user of the DataBase ? ', function(user) {
 		when.all ( DBConnectionEstablished ).then(function(){
 			app.configure(function() {
 				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
-			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.28");
+			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
+			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.28");
 			});
 			
 			server.listen(	

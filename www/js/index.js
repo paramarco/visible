@@ -1,18 +1,18 @@
 //MVP
 
 //TODO FIX null when a new contact comes & commentary & profile image
-
-//TODO push notifications
-
 //TODO reconnect just after app is resumed
+//TODO pay with paypal, GUI & backend
+//TODO translations in dictionary & stores
 
-//TODO #7 Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase, license page paybody and so on...
 
 //non MVP
 
+//TODO develop web
+//TODO push notifications (plugin configuration on client side)
 //TODO have our own emoticons
 //TODO FIX shareButtons for the galery
-//TODO pay with paypal
+//TODO Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
 //TODO viralization with email & SMS (plugin)
 //TODO try to save img as files in mobile version(save to file as they're received)
 //TODO a wall of my news
@@ -1894,7 +1894,7 @@ Application.prototype.loadMyConfig = function(){
 };
 
 Application.prototype.login2server = function(){
-	console.log ("DEBUG ::: login2server" );
+	
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
@@ -1905,7 +1905,7 @@ Application.prototype.login2server = function(){
 		.fail(function() {
 			app.connecting = false; 
 			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-			setTimeout(function(){ app.login2server(); },30000);
+			//setTimeout(function(){ app.login2server(); },30000);
 		})
 		.always(function() {
 			gui.hideLoadingSpinner();
@@ -1934,8 +1934,9 @@ Application.prototype.connect2server = function(result){
 	socket = io.connect(
 		'http://' + config.ipServerSockets +  ":" + config.portServerSockets ,
 		{ 
-			secure: true, 
-			query: 'token=' + tokenSigned	
+			'forceNew' : true,
+			secure : true, 
+			query : 'token=' + tokenSigned	
 		}
 	);
 	
@@ -2086,6 +2087,14 @@ Application.prototype.connect2server = function(result){
 		
 		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
 		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
+		
+		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
+
+		if ( contact.path2photo != "" ) kids[0].attr("src", data.img);
+		if ( contact.nickName != "" ) kids[1].find(".h2").text(contact.nickName);
+		if ( contact.commentary != "" ) kids[2].find(".p").text(contact.commentary);
+		
+		console.log("DEBUG ::: ProfileFromServer ::: " + JSON.stringify(kids) );
 		
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
@@ -2321,7 +2330,8 @@ Application.prototype.updateConfig = function(object) {
 Application.prototype.onOnlineCustom =  function() {
 	
 	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
-		if	( app.connecting == false &&  typeof socket == "undefined"){					
+		//if	( app.connecting == false &&  typeof socket == "undefined"){					
+		if	( app.connecting == false ){
 			app.login2server();
 		}else{
 			console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
@@ -2435,7 +2445,10 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 ContactsHandler.prototype.setNewContacts = function(input) {
 	var data = unWrapper.getParametersOfSetNewContacts(input);
 	if (data == null ) { return;}
-				
+	
+	console.log("DEBUG ::: setNewContacts :: llega esto:  " + JSON.stringify(data));
+
+	
 	data.map(function(c){
 		
 		var contact = listOfContacts.filter(function(elem){ 
@@ -2446,7 +2459,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 		var profileRetrievalObject = {	
 			publicClientIDofRequester : app.publicClientID, 
 			publicClientID2getImg : c.publicClientID,
-			lastProfileUpdate : null
+			lastProfileUpdate : config.beginingOf2015
 		};
 	
 		if (contact){
@@ -2460,9 +2473,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			//PRE: only if it is a persistent contact
 			contactsHandler.modifyContactOnDB(contact);
 			
-			if (profileRetrievalObject.lastProfileUpdate <= contact.lastProfileUpdate ){
-				return;
-			}else{
+			if (contact.lastProfileUpdate > config.beginingOf2015  ){
 				profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;				
 			}
 			

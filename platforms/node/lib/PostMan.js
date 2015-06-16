@@ -447,6 +447,7 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
+		console.log("DEBUG ::: ProfileUpdate --> getProfileResponseParameters  :::  parameters send to the server : " + JSON.stringify(parameters)  );
 		return parameters;
 	} 
 	catch (ex) {
