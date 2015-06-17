@@ -1,6 +1,5 @@
 //MVP
 
-//TODO FIX null when a new contact comes & commentary & profile image
 //TODO reconnect just after app is resumed
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores
@@ -567,8 +566,8 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		$("#chat-page-content").trigger("create");
 	}
 	if (withFX){
-		$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
-		setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 330 ); 		
+		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
+		setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 		
 	}
 };
 
@@ -722,8 +721,8 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
 		}else {
 			gui.hideLoadingSpinner();
-			$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);		
-			setTimeout(function(){	$.mobile.silentScroll($(document).height()); } , 330 ); 
+			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
+			setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
 		}
 	});	
 };
@@ -818,10 +817,10 @@ GUI.prototype.loadGalleryInDOM = function() {
 };
 
 GUI.prototype.showEmojis = function() {
+	
     $('#chat-input').emojiPicker('toggle');
-    setTimeout(function (){
-   		$.mobile.silentScroll($(document).height());
-   	}, 200);    
+    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
+    
 };
 
 GUI.prototype.showImagePic = function() {
@@ -888,12 +887,12 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "				<h2 id=\"label_1\">Profile<\/h2>							";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
-	strVar += "		<li data-icon=\"false\">";
+/*	strVar += "		<li data-icon=\"false\">";
 	strVar += "			<a href=\"#createGroup\" >							";
 	strVar += "				<img src=\"img\/group_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_2\" >Groups<\/h2>";
 	strVar += "			<\/a>";
-	strVar += "		<\/li>";
+	strVar += "		<\/li>"; */
 	strVar += "		<li data-icon=\"false\">";
 	strVar += "			<a href=\"#manageVisibles\" >							";
 	strVar += "				<img src=\"img\/visibles_black_195x195.png\" >";
@@ -984,13 +983,13 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<\/div><!-- \/header --> 	";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\">			";
 	strVar += "				<div id=\"picEditDiv\">";
-	//strVar += "					<form action=\"\" method=\"post\" enctype=\"multipart\/form-data\" id=\"xid\" >	";
 	strVar += "						<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
-	//strVar += "					<\/form>";
 	strVar += "				<\/div>			    ";
 	strVar += "				<div data-role=\"fieldcontain\">";
 	strVar += "					 <label id=\"label_5\" for=\"profileNameField\">my nick Name:<\/label>";
 	strVar += "					 <input id=\"profileNameField\" type=\"text\" name=\"profileNameField\" value=\"\">";
+	strVar += "					 <label id=\"label_17\" for=\"profileCommentary\">Commentary:<\/label>";
+	strVar += "					 <input id=\"profileCommentary\" type=\"text\" name=\"profileCommentary\" value=\"\">";
 	strVar += "				<\/div>  ";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page profile-->";
@@ -1256,6 +1255,8 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(document).on("pageshow","#profile",function(event){ 
 		$("#nickNameInProfile").html(app.myCurrentNick);
+		$("#profileNameField").val(app.myCurrentNick);
+		$("#profileCommentary").val(app.myCommentary);
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1265,6 +1266,10 @@ GUI.prototype.bindDOMevents = function(){
 	$("#profileNameField").on("input", function() {
 		app.myCurrentNick = $("#profileNameField").val();	
 		$("#nickNameInProfile").text(app.myCurrentNick);
+		app.profileIsChanged = true;
+	});
+	$("#profileCommentary").on("input", function() {
+		app.myCommentary = $("#profileCommentary").val();	
 		app.profileIsChanged = true;
 	});
 
@@ -1423,7 +1428,7 @@ GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
 
 GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_1").innerHTML = dictionary.Literals.label_1;
-	document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
+	//document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
 	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
 	document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
@@ -1437,6 +1442,7 @@ GUI.prototype.setLocalLabels = function() {
 	//dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
 	//dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
 	//label_15 saved contact, label_16 notification title
+	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
 };
 
 GUI.prototype.firstLogin = function() {	
@@ -1458,9 +1464,7 @@ GUI.prototype.firstLogin = function() {
 	
 	gui.showLoadingSpinner("generating your encryption keys ...");
 	gui.removeVisibleFirstTimeOnMainPage();
-	setTimeout(function(){
-		app.firstLogin();
-	},300);
+	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
 
 };
 
@@ -1577,6 +1581,7 @@ GUI.prototype.profileUpdateHandler = function() {
 			index : 0,	
 			publicClientID : app.publicClientID , 
 			myCurrentNick : app.myCurrentNick, 
+			myCommentary : app.myCommentary,
 			myPhotoPath : app.myPhotoPath , 
 			myArrayOfKeys : app.myArrayOfKeys ,
 			lastProfileUpdate : app.lastProfileUpdate ,
@@ -1799,14 +1804,15 @@ Application.prototype.openDB = function() {
 		
 	this.indexedDBHandler.onsuccess = function (event,caca) {
 		
-		console.log("DEBUG ::: this.indexedDBHandler.onsuccess");
-		
 		db = event.target.result;	
 				
-		setTimeout(function (){
-			app.loadMyConfig();				
-			gui.loadContacts(); 	
-		},500);		
+		setTimeout(
+			function (){
+				app.loadMyConfig();				
+				gui.loadContacts();
+			},
+			config.TIME_WAIT_DB
+		);		
 	};
 	
 	this.indexedDBHandler.onerror = function(){
@@ -1852,6 +1858,7 @@ Application.prototype.loadMyConfig = function(){
 	     		
 				app.publicClientID = cursor.value.publicClientID;
 	     		app.myCurrentNick = cursor.value.myCurrentNick;
+	     		app.myCommentary = cursor.value.myCommentary;	     		
 	     		app.myPhotoPath = cursor.value.myPhotoPath; 
 				app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
 				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
@@ -1905,7 +1912,6 @@ Application.prototype.login2server = function(){
 		.fail(function() {
 			app.connecting = false; 
 			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-			//setTimeout(function(){ app.login2server(); },30000);
 		})
 		.always(function() {
 			gui.hideLoadingSpinner();
@@ -1927,8 +1933,6 @@ Application.prototype.connect2server = function(result){
   	if (remoteServer != null) {
   		config.ipServerSockets = remoteServer.ipServerSockets;
   		config.portServerSockets = remoteServer.portServerSockets;
-  		console.log ("DEBUG ::: connect2server ::: overrides the config :" + JSON.stringify(remoteServer) );
-
   	} 
 
 	socket = io.connect(
@@ -1981,12 +1985,12 @@ Application.prototype.connect2server = function(result){
   	  				message.ACKfromAddressee = true;	
   	  				message.markedAsRead = true;
   	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
-  	  				$('.blue-r-by-end').delay(7000).fadeTo(4000, 0);
+  	  				$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);
 
   	  			}
   	  			mailBox.updateMessage(message);	  			
   	  		});  			
-  		}, 600);   		
+  		}, config.TIME_WAIT_DB);   		
 	});
   
   socket.on("messageFromServer", function(inputMsg) {
@@ -2085,16 +2089,20 @@ Application.prototype.connect2server = function(result){
 		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
+		console.log("DEBUG ::: ProfileFromServer ::: contact.nickName : " + JSON.stringify(contact.nickName) );
+		
 		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
 		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		//if ( contact.path2photo != "" ) kids[0].attr("src", data.img);
-		//if ( contact.nickName != "" ) kids[1].find(".h2").text(contact.nickName);
-		//if ( contact.commentary != "" ) kids[2].find(".p").text(contact.commentary);
+		if ( contact.path2photo != "" ) kids.find("img").attr("src", data.img);		
+		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
+		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
-		//console.log("DEBUG ::: ProfileFromServer ::: " + JSON.stringify(kids) );
+		
+		//$('#listOfContactsInMapPage').listview().listview('refresh');
+		
 		
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
@@ -2155,7 +2163,8 @@ Application.prototype.handshake = function(handshakeRequest){
 			var request = store.add({
 				index : 0,	
 				publicClientID : result.publicClientID , 
-				myCurrentNick : app.myCurrentNick, 
+				myCurrentNick : app.myCurrentNick,
+				myCommentary : "",
 				myPhotoPath : app.myPhotoPath , 
 				myArrayOfKeys : result.myArrayOfKeys ,
 				lastProfileUpdate : new Date().getTime(),
@@ -2329,6 +2338,8 @@ Application.prototype.updateConfig = function(object) {
 
 Application.prototype.onOnlineCustom =  function() {
 	
+	console.log ("DEBUG ::: onOnlineCustom ::: triggered" );
+	
 	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
 		//if	( app.connecting == false &&  typeof socket == "undefined"){					
 		if	( app.connecting == false ){
@@ -2340,6 +2351,16 @@ Application.prototype.onOnlineCustom =  function() {
 	
 };
 
+Application.prototype.onResumeCustom =  function() {
+	
+   	app.inBackground = false; 
+   	gui.hideLocalNotifications();
+   	if	( app.connecting == false ){
+		setTimeout( app.login2server , config.TIME_SILENT_SCROLL ); 		
+	}
+   	
+};
+
 Application.prototype.initializeDevice = function() {
 	if (typeof cordova == "undefined" || cordova == null ){
 		deviceReady.resolve();
@@ -2349,8 +2370,8 @@ Application.prototype.initializeDevice = function() {
 };
 // Bind Event Listeners
 Application.prototype.bindEvents = function() {
-    document.addEventListener('deviceready', Application.prototype.onDeviceReady, false);
-    document.addEventListener('backbutton', function(){ gui.backButtonHandler(); }, false);
+    document.addEventListener('deviceready', this.onDeviceReady, false);
+    document.addEventListener('backbutton',  gui.backButtonHandler , false);
     document.addEventListener('menubutton', function(){}, false);
     document.addEventListener('searchbutton', function(){}, false);
     document.addEventListener('startcallbutton', function(){}, false);
@@ -2358,7 +2379,7 @@ Application.prototype.bindEvents = function() {
     //The event fires when an application is put into the background
     document.addEventListener("pause", function(){ app.inBackground = true; }, false);
     //The event fires when an application is retrieved from the background
-    document.addEventListener("resume", function(){ app.inBackground = false; gui.hideLocalNotifications(); }, false);
+    document.addEventListener("resume", this.onResumeCustom  , false);   
     document.addEventListener("online", this.onOnlineCustom, false);
     
 };
@@ -2445,10 +2466,7 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 ContactsHandler.prototype.setNewContacts = function(input) {
 	var data = unWrapper.getParametersOfSetNewContacts(input);
 	if (data == null ) { return;}
-	
-	console.log("DEBUG ::: setNewContacts :: llega esto:  " + JSON.stringify(data));
 
-	
 	data.map(function(c){
 		
 		var contact = listOfContacts.filter(function(elem){ 
@@ -2515,7 +2533,8 @@ function Dictionary(){
 		label_13: "I'm new on Visible!",
 		label_14: "or drag and drop an image here",
 		label_15: "new contact saved ! <br> ;-) ",
-		label_16: "you got some new messages from:"
+		label_16: "you got some new messages from:",
+		label_17: "My commentary:"
 
 	};
 	this.Literals_De = {
@@ -2534,7 +2553,8 @@ function Dictionary(){
 		label_13: "Ich bin neu auf Visible!",
 		label_14: "Oder per Drag & Drop ein Bild hier",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
-		label_16: "Sie einige neue Nachrichten erhalten von:"
+		label_16: "Sie einige neue Nachrichten erhalten von:",
+		label_17: "Mein Kommentar:"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
@@ -2552,7 +2572,8 @@ function Dictionary(){
 		label_13: "Sono nuovo su Visible!",
 		label_14: "oppure trascinare l'immagine qui",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "hai ricevuto qualche nuovo messaggio:"
+		label_16: "hai ricevuto qualche nuovo messaggio:",
+		label_17: "Il mio commento:"
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
@@ -2570,7 +2591,8 @@ function Dictionary(){
 		label_13: "soy nuevo en Visible!",
 		label_14: "o bien arrastra una imagen aqu&iacute;",
 		label_15: "nuevo contacto guardado! <br>;-)",
-		label_16: "has recibido mensajes nuevos de:"			
+		label_16: "has recibido mensajes nuevos de:",
+		label_17: "Mi comentario:"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
@@ -2588,7 +2610,8 @@ function Dictionary(){
 		label_13: "Je suis nouveau sur Visible!",
 		label_14: "ou glissez-déposez une image ici",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
-		label_16: "vous avez re&ccedil;u de nouveaux messages de:"
+		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
+		label_17: "Mon commentaire:"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -2606,7 +2629,8 @@ function Dictionary(){
 		label_13: "Eu sou novo no Visible!",
 		label_14: "ou arrastar e soltar uma imagem aqui",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: "
+		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: ",
+		label_17: "Meu coment&aacute;rio:"
 	};
 	
 	this.AvailableLiterals = {

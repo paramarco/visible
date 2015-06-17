@@ -63,7 +63,7 @@ function PostMan(_io) {
 		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
-				return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
+				return console.error('DEBUG ::: PostMan  ::: error fetching client from pool', err);
 			}
 			clientOfDB = client;
 			return d.resolve(true);
@@ -447,7 +447,6 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
-		console.log("DEBUG ::: ProfileUpdate --> getProfileResponseParameters  :::  parameters send to the server : " + JSON.stringify(parameters)  );
 		return parameters;
 	} 
 	catch (ex) {

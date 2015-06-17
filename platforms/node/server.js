@@ -151,6 +151,33 @@ app.post('/handshake', function (req, res) {
 	});		  
 });
 
+app.locals.notifyNeighbours = function (client){
+	
+	brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
+		
+		io.sockets.to(client.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
+		
+		var visible = {
+			publicClientID : client.publicClientID,
+			location : client.location,
+			nickName : client.nickName,
+  			commentary : client.commentary
+		}; 
+		var list2send = [];
+		list2send.push(visible);
+		
+		listOfPeople.map(function (c){
+			brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
+				if ( client2BeNotified  != null ){						
+					io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
+				}
+			});	
+		});
+		
+	});	
+	
+};
+
 io.use(function(socket, next){
 	
 	var token = socket.handshake.query.token;
@@ -335,38 +362,14 @@ io.sockets.on("connection", function (socket) {
 		
 		brokerOfVisibles.updateClientsProfile( client );
 		brokerOfVisibles.updateClientsPhoto( client, parameters.img );
-	
-		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
-			
-			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
-			
-			var visible = {
-				publicClientID : client.publicClientID,
-				location : client.location,
-				nickName : client.nickName,
-	  			commentary : client.commentary
-			}; 
-			var list2send = [];
-			list2send.push(visible);
-			
-			listOfPeople.map(function (c){
-				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-					if ( client2BeNotified  != null ){						
-						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
-					}
-				});	
-			});
-			
-			
-		});
+		
+		app.locals.notifyNeighbours(client);
 		
 	});	
 	
 	socket.on('RequestOfListOfPeopleAround', function (input) {
 		
 		var client = socket.visibleClient;
-		
-		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: client.nickName: " + JSON.stringify(client.nickName) + "client.commentary: " + JSON.stringify(client.commentary) );
 		
 		if (client.nickName == null){
 			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
@@ -386,28 +389,7 @@ io.sockets.on("connection", function (socket) {
 	  		brokerOfVisibles.updateClientsProfile(client);		  				  			
   		}
   		
-		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
-		
-			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
-			
-			var visible = {
-				publicClientID : client.publicClientID,
-				location : client.location,
-				nickName : client.nickName,
-	  			commentary : client.commentary
-			}; 
-			var list2send = [];
-			list2send.push(visible);
-			
-			listOfPeople.map(function (c){
-				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-					if ( client2BeNotified  != null ){						
-						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
-					}
-				});	
-			});
-			
-		});	
+  		app.locals.notifyNeighbours(client);
 		
   	});	
 

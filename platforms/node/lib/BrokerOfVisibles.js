@@ -595,7 +595,34 @@ function BrokerOfVisibles(_io) {
 
 	};
 	
-};
+	this.notifyNeighbours = function(client) {
+		/*
+		brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 	
+			
+			socket.emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
+			
+			var visible = {
+				publicClientID : client.publicClientID,
+				location : client.location,
+				nickName : client.nickName,
+	  			commentary : client.commentary
+			}; 
+			var list2send = [];
+			list2send.push(visible);
+			
+			listOfPeople.map(function (c){
+				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
+					if ( client2BeNotified  != null ){						
+						io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
+					}
+				});	
+			});
+			
+		});	
+	    */
+	}; // END METHOD
+	
+};//END CLASS
 
 BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {	
 	try {    
