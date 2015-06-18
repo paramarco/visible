@@ -301,16 +301,33 @@ function PostMan(_io) {
 	};
 	
 	this.getRightServer2connect = function() {
-		/*
+		
 		lastServerAsigned = lastServerAsigned + 1;
 		if (lastServerAsigned >= config.listOfServerSockets.length){
 			lastServerAsigned = 0;
 		}
-		console.log("DEBUG ::: getRightServer2connect  :::  " + lastServerAsigned + " ... " + JSON.stringify(config.listOfServerSockets[lastServerAsigned])   );						
 
-		return config.listOfServerSockets[lastServerAsigned];
-		*/
-		return config.listOfServerSockets[1];
+		return config.listOfServerSockets[lastServerAsigned];		
+		
+	};
+	
+	this.send = function(event2trigger, data , client ) {
+		
+		if (typeof event2trigger !== 'string' ||
+			typeof data !== 'object' || data == null || 
+			typeof client !== 'object' || client == null || client.socketid == null	) 	{	
+			
+			console.log("DEBUG ::: postman ::: send ::: didn't pass the format" );			
+			return null;
+		}	
+		
+		try{		
+			io.sockets.to(client.socketid).emit(event2trigger, PostMan.prototype.encrypt( data, client ) );	
+						
+		}catch(e){
+			console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
+		}		
+			
 	};	
 	
 };	

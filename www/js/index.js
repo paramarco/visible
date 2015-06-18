@@ -9,7 +9,7 @@
 //TODO develop web
 //TODO push notifications (plugin configuration on client side)
 //TODO have our own emoticons
-//TODO FIX shareButtons for the galery
+//TODO FIX shareButtons for the gallery
 //TODO Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
 //TODO viralization with email & SMS (plugin)
 //TODO try to save img as files in mobile version(save to file as they're received)

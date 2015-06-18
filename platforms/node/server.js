@@ -158,7 +158,7 @@ app.locals.notifyNeighbours = function (client){
 	
 	brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
 		
-		io.sockets.to(client.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : listOfPeople } , client) );
+		postMan.send("notificationOfNewContact", { list : listOfPeople }, client);
 		
 		var visible = {
 			publicClientID : client.publicClientID,
@@ -170,10 +170,9 @@ app.locals.notifyNeighbours = function (client){
 		list2send.push(visible);
 		
 		listOfPeople.map(function (c){
-			brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){
-				if ( client2BeNotified  != null ){						
-					io.sockets.to(client2BeNotified.socketid).emit("notificationOfNewContact", postMan.encrypt( { list : list2send } , client2BeNotified));
-				}
+			brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){										
+				if (client2BeNotified != null ) 
+					postMan.send("notificationOfNewContact",  { list : list2send } , client2BeNotified);
 			});	
 		});
 		
@@ -211,6 +210,7 @@ app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
 	brokerOfVisibles.updateClientsProfile(client);		  				  			
 	}
 	
+	if (client == null ) console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss client es null");
 	app.locals.notifyNeighbours(client);
 	
 };
@@ -229,7 +229,8 @@ app.locals.ProfileRetrievalHandler = function(input , socket) {
 
 		if ( parameters.lastProfileUpdate == null ||
 			 parameters.lastProfileUpdate < profile.lastProfileUpdate ){
-			socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );
+			
+			postMan.send("ProfileFromServer",  profile , client);			
 		}
 		
 	});
@@ -250,6 +251,7 @@ app.locals.ProfileUpdateHandler = function(input , socket) {
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
 	
+	if (client == null ) console.log("DEBUG ::: ProfileUpdateHandler  ::: upsss client es null");
 	app.locals.notifyNeighbours(client);
 	
 };
@@ -277,7 +279,8 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 				to : messageACKparameters.to 	
 			};
 			
-				io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ), postMan.deleteMessageAndACK(deliveryReceipt) );
+			postMan.send("MessageDeliveryReceipt",  deliveryReceipt , clientSender );
+			postMan.deleteMessageAndACK(deliveryReceipt);
  					
  		}else {
  			postMan.archiveACK(messageACKparameters);
@@ -301,12 +304,12 @@ app.locals.messagetoserverHandler = function( msg , socket) {
 		to : message.to
 	};
 	
-	socket.emit("MessageDeliveryReceipt", postMan.encrypt( deliveryReceipt, client) );		
+	postMan.send("MessageDeliveryReceipt",  deliveryReceipt , client);		
 	
 	brokerOfVisibles.isClientOnline( message.to ).then(function(clientReceiver){
 		
 		if ( clientReceiver != null ){			
-			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", postMan.encrypt( message , clientReceiver));
+			postMan.send("messageFromServer",  message , clientReceiver);
  		}else { 			
  			postMan.archiveMessage(message);
  		}			
@@ -324,7 +327,7 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	
 	postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
 		if (message != null){
-			socket.emit("messageFromServer", postMan.encrypt( message , client));	
+			postMan.send("messageFromServer",  message , client);				
 		}
 	});
 	
@@ -389,7 +392,7 @@ io.sockets.on("connection", function (socket) {
 	postMan.sendDetectedLocation(client);	
 	
 	//XEP-0084: User Avatar 
-	socket.emit("RequestForProfile", postMan.encrypt( {	lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client ));
+	postMan.send("RequestForProfile",  { lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client);
 	
 	//XEP-0077: In-Band Registration
 	socket.on('disconnect',  function (msg){ app.locals.disconnectHandler( socket) } );

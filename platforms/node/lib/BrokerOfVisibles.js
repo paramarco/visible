@@ -539,7 +539,7 @@ function BrokerOfVisibles(_io) {
 		    
 		    if(err) {
 		    	console.error('DEBUG ::: isClientOnline ::: error running query', err);	
-		    	return d.resolve(err);
+		    	return d.resolve(null);
 		    }
 		    
 		    try {
