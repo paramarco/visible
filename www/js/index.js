@@ -1,8 +1,7 @@
 //MVP
 
-//TODO reconnect just after app is resumed
 //TODO pay with paypal, GUI & backend
-//TODO translations in dictionary & stores
+//TODO translations in dictionary & stores & images
 
 
 //non MVP
@@ -467,17 +466,10 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}
 	}else {		
 		
-		var contact = listOfContacts.filter(function(c){ 
-			return (c.publicClientID == message.from); }
-		)[0];
+		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];		
+		if (typeof contact === "undefined" || typeof contact === "null" ) {	return; 	}
 		
-		if (typeof contact === "undefined" || typeof contact === "null" ) {
-			console.log("DEBUG ::: insertMessageInConversation ::: something went wrong");
-			return;
-		}
-		
-		authorOfMessage = contact.nickName;
-		
+		authorOfMessage = contact.nickName;		
 		
 		if (message.markedAsRead == false) {		  	
 			if (typeof socket != "undefined" && socket.connected == true){
@@ -1363,15 +1355,17 @@ GUI.prototype.parseLinks = function(htmlOfContent) {
 	var result = {};
 	result.mediaLinks = [];
 	var urlRegEx = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-]*)?\??(?:[\-\+=&;%@\.\w]*)#?(?:[\.\!\/\\\w]*))?)/g;
-	function convert(match)
-	{
-		var link2media = gui.testUrlForMedia(match);
+	
+	result.htmlOfContent = htmlOfContent.replace(urlRegEx, function (match){
+		var link2media = gui.testUrlForMedia(match);		
 		if (link2media){
 			result.mediaLinks.push(link2media);
-		}
+		}else { 
+			if ( match.substring(1,4) != "http") match = "http://" + match;
+		}		
 	    return "<a href='" + match + "'>" + match + "</a>";
-	}
-	result.htmlOfContent = htmlOfContent.replace(urlRegEx, convert);
+	});
+	
 	return result;
 };
 

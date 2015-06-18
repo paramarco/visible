@@ -75,7 +75,7 @@ app.post('/login', function (req, res) {
 		];
 		
 		var server2connect = postMan.getRightServer2connect();
-		console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
+		//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
 		
 		// challenge forwarding to the Client
 		when.all ( clientUpdate ).then(function(){
@@ -151,6 +151,9 @@ app.post('/handshake', function (req, res) {
 	});		  
 });
 
+
+
+
 app.locals.notifyNeighbours = function (client){
 	
 	brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
@@ -178,6 +181,155 @@ app.locals.notifyNeighbours = function (client){
 	
 };
 
+
+app.locals.disconnectHandler = function(socket) {
+	
+	socket.visibleClient.socketid = null ;	
+	brokerOfVisibles.updateClientsProfile(socket.visibleClient);	
+	console.log('DEBUG ::: disconnect ::: ' + socket.visibleClient.publicClientID);
+	
+};
+
+app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
+	
+	var client = socket.visibleClient;
+	
+	if (client.nickName == null){
+		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
+		return;
+	} 
+		
+	var parameters = postMan.getRequestWhoIsaround(input, client);
+	if (parameters == null) {
+		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: "  );
+	}
+	
+	if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
+		client.location.lat = parameters.location.lat.toString() ;	
+		client.location.lon = parameters.location.lon.toString() ;
+		// update DB
+	brokerOfVisibles.updateClientsProfile(client);		  				  			
+	}
+	
+	app.locals.notifyNeighbours(client);
+	
+};
+
+
+app.locals.ProfileRetrievalHandler = function(input , socket) {
+	
+	var client = socket.visibleClient;
+	
+	var parameters = postMan.getProfileRetrievalParameters(input, client);		
+	if (parameters == null) return;	
+	
+	brokerOfVisibles.getProfileByID( parameters.publicClientID2getImg ).then(function(profile){
+		
+		if ( profile == null) return;
+
+		if ( parameters.lastProfileUpdate == null ||
+			 parameters.lastProfileUpdate < profile.lastProfileUpdate ){
+			socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );
+		}
+		
+	});
+	
+};
+
+app.locals.ProfileUpdateHandler = function(input , socket) {	
+	
+	var client = socket.visibleClient;	
+
+	var parameters = postMan.getProfileResponseParameters(input, client);		
+	if (parameters == null) return;	
+	
+	client.nickName = parameters.nickName;
+	client.commentary = parameters.commentary;		
+	client.lastProfileUpdate = new Date().getTime();
+	
+	brokerOfVisibles.updateClientsProfile( client );
+	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
+	
+	app.locals.notifyNeighbours(client);
+	
+};
+
+app.locals.MessageDeliveryACKHandler = function(input, socket) {		
+	
+	var client = socket.visibleClient;
+	
+	var messageACKparameters = postMan.getDeliveryACK(input, client);		
+	if (messageACKparameters == null) return;
+	
+	//check if sender of MessageDeliveryACK is actually the receiver
+	if (messageACKparameters.to != client.publicClientID) {
+		console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong ::: messageACKparameters.to != client.publicClientID ' );
+		return;
+	}
+				
+	brokerOfVisibles.isClientOnline(messageACKparameters.from).then(function(clientSender){									
+				
+		if ( clientSender != null ){
+			
+			var deliveryReceipt = { 
+				msgID : messageACKparameters.msgID, 
+				typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
+				to : messageACKparameters.to 	
+			};
+			
+				io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ), postMan.deleteMessageAndACK(deliveryReceipt) );
+ 					
+ 		}else {
+ 			postMan.archiveACK(messageACKparameters);
+ 		}
+		
+	});
+	
+};
+
+app.locals.messagetoserverHandler = function( msg , socket) {
+	
+	var client = socket.visibleClient;
+	
+	var message = postMan.getMessage( msg , client);
+	if ( message == null )  return;		
+	if (postMan.isPostBoxFull(message) == true) return;				
+	
+	var deliveryReceipt = { 
+		msgID : message.msgID, 
+		typeOfACK : "ACKfromServer", 
+		to : message.to
+	};
+	
+	socket.emit("MessageDeliveryReceipt", postMan.encrypt( deliveryReceipt, client) );		
+	
+	brokerOfVisibles.isClientOnline( message.to ).then(function(clientReceiver){
+		
+		if ( clientReceiver != null ){			
+			socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", postMan.encrypt( message , clientReceiver));
+ 		}else { 			
+ 			postMan.archiveMessage(message);
+ 		}			
+		
+	});
+	
+};
+
+app.locals.messageRetrievalHandler = function( input, socket) {		
+	
+	var client = socket.visibleClient;		
+	
+	var retrievalParameters = postMan.getMessageRetrievalParameters(input , client);		
+	if (retrievalParameters == null) return;		
+	
+	postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
+		if (message != null){
+			socket.emit("messageFromServer", postMan.encrypt( message , client));	
+		}
+	});
+	
+};
+	
 io.use(function(socket, next){
 	
 	var token = socket.handshake.query.token;
@@ -222,176 +374,43 @@ io.use(function(socket, next){
 io.sockets.on("connection", function (socket) {
 	
 	if ( typeof socket.visibleClient == 'undefined'){
-		console.log("DEBUG ::: connection ::: socket.visibleClient undefined " );		
-		socket.disconnect();		
+		console.log("DEBUG ::: ERROR ::: 404 " );
+		socket.disconnect(); 
 	}
-	var client = socket.visibleClient;	
+	var client = socket.visibleClient;
 	
-	console.log("DEBUG ::: connection ::: client " + client.publicClientID );
-	
-	// XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
-	// sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
+	console.log("DEBUG ::: connection ::: " + client.publicClientID );
+		
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	postMan.sendMessageHeaders(client);	
 	postMan.sendMessageACKs(client);
-	postMan.sendDetectedLocation(client);
 	
-	var requestParameters = {
-		lastProfileUpdate : parseInt(client.lastProfileUpdate)				
-	};
+	//XEP-0080: User Location
+	postMan.sendDetectedLocation(client);	
 	
-	socket.emit("RequestForProfile", postMan.encrypt( requestParameters , client ));				
+	//XEP-0084: User Avatar 
+	socket.emit("RequestForProfile", postMan.encrypt( {	lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client ));
 	
-	socket.on('disconnect', function() {
-		
-		socket.visibleClient.socketid = null ;
-		
-		brokerOfVisibles.updateClientsProfile(socket.visibleClient);
-		
-		console.log('DEBUG ::: disconnect ::: Got disconnect!');		
-	});
+	//XEP-0077: In-Band Registration
+	socket.on('disconnect',  function (msg){ app.locals.disconnectHandler( socket) } );
    
 	//XEP-0184: Message Delivery Receipts
-	socket.on("messagetoserver", function(msg) {
-		
-		var client = socket.visibleClient;
-		
-		var message = postMan.getMessage( msg , client);
-		if ( message == null )  return;		
-		if (postMan.isPostBoxFull(message) == true) return;				
-		
-		var deliveryReceipt = { 
-			msgID : message.msgID, 
-			typeOfACK : "ACKfromServer", 
-			to : message.to
-		};
-		
-		socket.emit("MessageDeliveryReceipt", postMan.encrypt( deliveryReceipt, client) );		
-		
-		brokerOfVisibles.isClientOnline( message.to ).then(function(clientReceiver){
-			
-			if ( clientReceiver != null ){			
-				socket.broadcast.to(clientReceiver.socketid).emit("messageFromServer", postMan.encrypt( message , clientReceiver));
-	 		}else { 			
-	 			postMan.archiveMessage(message);
-	 		}			
-			
-		});
-		
-	});
+	socket.on("messagetoserver", function (msg){ app.locals.messagetoserverHandler( msg , socket) } );
 	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
-	socket.on("messageRetrieval", function(input) {		
-		
-		var client = socket.visibleClient;		
-		
-		var retrievalParameters = postMan.getMessageRetrievalParameters(input , client);		
-		if (retrievalParameters == null) return;		
-		
-		postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
-			if (message != null){
-				socket.emit("messageFromServer", postMan.encrypt( message , client));	
-			}
-		});
-		
-	});
+	socket.on("messageRetrieval", function (msg){ app.locals.messageRetrievalHandler ( msg , socket) } );
 
 	//XEP-0184: Message Delivery Receipts
-	socket.on("MessageDeliveryACK", function(input) {		
-		
-		var client = socket.visibleClient;
-		
-		var messageACKparameters = postMan.getDeliveryACK(input, client);		
-		if (messageACKparameters == null) return;
-		
-		//check if sender of MessageDeliveryACK is actually the receiver
-		if (messageACKparameters.to != client.publicClientID) {
-			console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong ::: messageACKparameters.to != client.publicClientID ' );
-			return;
-		}
-					
-		brokerOfVisibles.isClientOnline(messageACKparameters.from).then(function(clientSender){									
-					
-			if ( clientSender != null ){
-				
-				var deliveryReceipt = { 
-					msgID : messageACKparameters.msgID, 
-					typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
-					to : messageACKparameters.to 	
-				};
-				
- 				io.sockets.to(clientSender.socketid).emit("MessageDeliveryReceipt", postMan.encrypt(deliveryReceipt, clientSender ), postMan.deleteMessageAndACK(deliveryReceipt) );
-	 					
-	 		}else {
-	 			postMan.archiveACK(messageACKparameters);
-	 		}
-			
-		});
-		
-	});
+	socket.on("MessageDeliveryACK", function (msg){ app.locals.MessageDeliveryACKHandler ( msg , socket) } );
 	
-	socket.on("ProfileRetrieval", function(input) {
-		
-		var client = socket.visibleClient;
-		
-		var parameters = postMan.getProfileRetrievalParameters(input, client);		
-		if (parameters == null) return;	
-		
-		brokerOfVisibles.getProfileByID( parameters.publicClientID2getImg ).then(function(profile){
-			
-			if ( profile == null) return;
+	//XEP-0163: Personal Eventing Protocol
+	socket.on("ProfileRetrieval", function (msg){ app.locals.ProfileRetrievalHandler ( msg , socket) } );
 	
-			if ( parameters.lastProfileUpdate == null ||
-				 parameters.lastProfileUpdate < profile.lastProfileUpdate ){
-				socket.emit("ProfileFromServer", postMan.encrypt( profile , client) );
-			}
-			
-		});
-		
-	});
+	//XEP-0084: User Avatar, XEP-0077: In-Band Registration
+	socket.on("profileupdate", function (msg){ app.locals.profileupdateHandler ( msg , socket) } );	
 	
-	socket.on("ProfileUpdate", function(input) {	
-		
-		var client = socket.visibleClient;	
-
-		var parameters = postMan.getProfileResponseParameters(input, client);		
-		if (parameters == null) return;	
-		
-		client.nickName = parameters.nickName;
-		client.commentary = parameters.commentary;		
-		client.lastProfileUpdate = new Date().getTime();
-		
-		brokerOfVisibles.updateClientsProfile( client );
-		brokerOfVisibles.updateClientsPhoto( client, parameters.img );
-		
-		app.locals.notifyNeighbours(client);
-		
-	});	
-	
-	socket.on('RequestOfListOfPeopleAround', function (input) {
-		
-		var client = socket.visibleClient;
-		
-		if (client.nickName == null){
-			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
-			return;
-		} 
-			
-		var parameters = postMan.getRequestWhoIsaround(input, client);
-		if (parameters == null) {
-			console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: "  );
-		}	
-
-				  		
-  		if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
-  			client.location.lat = parameters.location.lat.toString() ;	
-  			client.location.lon = parameters.location.lon.toString() ;
-  			// update DB
-	  		brokerOfVisibles.updateClientsProfile(client);		  				  			
-  		}
-  		
-  		app.locals.notifyNeighbours(client);
-		
-  	});	
+	//XEP-0080: User Location
+	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } ); 	
 
 });
 
