@@ -184,27 +184,27 @@ Postman.prototype.getListOfHeaders = function(encryptedList) {
 Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {	
 	try {    
 		
-		var listOfContacts = Postman.prototype.decrypt(encryptedList).list;
-		if (Array.isArray(listOfContacts) == false) { 
-			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfContacts)); 
+		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfNewContacts) == false) { 
+			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfNewContacts)); 
 			return null;
 		}
 
-		for (var i = 0; i < listOfContacts.length; i++){
-			if (typeof listOfContacts[i].publicClientID !== 'string' || 
-				!(typeof listOfContacts[i].nickName == 'string' ||  listOfContacts[i].nickName == null ) ||				
-				!(typeof listOfContacts[i].commentary == 'string' || listOfContacts[i].commentary == null ) ||
-				typeof listOfContacts[i].location !== 'object'||
-				Object.keys(listOfContacts[i]).length != 4  ) {	
-				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfContacts)); 
+		for (var i = 0; i < listOfNewContacts.length; i++){
+			if (typeof listOfNewContacts[i].publicClientID !== 'string' || 
+				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
+				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
+				typeof listOfNewContacts[i].location !== 'object'||
+				Object.keys(listOfNewContacts[i]).length != 4  ) {	
+				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
 				return null;
 			}
 		}		
 			
-		return listOfContacts; 
+		return listOfNewContacts; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfContacts)); 
+		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfNewContacts)); 
 		return null;
 	}	
 };
@@ -488,11 +488,14 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}
 	}else {		
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];		
-		if (typeof contact === "undefined" || typeof contact === "null" ) {	return; 	}
-		
-		authorOfMessage = contact.nickName;		
-		
+		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];
+		var contact = contactsHandler.getContactById(message.from); 		
+		if (contact) {	
+			authorOfMessage = contact.nickName;
+		}else{
+			return;
+		}
+				
 		if (message.markedAsRead == false) {		  	
 			var messageACK = {	
 	  			to : message.to, 
@@ -583,7 +586,8 @@ GUI.prototype.loadContacts = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		listOfContacts.push(cursor.value);      	
+     		//listOfContacts.push(cursor.value);
+     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
@@ -597,7 +601,8 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		listOfContacts.push(cursor.value);      	
+     		//listOfContacts.push(cursor.value);
+     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
          	cursor.continue(); 
      	}
@@ -742,7 +747,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
 
-	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	var contact = contactsHandler.getContactById(publicClientID); 		
+	if (typeof contact == "undefined") return;
 	
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
@@ -1462,9 +1469,11 @@ GUI.prototype.firstLogin = function() {
 
 GUI.prototype.showLocalNotification = function(msg) {
 	
-	var contact = listOfContacts.filter(function(c){ 
+/*	var contact = listOfContacts.filter(function(c){ 
 		return (c.publicClientID == msg.from); 
 	})[0];
+	*/
+	var contact = contactsHandler.getContactById(msg.from); 		
 	
 	if (app.inBackground && contact && typeof cordova != "undefined" ){			
 		
@@ -1512,8 +1521,9 @@ GUI.prototype.backButtonHandler = function() {
 
 GUI.prototype.showProfileOfContact = function() {	
 	
-	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
-	if (typeof contact == "undefined" || contact == null) return;
+	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
+	var contact = contactsHandler.getContactById(app.currentChatWith); 
+	if (typeof contact == "undefined") return;	
 		
 	$("#ProfileOfContact-page").remove();
 	
@@ -1819,8 +1829,8 @@ Application.prototype.sendProfileUpdate = function() {
 		commentary : app.myCommentary,
 		nickName: app.myCurrentNick				
 	};			
-	
-	postman.send("ProfileUpdate", profileResponseObject );	
+	console.dir(profileResponseObject );
+	postman.send("profileUpdate", profileResponseObject );	
 };
 
 Application.prototype.loadMyConfig = function(){
@@ -1995,8 +2005,10 @@ Application.prototype.connect2server = function(result){
   				//stores in IndexDB			
   				mailBox.storeMessage(messageFromServer); 
   				
-  				var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
-  				if (typeof contact == "undefined" || contact == null ) return;
+  				//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
+  				//if (typeof contact == "undefined" || contact == null ) return;
+  				var contact = contactsHandler.getContactById(messageFromServer.from); 
+  				if (typeof contact == "undefined") return;
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
   		 			gui.insertMessageInConversation(messageFromServer,false,true);
@@ -2061,7 +2073,10 @@ Application.prototype.connect2server = function(result){
 		var data = postman.getParametersOfProfileFromServer(input); 
 		if (data == null) { return;	}
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		var contact = contactsHandler.getContactById(data.publicClientID); 
+  		if (typeof contact == "undefined") return;
+  		
 		contact.path2photo = data.img;
 		contact.nickName = data.nickName ;
 		contact.commentary = data.commentary ;		
@@ -2373,12 +2388,6 @@ Application.prototype.receivedEvent = function() {
 };
 
 
-
-
-
-
-
-
 //END Class Application
 
 
@@ -2386,11 +2395,8 @@ function ContactsHandler() {
 	this.listOfContacts = [];
 };
 
-
-
-
 ContactsHandler.prototype.addNewContact = function(contact) {
-	
+	this.listOfContacts.push(contact);
 };
 
 ContactsHandler.prototype.getContactById = function(id) {
@@ -2413,9 +2419,11 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$("#listOfContactsInMainPage").trigger("create");
 	$("#popupDiv").popup("open");
 	
-	var contact = listOfContacts.filter(function(c){ 
+/*	var contact = listOfContacts.filter(function(c){ 
 		return (c.publicClientID == publicClientID); 
 	})[0];
+	*/
+	var contact = this.getContactById(publicClientID);
 	
 	if (contact){		
 		try {
@@ -2431,6 +2439,13 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 
 //this function assumes that the contact is already inserted on the DB
 ContactsHandler.prototype.modifyContactOnDB = function(contact) {
+	
+	this.listOfContacts.forEach(function(part, index, theArray) {
+	  if (theArray[index].publicClientID == contact.publicClientID){
+	  	theArray[index] = contact;	
+	  }	  	
+	});
+	
 	
 	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
 	
@@ -2456,9 +2471,10 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 
 	data.map(function(c){
 		
-		var contact = listOfContacts.filter(function(elem){ 
+/*		var contact = listOfContacts.filter(function(elem){ 
 			return (c.publicClientID == elem.publicClientID); 
-		})[0];
+		})[0];*/
+		
 				
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
@@ -2466,10 +2482,10 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			publicClientID2getImg : c.publicClientID,
 			lastProfileUpdate : config.beginingOf2015
 		};
-	
+		
+		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
 			
-			//update what we already got....
 			contact.nickName = c.nickName ;
 			contact.commentary = c.commentary ;
 			contact.location.lat = parseFloat( c.location.lat );
@@ -2491,8 +2507,9 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary								
 			});
 			
-			listOfContacts.push(newContact);
-			GUI.prototype.insertContactInMainPage(newContact,true);			
+			//listOfContacts.push(newContact);
+			contactsHandler.addNewContact(newContact);
+			gui.insertContactInMainPage(newContact,true);			
 		}	
 		postman.send("ProfileRetrieval", profileRetrievalObject );
 	});

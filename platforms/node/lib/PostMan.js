@@ -245,7 +245,6 @@ function PostMan(_io) {
 						typeOfACK : r.type,
 						to : r.receiver 	
 					};
-					console.log("DEBUG ::: sendMessageACKs  :::  MessageDeliveryReceipt sent " + JSON.stringify(deliveryReceipt)  );						
 
 					io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) , self.deleteMessageAndACK(deliveryReceipt) );
 				});								

@@ -234,7 +234,7 @@ app.locals.ProfileRetrievalHandler = function(input , socket) {
 	
 };
 
-app.locals.ProfileUpdateHandler = function(input , socket) {	
+app.locals.profileUpdateHandler = function(input , socket) {	
 	
 	var client = socket.visibleClient;	
 
@@ -407,7 +407,7 @@ io.sockets.on("connection", function (socket) {
 	socket.on("ProfileRetrieval", function (msg){ app.locals.ProfileRetrievalHandler ( msg , socket) } );
 	
 	//XEP-0084: User Avatar, XEP-0077: In-Band Registration
-	socket.on("profileupdate", function (msg){ app.locals.profileupdateHandler ( msg , socket) } );	
+	socket.on("profileUpdate", function (msg){ app.locals.profileUpdateHandler ( msg , socket) } );	
 	
 	//XEP-0080: User Location
 	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } ); 	
