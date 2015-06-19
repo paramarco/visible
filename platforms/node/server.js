@@ -92,8 +92,6 @@ app.post('/login', function (req, res) {
 
 app.post('/signin', function (req, res) {
 	
-	console.log("DEBUG ::: yes there is connectivity");
-	
 	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
 	
 	brokerOfVisibles.createNewClient().then(function (newClient){
@@ -134,7 +132,6 @@ app.post('/handshake', function (req, res) {
 				res.json( { error : null } );
 				return;
 			}
-			console.log("DEBUG ::: handshake ::: decrypted " + JSON.stringify(decrypted) );
 			
 			if ( decrypted.challenge == client.currentChallenge ){
 				var answer = {

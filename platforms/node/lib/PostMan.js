@@ -72,7 +72,7 @@ function PostMan(_io) {
 	};
 	
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
-	this.sendMessageHeaders = function(client) {
+	this.sendMessageHeaders = function(client) {		
 		
 	    var query2send = squel.select()
 	    						.field("msgid")
@@ -102,7 +102,7 @@ function PostMan(_io) {
 				});
 				
 				var message = { list : messageHeaders };
-				io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client ));				
+				io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client ));
 				
 			}catch (ex) {
 				console.log("DEBUG ::: sendMessageHeaders  :::  exceptrion thrown " + ex  );						
