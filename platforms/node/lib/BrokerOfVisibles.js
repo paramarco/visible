@@ -3,6 +3,7 @@ var _ 				= require('underscore')._
 var pg = require('pg');
 var when = require('when');
 var squel = require("squel");
+var config = require('./Config.js');
 
 
 function BrokerOfVisibles(_io) {
@@ -29,21 +30,37 @@ function BrokerOfVisibles(_io) {
 	};	
 	
 	//XEP-0080: User Location:: distribute its Location to its "Visible"s	
-	this.getListOfPeopleAround = function(client) {
+	this.getListOfPeopleAround = function(client , online) {
 		
 		var d = when.defer();
 	    		
-	    var query2send = squel.select()
+		var query2send;
+	
+		if (online){
+			query2send = squel.select()
 	    						.field("publicclientid")
 	    						.field("nickname")
 	    						.field("commentary")
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
-							    .from("client")
-							    .where("ST_DWithin(location, ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon +" " +client.location.lat + ")'), 1000000)")
-							    .where(" CAST(publicclientid AS varchar(40)) NOT LIKE '" + client.publicClientID + "'")
-							    .toString();	    
-	    
+							    .from("client")							    				    
+							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
+							    .where("socketid IS NOT NULL")
+							    .limit(config.MAX_PROFILES_QUERY)
+							    .toString();			
+		}else{
+			query2send = squel.select()
+	    						.field("publicclientid")
+	    						.field("nickname")
+	    						.field("commentary")
+	    						.field("ST_X(location::geometry)", "lon")
+	    						.field("ST_Y(location::geometry)", "lat")
+							    .from("client")							    				    
+							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
+							    .limit(config.MAX_PROFILES_QUERY_ONLINE)
+							    .toString();			
+		}
+							 							        
 		clientOfDB.query(query2send, function(err, result) {
 		    
 		    if(err) {
@@ -61,19 +78,15 @@ function BrokerOfVisibles(_io) {
 				var listOfVisibles = [];
 				result.rows.map(function(r){
 					
-					if ( 	typeof r.commentary == "undefined" 	|| 
-							typeof r.commentary == "null"	 	||
-							r.commentary == null ) {
-						r.commentary = "";						
+					if (r.publicclientid != client.publicClientID){
+						var visible = {
+							publicClientID : r.publicclientid,
+							location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
+							nickName : r.nickname,
+				  			commentary :  (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary
+				  		}; 
+						listOfVisibles.push(visible);
 					}
-				
-					var visible = {
-						publicClientID : r.publicclientid,
-						location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
-						nickName : r.nickname,
-			  			commentary :  r.commentary
-					}; 
-					listOfVisibles.push(visible);
 				});			   		
 			    
 			    return  d.resolve(listOfVisibles);

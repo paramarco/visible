@@ -109,12 +109,34 @@ Message.prototype.setACKfromAddressee = function(bool){
 
 
 
-function Unwrapper() {
+function Postman() {
 };
-Unwrapper.prototype.getMessageFromServer = function(encrypted) {
+
+Postman.prototype.send = function(event2trigger, data  ) {
+	
+	if (typeof event2trigger !== 'string' ||
+		typeof data !== 'object' || data == null ) 	{	
+		
+		console.log("DEBUG ::: postman ::: send ::: didn't pass the format" );			
+		return null;
+	}	
+	
+	try{
+		if (typeof socket != "undefined" && socket.connected == true){
+			socket.emit(event2trigger, Postman.prototype.encrypt( data ) );
+		}	
+					
+	}catch(e){
+		console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
+	}		
+		
+};	
+
+
+Postman.prototype.getMessageFromServer = function(encrypted) {
 
 	try {
-		var inputMessage = Unwrapper.prototype.decrypt(encrypted);
+		var inputMessage = Postman.prototype.decrypt(encrypted);
 		
 		if (inputMessage == null ||
 			typeof inputMessage.to !== 'string' ||
@@ -138,10 +160,10 @@ Unwrapper.prototype.getMessageFromServer = function(encrypted) {
 	
 };
 
-Unwrapper.prototype.getListOfHeaders = function(encryptedList) {	
+Postman.prototype.getListOfHeaders = function(encryptedList) {	
 	try {    
 		
-		var listOfHeaders =	Unwrapper.prototype.decrypt(encryptedList).list;
+		var listOfHeaders =	Postman.prototype.decrypt(encryptedList).list;
 		if (Array.isArray(listOfHeaders) == false) { return null;}
 
 		for (var i = 0; i < listOfHeaders.length; i++){
@@ -159,38 +181,38 @@ Unwrapper.prototype.getListOfHeaders = function(encryptedList) {
 	}	
 };
 
-Unwrapper.prototype.getParametersOfSetNewContacts = function(encryptedList) {	
+Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {	
 	try {    
 		
-		var listOfContacts = Unwrapper.prototype.decrypt(encryptedList).list;
-		if (Array.isArray(listOfContacts) == false) { 
-			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfContacts)); 
+		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfNewContacts) == false) { 
+			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfNewContacts)); 
 			return null;
 		}
 
-		for (var i = 0; i < listOfContacts.length; i++){
-			if (typeof listOfContacts[i].publicClientID !== 'string' || 
-				!(typeof listOfContacts[i].nickName == 'string' ||  listOfContacts[i].nickName == null ) ||				
-				!(typeof listOfContacts[i].commentary == 'string' || listOfContacts[i].commentary == null ) ||
-				typeof listOfContacts[i].location !== 'object'||
-				Object.keys(listOfContacts[i]).length != 4  ) {	
-				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfContacts)); 
+		for (var i = 0; i < listOfNewContacts.length; i++){
+			if (typeof listOfNewContacts[i].publicClientID !== 'string' || 
+				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
+				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
+				typeof listOfNewContacts[i].location !== 'object'||
+				Object.keys(listOfNewContacts[i]).length != 4  ) {	
+				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
 				return null;
 			}
 		}		
 			
-		return listOfContacts; 
+		return listOfNewContacts; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfContacts)); 
+		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfNewContacts)); 
 		return null;
 	}	
 };
 
-Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
+Postman.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
 	try {    
 
-		var deliveryReceipt = Unwrapper.prototype.decrypt(inputDeliveryReceipt);
+		var deliveryReceipt = Postman.prototype.decrypt(inputDeliveryReceipt);
 		
 		if (deliveryReceipt == null ||
 			typeof deliveryReceipt.msgID !== 'string' 	|| 
@@ -208,10 +230,10 @@ Unwrapper.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 	}	
 };
 
-Unwrapper.prototype.getParametersOfProfileRequest = function(input) {	
+Postman.prototype.getParametersOfProfileRequest = function(input) {	
 	try {    
 
-		var parameters = Unwrapper.prototype.decrypt(input);
+		var parameters = Postman.prototype.decrypt(input);
 		
 		if (parameters == null ||
 			typeof parameters.lastProfileUpdate !== 'number' 	|| 
@@ -230,10 +252,10 @@ Unwrapper.prototype.getParametersOfProfileRequest = function(input) {
 };
 
 
-Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {	
+Postman.prototype.getParametersOfProfileFromServer = function(input) {	
 	try {    
 
-		var parameters = Unwrapper.prototype.decrypt(input);
+		var parameters = Postman.prototype.decrypt(input);
 		
 		if (parameters == null ||
 			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
@@ -254,20 +276,20 @@ Unwrapper.prototype.getParametersOfProfileFromServer = function(input) {
 };
 
 
-Unwrapper.prototype.getParametersOfLocationFromServer = function(input) {	
+Postman.prototype.getParametersOfLocationFromServer = function(input) {	
 	try {    
 
-		var parameters = Unwrapper.prototype.decrypt(input);
+		var position = Postman.prototype.decrypt(input);
 		
-		if (parameters == null ||
-			typeof parameters.lat !== 'string' 	|| 
-			typeof parameters.lon !== 'string' 	 ) {
+		if (position == null ||
+			typeof position !== 'object' 	|| 
+			typeof position.coords !== 'object'  ) {
 							
 			console.log("DEBUG ::: getParametersOfLocationFromServer  ::: didn't pass the type check "); 
 			return null;
 		}
 		
-		return parameters; 
+		return position; 
 	}
 	catch (ex) {	
 		console.log("DEBUG ::: getParametersOfLocationFromServer  :::  " + ex);
@@ -277,7 +299,7 @@ Unwrapper.prototype.getParametersOfLocationFromServer = function(input) {
 
 
 
-Unwrapper.prototype.signToken = function(message) {	
+Postman.prototype.signToken = function(message) {	
 	try {    
 		var stringMessage = JSON.stringify(message);
 		var pHeader = {'alg': 'HS512', 'typ': 'JWT'};
@@ -290,7 +312,7 @@ Unwrapper.prototype.signToken = function(message) {
 };
 
 
-Unwrapper.prototype.encryptHandshake = function(message) {
+Postman.prototype.encryptHandshake = function(message) {
 	try {    
 		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
 
@@ -312,9 +334,9 @@ Unwrapper.prototype.encryptHandshake = function(message) {
 };
 
 
-Unwrapper.prototype.encrypt = function(message) {
+Postman.prototype.encrypt = function(message) {
 	try {    
-		console.log("DEBUG ::: Unwrapper.prototype.encrypt ::: " + JSON.stringify(message) );
+		console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
 		var iv = Math.floor((Math.random() * 7) + 0);
@@ -336,7 +358,7 @@ Unwrapper.prototype.encrypt = function(message) {
 	}	
 };
 
-Unwrapper.prototype.decrypt = function(encrypted) {	
+Postman.prototype.decrypt = function(encrypted) {	
 	try {    
 
 		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
@@ -347,7 +369,7 @@ Unwrapper.prototype.decrypt = function(encrypted) {
 		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();
 		
-		console.log("DEBUG ::: Unwrapper.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
+		console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
 		
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 
@@ -358,7 +380,7 @@ Unwrapper.prototype.decrypt = function(encrypted) {
 	}	
 };
 
-Unwrapper.prototype.decryptHandshake = function(encrypted) {	
+Postman.prototype.decryptHandshake = function(encrypted) {	
 	try {    
 
 		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
@@ -466,28 +488,24 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}
 	}else {		
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];		
-		if (typeof contact === "undefined" || typeof contact === "null" ) {	return; 	}
-		
-		authorOfMessage = contact.nickName;		
-		
+		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];
+		var contact = contactsHandler.getContactById(message.from); 		
+		if (contact) {	
+			authorOfMessage = contact.nickName;
+		}else{
+			return;
+		}
+				
 		if (message.markedAsRead == false) {		  	
-			if (typeof socket != "undefined" && socket.connected == true){
-				try{
-					var messageACK = {	
-			  			to : message.to, 
-			  			from : message.from,
-			  			msgID : message.msgID, 
-			  			typeOfACK : "ReadfromAddressee"
-				  	};					
-					socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
-					message.markedAsRead = true;
-					mailBox.updateMessage(message);				
-					
-				}catch (e){
-					console.log('DEBUG ::: insertMessageInConversation ::: socket not connected : ' + e );
-				}		
-			}		
+			var messageACK = {	
+	  			to : message.to, 
+	  			from : message.from,
+	  			msgID : message.msgID, 
+	  			typeOfACK : "ReadfromAddressee"
+		  	};					
+			postman.send("MessageDeliveryACK", messageACK );
+			message.markedAsRead = true;
+			mailBox.updateMessage(message);						
 		}		
 	}
 	var htmlOfContent = "";
@@ -568,7 +586,8 @@ GUI.prototype.loadContacts = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		listOfContacts.push(cursor.value);      	
+     		//listOfContacts.push(cursor.value);
+     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
@@ -582,7 +601,8 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		listOfContacts.push(cursor.value);      	
+     		//listOfContacts.push(cursor.value);
+     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
          	cursor.continue(); 
      	}
@@ -594,7 +614,7 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContact(\'' + contact.publicClientID + '\');" ' +
+		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
 							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}
 	
@@ -625,7 +645,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContact(\'' + contact.publicClientID + '\');" ' +
+		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
 							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
 	if (contact.commentary == ""){
@@ -727,7 +747,9 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
 
-	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
+	var contact = contactsHandler.getContactById(publicClientID); 		
+	if (typeof contact == "undefined") return;
 	
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
@@ -737,18 +759,12 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
 	//request an update of the last photo of this Contact
-	if (typeof socket != "undefined" && socket.connected == true){
-		try {
-			var profileRetrievalObject = {	
-				publicClientIDofRequester : app.publicClientID, 
-				publicClientID2getImg : contact.publicClientID,
-				lastProfileUpdate : contact.lastProfileUpdate
-			};
-			socket.emit('ProfileRetrieval',  unWrapper.encrypt(profileRetrievalObject)	);
-		}catch (e){
-			console.log("DEBUG ::: GUI.prototype.go2ChatWith  ::: socket not initialized yet");
-		}		
-	}
+	var profileRetrievalObject = {	
+		publicClientIDofRequester : app.publicClientID, 
+		publicClientID2getImg : contact.publicClientID,
+		lastProfileUpdate : contact.lastProfileUpdate
+	};
+	postman.send("ProfileRetrieval", profileRetrievalObject );
 	
 	if (contact.counterOfUnreadSMS > 0){
 		contact.counterOfUnreadSMS = 0;
@@ -851,14 +867,9 @@ GUI.prototype.showImagePic = function() {
 			$.mobile.silentScroll($(document).height());
 			
 			//sends message	
-			if (typeof socket != "undefined" && socket.connected == true){
-				try{
-					socket.emit('messagetoserver', unWrapper.encrypt(message2send));
+			postman.send("messagetoserver", message2send );
+
 					
-				}catch (e){
-					console.log('DEBUG ::: on chat-input-button ::: socket not initialized yet');
-				}		
-			}			
  		}// END imageUpdated
  	});// END picEdit construct
 	
@@ -1135,14 +1146,8 @@ GUI.prototype.chatInputHandler = function() {
 	// clear chat-input	
 	document.getElementById('chat-input').value='';
 	
-	//sends message	
-	if (typeof socket != "undefined" && socket.connected == true){
-		try{			 
-			socket.emit('messagetoserver', unWrapper.encrypt(message2send) );
-		}catch (e){
-			console.log('DEBUG ::: on(click,#chat-input-button ::: socket not initialized yet');
-		}		
-	}
+	//sends message				 
+	postman.send("messagetoserver", message2send );
 	
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
@@ -1464,9 +1469,11 @@ GUI.prototype.firstLogin = function() {
 
 GUI.prototype.showLocalNotification = function(msg) {
 	
-	var contact = listOfContacts.filter(function(c){ 
+/*	var contact = listOfContacts.filter(function(c){ 
 		return (c.publicClientID == msg.from); 
 	})[0];
+	*/
+	var contact = contactsHandler.getContactById(msg.from); 		
 	
 	if (app.inBackground && contact && typeof cordova != "undefined" ){			
 		
@@ -1514,8 +1521,9 @@ GUI.prototype.backButtonHandler = function() {
 
 GUI.prototype.showProfileOfContact = function() {	
 	
-	var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
-	if (typeof contact == "undefined" || contact == null) return;
+	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
+	var contact = contactsHandler.getContactById(app.currentChatWith); 
+	if (typeof contact == "undefined") return;	
 		
 	$("#ProfileOfContact-page").remove();
 	
@@ -1697,16 +1705,8 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 		if (listOfMessages.length > config.limitOfflineMessages2Get || 
 			olderDate < config.beginingOf2015 ){
 							
-			listOfMessages.map(function(message){			
-				//sends message	
-				if (typeof socket != "undefined" && socket.connected == true){
-					try{
-						socket.emit('messagetoserver', unWrapper.encrypt(message));	
-											
-					}catch (e){
-						console.log('DEBUG ::: sendOfflineMessages ::: socket not initialized yet');
-					}		
-				}
+			listOfMessages.map(function(message){
+				postman.send("messagetoserver", message );											
 			});
 			
 		}else {			
@@ -1822,21 +1822,15 @@ Application.prototype.openDB = function() {
 
 
 Application.prototype.sendProfileUpdate = function() {
-	if (typeof socket != "undefined" && socket.connected == true){
-		try{
-			var profileResponseObject = {	
-				publicClientIDofSender : app.publicClientID, 
-				img : app.myPhotoPath,
-				commentary : app.myCommentary,
-				nickName: app.myCurrentNick				
-			};			
-			
-			socket.emit("ProfileUpdate", unWrapper.encrypt(profileResponseObject)	);
-
-		}catch (e){
-			console.log('DEBUG ::: sendProfileUpdate ::: socket not initialized yet');
-		}		
-	}	
+	
+	var profileResponseObject = {	
+		publicClientIDofSender : app.publicClientID, 
+		img : app.myPhotoPath,
+		commentary : app.myCommentary,
+		nickName: app.myCurrentNick				
+	};			
+	console.dir(profileResponseObject );
+	postman.send("profileUpdate", profileResponseObject );	
 };
 
 Application.prototype.loadMyConfig = function(){
@@ -1916,14 +1910,14 @@ Application.prototype.connect2server = function(result){
 	
 	app.symetricKey2use = app.myArrayOfKeys[result.index];
 	
-	var challengeClear = unWrapper.decrypt(result.challenge).challenge;	
+	var challengeClear = postman.decrypt(result.challenge).challenge;	
 	var token2sign = { 			
 		handshakeToken : app.handshakeToken ,
-		challenge :  encodeURI( unWrapper.encrypt( { challengeClear : challengeClear } ) )
+		challenge :  encodeURI( postman.encrypt( { challengeClear : challengeClear } ) )
   	};
-  	var tokenSigned = unWrapper.signToken(token2sign);
+  	var tokenSigned = postman.signToken(token2sign);
   	
-  	var remoteServer = unWrapper.decrypt(result.server2connect);
+  	var remoteServer = postman.decrypt(result.server2connect);
   	if (remoteServer != null) {
   		config.ipServerSockets = remoteServer.ipServerSockets;
   		config.portServerSockets = remoteServer.portServerSockets;
@@ -1957,7 +1951,7 @@ Application.prototype.connect2server = function(result){
 
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
 
-  		var deliveryReceipt = unWrapper.getDeliveryReceipt(inputDeliveryReceipt);
+  		var deliveryReceipt = postman.getDeliveryReceipt(inputDeliveryReceipt);
   		if ( deliveryReceipt == null) { return; }	
   		
   		// delay introduced just to avoid receiving a ACKfromServer before the message 
@@ -1989,7 +1983,7 @@ Application.prototype.connect2server = function(result){
   
   socket.on("messageFromServer", function(inputMsg) {
   	
-  	  	var messageFromServer = unWrapper.getMessageFromServer(inputMsg);
+  	  	var messageFromServer = postman.getMessageFromServer(inputMsg);
   		if (messageFromServer == null) { return; }
   		
   		var messageACK = {	
@@ -1999,7 +1993,7 @@ Application.prototype.connect2server = function(result){
   			typeOfACK : "ACKfromAddressee"
   		};
 
-  		socket.emit("MessageDeliveryACK", unWrapper.encrypt(messageACK));
+  		postman.send("MessageDeliveryACK", messageACK );
   		
   		//double check to avoid saving messages twice...(which should never be received...)
   		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
@@ -2011,8 +2005,10 @@ Application.prototype.connect2server = function(result){
   				//stores in IndexDB			
   				mailBox.storeMessage(messageFromServer); 
   				
-  				var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
-  				if (typeof contact == "undefined" || contact == null ) return;
+  				//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
+  				//if (typeof contact == "undefined" || contact == null ) return;
+  				var contact = contactsHandler.getContactById(messageFromServer.from); 
+  				if (typeof contact == "undefined") return;
   				 		 		
   				if (app.currentChatWith == messageFromServer.from ){
   		 			gui.insertMessageInConversation(messageFromServer,false,true);
@@ -2039,7 +2035,7 @@ Application.prototype.connect2server = function(result){
 	// start a loop requesting a message one by one 
   socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 
-		var listOfHeaders = unWrapper.getListOfHeaders(inputListOfHeaders);
+		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
 		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
@@ -2050,8 +2046,8 @@ Application.prototype.connect2server = function(result){
 				var message2request = listOfHeaders.pop();				
 				var requestOfMessage =  {	
 					msgID :  message2request.msgID
-				};
-				socket.emit('messageRetrieval', unWrapper.encrypt(requestOfMessage)); 
+				};				
+				postman.send("messageRetrieval", requestOfMessage );
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
@@ -2062,7 +2058,7 @@ Application.prototype.connect2server = function(result){
 
 	socket.on("RequestForProfile", function(input) {
 		
-		var requestParameters = unWrapper.getParametersOfProfileRequest(input);
+		var requestParameters = postman.getParametersOfProfileRequest(input);
 	
 		if ( requestParameters != null && 
 			 requestParameters.lastProfileUpdate <  app.lastProfileUpdate  ){
@@ -2074,17 +2070,19 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("ProfileFromServer", function(input) {
 		
-		var data = unWrapper.getParametersOfProfileFromServer(input); 
+		var data = postman.getParametersOfProfileFromServer(input); 
 		if (data == null) { return;	}
 		
-		var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
+		var contact = contactsHandler.getContactById(data.publicClientID); 
+  		if (typeof contact == "undefined") return;
+  		
 		contact.path2photo = data.img;
 		contact.nickName = data.nickName ;
 		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
-		console.log("DEBUG ::: ProfileFromServer ::: contact.nickName : " + JSON.stringify(contact.nickName) );
-		
+
 		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
 		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
 		
@@ -2094,10 +2092,6 @@ Application.prototype.connect2server = function(result){
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
-		
-		//$('#listOfContactsInMapPage').listview().listview('refresh');
-		
-		
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
 
@@ -2106,22 +2100,7 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("locationFromServer", function(input) {
 		
-		var location = unWrapper.getParametersOfLocationFromServer(input); 
-
-		if (app.myPosition.coords.latitude == "" && location != null ){			
-			app.myPosition.coords.latitude = parseFloat( location.lat ); 
-			app.myPosition.coords.longitude = parseFloat( location.lon );			
-		}		
-				
-		if(app.myPosition.coords.latitude != ""){
-			var whoIsAround = { 
-			location : { 
-		  			lat : app.myPosition.coords.latitude.toString() , 
-					lon : app.myPosition.coords.longitude.toString()
-		  		}
-			};
-			socket.emit('RequestOfListOfPeopleAround',  unWrapper.encrypt( whoIsAround ) );				
-		}
+		app.askServerWhoisAround( postman.getParametersOfLocationFromServer(input) );
 
 	});//END locationFromServer	
 	  
@@ -2136,7 +2115,7 @@ Application.prototype.handshake = function(handshakeRequest){
  		
  		gui.showLoadingSpinner("exchanging the encryption keys ...");
 	 		
- 		var result = unWrapper.decryptHandshake( answer );
+ 		var result = postman.decryptHandshake( answer );
  		
 	 	//type cheking before going to the next step
 	 	if (typeof result == "undefined" || result == null ){
@@ -2199,7 +2178,7 @@ Application.prototype.firstLogin = function(){
 	 	app.symetricKey2use = symetricKey;
 	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
 		var challenge = $(decrypted).find('challenge').text();
-		var encryptedChallenge4handshake = unWrapper.encryptHandshake({ challenge : challenge });
+		var encryptedChallenge4handshake = postman.encryptHandshake({ challenge : challenge });
  	
 	 	var handshakeRequest = {
 	 		handshakeToken : handshakeToken,
@@ -2227,25 +2206,44 @@ Application.prototype.firstLogin = function(){
 
 };
 
+
+Application.prototype.askServerWhoisAround = function(position){	
+	
+	if (position && position != null){			
+		//app.myPosition.coords.latitude = parseFloat( location.lat ); 
+		//app.myPosition.coords.longitude = parseFloat( location.lon );
+		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
+		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
+	}	
+	
+	if(app.myPosition.coords.latitude != ""){
+		var whoIsAround = { 
+			location : { 
+	  			lat : app.myPosition.coords.latitude.toString() , 
+				lon : app.myPosition.coords.longitude.toString()
+		  	}
+		};
+		
+		postman.send("RequestOfListOfPeopleAround", whoIsAround );
+	}
+		
+};
+
 Application.prototype.locateMyPosition = function(){
 	if (typeof cordova == "undefined" || cordova == null ){
 		
 		if ( navigator.geolocation ) {
 	        function success(pos) {
 	            app.myPosition = pos;
-	            positionLoaded.resolve();
+	            app.askServerWhoisAround();
 	        }
 	        function fail(error) {
 	        	//if (app.myPosition == null)
 	        	//	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
 	        	positionLoaded.resolve();
 	        }
-	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 50000, enableHighAccuracy: true, timeout: 5000 });
-	    } else {
-	    	//if (app.myPosition == null)
-	    	//	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
-	        positionLoaded.resolve();
-	    }
+	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
+	    } 
 	    
     }else{
     	
@@ -2253,16 +2251,14 @@ Application.prototype.locateMyPosition = function(){
 		    function success(pos) {
 	            app.myPosition = pos;
 	            console.log("DEBUG ::: locateMyPosition ::: success cordova ");
-	            positionLoaded.resolve();
+	            app.askServerWhoisAround();
+	            navigator.geolocation.watchPosition(function(){}, function(){});
 	        }
 	        function fail(error) {
 	        	console.log("DEBUG ::: locateMyPosition ::: fail cordova ");
 
-	        //	if (app.myPosition == null)
-	        //		app.myPosition = { coords : { latitude : "" , longitude : ""  } };
-	        	positionLoaded.resolve();
 	        }	
-    		navigator.geolocation.getCurrentPosition( success, fail );
+    		navigator.geolocation.getCurrentPosition( app.askServerWhoisAround , fail );
     	});
     }
 };
@@ -2393,19 +2389,23 @@ Application.prototype.receivedEvent = function() {
 };
 
 
-
-
-
-
-
-
 //END Class Application
 
 
 function ContactsHandler() {
+	this.listOfContacts = [];
 };
+
+ContactsHandler.prototype.addNewContact = function(contact) {
+	this.listOfContacts.push(contact);
+};
+
+ContactsHandler.prototype.getContactById = function(id) {
+	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
+};
+
 //this method assumes that the contact is already inserted on the Array listOfContacts
-ContactsHandler.prototype.addNewContact = function(publicClientID) {
+ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
 	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
 	
@@ -2420,9 +2420,11 @@ ContactsHandler.prototype.addNewContact = function(publicClientID) {
 	$("#listOfContactsInMainPage").trigger("create");
 	$("#popupDiv").popup("open");
 	
-	var contact = listOfContacts.filter(function(c){ 
+/*	var contact = listOfContacts.filter(function(c){ 
 		return (c.publicClientID == publicClientID); 
 	})[0];
+	*/
+	var contact = this.getContactById(publicClientID);
 	
 	if (contact){		
 		try {
@@ -2431,13 +2433,20 @@ ContactsHandler.prototype.addNewContact = function(publicClientID) {
 			var request = store.add(contact);
 		}
 		catch(e){
-			console.log("DEBUG ::: addNewContact ::: exception trown ");
+			console.log("DEBUG ::: addNewContactOnDB ::: exception trown ");
 		}	
 	}	
 };
 
 //this function assumes that the contact is already inserted on the DB
 ContactsHandler.prototype.modifyContactOnDB = function(contact) {
+	
+	this.listOfContacts.forEach(function(part, index, theArray) {
+	  if (theArray[index].publicClientID == contact.publicClientID){
+	  	theArray[index] = contact;	
+	  }	  	
+	});
+	
 	
 	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
 	
@@ -2458,14 +2467,15 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 };
 
 ContactsHandler.prototype.setNewContacts = function(input) {
-	var data = unWrapper.getParametersOfSetNewContacts(input);
+	var data = postman.getParametersOfSetNewContacts(input);
 	if (data == null ) { return;}
 
 	data.map(function(c){
 		
-		var contact = listOfContacts.filter(function(elem){ 
+/*		var contact = listOfContacts.filter(function(elem){ 
 			return (c.publicClientID == elem.publicClientID); 
-		})[0];
+		})[0];*/
+		
 				
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
@@ -2473,10 +2483,10 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			publicClientID2getImg : c.publicClientID,
 			lastProfileUpdate : config.beginingOf2015
 		};
-	
+		
+		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
 			
-			//update what we already got....
 			contact.nickName = c.nickName ;
 			contact.commentary = c.commentary ;
 			contact.location.lat = parseFloat( c.location.lat );
@@ -2498,12 +2508,11 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary								
 			});
 			
-			console.log("DEBUG ::: setNewContacts :: new contact:  " + JSON.stringify(newContact));
-			
-			listOfContacts.push(newContact);
-			GUI.prototype.insertContactInMainPage(newContact,true);			
+			//listOfContacts.push(newContact);
+			contactsHandler.addNewContact(newContact);
+			gui.insertContactInMainPage(newContact,true);			
 		}	
-		socket.emit('ProfileRetrieval', unWrapper.encrypt(profileRetrievalObject)	);
+		postman.send("ProfileRetrieval", profileRetrievalObject );
 	});
 };
 
@@ -2651,7 +2660,7 @@ var socket;
 var listOfContacts = [];
 var config = new Config();
 var gui = new GUI();
-var unWrapper = new Unwrapper();
+var postman = new Postman();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
 var dictionary = new Dictionary();	

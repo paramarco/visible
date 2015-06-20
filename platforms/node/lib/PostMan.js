@@ -261,7 +261,14 @@ function PostMan(_io) {
 
 		try{
 			
-			io.sockets.to(client.socketid).emit("locationFromServer", PostMan.prototype.encrypt( client.location, client )  );
+			var position = {
+				coords : {
+					latitude : client.location.lat,
+					longitude : client.location.lon,
+				}
+			}
+			
+			io.sockets.to(client.socketid).emit("locationFromServer", PostMan.prototype.encrypt( position, client )  );
 		
 		}catch (ex) {
 			console.log("DEBUG ::: sendDetectedLocation  :::  exception thrown " + ex  );						
@@ -316,7 +323,7 @@ function PostMan(_io) {
 			typeof data !== 'object' || data == null || 
 			typeof client !== 'object' || client == null || client.socketid == null	) 	{	
 			
-			console.log("DEBUG ::: postman ::: send ::: didn't pass the format" );			
+			console.log("DEBUG ::: postman ::: send ::: can't send " );			
 			return null;
 		}	
 		

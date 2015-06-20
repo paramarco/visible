@@ -6,18 +6,20 @@ config.MAX_SIZE_NICKNAME = 60;
 config.MAX_SIZE_COMMENTARY = 80;
 config.MAX_SIZE_MODULUS = 417;
 config.MAX_SIZE_CHALLENGE = 360;
+config.MAX_PROFILES_QUERY = 7;
+config.MAX_PROFILES_QUERY_ONLINE = 7;
 config.listOfServerSockets = [
 	{
-		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "8090"
+		ipServerSockets	: "217.127.199.47",
+		portServerSockets : "80"
 	},
 	{
-		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "8090"		
+		ipServerSockets	: "217.127.199.47",
+		portServerSockets : "80"		
 	},
 	{
-		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "8090"		
+		ipServerSockets	: "217.127.199.47",
+		portServerSockets : "80"		
 	}
 ];
 

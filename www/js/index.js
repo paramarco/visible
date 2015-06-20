@@ -279,17 +279,17 @@ Postman.prototype.getParametersOfProfileFromServer = function(input) {
 Postman.prototype.getParametersOfLocationFromServer = function(input) {	
 	try {    
 
-		var parameters = Postman.prototype.decrypt(input);
+		var position = Postman.prototype.decrypt(input);
 		
-		if (parameters == null ||
-			typeof parameters.lat !== 'string' 	|| 
-			typeof parameters.lon !== 'string' 	 ) {
+		if (position == null ||
+			typeof position !== 'object' 	|| 
+			typeof position.coords !== 'object'  ) {
 							
 			console.log("DEBUG ::: getParametersOfLocationFromServer  ::: didn't pass the type check "); 
 			return null;
 		}
 		
-		return parameters; 
+		return position; 
 	}
 	catch (ex) {	
 		console.log("DEBUG ::: getParametersOfLocationFromServer  :::  " + ex);
@@ -2100,23 +2100,7 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("locationFromServer", function(input) {
 		
-		var location = postman.getParametersOfLocationFromServer(input); 
-
-		if (app.myPosition.coords.latitude == "" && location != null ){			
-			app.myPosition.coords.latitude = parseFloat( location.lat ); 
-			app.myPosition.coords.longitude = parseFloat( location.lon );			
-		}		
-				
-		if(app.myPosition.coords.latitude != ""){
-			var whoIsAround = { 
-			location : { 
-		  			lat : app.myPosition.coords.latitude.toString() , 
-					lon : app.myPosition.coords.longitude.toString()
-		  		}
-			};
-			
-			postman.send("RequestOfListOfPeopleAround", whoIsAround );
-		}
+		app.askServerWhoisAround( postman.getParametersOfLocationFromServer(input) );
 
 	});//END locationFromServer	
 	  
@@ -2222,25 +2206,44 @@ Application.prototype.firstLogin = function(){
 
 };
 
+
+Application.prototype.askServerWhoisAround = function(position){	
+	
+	if (position && position != null){			
+		//app.myPosition.coords.latitude = parseFloat( location.lat ); 
+		//app.myPosition.coords.longitude = parseFloat( location.lon );
+		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
+		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
+	}	
+	
+	if(app.myPosition.coords.latitude != ""){
+		var whoIsAround = { 
+			location : { 
+	  			lat : app.myPosition.coords.latitude.toString() , 
+				lon : app.myPosition.coords.longitude.toString()
+		  	}
+		};
+		
+		postman.send("RequestOfListOfPeopleAround", whoIsAround );
+	}
+		
+};
+
 Application.prototype.locateMyPosition = function(){
 	if (typeof cordova == "undefined" || cordova == null ){
 		
 		if ( navigator.geolocation ) {
 	        function success(pos) {
 	            app.myPosition = pos;
-	            positionLoaded.resolve();
+	            app.askServerWhoisAround();
 	        }
 	        function fail(error) {
 	        	//if (app.myPosition == null)
 	        	//	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
 	        	positionLoaded.resolve();
 	        }
-	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 50000, enableHighAccuracy: true, timeout: 5000 });
-	    } else {
-	    	//if (app.myPosition == null)
-	    	//	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
-	        positionLoaded.resolve();
-	    }
+	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
+	    } 
 	    
     }else{
     	
@@ -2248,16 +2251,14 @@ Application.prototype.locateMyPosition = function(){
 		    function success(pos) {
 	            app.myPosition = pos;
 	            console.log("DEBUG ::: locateMyPosition ::: success cordova ");
-	            positionLoaded.resolve();
+	            app.askServerWhoisAround();
+	            navigator.geolocation.watchPosition(function(){}, function(){});
 	        }
 	        function fail(error) {
 	        	console.log("DEBUG ::: locateMyPosition ::: fail cordova ");
 
-	        //	if (app.myPosition == null)
-	        //		app.myPosition = { coords : { latitude : "" , longitude : ""  } };
-	        	positionLoaded.resolve();
 	        }	
-    		navigator.geolocation.getCurrentPosition( success, fail );
+    		navigator.geolocation.getCurrentPosition( app.askServerWhoisAround , fail );
     	});
     }
 };

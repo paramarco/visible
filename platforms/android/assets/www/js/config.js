@@ -1,9 +1,9 @@
 function Config ()  {  
 
-	this.ipServerAuth = "192.168.178.28";		
-	this.portServerAuth	= "8090";
-	this.ipServerSockets = "192.168.178.28";		
-	this.portServerSockets	= "8090";
+	this.ipServerAuth = "217.127.199.47";		
+	this.portServerAuth	= "80";
+	this.ipServerSockets = "217.127.199.47";		
+	this.portServerSockets	= "80";
 		
 	this.limitOfflineMessages2Get = 30; 
 	this.beginingOf2015 = 1420070401000; // 2015 UNIX EPOC
@@ -14,5 +14,13 @@ function Config ()  {
 	this.MAX_WIDTH_IMG = 500;
 	this.MAX_HEIGHT_IMG = 500;
 	this.MAX_WIDTH_IMG_PROFILE = 300;
-	this.MAX_HEIGHT_IMG_PROFILE = 300;      
+	this.MAX_HEIGHT_IMG_PROFILE = 300;
+	this.MIN_WIDTH_IMG_PROFILE = 140;
+	this.MIN_HEIGHT_IMG_PROFILE = 140;
+	this.TIME_WAIT_DB = 500;
+	this.TIME_FADE_ACK = 6000;
+	this.TIME_SILENT_SCROLL = 330;
+	this.TIME_LOAD_EMOJI = 200;
+	this.TIME_LOAD_SPINNER = 200;
+	this.TIME_WAIT_WAKEUP = 1500;
 }

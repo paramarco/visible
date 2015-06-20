@@ -1,7 +1,6 @@
 //MVP
 
 
-//TODO show visibles in a parametric radio area
 //TODO refactor in two servers
 //TODO setup redis
 //TODO ngix ready
@@ -151,27 +150,29 @@ app.post('/handshake', function (req, res) {
 
 
 
-app.locals.notifyNeighbours = function (client){
+app.locals.notifyNeighbours = function (client, online){
 	
-	brokerOfVisibles.getListOfPeopleAround(client).then(function(listOfPeople){ 
+	brokerOfVisibles.getListOfPeopleAround(client, online).then(function(listOfPeople){ 
 		
 		postMan.send("notificationOfNewContact", { list : listOfPeople }, client);
 		
-		var visible = {
-			publicClientID : client.publicClientID,
-			location : client.location,
-			nickName : client.nickName,
-  			commentary : client.commentary
-		}; 
-		var list2send = [];
-		list2send.push(visible);
-		
-		listOfPeople.map(function (c){
-			brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){										
-				if (client2BeNotified != null ) 
+		if (online){
+			var visible = {
+				publicClientID : client.publicClientID,
+				location : client.location,
+				nickName : client.nickName,
+	  			commentary : client.commentary
+			}; 
+			var list2send = [];
+			list2send.push(visible);
+			
+			listOfPeople.map(function (c){
+				brokerOfVisibles.isClientOnline(c.publicClientID).then(function(client2BeNotified){										
 					postMan.send("notificationOfNewContact",  { list : list2send } , client2BeNotified);
-			});	
-		});
+				});	
+			});
+			
+		}
 		
 	});	
 	
@@ -204,12 +205,14 @@ app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
 		client.location.lat = parameters.location.lat.toString() ;	
 		client.location.lon = parameters.location.lon.toString() ;
 		// update DB
-	brokerOfVisibles.updateClientsProfile(client);		  				  			
+		brokerOfVisibles.updateClientsProfile(client);		  				  			
 	}
 	
 	if (client == null ) console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss client es null");
-	app.locals.notifyNeighbours(client);
-	
+	var online = true;
+	app.locals.notifyNeighbours(client, online);
+	online = false;
+	app.locals.notifyNeighbours(client, online);
 };
 
 
@@ -249,7 +252,10 @@ app.locals.profileUpdateHandler = function(input , socket) {
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
 	
 	if (client == null ) console.log("DEBUG ::: ProfileUpdateHandler  ::: upsss client es null");
-	app.locals.notifyNeighbours(client);
+	var online = true;
+	app.locals.notifyNeighbours(client, online);
+	online = false;
+	app.locals.notifyNeighbours(client, online);
 	
 };
 
@@ -417,31 +423,34 @@ io.sockets.on("connection", function (socket) {
 
 rl = readline.createInterface(process.stdin, process.stdout);
 rl.question('What is the user of the DataBase ? ', function(user) {	
-	rl.question('What is the password of the DataBase ? ', function(pass) {
-		
-		var DBConnectionEstablished = [
-			postMan.initDBConnection(user, pass),
-			brokerOfVisibles.initDBConnection(user, pass)
-		];
-		
-		when.all ( DBConnectionEstablished ).then(function(){
-			app.configure(function() {
-				app.set('port', process.env.OPENSHIFT_NODEJS_PORT || 8090);
-			  	app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1"); 
-			  	//app.set('ipaddr', process.env.OPENSHIFT_NODEJS_IP || "192.168.178.28");
-			});
-			
-			server.listen(	
-				app.get('port'),
-				app.get('ipaddr'), 
-				function(){	
-					console.log('Express server listening on IP: ' + app.get('ipaddr') + ' and port ' + app.get('port'));
-				}
-			);
+rl.question('What is the password of the DataBase ? ', function(pass) {
+rl.question('What IP Address do you want to set on this Server ? ', function(ipAddress) {
+rl.question('and the port ? ', function(portNumber) {		
+
+	var DBConnectionEstablished = [
+		postMan.initDBConnection(user, pass),
+		brokerOfVisibles.initDBConnection(user, pass)
+	];
+	
+	when.all ( DBConnectionEstablished ).then(function(){
+		app.configure(function() {
+			app.set('port', portNumber);
+		  	app.set('ipaddr', ipAddress );
 		});
 		
+		server.listen(	
+			app.get('port'),
+			app.get('ipaddr'), 
+			function(){	
+				console.log('server is listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
+			}
+		);
 	});
-});
+	
+});// ? ip 
+});// ? port		
+});// ? pwd
+});// ? user
 rl.on('close', function() {
   console.log('upss! the terminal was closed');
   //process.exit(0);
