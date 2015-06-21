@@ -3,6 +3,7 @@ var fs = require('fs');
 var lineByLine = require('n-readlines');
 var squel = require("squel");
 var readline = require('readline');
+var pg = require('pg');
 
 rl = readline.createInterface(process.stdin, process.stdout);
 rl.question('What is the user of the DataBase ? ', function(user) {	

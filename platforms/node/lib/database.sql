@@ -171,12 +171,6 @@ WITH (
 );
 ALTER TABLE public.messageack  OWNER TO visible;
 
---
--- Name: publicClientID; Type: INDEX; Schema: public; Owner: visible; Tablespace: 
---
-
-CREATE UNIQUE INDEX "publicClientID" ON client USING btree (publicclientid);
-
 
 --
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
