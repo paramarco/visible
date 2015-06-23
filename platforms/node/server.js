@@ -1,8 +1,5 @@
 //MVP
 
-
-//TODO refactor in two servers
-//TODO setup redis
 //TODO ngix ready
 
 //NON MVP
@@ -40,6 +37,8 @@ var	io 				= require("socket.io").listen(server),
 	brokerOfVisibles = new BrokerOfVisibles(io),
 	postMan = new PostMan(io);
 
+var redis = require('socket.io-redis');
+
 app.use(cors());
 app.use(express.bodyParser());
 
@@ -50,7 +49,7 @@ app.post('/login', function (req, res) {
 	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
 		
 		if (client == null ){
-	  		console.log('DEBUG ::: login ::: I dont know any client with this handshakeToken' + req.body.handshakeToken );	  		
+	  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + req.body.handshakeToken );	  		
 			return;
 		} 
 		
@@ -61,13 +60,7 @@ app.post('/login', function (req, res) {
 		// DEBUG
 		if ( ip == "127.0.0.1")
 			ip = "129.247.31.224";
-		
-		if ( /192/.test(ip))
-			ip = "80.187.98.215";
-		
-		//ip = "88.217.180.159";
-		// DEBUG
-		
+				
 		var clientUpdate = [ 
              brokerOfVisibles.updateClientsLocation( client, ip ) ,
 		     brokerOfVisibles.updateClientsHandshake( client )
@@ -198,7 +191,7 @@ app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
 		
 	var parameters = postMan.getRequestWhoIsaround(input, client);
 	if (parameters == null) {
-		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ..anyway for client: "  );
+		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ... anyway");
 	}
 	
 	if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
@@ -268,7 +261,7 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 	
 	//check if sender of MessageDeliveryACK is actually the receiver
 	if (messageACKparameters.to != client.publicClientID) {
-		console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong ::: messageACKparameters.to != client.publicClientID ' );
+		console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong on MessageDeliveryACKHandler ' );
 		return;
 	}
 				
@@ -335,6 +328,9 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	});
 	
 };
+
+
+io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
 	
@@ -420,38 +416,27 @@ io.sockets.on("connection", function (socket) {
 
 });
 
+//$ sudo node server.js --instanceNumber=[number] &
+var argv = require('minimist')(process.argv.slice(2));
+var id = parseInt(argv.instanceNumber);
 
-rl = readline.createInterface(process.stdin, process.stdout);
-rl.question('What is the user of the DataBase ? ', function(user) {	
-rl.question('What is the password of the DataBase ? ', function(pass) {
-rl.question('What IP Address do you want to set on this Server ? ', function(ipAddress) {
-rl.question('and the port ? ', function(portNumber) {		
 
-	var DBConnectionEstablished = [
-		postMan.initDBConnection(user, pass),
-		brokerOfVisibles.initDBConnection(user, pass)
-	];
-	
-	when.all ( DBConnectionEstablished ).then(function(){
-		app.configure(function() {
-			app.set('port', portNumber);
-		  	app.set('ipaddr', ipAddress );
-		});
-		
-		server.listen(	
-			app.get('port'),
-			app.get('ipaddr'), 
-			function(){	
-				console.log('server is listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
-			}
-		);
+var DBConnectionEstablished = [
+	postMan.initDBConnection(config.instance[id].db.user, config.instance[id].db.pass),
+	brokerOfVisibles.initDBConnection(config.instance[id].db.user, config.instance[id].db.pass)
+];
+
+when.all ( DBConnectionEstablished ).then(function(){
+	app.configure(function() {
+		app.set('port', config.instance[id].portNumber);
+	  	app.set('ipaddr', config.instance[id].ipAddress );
 	});
 	
-});// ? ip 
-});// ? port		
-});// ? pwd
-});// ? user
-rl.on('close', function() {
-  console.log('upss! the terminal was closed');
-  //process.exit(0);
+	server.listen(	
+		app.get('port'),
+		app.get('ipaddr'), 
+		function(){	
+			console.log('server is listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
+		}
+	);
 });

@@ -15,6 +15,8 @@
     "when": 		"~3.7.2",
     "squel": 		"~3.10.0",
     "n-readlines": 	"~0.2.0",
+    "minimist" : "~1.1.1",
+    "socket.io-redis" : "~0.1.4",
     "shrinkwrap": 	"~0.0.3"
   },
   "repository": {
