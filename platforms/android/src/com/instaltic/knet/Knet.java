@@ -17,7 +17,7 @@
        under the License.
  */
 
-package com.instaltic.visible;
+package com.instaltic.knet;
 
 import android.os.Bundle;
 
@@ -25,7 +25,7 @@ import org.apache.cordova.Config;
 import org.apache.cordova.CordovaActivity;
 import org.apache.cordova.base64topng.*;
 
-public class visible extends CordovaActivity 
+public class Knet extends CordovaActivity 
 {
     @Override
     public void onCreate(Bundle savedInstanceState)

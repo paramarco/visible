@@ -488,7 +488,6 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}
 	}else {		
 		
-		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == message.from); } )[0];
 		var contact = contactsHandler.getContactById(message.from); 		
 		if (contact) {	
 			authorOfMessage = contact.nickName;
@@ -586,7 +585,6 @@ GUI.prototype.loadContacts = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		//listOfContacts.push(cursor.value);
      		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
@@ -601,7 +599,6 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		//listOfContacts.push(cursor.value);
      		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value,false);
          	cursor.continue(); 
@@ -747,7 +744,6 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
 
-	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == publicClientID); })[0];
 	var contact = contactsHandler.getContactById(publicClientID); 		
 	if (typeof contact == "undefined") return;
 	
@@ -1469,10 +1465,6 @@ GUI.prototype.firstLogin = function() {
 
 GUI.prototype.showLocalNotification = function(msg) {
 	
-/*	var contact = listOfContacts.filter(function(c){ 
-		return (c.publicClientID == msg.from); 
-	})[0];
-	*/
 	var contact = contactsHandler.getContactById(msg.from); 		
 	
 	if (app.inBackground && contact && typeof cordova != "undefined" ){			
@@ -1521,7 +1513,6 @@ GUI.prototype.backButtonHandler = function() {
 
 GUI.prototype.showProfileOfContact = function() {	
 	
-	//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == app.currentChatWith); })[0];
 	var contact = contactsHandler.getContactById(app.currentChatWith); 
 	if (typeof contact == "undefined") return;	
 		
@@ -1890,6 +1881,8 @@ Application.prototype.loadMyConfig = function(){
 
 Application.prototype.login2server = function(){
 	
+	if (app.connecting == true) return;
+	
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
@@ -1900,6 +1893,7 @@ Application.prototype.login2server = function(){
 		.fail(function() {
 			app.connecting = false; 
 			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
+			setTimeout( app.login2server() , config.TIME_WAIT_HTTP_POST );
 		})
 		.always(function() {
 			gui.hideLoadingSpinner();
@@ -2005,8 +1999,6 @@ Application.prototype.connect2server = function(result){
   				//stores in IndexDB			
   				mailBox.storeMessage(messageFromServer); 
   				
-  				//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == messageFromServer.from); })[0];
-  				//if (typeof contact == "undefined" || contact == null ) return;
   				var contact = contactsHandler.getContactById(messageFromServer.from); 
   				if (typeof contact == "undefined") return;
   				 		 		
@@ -2073,7 +2065,6 @@ Application.prototype.connect2server = function(result){
 		var data = postman.getParametersOfProfileFromServer(input); 
 		if (data == null) { return;	}
 		
-		//var contact = listOfContacts.filter(function(c){ return (c.publicClientID == data.publicClientID); })[0];
 		var contact = contactsHandler.getContactById(data.publicClientID); 
   		if (typeof contact == "undefined") return;
   		
@@ -2420,10 +2411,6 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$("#listOfContactsInMainPage").trigger("create");
 	$("#popupDiv").popup("open");
 	
-/*	var contact = listOfContacts.filter(function(c){ 
-		return (c.publicClientID == publicClientID); 
-	})[0];
-	*/
 	var contact = this.getContactById(publicClientID);
 	
 	if (contact){		
@@ -2471,12 +2458,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 	if (data == null ) { return;}
 
 	data.map(function(c){
-		
-/*		var contact = listOfContacts.filter(function(elem){ 
-			return (c.publicClientID == elem.publicClientID); 
-		})[0];*/
-		
-				
+
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
 			publicClientIDofRequester : app.publicClientID, 
@@ -2508,7 +2490,6 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary								
 			});
 			
-			//listOfContacts.push(newContact);
 			contactsHandler.addNewContact(newContact);
 			gui.insertContactInMainPage(newContact,true);			
 		}	
@@ -2657,7 +2638,6 @@ function Dictionary(){
 
 var db;
 var socket;
-var listOfContacts = [];
 var config = new Config();
 var gui = new GUI();
 var postman = new Postman();

@@ -23,4 +23,5 @@ function Config ()  {
 	this.TIME_LOAD_EMOJI = 200;
 	this.TIME_LOAD_SPINNER = 200;
 	this.TIME_WAIT_WAKEUP = 1500;
+	this.TIME_WAIT_HTTP_POST = 7000;
 }

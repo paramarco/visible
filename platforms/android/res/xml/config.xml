@@ -1,17 +1,16 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.instaltic.visible" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="com.instaltic.knet" version="1.2.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <preference name="loglevel" value="DEBUG" />
     <preference name="AndroidLaunchMode" value="singleTop" />
     <feature name="App">
         <param name="android-package" value="org.apache.cordova.App" />
     </feature>
-    <name>visible</name>
+    <name>knet</name>
     <description>
-        are you visible?
+      Knet is a new way of communication without email address nor telephone numbers, it simply keeps your Identity anonymous, it lets you get in touch with people around and keep them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, since your communications with "knet" are encrypted and deleted just upon reception, giving no chance for those agencies to track your profile, control you, and influence you to make you buy that product they are willing to sell you. Knet is free of adverts.
     </description>
-    <author email="marco.vereda@instaltic.com" href="http://www.instaltic.com/visible">
-        Marco Vereda Manchego
-        Julio Galaron Touriño
+    <author email="support@instaltic.com" href="http://www.instaltic.com">
+         instalTIC S.L.        
     </author>
     <content src="index.html" />
     <access origin="*" />
