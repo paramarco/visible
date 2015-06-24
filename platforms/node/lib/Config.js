@@ -10,15 +10,15 @@ config.MAX_PROFILES_QUERY = 7;
 config.MAX_PROFILES_QUERY_ONLINE = 7;
 config.listOfServerSockets = [
 	{
-		ipServerSockets	: "127.0.0.1",
+		ipServerSockets	: "217.127.199.47",
 		portServerSockets : "80"
 	},
 	{
-		ipServerSockets	: "127.0.0.1",
+		ipServerSockets	: "217.127.199.47",
 		portServerSockets : "80"		
 	},
 	{
-		ipServerSockets	: "127.0.0.1",
+		ipServerSockets	: "217.127.199.47",
 		portServerSockets : "80"		
 	}
 ];
@@ -28,7 +28,7 @@ config.instance[0] = {
 		user : "",
 		pass : ""
 	},
-	ipAddress : "127.0.0.1",
+	ipAddress : "217.127.199.47",
 	portNumber : "8090"	
 };
 config.instance[1] = {
@@ -36,7 +36,7 @@ config.instance[1] = {
 		user : "",
 		pass : ""
 	},
-	ipAddress : "127.0.0.1",
+	ipAddress : "217.127.199.47",
 	portNumber : "8091"	
 };
 config.instance[2] = {
@@ -44,7 +44,7 @@ config.instance[2] = {
 		user : "",
 		pass : ""
 	},
-	ipAddress : "127.0.0.1",
+	ipAddress : "217.127.199.47",
 	portNumber : "8092"	
 };
 

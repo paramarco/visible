@@ -2337,7 +2337,7 @@ Application.prototype.onResumeCustom =  function() {
    	app.inBackground = false; 
    	gui.hideLocalNotifications();
    	if	( app.connecting == false ){
-		setTimeout( app.login2server , config.TIME_SILENT_SCROLL ); 		
+	//	setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST ); 		
 	}
    	
 };

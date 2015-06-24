@@ -25,7 +25,7 @@ import org.apache.cordova.Config;
 import org.apache.cordova.CordovaActivity;
 import org.apache.cordova.base64topng.*;
 
-public class Knet extends CordovaActivity 
+public class knet extends CordovaActivity 
 {
     @Override
     public void onCreate(Bundle savedInstanceState)
