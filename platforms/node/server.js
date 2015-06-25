@@ -60,7 +60,8 @@ app.post('/login', function (req, res) {
 		// DEBUG
 		if ( ip == "127.0.0.1")
 			ip = "129.247.31.224";
-				
+
+		// DEBUG
 		var clientUpdate = [ 
              brokerOfVisibles.updateClientsLocation( client, ip ) ,
 		     brokerOfVisibles.updateClientsHandshake( client )
