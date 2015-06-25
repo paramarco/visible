@@ -403,7 +403,9 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 //END Class UnWrapper
 
 function GUI() {
-	this.localNotificationText = "";	
+	this.localNotificationText = "";
+	this.listOfImages4Gallery = [] ;
+	this.indexOfImages4Gallery = 0;	
 };
 
 
@@ -438,7 +440,7 @@ GUI.prototype.insertImgInGallery = function(index, src) {
 	img.onload = function() {
 	    var height = img.height; 
 		var width =  img.width; 
-		app.listOfImages4Gallery[index] = {
+		gui.listOfImages4Gallery[index] = {
 			src: src,
 		    w: width,
 		    h: height
@@ -463,7 +465,7 @@ GUI.prototype.showGallery = function(index) {
 	options.tapToClose = false;
 	options.tapToToggleControls = false;
 
-	var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, app.listOfImages4Gallery, options);
+	var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
 	gallery.init();		
 	
 };
@@ -538,13 +540,13 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 			
 			htmlOfContent = '<div class="image-preview"> ' + 
 						  	'	<a target="_blank" href="#">  ' +   
-						    '		<img class="image-embed" data-indexInGallery=' + app.indexOfImages4Gallery + ' src="' + message.messageBody.src  + '" onclick="gui.showGallery('+app.indexOfImages4Gallery+');">' +
+						    '		<img class="image-embed" data-indexInGallery=' + gui.indexOfImages4Gallery + ' src="' + message.messageBody.src  + '" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
 						  	'	</a>' + 
 						  	'	<div class="name"></div>' + 
 							'</div>' ;
 			
-			gui.insertImgInGallery(app.indexOfImages4Gallery , message.messageBody.src);
-			app.indexOfImages4Gallery = app.indexOfImages4Gallery + 1;
+			gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
+			gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 			
 		}		
 	}
@@ -1184,9 +1186,9 @@ GUI.prototype.bindDOMevents = function(){
 	    	
 	    	$("#chat-page-content").empty();
 			app.currentChatWith = null;
-			app.listOfImages4Gallery = null;
-			app.listOfImages4Gallery = [];
-			app.indexOfImages4Gallery = 0;
+			gui.listOfImages4Gallery = null;
+			gui.listOfImages4Gallery = [];
+			gui.indexOfImages4Gallery = 0;
 			
 			gui.profileUpdateHandler();
 
@@ -1727,8 +1729,7 @@ function Application() {
 	this.map = null;
 	this.connecting = false;
 	this.inBackground = false;
-	this.listOfImages4Gallery = [] ;
-	this.indexOfImages4Gallery = 0;
+	this.initialized = false;
 	
 };
 
@@ -2319,25 +2320,23 @@ Application.prototype.updateConfig = function(object) {
 
 Application.prototype.onOnlineCustom =  function() {
 	
-	console.log ("DEBUG ::: onOnlineCustom ::: triggered" );
-	
-	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
-		//if	( app.connecting == false &&  typeof socket == "undefined"){					
-		if	( app.connecting == false ){
-			app.login2server();
-		}else{
-			console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
-		}
-	});
+//	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
+	if	( app.connecting == false && app.initialized == true){
+		app.login2server();
+	}else{
+		console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
+	}
+//	});
 	
 };
 
 Application.prototype.onResumeCustom =  function() {
 	
    	app.inBackground = false; 
-   	gui.hideLocalNotifications();
-   	if	( app.connecting == false ){
-	//	setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST ); 		
+
+   	if	( app.connecting == false && app.initialized == true){
+   		gui.hideLocalNotifications();
+		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 		
 	}
    	
 };
@@ -2660,6 +2659,7 @@ var deviceReady  = new $.Deferred();
 
 $.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){
 
+	app.initialized = true;
 	app.login2server();	
 	
 });

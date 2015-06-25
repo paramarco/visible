@@ -28,24 +28,24 @@ config.instance[0] = {
 		user : "",
 		pass : ""
 	},
-	ipAddress : "217.127.199.47",
-	portNumber : "8090"	
+	ipAddress : "",
+	portNumber : ""	
 };
 config.instance[1] = {
 	db : { 
 		user : "",
 		pass : ""
 	},
-	ipAddress : "217.127.199.47",
-	portNumber : "8091"	
+	ipAddress : "",
+	portNumber : ""	
 };
 config.instance[2] = {
 	db : { 
 		user : "",
 		pass : ""
 	},
-	ipAddress : "217.127.199.47",
-	portNumber : "8092"	
+	ipAddress : "",
+	portNumber : ""	
 };
 
 
