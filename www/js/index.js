@@ -2,6 +2,8 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
+//TODO responsive buttons of chat 
+//TODO check whats going on on Gallery for windows
 
 
 //non MVP
@@ -1510,7 +1512,27 @@ GUI.prototype.hideLocalNotifications = function() {
 };
 
 GUI.prototype.backButtonHandler = function() {	
-	$('body').pagecontainer('change', '#MainPage');	
+	
+	console.log("DEBUG ::: backButtonHandler ::: activePage " + $.mobile.activePage.attr( "id" ) );
+
+	if ( $.mobile.activePage.attr( "id" ) == 'MainPage'){
+	
+		function onConfirmQuit(button){
+	       if(button == 2){
+	        navigator.app.exitApp();
+	       }
+		}
+		navigator.notification.confirm(
+			dictionary.Literals.label_18,// 'Do you want to quit?'
+			onConfirmQuit,
+			dictionary.Literals.label_19, // exit
+			dictionary.Literals.label_20 //'Yes, No' 
+		);	
+
+	}else{
+		$('body').pagecontainer('change', '#MainPage');
+	}
+	
 };
 
 GUI.prototype.showProfileOfContact = function() {	
@@ -2495,7 +2517,11 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 		postman.send("ProfileRetrieval", profileRetrievalObject );
 	});
 };
-
+/*
+dictionary.Literals.label_18,// 'Do you want to quit'
+dictionary.Literals.label_19, // exit
+dictionary.Literals.label_20 //'Yes, No
+*/
 function Dictionary(){
 	
 	var _this = this;
@@ -2517,7 +2543,10 @@ function Dictionary(){
 		label_14: "or drag and drop an image here",
 		label_15: "new contact saved ! <br> ;-) ",
 		label_16: "you got some new messages from:",
-		label_17: "My commentary:"
+		label_17: "My commentary:",
+		label_18: "Do you really want to exit?",
+		label_19: "Exit",
+		label_20: "No,Yes"
 
 	};
 	this.Literals_De = {
@@ -2537,7 +2566,10 @@ function Dictionary(){
 		label_14: "Oder per Drag & Drop ein Bild hier",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
 		label_16: "Sie einige neue Nachrichten erhalten von:",
-		label_17: "Mein Kommentar:"
+		label_17: "Mein Kommentar:",
+		label_18: "Wollen Sie wirklich beenden?",
+		label_19: "Verlassen",
+		label_20: "Abbrechen,Ok"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
@@ -2556,7 +2588,10 @@ function Dictionary(){
 		label_14: "oppure trascinare l'immagine qui",
 		label_15: "novo contacto guardado! <br>;-)",
 		label_16: "hai ricevuto qualche nuovo messaggio:",
-		label_17: "Il mio commento:"
+		label_17: "Il mio commento:",
+		label_18: "Sei sicuro di voler uscire?",
+		label_19: "Uscire",
+		label_20: "Annulla,Ok"
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
@@ -2575,7 +2610,10 @@ function Dictionary(){
 		label_14: "o bien arrastra una imagen aqu&iacute;",
 		label_15: "nuevo contacto guardado! <br>;-)",
 		label_16: "has recibido mensajes nuevos de:",
-		label_17: "Mi comentario:"			
+		label_17: "Mi comentario:",
+		label_18: "De verdad quieres salir?",
+		label_19: "Salir",
+		label_20: "Cancelar,Ok"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
@@ -2594,7 +2632,10 @@ function Dictionary(){
 		label_14: "ou glissez-déposez une image ici",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
 		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
-		label_17: "Mon commentaire:"
+		label_17: "Mon commentaire:",
+		label_18: "Voulez-vous vraiment quitter?",
+		label_19: "Quitter",
+		label_20: "Annuler,Ok"	
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -2613,7 +2654,10 @@ function Dictionary(){
 		label_14: "ou arrastar e soltar uma imagem aqui",
 		label_15: "novo contacto guardado! <br>;-)",
 		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: ",
-		label_17: "Meu coment&aacute;rio:"
+		label_17: "Meu coment&aacute;rio:",
+		label_18: "Voce realmente deseja sair?",
+		label_19: "Sair",
+		label_20: "Cancelar,Ok"	
 	};
 	
 	this.AvailableLiterals = {

@@ -1,72 +1,35 @@
-Node version: v0.10.26
+################################################################
+Google Play, Windows Store
+################################################################
+English:
 
-Cordova version: 0.21.3
+chat without email address, phone numbers, espionage nor adverts, and it's free!
 
-Config.xml file: 
+Knet is a chat without email address nor telephone numbers, it simply makes your Identity anonymous, it lets you get in touch with people around you and have them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, since your communications with "knet" are encrypted and deleted just upon reception, giving no chance for those Agencies to track your profile, control you, and influence you to make you buy that product they are willing to sell you. Knet is free of adverts. Knet let's you share messages, images and videos securely and confidentially.
+ 
 
-<?xml version='1.0' encoding='utf-8'?>
-<widget id="com.instaltic.visible" version="0.0.1" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>visible</name>
-    <description>
-        A sample Apache Cordova application that responds to the deviceready event.
-    </description>
-    <author email="dev@cordova.apache.org" href="http://cordova.io">
-        Apache Cordova Team
-    </author>
-    <content src="index.html" />
-    <access origin="*" />
-</widget>
+Deutsch:
+
+chatten ohne E-Mail, Telefonnummern, noch Spionage, und es ist kostenlos!
+
+Knet ist ein Chat, ohne E-Mail-Adresse noch Telefonnummern, macht es einfach Ihre Identität anonym, es lässt Sie in Kontakt mit Menschen um Sie herum zu erhalten und haben sie als Kontakt, hält es darüber hinaus Sie weg von Sicherheit Agenturen und Marketing-Agenturen, da Ihre Kommunikation mit "Knet" sind verschlüsselt und nur bei Empfang gelöscht, so dass keine Möglichkeit für diejenigen Agenturen in Ihrem Profil zu verfolgen, kontrollieren Sie, und beeinflussen Sie, dass Sie, dass die Produkt sie bereit sind, die Sie verkaufen, sind zu kaufen. Knet frei anzeigen. Knet lassen Sie Nachrichten, Bilder und Videos sicher und vertraulich zu teilen
 
 
-Plugins: 
+Italiano:
 
-org.apache.cordova.console,org.apache.cordova.contacts,org.apache.cordova.dialogs,org.apache.cordova.file,org.apache.cordova.file-transfer,org.apache.cordova.geolocation,org.apache.cordova.globalization,org.apache.cordova.inappbrowser,org.apache.cordova.network-information,org.apache.cordova.vibration
+chat senza indirizzo e-mail, telefono, di spionaggio né pubblicità, ed è gratis!
 
-Android platform:
+Knet è una chat senza indirizzo di posta elettronica né numeri di telefono, fa semplicemente il vostro identità anonima, ti permette di entrare in contatto con le persone intorno a voi e li hanno come contatto, inoltre, ti tiene lontano da agenzie di sicurezza e agenzie di marketing, dal momento che le comunicazioni con "knet" sono crittografati e cancellati solo al momento della ricezione, dando alcuna possibilità per quelle agenzie per monitorare il tuo profilo, che controlli, e l'influenza per farvi comprare quel prodotto che sono disposti a vendere. Knet è libero di annunci. Di Knet consentono di condividere messaggi, immagini e video in modo sicuro e riservato.
 
-Available Android targets:
-----------
-id: 1 or "android-19"
-     Name: Android 4.4.2
-     Type: Platform
-     API level: 19
-     Revision: 3
-     Skins: HVGA, QVGA, WQVGA400, WQVGA432, WSVGA, WVGA800 (default), WVGA854, WXGA720, WXGA800, WXGA800-7in
- Tag/ABIs : default/armeabi-v7a
-----------
-id: 2 or "Google Inc.:Google APIs x86:19"
-     Name: Google APIs x86
-     Type: Add-On
-     Vendor: Google Inc.
-     Revision: 4
-     Description: Android + Google APIs x86
-     Based on Android 4.4.2 (API level 19)
-     Libraries:
-      * com.google.android.media.effects (effects.jar)
-          Collection of video effects
-      * com.android.future.usb.accessory (usb.jar)
-          API for USB Accessories
-      * com.google.android.maps (maps.jar)
-          API for Google Maps
-     Skins: WQVGA432, HVGA, QVGA, WXGA800, WVGA854, WXGA800-7in, WQVGA400, WXGA720, WVGA800 (default), WSVGA
- Tag/ABIs : default/x86
-----------
-id: 3 or "Google Inc.:Google APIs:19"
-     Name: Google APIs
-     Type: Add-On
-     Vendor: Google Inc.
-     Revision: 4
-     Description: Android + Google APIs
-     Based on Android 4.4.2 (API level 19)
-     Libraries:
-      * com.google.android.media.effects (effects.jar)
-          Collection of video effects
-      * com.android.future.usb.accessory (usb.jar)
-          API for USB Accessories
-      * com.google.android.maps (maps.jar)
-          API for Google Maps
-     Skins: WQVGA432, HVGA, QVGA, WXGA800, WVGA854, WXGA800-7in, WQVGA400, WXGA720, WVGA800 (default), WSVGA
- Tag/ABIs : default/armeabi-v7a
+Espagnol:
+
+chatea sin email, número de teléfono, espionaje, ni anuncios, y es gratis!
+
+Knet es un chat sin dirección de correo electrónico ni números de teléfono, simplemente hace anónima su identidad, le permite estar en contacto con las personas que le rodean y tenerlos como contacto, además,le mantiene lejos de las agencias de seguridad y agencias de marketing, ya que sus comunicaciones con "knet" se cifran y son eliminados tras la recepción, sin dar la oportunidad a esas agencias para realizar un seguimiento de su perfil, controlarle e influenciarle para que usted compre ese producto que están dispuestos a venderle. Knet no tiene anuncios. Knet le permite compartir mensajes, imágenes y vídeos de forma segura y confidencial.
 
 
+Frances:
 
+chat sans e-mail, téléphone, d'annonces ni d'espionnage, et il est gratuit!
+
+Knet est un chat sans adresse e-mail, ni les numéros de téléphone, il est tout simplement votre identité anonyme, il vous permet d'entrer en contact avec les gens autour de vous et les avoir comme un contact, en outre, il vous éloigne de agences de sécurité et les offices de commercialisation, depuis vos communications avec "knet" sont cryptées et supprimé tout simplement à la réception, ne donnant aucune chance pour ces organismes de suivre votre profil, vous contrôlez, et de l'influence que vous fassiez vous achetez ce produit, ils sont prêts à vous vendre. Knet est libre d'annonces. Knet mais aussi de partager des messages, des images et des vidéos en toute sécurité et en toute confidentialité.
