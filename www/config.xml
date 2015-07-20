@@ -4,11 +4,11 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.instaltic.knet"
-        version   = "1.0.2">
+        version   = "1.2.2">
 
     <name>knet</name>
     <description>
-       Knet is a new way of communication without email address nor telephone numbers, it simply keeps your Identity anonymous, it lets you get in touch with people around and keep them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, since your communications with "knet" are encrypted and deleted just upon reception, giving no chance for those agencies to track your profile, control you, and influence you to make you buy that product they are willing to sell you. Knet is free of adverts.
+		Knet is a chat without email address nor telephone numbers, it simply makes your Identity anonymous, it lets you get in touch with people around you and have them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, since your communications with "knet" are encrypted and deleted just upon reception, giving no chance for those Agencies to track your profile, control you, and influence you to make you buy that product they are willing to sell you. Knet is free of adverts. Knet lets you share messages, images and videos securely and confidentially.
     </description>
     <author email="support@instaltic.com" href="http://www.instaltic.com">
         instalTIC S.L.

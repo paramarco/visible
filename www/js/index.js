@@ -1916,7 +1916,7 @@ Application.prototype.login2server = function(){
 		.fail(function() {
 			app.connecting = false; 
 			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-			setTimeout( app.login2server() , config.TIME_WAIT_HTTP_POST );
+			setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST );
 		})
 		.always(function() {
 			gui.hideLoadingSpinner();
@@ -2364,11 +2364,13 @@ Application.prototype.onResumeCustom =  function() {
 };
 
 Application.prototype.initializeDevice = function() {
+	
+	Application.prototype.bindEvents();	
+	
 	if (typeof cordova == "undefined" || cordova == null ){
 		deviceReady.resolve();
 	}
-
-	Application.prototype.bindEvents();
+	
 };
 // Bind Event Listeners
 Application.prototype.bindEvents = function() {
@@ -2393,6 +2395,7 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.receivedEvent = function() {
 	
 	try{
+		
 		deviceReady.resolve();		
 
 	}catch(err){

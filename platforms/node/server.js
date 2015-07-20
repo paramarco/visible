@@ -330,8 +330,8 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	
 };
 
-
-io.adapter(redis({ host: 'localhost', port: 6379 }));
+//DEBUG
+//io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
 	

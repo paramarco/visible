@@ -10,15 +10,18 @@ config.MAX_PROFILES_QUERY = 7;
 config.MAX_PROFILES_QUERY_ONLINE = 7;
 config.listOfServerSockets = [
 	{
-		ipServerSockets	: "217.127.199.47",
+		//ipServerSockets	: "217.127.199.47",
+		ipServerSockets	: "127.0.0.1",
 		portServerSockets : "80"
 	},
 	{
-		ipServerSockets	: "217.127.199.47",
+		//ipServerSockets	: "217.127.199.47",
+		ipServerSockets	: "127.0.0.1",
 		portServerSockets : "80"		
 	},
 	{
-		ipServerSockets	: "217.127.199.47",
+		//ipServerSockets	: "217.127.199.47",
+		ipServerSockets	: "127.0.0.1",
 		portServerSockets : "80"		
 	}
 ];
