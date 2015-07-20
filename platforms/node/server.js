@@ -83,6 +83,23 @@ app.post('/login', function (req, res) {
       
 });
 
+app.post('/register', function (req, res) {
+	
+	brokerOfVisibles.createNewClient().then(function (newClient){		
+				
+		var answer = {
+			publicClientID : newClient.publicClientID , 
+			myArrayOfKeys : newClient.myArrayOfKeys,
+			handshakeToken : newClient.handshakeToken					 
+		};
+		
+		res.json( answer );
+
+	});	
+	  
+});
+
+
 app.post('/signin', function (req, res) {
 	
 	if ( ! postMan.isRSAmodulus(req.body.n) ) return;

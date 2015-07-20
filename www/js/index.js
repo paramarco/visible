@@ -1376,6 +1376,7 @@ GUI.prototype.parseLinks = function(htmlOfContent) {
 };
 
 GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
+
 	
 	$('#listOfContactsInMainPage').hide();
 	
@@ -1413,11 +1414,12 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
  		}
  	});  	
 	         	    
- 	$("#link2profileFromMyPanel").remove();
+	$("#link2profileFromMyPanel").remove();
 	$.mobile.loading( "hide" );
 	
 	$("#formInFirstLogin").show();
 	$("#listInFirstLogin").show();
+
 };
 
 GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
@@ -1465,7 +1467,7 @@ GUI.prototype.firstLogin = function() {
 	gui.showLoadingSpinner("generating your encryption keys ...");
 	gui.removeVisibleFirstTimeOnMainPage();
 	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
-
+	
 };
 
 GUI.prototype.showLocalNotification = function(msg) {
@@ -1827,7 +1829,8 @@ Application.prototype.openDB = function() {
 	this.indexedDBHandler.onerror = function(){
 		
 		console.log("DEBUG ::: Database error ::: app.init  ");
- 		gui.loadVisibleFirstTimeOnMainPage();
+ 		app.register();
+ 		//gui.loadVisibleFirstTimeOnMainPage();
 		
 	};
 	this.indexedDBHandler.onblocked = function(){
@@ -1888,7 +1891,8 @@ Application.prototype.loadMyConfig = function(){
 	     		return;
 	     	}else{
 	     	
-	     		gui.loadVisibleFirstTimeOnMainPage();	     	   	
+	     		app.register();
+	     		//gui.loadVisibleFirstTimeOnMainPage();	     	   	
 	     	   	return;
 	     		
 	     	}
@@ -1897,7 +1901,8 @@ Application.prototype.loadMyConfig = function(){
 	}catch(e){
 		
 		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");		   
-		   gui.loadVisibleFirstTimeOnMainPage(); 
+		   app.register();
+		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
 	
 
@@ -2123,6 +2128,47 @@ Application.prototype.connect2server = function(result){
 	
 };//END of connect2server
 
+Application.prototype.register = function(){
+	
+ 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register').done(function (answer) {
+ 		
+ 		if (typeof answer == "undefined" || answer == null ){
+ 			
+	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
+	 		app.register();
+	 		
+	 	}else{
+		
+			//update app object	
+			app.publicClientID = answer.publicClientID;
+			app.myCurrentNick = answer.publicClientID;
+			app.myArrayOfKeys = answer.myArrayOfKeys;
+			app.handshakeToken = answer.handshakeToken;
+			app.lastProfileUpdate = new Date().getTime();			
+			
+	 		//update internal DB
+			var transaction = db.transaction(["myconfig"],"readwrite");	
+			var store = transaction.objectStore("myconfig");
+			var request = store.add({
+				index : 0,	
+				publicClientID : app.publicClientID , 
+				myCurrentNick : app.myCurrentNick,
+				myCommentary : app.myCommentary ,
+				myPhotoPath : app.myPhotoPath , 
+				myArrayOfKeys : app.myArrayOfKeys ,
+				lastProfileUpdate : app.lastProfileUpdate,
+				handshakeToken : app.handshakeToken
+			});
+			
+			//trigger configuration as already loaded
+			configLoaded.resolve(); 		
+	 	}
+ 		
+ 	}).fail(function() {
+		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+	});	
+
+};	
 
 Application.prototype.handshake = function(handshakeRequest){	
 	
@@ -2132,7 +2178,7 @@ Application.prototype.handshake = function(handshakeRequest){
 	 		
  		var result = postman.decryptHandshake( answer );
  		
-	 	//type cheking before going to the next step
+	 	//type checking before going to the next step
 	 	if (typeof result == "undefined" || result == null ){
 	 		console.log("DEBUG ::: handshake ::: result wrong.... another attemp....." );	 		
 	 		app.firstLogin();
