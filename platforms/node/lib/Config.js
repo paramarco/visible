@@ -28,19 +28,19 @@ config.listOfServerSockets = [
 config.instance = [];
 config.instance[0] = {
 	db : { 
-		user : "",
-		pass : ""
+		user : "visible",
+		pass : "paramarco"
 	},
-	ipAddress : "",
-	portNumber : ""	
+	ipAddress : "127.0.0.1",
+	portNumber : "8090"	
 };
 config.instance[1] = {
 	db : { 
-		user : "",
-		pass : ""
+		user : "visible",
+		pass : "paramarco"
 	},
-	ipAddress : "",
-	portNumber : ""	
+	ipAddress : "127.0.0.1",
+	portNumber : "8091"
 };
 config.instance[2] = {
 	db : { 

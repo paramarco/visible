@@ -2,8 +2,9 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
-//TODO responsive buttons of chat 
 //TODO check whats going on on Gallery for windows
+//TODO GUI : responsive buttons of chat, change loading for newbies, size of image Picker , profile view, gallery on windows, side bar button with on click , make text content of SMS wider, size of avatar in chat page (menubar)
+//TODO analysis SMS from a non contact
 
 
 //non MVP
