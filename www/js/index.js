@@ -622,7 +622,12 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
-	}	
+	}
+	
+	if (contact.path2photo == ""){
+		contact.path2photo = "./img/profile_black_195x195.png" ;
+	}
+	
 	
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '">'+
@@ -652,6 +657,9 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	}	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
+	}
+	if (contact.path2photo == ""){
+		contact.path2photo = "./img/profile_black_195x195.png" ;
 	}
 	var htmlOfCounter = "";
 	if ( contact.counterOfUnreadSMS > 0 ){
@@ -1636,6 +1644,27 @@ GUI.prototype.updatePurchasePrice = function() {
 	
 };
 
+GUI.prototype.loadProfile = function() {
+	
+	$('#imageProfile').picEdit({
+		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		navToolsEnabled : true,
+		defaultImage: app.myPhotoPath,
+		imageUpdated: function(img){
+			
+			app.myPhotoPath = img.src;
+			app.lastProfileUpdate = new Date().getTime();
+			app.profileIsChanged = true;
+
+		}
+	});
+	
+};
+
+
 
 function MailBox() {
 };
@@ -1741,9 +1770,9 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 
 function Application() {
 	this.currentChatWith = null,
-	this.myCurrentNick = null,
+	this.myCurrentNick = "",
 	this.myCommentary = "",
-	this.myPhotoPath = null,
+	this.myPhotoPath = "",
 	this.myArrayOfKeys = [],
 	this.publicClientID = null,
 	this.myPosition = { coords : { latitude : "",  longitude : ""} },  
@@ -1870,21 +1899,7 @@ Application.prototype.loadMyConfig = function(){
 				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 				app.handshakeToken = cursor.value.handshakeToken;
 		
-				$('#imageProfile').picEdit({
-					maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-					maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-					minWidth: config.MIN_WIDTH_IMG_PROFILE ,
-					minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
-					navToolsEnabled : true,
-		     		defaultImage: app.myPhotoPath,
-		     		imageUpdated: function(img){
-		     			
-		   				app.myPhotoPath = img.src;
-		   				app.lastProfileUpdate = new Date().getTime();
-		   				app.profileIsChanged = true;
 
-		     		}
-		     	});
 				
 				//	trigger configuration as already loaded     		
 				configLoaded.resolve(); 
@@ -2097,18 +2112,22 @@ Application.prototype.connect2server = function(result){
 		var contact = contactsHandler.getContactById(data.publicClientID); 
   		if (typeof contact == "undefined") return;
   		
-		contact.path2photo = data.img;
+  		if (data.img == ""){
+  			contact.path2photo = "./img/profile_black_195x195.png" ;
+  		}else{
+  			contact.path2photo = data.img;	
+  		}  		
 		contact.nickName = data.nickName ;
 		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
 
-		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
-		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
+		$("#profilePhoto" + data.publicClientID ).attr("src", contact.path2photo);		
+		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		if ( contact.path2photo != "" ) kids.find("img").attr("src", data.img);		
+		if ( contact.path2photo != "" ) kids.find("img").attr("src", contact.path2photo);		
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
@@ -2198,7 +2217,7 @@ Application.prototype.handshake = function(handshakeRequest){
 				index : 0,	
 				publicClientID : result.publicClientID , 
 				myCurrentNick : app.myCurrentNick,
-				myCommentary : "",
+				myCommentary : app.myCommentary,
 				myPhotoPath : app.myPhotoPath , 
 				myArrayOfKeys : result.myArrayOfKeys ,
 				lastProfileUpdate : new Date().getTime(),
@@ -2754,6 +2773,7 @@ var deviceReady  = new $.Deferred();
 $.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){
 
 	app.initialized = true;
+	gui.loadProfile(); 
 	app.login2server();	
 	
 });
