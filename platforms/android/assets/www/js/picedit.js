@@ -29,6 +29,8 @@
 			maxHeight: 'auto',				// Max height parameter
 			minWidth: 'auto',				// Max width parameter | 'auto'
 			minHeight: 'auto',				// Max height parameter
+			displayWidth: 'auto',
+			displayHeight: 'auto',
 			aspectRatio: true,				// Preserve aspect ratio
             defaultImage: false,            // Default image to be used with the plugin
             navToolsEnabled: true,
@@ -218,6 +220,16 @@
 				this._variables.prev_pos = false;
                 // Load default image if one is set
                 if(this.options.defaultImage) _this.set_default_image(this.options.defaultImage);
+                
+                if(this.options.displayWidth != 'auto') {
+					$(this.element).css({
+						"width": this.options.displayWidth,
+						"height": this.options.displayHeight
+					});
+				}
+                
+//              displayWidth: 'auto',
+//				displayHeight: 'auto',  
 		},
         // Check Browser Capabilities (determine if the picedit should run, or leave the default file-input field)
         check_browser_capabilities: function () {

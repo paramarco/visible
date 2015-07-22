@@ -3,7 +3,7 @@
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
 //TODO check whats going on on Gallery for windows
-//TODO GUI : responsive buttons of chat, change loading for newbies, size of image Picker , profile view, gallery on windows, side bar button with on click , make text content of SMS wider, size of avatar in chat page (menubar)
+//TODO GUI : responsive buttons of chat, size of image Picker , profile view, side bar button with on click, fix cam web in firefox 
 //TODO analysis SMS from a non contact
 
 
@@ -622,7 +622,12 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
-	}	
+	}
+	
+	if (contact.path2photo == ""){
+		contact.path2photo = "./img/profile_black_195x195.png" ;
+	}
+	
 	
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '">'+
@@ -652,6 +657,9 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	}	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
+	}
+	if (contact.path2photo == ""){
+		contact.path2photo = "./img/profile_black_195x195.png" ;
 	}
 	var htmlOfCounter = "";
 	if ( contact.counterOfUnreadSMS > 0 ){
@@ -846,6 +854,8 @@ GUI.prototype.showImagePic = function() {
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : config.MAX_WIDTH_IMG ,
 		maxHeight : config.MAX_HEIGHT_IMG ,
+		displayWidth: $(window).width() * 0.90 ,
+		displayHeight: $(window).height() * 0.75 , 
 		navToolsEnabled : false,
 		porup2remove : '#popupDivMultimedia',
  		imageUpdated: function(img){ 
@@ -979,22 +989,59 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> 		    		";
 	strVar += "	    		<\/div>";
-	strVar += "			    <div class=\"ui-block-b\">	<h2 id=\"nickNameInProfile\"><\/h2> <\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
 	strVar += "			    <div class=\"ui-block-d\"><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header --> 	";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\">			";
-	strVar += "				<div id=\"picEditDiv\">";
-	strVar += "						<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
-	strVar += "				<\/div>			    ";
-	strVar += "				<div data-role=\"fieldcontain\">";
-	strVar += "					 <label id=\"label_5\" for=\"profileNameField\">my nick Name:<\/label>";
-	strVar += "					 <input id=\"profileNameField\" type=\"text\" name=\"profileNameField\" value=\"\">";
-	strVar += "					 <label id=\"label_17\" for=\"profileCommentary\">Commentary:<\/label>";
-	strVar += "					 <input id=\"profileCommentary\" type=\"text\" name=\"profileCommentary\" value=\"\">";
-	strVar += "				<\/div>  ";
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\" data-role=\"none\" >";
+	strVar += "										<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1  id=\"nickNameInProfile\" ><\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5 id=\"commentaryInProfile\" ><\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "								";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">						";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<h1>Profile<\/h1>";
+	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "										<p><\/p>";
+	//strVar += "										<form>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileNameField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileCommentary\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "													<\/div>													";
+	strVar += "												<\/div>";
+	strVar += "											<\/div>";
+//	strVar += "											<div class=\"row\">";
+//	strVar += "												<button class=\"btn btn-lg btn-primary btn-block\">UPDATE<\/button>";
+//	strVar += "											<\/div>";
+//	strVar += "										<\/form>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page profile-->";
 	strVar += "		";
@@ -1182,12 +1229,42 @@ GUI.prototype.loadMaps = function(){
 };
 
 
+GUI.prototype.loadMapOnProfileOfContact = function(){
+
+	var contact = contactsHandler.getContactById(app.currentChatWith); 
+	if (typeof contact == "undefined") return;
+	
+	var newMap = L.map('mapProfile');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'examples.map-i875mjb7',
+		trackResize : true
+	}).addTo(newMap);
+	
+//	newMap.setView([contact.location.lat, contact.location.lon], 14);  
+//	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+//	L.marker(latlng).addTo(newMap).bindPopup( contact.nickName );
+	newMap.setView([contact.location.lat, contact.location.lon], 14);  
+	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+	L.marker(latlng).addTo(newMap).bindPopup(contact.nickName);	
+	L.circle(latlng, 200).addTo(newMap); 	
+		
+};
+
+
+
+
 GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
 	    if (ui.options.target == "#MainPage"){			
 	    	
 	    	$("#chat-page-content").empty();
+	    	$("#ProfileOfContact-page").empty();
 			app.currentChatWith = null;
 			gui.listOfImages4Gallery = null;
 			gui.listOfImages4Gallery = [];
@@ -1198,7 +1275,11 @@ GUI.prototype.bindDOMevents = function(){
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
-	    } 
+	    }
+	    if (ui.options.target == "#ProfileOfContact-page"){		
+			gui.loadMapOnProfileOfContact();				 
+	    }
+	    
 	    
 	    gui.hideLoadingSpinner();
 	});
@@ -1254,7 +1335,9 @@ GUI.prototype.bindDOMevents = function(){
 	$(document).on("pageshow","#profile",function(event){ 
 		$("#nickNameInProfile").html(app.myCurrentNick);
 		$("#profileNameField").val(app.myCurrentNick);
+		$("#commentaryInProfile").html(app.myCommentary);
 		$("#profileCommentary").val(app.myCommentary);
+
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1267,7 +1350,8 @@ GUI.prototype.bindDOMevents = function(){
 		app.profileIsChanged = true;
 	});
 	$("#profileCommentary").on("input", function() {
-		app.myCommentary = $("#profileCommentary").val();	
+		app.myCommentary = $("#profileCommentary").val();
+		$("#commentaryInProfile").text(app.myCommentary);	
 		app.profileIsChanged = true;
 	});
 
@@ -1376,6 +1460,7 @@ GUI.prototype.parseLinks = function(htmlOfContent) {
 };
 
 GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
+
 	
 	$('#listOfContactsInMainPage').hide();
 	
@@ -1407,17 +1492,20 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		displayWidth: $(window).width() * 0.90 ,
+		displayHeight: $(window).height() * 0.80 , 
 		navToolsEnabled : true,
  		imageUpdated: function(img){
  			app.myPhotoPath = img.src;	     			
  		}
  	});  	
 	         	    
- 	$("#link2profileFromMyPanel").remove();
+	$("#link2profileFromMyPanel").remove();
 	$.mobile.loading( "hide" );
 	
 	$("#formInFirstLogin").show();
 	$("#listInFirstLogin").show();
+
 };
 
 GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
@@ -1431,7 +1519,7 @@ GUI.prototype.setLocalLabels = function() {
 	//document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
 	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
-	document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
+	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
 	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
 	document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
 	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
@@ -1442,7 +1530,7 @@ GUI.prototype.setLocalLabels = function() {
 	//dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
 	//dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
 	//label_15 saved contact, label_16 notification title
-	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
+	//document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
 };
 
 GUI.prototype.firstLogin = function() {	
@@ -1465,7 +1553,7 @@ GUI.prototype.firstLogin = function() {
 	gui.showLoadingSpinner("generating your encryption keys ...");
 	gui.removeVisibleFirstTimeOnMainPage();
 	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
-
+	
 };
 
 GUI.prototype.showLocalNotification = function(msg) {
@@ -1559,18 +1647,66 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
-	strVar += "				<img src=\"" + contact.path2photo + "\" class=\"profileImage\">";
-	strVar += "				<ul data-role=\"listview\">";
-	strVar += "  				<li>";
-	strVar += "    					<h3>" + contact.nickName  + "<\/h3>";
-	strVar += "    					<p>" + contact.commentary  + "<\/p>";
-	strVar += "  				<\/li>";
-	strVar += "				<\/ul>";
+
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\">";
+	strVar += "										<img src=\"" + contact.path2photo + "\" class=\"img-circle\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1>" + contact.nickName  + "<\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5>" + contact.commentary  + "<\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\"> ";
+	
+	strVar += "					          		<div class=\"timeline-panel\">";
+	strVar += "					          			<h1>Contact Info<\/h1>";
+	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
+	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
+	strVar += "					          				<div class=\"col-md-6\">";
+	strVar += "					          					<address>";
+	strVar += "												  	<strong>" + contact.nickName  + "<\/strong><br>";
+	strVar += "												  	somewhere in the middle of nowhere<br>";
+	strVar += "											  		CITY,  99999<br>";
+	strVar += "											  	<abbr title=\"Phone\"> "+  "&#9742" + "<\/abbr> (123) 456-7890";
+	strVar += "												<\/address>";
+	strVar += "												<address>";
+	strVar += "												  	<strong><\/strong><br>";
+	strVar += "												  	<a href=\"mailto:#\">name@company.com<\/a>";
+	strVar += "												<\/address>";
+	strVar += "						          			<\/div>";
+	strVar += "						          			<div class=\"col-md-6\">";
+	strVar += "					    	      				<p><\/p>";
+	strVar += "					        	  			<\/div>";
+	strVar += "					          			<\/div>";
+//	strVar += "					          			<div class=\"row\">";
+	strVar += "					          				<div class=\"col-md-12\">";
+	strVar += "					          					<div id=\"mapProfile\">";
+	strVar += "					          					<\/div>";
+	strVar += "					          				<\/div>";
+	strVar += "					   	    	   		<\/div>";
+	strVar += "					    	      	<\/div>";	
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";	
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
-	$("body").append(strVar);	
-	$('body').pagecontainer('change', '#ProfileOfContact-page');	
+	$("body").append(strVar);
+	$('body').pagecontainer('change', '#ProfileOfContact-page');
+
 };
 
 GUI.prototype.setTimeLastSMS = function(contact) {	
@@ -1633,6 +1769,29 @@ GUI.prototype.updatePurchasePrice = function() {
 	$("#price").html(price + "\u20AC");
 	
 };
+
+GUI.prototype.loadProfile = function() {
+
+	console.log("DEBUG ::: loadProfile  ::: app.myPhotoPath : " + app.myPhotoPath);
+	
+	$('#imageProfile').picEdit({
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		navToolsEnabled : true,
+		defaultImage: app.myPhotoPath,
+		imageUpdated: function(img){
+			
+			app.myPhotoPath = img.src;
+			app.lastProfileUpdate = new Date().getTime();
+			app.profileIsChanged = true;
+
+		}
+	});
+
+};
+
 
 
 function MailBox() {
@@ -1739,9 +1898,9 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 
 function Application() {
 	this.currentChatWith = null,
-	this.myCurrentNick = null,
+	this.myCurrentNick = "",
 	this.myCommentary = "",
-	this.myPhotoPath = null,
+	this.myPhotoPath = "",
 	this.myArrayOfKeys = [],
 	this.publicClientID = null,
 	this.myPosition = { coords : { latitude : "",  longitude : ""} },  
@@ -1827,7 +1986,8 @@ Application.prototype.openDB = function() {
 	this.indexedDBHandler.onerror = function(){
 		
 		console.log("DEBUG ::: Database error ::: app.init  ");
- 		gui.loadVisibleFirstTimeOnMainPage();
+ 		app.register();
+ 		//gui.loadVisibleFirstTimeOnMainPage();
 		
 	};
 	this.indexedDBHandler.onblocked = function(){
@@ -1867,28 +2027,15 @@ Application.prototype.loadMyConfig = function(){
 				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 				app.handshakeToken = cursor.value.handshakeToken;
 		
-				$('#imageProfile').picEdit({
-					maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-					maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-					minWidth: config.MIN_WIDTH_IMG_PROFILE ,
-					minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
-					navToolsEnabled : true,
-		     		defaultImage: app.myPhotoPath,
-		     		imageUpdated: function(img){
-		     			
-		   				app.myPhotoPath = img.src;
-		   				app.lastProfileUpdate = new Date().getTime();
-		   				app.profileIsChanged = true;
 
-		     		}
-		     	});
 				
 				//	trigger configuration as already loaded     		
 				configLoaded.resolve(); 
 	     		return;
 	     	}else{
 	     	
-	     		gui.loadVisibleFirstTimeOnMainPage();	     	   	
+	     		app.register();
+	     		//gui.loadVisibleFirstTimeOnMainPage();	     	   	
 	     	   	return;
 	     		
 	     	}
@@ -1897,7 +2044,8 @@ Application.prototype.loadMyConfig = function(){
 	}catch(e){
 		
 		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");		   
-		   gui.loadVisibleFirstTimeOnMainPage(); 
+		   app.register();
+		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
 	
 
@@ -2092,18 +2240,22 @@ Application.prototype.connect2server = function(result){
 		var contact = contactsHandler.getContactById(data.publicClientID); 
   		if (typeof contact == "undefined") return;
   		
-		contact.path2photo = data.img;
+  		if (data.img == ""){
+  			contact.path2photo = "./img/profile_black_195x195.png" ;
+  		}else{
+  			contact.path2photo = data.img;	
+  		}  		
 		contact.nickName = data.nickName ;
 		contact.commentary = data.commentary ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
 
-		$("#profilePhoto" + data.publicClientID ).attr("src", data.img);		
-		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", data.img);
+		$("#profilePhoto" + data.publicClientID ).attr("src", contact.path2photo);		
+		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		if ( contact.path2photo != "" ) kids.find("img").attr("src", data.img);		
+		if ( contact.path2photo != "" ) kids.find("img").attr("src", contact.path2photo);		
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
@@ -2123,6 +2275,47 @@ Application.prototype.connect2server = function(result){
 	
 };//END of connect2server
 
+Application.prototype.register = function(){
+	
+ 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register').done(function (answer) {
+ 		
+ 		if (typeof answer == "undefined" || answer == null ){
+ 			
+	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
+	 		app.register();
+	 		
+	 	}else{
+		
+			//update app object	
+			app.publicClientID = answer.publicClientID;
+			app.myCurrentNick = answer.publicClientID;
+			app.myArrayOfKeys = answer.myArrayOfKeys;
+			app.handshakeToken = answer.handshakeToken;
+			app.lastProfileUpdate = new Date().getTime();			
+			
+	 		//update internal DB
+			var transaction = db.transaction(["myconfig"],"readwrite");	
+			var store = transaction.objectStore("myconfig");
+			var request = store.add({
+				index : 0,	
+				publicClientID : app.publicClientID , 
+				myCurrentNick : app.myCurrentNick,
+				myCommentary : app.myCommentary ,
+				myPhotoPath : app.myPhotoPath , 
+				myArrayOfKeys : app.myArrayOfKeys ,
+				lastProfileUpdate : app.lastProfileUpdate,
+				handshakeToken : app.handshakeToken
+			});
+			
+			//trigger configuration as already loaded
+			configLoaded.resolve(); 		
+	 	}
+ 		
+ 	}).fail(function() {
+		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+	});	
+
+};	
 
 Application.prototype.handshake = function(handshakeRequest){	
 	
@@ -2132,7 +2325,7 @@ Application.prototype.handshake = function(handshakeRequest){
 	 		
  		var result = postman.decryptHandshake( answer );
  		
-	 	//type cheking before going to the next step
+	 	//type checking before going to the next step
 	 	if (typeof result == "undefined" || result == null ){
 	 		console.log("DEBUG ::: handshake ::: result wrong.... another attemp....." );	 		
 	 		app.firstLogin();
@@ -2152,7 +2345,7 @@ Application.prototype.handshake = function(handshakeRequest){
 				index : 0,	
 				publicClientID : result.publicClientID , 
 				myCurrentNick : app.myCurrentNick,
-				myCommentary : "",
+				myCommentary : app.myCommentary,
 				myPhotoPath : app.myPhotoPath , 
 				myArrayOfKeys : result.myArrayOfKeys ,
 				lastProfileUpdate : new Date().getTime(),
@@ -2708,6 +2901,7 @@ var deviceReady  = new $.Deferred();
 $.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){
 
 	app.initialized = true;
+	gui.loadProfile(); 
 	app.login2server();	
 	
 });
@@ -2718,7 +2912,6 @@ $(document).ready(function() {
 	app.init();	
 	app.initializeDevice();
 	gui.bindDOMevents();	
-	
 	
 });
 

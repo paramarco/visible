@@ -12,17 +12,17 @@ config.listOfServerSockets = [
 	{
 		//ipServerSockets	: "217.127.199.47",
 		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "80"
+		portServerSockets : "8090"
 	},
 	{
 		//ipServerSockets	: "217.127.199.47",
 		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "80"		
+		portServerSockets : "8090"		
 	},
 	{
 		//ipServerSockets	: "217.127.199.47",
 		ipServerSockets	: "127.0.0.1",
-		portServerSockets : "80"		
+		portServerSockets : "8090"		
 	}
 ];
 config.instance = [];
@@ -40,7 +40,7 @@ config.instance[1] = {
 		pass : "paramarco"
 	},
 	ipAddress : "127.0.0.1",
-	portNumber : "8091"
+	portNumber : "8090"
 };
 config.instance[2] = {
 	db : { 

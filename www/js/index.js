@@ -3,7 +3,7 @@
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
 //TODO check whats going on on Gallery for windows
-//TODO GUI : responsive buttons of chat, change loading for newbies, size of image Picker , profile view, gallery on windows, side bar button with on click , make text content of SMS wider, size of avatar in chat page (menubar)
+//TODO GUI : responsive buttons of chat, size of image Picker , profile view, side bar button with on click, fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
 //TODO analysis SMS from a non contact
 
 
@@ -854,6 +854,8 @@ GUI.prototype.showImagePic = function() {
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : config.MAX_WIDTH_IMG ,
 		maxHeight : config.MAX_HEIGHT_IMG ,
+		displayWidth: $(window).width() * 0.90 ,
+		displayHeight: $(window).height() * 0.75 , 
 		navToolsEnabled : false,
 		porup2remove : '#popupDivMultimedia',
  		imageUpdated: function(img){ 
@@ -987,22 +989,59 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> 		    		";
 	strVar += "	    		<\/div>";
-	strVar += "			    <div class=\"ui-block-b\">	<h2 id=\"nickNameInProfile\"><\/h2> <\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
 	strVar += "			    <div class=\"ui-block-d\"><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header --> 	";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\">			";
-	strVar += "				<div id=\"picEditDiv\">";
-	strVar += "						<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
-	strVar += "				<\/div>			    ";
-	strVar += "				<div data-role=\"fieldcontain\">";
-	strVar += "					 <label id=\"label_5\" for=\"profileNameField\">my nick Name:<\/label>";
-	strVar += "					 <input id=\"profileNameField\" type=\"text\" name=\"profileNameField\" value=\"\">";
-	strVar += "					 <label id=\"label_17\" for=\"profileCommentary\">Commentary:<\/label>";
-	strVar += "					 <input id=\"profileCommentary\" type=\"text\" name=\"profileCommentary\" value=\"\">";
-	strVar += "				<\/div>  ";
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\" data-role=\"none\" >";
+	strVar += "										<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageProfile\" class=\"picedit_box\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1  id=\"nickNameInProfile\" ><\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5 id=\"commentaryInProfile\" ><\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "								";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">						";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<h1>Profile<\/h1>";
+	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "										<p><\/p>";
+	//strVar += "										<form>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileNameField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileCommentary\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "													<\/div>													";
+	strVar += "												<\/div>";
+	strVar += "											<\/div>";
+//	strVar += "											<div class=\"row\">";
+//	strVar += "												<button class=\"btn btn-lg btn-primary btn-block\">UPDATE<\/button>";
+//	strVar += "											<\/div>";
+//	strVar += "										<\/form>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page profile-->";
 	strVar += "		";
@@ -1190,12 +1229,42 @@ GUI.prototype.loadMaps = function(){
 };
 
 
+GUI.prototype.loadMapOnProfileOfContact = function(){
+
+	var contact = contactsHandler.getContactById(app.currentChatWith); 
+	if (typeof contact == "undefined") return;
+	
+	var newMap = L.map('mapProfile');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+		maxZoom: 18,
+		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'examples.map-i875mjb7',
+		trackResize : true
+	}).addTo(newMap);
+	
+//	newMap.setView([contact.location.lat, contact.location.lon], 14);  
+//	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+//	L.marker(latlng).addTo(newMap).bindPopup( contact.nickName );
+	newMap.setView([contact.location.lat, contact.location.lon], 14);  
+	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+	L.marker(latlng).addTo(newMap).bindPopup(contact.nickName);	
+	L.circle(latlng, 200).addTo(newMap); 	
+		
+};
+
+
+
+
 GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
 	    if (ui.options.target == "#MainPage"){			
 	    	
 	    	$("#chat-page-content").empty();
+	    	$("#ProfileOfContact-page").empty();
 			app.currentChatWith = null;
 			gui.listOfImages4Gallery = null;
 			gui.listOfImages4Gallery = [];
@@ -1206,7 +1275,11 @@ GUI.prototype.bindDOMevents = function(){
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
-	    } 
+	    }
+	    if (ui.options.target == "#ProfileOfContact-page"){		
+			gui.loadMapOnProfileOfContact();				 
+	    }
+	    
 	    
 	    gui.hideLoadingSpinner();
 	});
@@ -1262,7 +1335,9 @@ GUI.prototype.bindDOMevents = function(){
 	$(document).on("pageshow","#profile",function(event){ 
 		$("#nickNameInProfile").html(app.myCurrentNick);
 		$("#profileNameField").val(app.myCurrentNick);
+		$("#commentaryInProfile").html(app.myCommentary);
 		$("#profileCommentary").val(app.myCommentary);
+
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1275,7 +1350,8 @@ GUI.prototype.bindDOMevents = function(){
 		app.profileIsChanged = true;
 	});
 	$("#profileCommentary").on("input", function() {
-		app.myCommentary = $("#profileCommentary").val();	
+		app.myCommentary = $("#profileCommentary").val();
+		$("#commentaryInProfile").text(app.myCommentary);	
 		app.profileIsChanged = true;
 	});
 
@@ -1416,6 +1492,8 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		displayWidth: $(window).width() * 0.90 ,
+		displayHeight: $(window).height() * 0.80 , 
 		navToolsEnabled : true,
  		imageUpdated: function(img){
  			app.myPhotoPath = img.src;	     			
@@ -1441,7 +1519,7 @@ GUI.prototype.setLocalLabels = function() {
 	//document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
 	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
-	document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
+	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
 	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
 	document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
 	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
@@ -1452,7 +1530,7 @@ GUI.prototype.setLocalLabels = function() {
 	//dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
 	//dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
 	//label_15 saved contact, label_16 notification title
-	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
+	//document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
 };
 
 GUI.prototype.firstLogin = function() {	
@@ -1569,18 +1647,66 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
-	strVar += "				<img src=\"" + contact.path2photo + "\" class=\"profileImage\">";
-	strVar += "				<ul data-role=\"listview\">";
-	strVar += "  				<li>";
-	strVar += "    					<h3>" + contact.nickName  + "<\/h3>";
-	strVar += "    					<p>" + contact.commentary  + "<\/p>";
-	strVar += "  				<\/li>";
-	strVar += "				<\/ul>";
+
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\">";
+	strVar += "										<img src=\"" + contact.path2photo + "\" class=\"img-circle\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1>" + contact.nickName  + "<\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5>" + contact.commentary  + "<\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\"> ";
+	
+	strVar += "					          		<div class=\"timeline-panel\">";
+	strVar += "					          			<h1>Contact Info<\/h1>";
+	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
+	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
+	strVar += "					          				<div class=\"col-md-6\">";
+	strVar += "					          					<address>";
+	strVar += "												  	<strong>" + contact.nickName  + "<\/strong><br>";
+	strVar += "												  	somewhere in the middle of nowhere<br>";
+	strVar += "											  		CITY,  99999<br>";
+	strVar += "											  	<abbr title=\"Phone\"> "+  "&#9742" + "<\/abbr> (123) 456-7890";
+	strVar += "												<\/address>";
+	strVar += "												<address>";
+	strVar += "												  	<strong><\/strong><br>";
+	strVar += "												  	<a href=\"mailto:#\">name@company.com<\/a>";
+	strVar += "												<\/address>";
+	strVar += "						          			<\/div>";
+	strVar += "						          			<div class=\"col-md-6\">";
+	strVar += "					    	      				<p><\/p>";
+	strVar += "					        	  			<\/div>";
+	strVar += "					          			<\/div>";
+//	strVar += "					          			<div class=\"row\">";
+	strVar += "					          				<div class=\"col-md-12\">";
+	strVar += "					          					<div id=\"mapProfile\">";
+	strVar += "					          					<\/div>";
+	strVar += "					          				<\/div>";
+	strVar += "					   	    	   		<\/div>";
+	strVar += "					    	      	<\/div>";	
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";	
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
-	$("body").append(strVar);	
-	$('body').pagecontainer('change', '#ProfileOfContact-page');	
+	$("body").append(strVar);
+	$('body').pagecontainer('change', '#ProfileOfContact-page');
+
 };
 
 GUI.prototype.setTimeLastSMS = function(contact) {	
@@ -1645,9 +1771,11 @@ GUI.prototype.updatePurchasePrice = function() {
 };
 
 GUI.prototype.loadProfile = function() {
+
+	console.log("DEBUG ::: loadProfile  ::: app.myPhotoPath : " + app.myPhotoPath);
 	
 	$('#imageProfile').picEdit({
-		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
@@ -1661,7 +1789,7 @@ GUI.prototype.loadProfile = function() {
 
 		}
 	});
-	
+
 };
 
 
@@ -2784,7 +2912,6 @@ $(document).ready(function() {
 	app.init();	
 	app.initializeDevice();
 	gui.bindDOMevents();	
-	
 	
 });
 
