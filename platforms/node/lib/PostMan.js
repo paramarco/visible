@@ -351,9 +351,14 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 
 		var a = tokenHandshake.split(".");
 		var uClaim = crypto.b64utos(a[1]);
-		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);		
+		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 		
 		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge ) , client );
+		
+		if (decryptedChallenge == null || client == null){
+			console.log("DEBUG ::: verifyHandshake  :::  decryptedChallenge : " + JSON.stringify(decryptedChallenge) +  " client : " + JSON.stringify(client)  );
+			return false; 
+		}
 		
 		if (decryptedChallenge.challengeClear != client.currentChallenge){
 			verified = false;

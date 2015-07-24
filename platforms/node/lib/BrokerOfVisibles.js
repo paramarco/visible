@@ -78,7 +78,8 @@ function BrokerOfVisibles(_io) {
 				var listOfVisibles = [];
 				result.rows.map(function(r){
 					
-					if (r.publicclientid != client.publicClientID){
+					if (	r.publicclientid != client.publicClientID && 
+							r.lat != null && r.lon != null){
 						var visible = {
 							publicClientID : r.publicclientid,
 							location : { lat : r.lat.toString() , lon : r.lon.toString() } ,

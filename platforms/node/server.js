@@ -44,7 +44,10 @@ app.use(express.bodyParser());
 
 app.post('/login', function (req, res) {
 	
-	if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
+	if ( ! postMan.isUUID(req.body.handshakeToken) ) {
+  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
+		return;
+	}
 	
 	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
 		

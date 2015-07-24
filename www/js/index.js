@@ -1245,9 +1245,6 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		trackResize : true
 	}).addTo(newMap);
 	
-//	newMap.setView([contact.location.lat, contact.location.lon], 14);  
-//	var latlng = L.latLng(contact.location.lat, contact.location.lon);
-//	L.marker(latlng).addTo(newMap).bindPopup( contact.nickName );
 	newMap.setView([contact.location.lat, contact.location.lon], 14);  
 	var latlng = L.latLng(contact.location.lat, contact.location.lon);
 	L.marker(latlng).addTo(newMap).bindPopup(contact.nickName);	
@@ -1772,8 +1769,6 @@ GUI.prototype.updatePurchasePrice = function() {
 
 GUI.prototype.loadProfile = function() {
 
-	console.log("DEBUG ::: loadProfile  ::: app.myPhotoPath : " + app.myPhotoPath);
-	
 	$('#imageProfile').picEdit({
  		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
@@ -1912,6 +1907,7 @@ function Application() {
 	this.connecting = false;
 	this.inBackground = false;
 	this.initialized = false;
+	this.tokenSigned = null;
 	
 };
 
@@ -1954,7 +1950,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 10);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 11);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2026,8 +2022,6 @@ Application.prototype.loadMyConfig = function(){
 				app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
 				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 				app.handshakeToken = cursor.value.handshakeToken;
-		
-
 				
 				//	trigger configuration as already loaded     		
 				configLoaded.resolve(); 
@@ -2058,6 +2052,8 @@ Application.prototype.login2server = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
+	console.log ("DEBUG ::: login2server ::: app.handshakeToken : " + app.handshakeToken);
+	
 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
 		.done(function (result) { 
 			app.connect2server(result);
@@ -2081,7 +2077,7 @@ Application.prototype.connect2server = function(result){
 		handshakeToken : app.handshakeToken ,
 		challenge :  encodeURI( postman.encrypt( { challengeClear : challengeClear } ) )
   	};
-  	var tokenSigned = postman.signToken(token2sign);
+  	app.tokenSigned = postman.signToken(token2sign);
   	
   	var remoteServer = postman.decrypt(result.server2connect);
   	if (remoteServer != null) {
@@ -2094,11 +2090,13 @@ Application.prototype.connect2server = function(result){
 		{ 
 			'forceNew' : true,
 			secure : true, 
-			query : 'token=' + tokenSigned	
+			query : 'token=' + app.tokenSigned	
 		}
 	);
 	
 	socket.on('connect', function () {
+		
+		console.log("DEBUG ::: socket.on.connected to ws server");
 		
 		app.connecting = false;	
 	
@@ -2279,13 +2277,16 @@ Application.prototype.register = function(){
 	
  	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register').done(function (answer) {
  		
- 		if (typeof answer == "undefined" || answer == null ){
+ 		if (typeof answer == "undefined" || answer == null || 
+ 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
+ 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
  			
 	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
 	 		app.register();
 	 		
 	 	}else{
 		
+	 		console.log("DEBUG ::: register ::: saving onto DB....." );	
 			//update app object	
 			app.publicClientID = answer.publicClientID;
 			app.myCurrentNick = answer.publicClientID;
@@ -2536,13 +2537,13 @@ Application.prototype.updateConfig = function(object) {
 
 Application.prototype.onOnlineCustom =  function() {
 	
-//	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
-	if	( app.connecting == false && app.initialized == true){
-		app.login2server();
-	}else{
-		console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
-	}
-//	});
+	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
+		if	( app.connecting == false && app.initialized == true){
+			app.login2server();
+		}else{
+			console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
+		}
+	});
 	
 };
 
