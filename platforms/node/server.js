@@ -1,7 +1,5 @@
 //MVP
 
-//TODO ngix ready
-
 //NON MVP
 //TODO push notifications (platform side)
 

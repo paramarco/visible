@@ -226,10 +226,8 @@
 						"width": this.options.displayWidth,
 						"height": this.options.displayHeight
 					});
-				}
-                
-//              displayWidth: 'auto',
-//				displayHeight: 'auto',  
+				}              
+ 
 		},
         // Check Browser Capabilities (determine if the picedit should run, or leave the default file-input field)
         check_browser_capabilities: function () {
@@ -317,6 +315,9 @@
 					destinationType : navigator.camera.DestinationType.FILE_URI,
 					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
 				};
+				
+				app.setMultimediaAsOpen();
+				
 				navigator.camera.getPicture(	
 					function (datasrc){ 
 						//_this._videobox.addClass("active");
@@ -459,7 +460,9 @@
 					//targetWidth: 300,
 					//targetHeight: 300,
 					//saveToPhotoAlbum: true
-				};
+				};				
+				app.setMultimediaAsOpen();
+								
 				navigator.camera.getPicture(	
 					function (datasrc){ 
 						_this._create_image_with_datasrc(datasrc, false, true);

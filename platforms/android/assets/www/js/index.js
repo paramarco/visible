@@ -2,8 +2,7 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
-//TODO check whats going on on Gallery for windows
-//TODO GUI : responsive buttons of chat, size of image Picker , profile view, side bar button with on click, fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
+//TODO GUI : fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
 //TODO analysis SMS from a non contact
 
 
@@ -11,6 +10,7 @@
 
 //TODO develop web
 //TODO push notifications (plugin configuration on client side)
+//TODO check whats going on on Gallery for windows
 //TODO have our own emoticons
 //TODO FIX shareButtons for the gallery
 //TODO Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
@@ -782,23 +782,24 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 		contactsHandler.modifyContactOnDB(contact);
 	}
 	
-	gui.loadGalleryInDOM();	
+	
 	
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
 	var strVar="";
-	strVar += "    <div id=\"gallery\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">";
-	strVar += "        <div class=\"pswp__bg\"><\/div>";
-	strVar += "        <div class=\"pswp__scroll-wrap\">";
-	strVar += "          <div class=\"pswp__container\">";
-	strVar += "			<div class=\"pswp__item\"><\/div>";
-	strVar += "			<div class=\"pswp__item\"><\/div>";
-	strVar += "			<div class=\"pswp__item\"><\/div>";
+//	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">";
+	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
+	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
+	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
+	strVar += "			<div data-role=\"none\" class=\"pswp__container\">";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
 	strVar += "          <\/div>";
-	strVar += "          <div class=\"pswp__ui pswp__ui--hidden\">";
-	strVar += "            <div class=\"pswp__top-bar\">";
-	strVar += "				<div class=\"pswp__counter\"><\/div>";
+	strVar += "          <div data-role=\"none\" class=\"pswp__ui pswp__ui--hidden\">";
+	strVar += "				<div data-role=\"none\" class=\"pswp__top-bar\">";
+	strVar += "					<div data-role=\"none\" class=\"pswp__counter\"><\/div>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
@@ -846,7 +847,7 @@ GUI.prototype.showImagePic = function() {
 	var prompt2show = 	
 		'<div id="popupDivMultimedia" data-role="popup"> '+
 		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-		'	<input type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+		'	<input data-role="none" type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
 	$("#chat-page-content").append(prompt2show);
 	$("#chat-page-content").trigger("create");
@@ -854,8 +855,8 @@ GUI.prototype.showImagePic = function() {
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : config.MAX_WIDTH_IMG ,
 		maxHeight : config.MAX_HEIGHT_IMG ,
-		displayWidth: $(window).width() * 0.90 ,
-		displayHeight: $(window).height() * 0.75 , 
+		displayWidth: $(window).width() * 0.80 ,
+		displayHeight: $(window).height() * 0.60 , 
 		navToolsEnabled : false,
 		porup2remove : '#popupDivMultimedia',
  		imageUpdated: function(img){ 
@@ -1276,7 +1277,11 @@ GUI.prototype.bindDOMevents = function(){
 	    if (ui.options.target == "#ProfileOfContact-page"){		
 			gui.loadMapOnProfileOfContact();				 
 	    }
-	    
+	    if (ui.options.target == "#chat-page"){		
+			gui.loadGalleryInDOM();					 
+	    }
+
+
 	    
 	    gui.hideLoadingSpinner();
 	});
@@ -1386,6 +1391,12 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );
+	
+	
+	
+	$(document).on("click","#link2panel",function() {
+		$( "#mypanel" ).panel( "open" );
+	});
 	
 	documentReady.resolve();
 
@@ -2046,8 +2057,11 @@ Application.prototype.loadMyConfig = function(){
 };
 
 Application.prototype.login2server = function(){
-	
-	if (app.connecting == true) return;
+		
+	if (app.connecting == true || app.initialized == false || ( typeof socket != "undefined" && socket.connected == true)){
+		console.log("DEBUG ::: login2server ::: " + JSON.stringify([app.connecting,app.initialized,socket.connected]) );
+		return;
+	} 
 	
 	app.connecting = true;
 	gui.showLoadingSpinner();	
@@ -2533,28 +2547,27 @@ Application.prototype.updateConfig = function(object) {
 	
 };
 
-
+Application.prototype.setMultimediaAsOpen = function() {
+	app.multimediaWasOpened = true;
+};
 
 Application.prototype.onOnlineCustom =  function() {
 	
 	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
-		if	( app.connecting == false && app.initialized == true){
-			app.login2server();
-		}else{
-			console.log ("DEBUG ::: onOnlineCustom :: currently connecting == true" );
-		}
+		app.login2server();
 	});
 	
 };
 
 Application.prototype.onResumeCustom =  function() {
 	
-   	app.inBackground = false; 
-
-   	if	( app.connecting == false && app.initialized == true){
+   	if	( app.multimediaWasOpened == false ){
    		gui.hideLocalNotifications();
 		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 		
 	}
+	
+	app.inBackground = false; 
+	app.multimediaWasOpened = false;
    	
 };
 
@@ -2823,11 +2836,11 @@ function Dictionary(){
 		label_7: "envoyer",
 		label_8: "vous visible ...",
 		label_9: "Tout le monde",
-		label_10: "vous devez dÃ©sactiver cette fonctionnalit&eacute;, seuls vos contacts verriez-vous en ligne, est pas ennuyeux?",
+		label_10: "vous devez désactiver cette fonctionnalit&eacute;, seuls vos contacts verriez-vous en ligne, est pas ennuyeux?",
 		label_11: "Ici, vous &ecirc;tes",
 		label_12: "est encore la r&eacute;flexion sur une belle commentaires",
 		label_13: "Je suis nouveau sur Visible!",
-		label_14: "ou glissez-dÃ©posez une image ici",
+		label_14: "ou glissez-déposez une image ici",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
 		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
 		label_17: "Mon commentaire:",

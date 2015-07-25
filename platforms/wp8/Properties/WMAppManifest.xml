@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Deployment AppPlatformVersion="8.0" xmlns="http://schemas.microsoft.com/windowsphone/2012/deployment">
+  <DefaultLanguage code="en-US" xmlns="" />
+  <Languages xmlns="">
+    <Language code="en-US" />
+  </Languages>
+  <App Author="instaltic.com" BitsPerPixel="32" Description="Knet is a chat without email address nor telephone numbers, it simply makes your Identity anonymous, it lets you get in touch with people around you and have them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, si" Genre="apps.normal" ProductID="{ada87970-32bf-11e5-8e8e-af52a34335a2}" Publisher="knet" PublisherID="{db093ed5-53b1-45f7-af72-751e8f36ab80}" RuntimeType="Silverlight" Title="knet" Version="1.2.1" xmlns="">
+    <IconPath IsRelative="true" IsResource="false">logo_96x96.png</IconPath>
+    <Capabilities>
+      <Capability Name="ID_CAP_WEBBROWSERCOMPONENT" />
+      <Capability Name="ID_CAP_NETWORKING" />
+      <Capability Name="ID_CAP_IDENTITY_DEVICE" />
+      <Capability Name="ID_CAP_ISV_CAMERA" />
+      <Capability Name="ID_CAP_MEDIALIB_PHOTO" />
+      <Capability Name="ID_CAP_CONTACTS" />
+      <Capability Name="ID_CAP_LOCATION" />
+    </Capabilities>
+    <Tasks>
+      <DefaultTask Name="_default" NavigationPage="MainPage.xaml" />
+    </Tasks>
+    <Tokens>
+      <PrimaryToken TaskName="_default" TokenID="knetToken">
+        <TemplateFlip>
+          <SmallImageURI IsRelative="true" IsResource="false">logo_48x48.png</SmallImageURI>
+          <Count>0</Count>
+          <BackgroundImageURI IsRelative="true" IsResource="false">logo_96x96.png</BackgroundImageURI>
+          <Title>knet</Title>
+          <BackContent />
+          <BackBackgroundImageURI />
+          <BackTitle />
+          <LargeBackgroundImageURI />
+          <LargeBackContent />
+          <LargeBackBackgroundImageURI />
+          <DeviceLockImageURI />
+          <HasLarge>false</HasLarge>
+        </TemplateFlip>
+      </PrimaryToken>
+    </Tokens>
+    <ScreenResolutions>
+      <ScreenResolution Name="ID_RESOLUTION_WVGA" />
+      <ScreenResolution Name="ID_RESOLUTION_WXGA" />
+      <ScreenResolution Name="ID_RESOLUTION_HD720P" />
+    </ScreenResolutions>
+  </App>
+</Deployment>
