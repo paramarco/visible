@@ -4,6 +4,7 @@
 //TODO translations in dictionary & stores & images
 //TODO GUI : fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
 //TODO analysis SMS from a non contact
+//TODO fonts in local
 
 
 //non MVP
@@ -2065,8 +2066,6 @@ Application.prototype.login2server = function(){
 	
 	app.connecting = true;
 	gui.showLoadingSpinner();	
-	
-	console.log ("DEBUG ::: login2server ::: app.handshakeToken : " + app.handshakeToken);
 	
 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
 		.done(function (result) { 

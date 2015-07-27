@@ -4,6 +4,7 @@
 //TODO translations in dictionary & stores & images
 //TODO GUI : fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
 //TODO analysis SMS from a non contact
+//TODO fonts in local
 
 
 //non MVP
