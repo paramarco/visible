@@ -22,6 +22,6 @@ function Config ()  {
 	this.TIME_SILENT_SCROLL = 330;
 	this.TIME_LOAD_EMOJI = 200;
 	this.TIME_LOAD_SPINNER = 200;
-	this.TIME_WAIT_WAKEUP = 1500;
+	this.TIME_WAIT_WAKEUP = 6500;
 	this.TIME_WAIT_HTTP_POST = 7000;
 }

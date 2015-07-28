@@ -2,7 +2,7 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in dictionary & stores & images
-//TODO GUI : fix cam web in firefox , remove CCV from nav in picEdit, refine inputs in Profile
+//TODO refine inputs in Profile
 //TODO analysis SMS from a non contact
 //TODO fonts in local
 
@@ -2101,7 +2101,7 @@ Application.prototype.connect2server = function(result){
 	socket = io.connect(
 		'http://' + config.ipServerSockets +  ":" + config.portServerSockets ,
 		{ 
-			'forceNew' : true,
+			forceNew : true,
 			secure : true, 
 			query : 'token=' + app.tokenSigned	
 		}
@@ -2109,8 +2109,7 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('connect', function () {
 		
-		console.log("DEBUG ::: socket.on.connected to ws server");
-		
+		console.log("DEBUG ::: socket.on.connect :::");		
 		app.connecting = false;	
 	
 		var newerDate = new Date().getTime();	
@@ -2122,8 +2121,18 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('disconnect', function () {
 		console.log("DEBUG ::: socket.on.disconnect ::: ");
-		//socket.disconnect();
 		app.connecting = false;					
+	});
+	
+	socket.on('reconnect_attempt', function () {
+		console.log("DEBUG ::: socket.on.reconnect_attempt ::: ");
+		app.connecting = true;					
+	});
+	
+	socket.on('reconnect_failed', function () {
+		console.log("DEBUG ::: socket.on.reconnect_failed ::: ");
+		app.connecting = false;
+		app.login2server();					
 	});
 
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
@@ -2553,7 +2562,7 @@ Application.prototype.setMultimediaAsOpen = function() {
 Application.prototype.onOnlineCustom =  function() {
 	
 	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
-		app.login2server();
+		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 
 	});
 	
 };
