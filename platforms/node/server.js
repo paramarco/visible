@@ -348,6 +348,19 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	
 };
 
+app.locals.reconnectHandler = function( socket ) {		
+	
+	var client = socket.visibleClient;		
+	client.socketid = socket.id ;
+	// update DB
+	brokerOfVisibles.updateClientsProfile(client);	
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
+	postMan.sendMessageHeaders(client);	
+	postMan.sendMessageACKs(client);
+	
+};
+
+
 //DEBUG
 //io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
@@ -431,7 +444,10 @@ io.sockets.on("connection", function (socket) {
 	socket.on("profileUpdate", function (msg){ app.locals.profileUpdateHandler ( msg , socket) } );	
 	
 	//XEP-0080: User Location
-	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } ); 	
+	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } );
+	
+	socket.on("reconnectNotification", function (msg){ app.locals.reconnectHandler ( socket) } );	
+ 	
 
 });
 

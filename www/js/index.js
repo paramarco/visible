@@ -2134,6 +2134,12 @@ Application.prototype.connect2server = function(result){
 		app.connecting = false;
 		app.login2server();					
 	});
+	
+	socket.on('reconnect', function () {
+		console.log("DEBUG ::: socket.on.reconnect ::: ");
+		app.connecting = false;		
+  		postman.send("reconnectNotification", {	empty : "" } );
+	});
 
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
 
