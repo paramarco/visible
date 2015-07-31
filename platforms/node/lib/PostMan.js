@@ -328,10 +328,10 @@ function PostMan(_io) {
 		}	
 		
 		try{		
-			io.sockets.to(client.socketid).emit(event2trigger, PostMan.prototype.encrypt( data, client ) );	
+			io.sockets.to(client.socketid).emit(event2trigger, PostMan.prototype.encrypt( data, client ) );
 						
 		}catch(e){
-			console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
+			console.log("DEBUG ::: postman ::: send ::: exception"  + e);
 		}		
 			
 	};	

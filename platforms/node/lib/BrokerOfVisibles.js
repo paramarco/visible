@@ -488,6 +488,7 @@ function BrokerOfVisibles(_io) {
 							    .set("lastprofileupdate", client.lastProfileUpdate)
 							    .where("publicclientid = '" + client.publicClientID + "'")
 							    .toString();
+			query2send = "BEGIN; " + query2send + "; COMMIT;";				  
 		
 		clientOfDB.query(query2send, function(err, result) {		     
 			 

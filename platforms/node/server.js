@@ -23,8 +23,8 @@ var when = require('when');
 var readline = require('readline');
 var server = http.createServer(app); //var server = https.createServer(credentials, app);
 
-var	io 				= require("socket.io").listen(server), 
-	_ 				= require('underscore')._ ,
+var	io 				= require("socket.io")(server);
+var _ 				= require('underscore')._ ,
 	Room			= require('./lib/Group.js'),
 	config 			= require('./lib/Config.js'),
 	Client			= require('./lib/Client.js'),
@@ -34,7 +34,7 @@ var	io 				= require("socket.io").listen(server),
 	forge = require('node-forge')({disableNativeCode: true}),
 	brokerOfVisibles = new BrokerOfVisibles(io),
 	postMan = new PostMan(io);
-
+//DEBUG
 var redis = require('socket.io-redis');
 
 app.use(cors());
@@ -330,6 +330,7 @@ app.locals.messagetoserverHandler = function( msg , socket) {
  		}			
 		
 	});
+
 	
 };
 
@@ -362,7 +363,7 @@ app.locals.reconnectHandler = function( socket ) {
 
 
 //DEBUG
-//io.adapter(redis({ host: 'localhost', port: 6379 }));
+io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
 	
@@ -447,7 +448,7 @@ io.sockets.on("connection", function (socket) {
 	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } );
 	
 	socket.on("reconnectNotification", function (msg){ app.locals.reconnectHandler ( socket) } );	
- 	
+	
 
 });
 
