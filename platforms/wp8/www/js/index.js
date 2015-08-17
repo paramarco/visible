@@ -4,7 +4,6 @@
 //TODO translations in dictionary & stores & images
 //TODO refine inputs in Profile
 //TODO analysis SMS from a non contact
-//TODO fonts in local
 
 
 //non MVP
@@ -19,7 +18,7 @@
 //TODO try to save img as files in mobile version(save to file as they're received)
 //TODO a wall of my news
 //TODO chineese,arab, japaneese
-//TODO check how to reduce batery consumption
+//TODO check how to reduce battery consumption
 //TODO viralization via SMS from the user's contacts
 
 
@@ -33,6 +32,8 @@ function ContactOfVisible(contact2create) {
 	this.lastProfileUpdate = config.beginingOf2015;
 	this.counterOfUnreadSMS = 0;
 	this.timeLastSMS = 0;
+	this.telephone = "";
+	this.email = "";
 };
 
 
@@ -265,7 +266,9 @@ Postman.prototype.getParametersOfProfileFromServer = function(input) {
 			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
 			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
 			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
-			typeof parameters.img !== 'string' || parameters.img == null ) {
+			typeof parameters.img !== 'string' || parameters.img == null ||
+			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
+			typeof parameters.email !== 'string' || parameters.email == null) {
 			
 			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check " + JSON.stringify(parameters) ); 
 			return null;
@@ -1031,7 +1034,13 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<\/div>";
 	strVar += "													<div class=\"form-group\">";
 	strVar += "														<input id=\"profileCommentary\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
-	strVar += "													<\/div>													";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileTelephone\" class=\"form-control input-lg\" placeholder=\"telephone...\">";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"profileEmail\" class=\"form-control input-lg\" placeholder=\"e-mail...\">";
+	strVar += "													<\/div>";
 	strVar += "												<\/div>";
 	strVar += "											<\/div>";
 //	strVar += "											<div class=\"row\">";
@@ -1335,12 +1344,18 @@ GUI.prototype.bindDOMevents = function(){
 		$('body').pagecontainer('change', '#MainPage');
 	});
 	
-	$(document).on("pageshow","#profile",function(event){ 
-		$("#nickNameInProfile").html(app.myCurrentNick);
+	$(document).on("pageshow","#profile",function(event){
+		if(app.myCurrentNick == ""){
+			$("#nickNameInProfile").html(app.publicClientID);
+		} else{
+			$("#nickNameInProfile").html(app.myCurrentNick);
+		}
+		
 		$("#profileNameField").val(app.myCurrentNick);
 		$("#commentaryInProfile").html(app.myCommentary);
 		$("#profileCommentary").val(app.myCommentary);
-
+		$("#profileTelephone").val(app.myTelephone);
+		$("#profileEmail").val(app.myEmail);		
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1357,7 +1372,15 @@ GUI.prototype.bindDOMevents = function(){
 		$("#commentaryInProfile").text(app.myCommentary);	
 		app.profileIsChanged = true;
 	});
-
+		$("#profileTelephone").on("input", function() {
+		app.myTelephone = $("#profileTelephone").val();	
+		app.profileIsChanged = true;
+	});
+	$("#profileEmail").on("input", function() {
+		app.myEmail = $("#profileEmail").val();
+		app.profileIsChanged = true;
+	});
+	
 	$(document).on("click","#mapButtonInMainPage",function() {
 		if ( app.myPosition.coords.latitude != "" ){
 			$('body').pagecontainer('change', '#map-page');
@@ -1685,14 +1708,11 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "					          				<div class=\"col-md-6\">";
 	strVar += "					          					<address>";
 	strVar += "												  	<strong>" + contact.nickName  + "<\/strong><br>";
-	strVar += "												  	somewhere in the middle of nowhere<br>";
-	strVar += "											  		CITY,  99999<br>";
-	strVar += "											  	<abbr title=\"Phone\"> "+  "&#9742" + "<\/abbr> (123) 456-7890";
+	strVar += "											  		<abbr title=\"Phone\"> &#9742 <\/abbr>" + contact.telephone;
 	strVar += "												<\/address>";
-	strVar += "												<address>";
-	strVar += "												  	<strong><\/strong><br>";
-	strVar += "												  	<a href=\"mailto:#\">name@company.com<\/a>";
-	strVar += "												<\/address>";
+	strVar += "												<email>";
+	strVar += "												  	<abbr title=\"email\"> &#9993 <\/abbr>" + contact.email;
+	strVar += "												<\/email>";
 	strVar += "						          			<\/div>";
 	strVar += "						          			<div class=\"col-md-6\">";
 	strVar += "					    	      				<p><\/p>";
@@ -1748,7 +1768,9 @@ GUI.prototype.profileUpdateHandler = function() {
 			myPhotoPath : app.myPhotoPath , 
 			myArrayOfKeys : app.myArrayOfKeys ,
 			lastProfileUpdate : app.lastProfileUpdate ,
-			handshakeToken : app.handshakeToken
+			handshakeToken : app.handshakeToken,
+			myTelephone : app.myTelephone,
+			myEmail : app.myEmail
 		});					
 	}
 };
@@ -1901,25 +1923,25 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 };
 
 
-
-
 function Application() {
-	this.currentChatWith = null,
-	this.myCurrentNick = "",
-	this.myCommentary = "",
-	this.myPhotoPath = "",
-	this.myArrayOfKeys = [],
-	this.publicClientID = null,
-	this.myPosition = { coords : { latitude : "",  longitude : ""} },  
-	this.lastProfileUpdate = null,
-	this.symetricKey2use = null,
-	this.handshakeToken = null,
-	this.profileIsChanged = false,
+	this.currentChatWith = null;
+	this.myCurrentNick = "";
+	this.myCommentary = "";
+	this.myPhotoPath = "";
+	this.myArrayOfKeys = [];
+	this.publicClientID = null;
+	this.myPosition = { coords : { latitude : "",  longitude : ""} };  
+	this.lastProfileUpdate = null;
+	this.symetricKey2use = null;
+	this.handshakeToken = null;
+	this.profileIsChanged = false;
 	this.map = null;
 	this.connecting = false;
 	this.inBackground = false;
 	this.initialized = false;
 	this.tokenSigned = null;
+	this.myTelephone = "";
+	this.myEmail = "";
 	
 };
 
@@ -2010,7 +2032,9 @@ Application.prototype.sendProfileUpdate = function() {
 		publicClientIDofSender : app.publicClientID, 
 		img : app.myPhotoPath,
 		commentary : app.myCommentary,
-		nickName: app.myCurrentNick				
+		nickName: app.myCurrentNick,
+		telephone: app.myTelephone,
+		email : app.myEmail				
 	};			
 	console.dir(profileResponseObject );
 	postman.send("profileUpdate", profileResponseObject );	
@@ -2034,7 +2058,8 @@ Application.prototype.loadMyConfig = function(){
 				app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
 				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
 				app.handshakeToken = cursor.value.handshakeToken;
-				
+				app.myTelephone = cursor.value.myTelephone;
+				app.myEmail = cursor.value.myEmail;
 				//	trigger configuration as already loaded     		
 				configLoaded.resolve(); 
 	     		return;
@@ -2272,7 +2297,9 @@ Application.prototype.connect2server = function(result){
   			contact.path2photo = data.img;	
   		}  		
 		contact.nickName = data.nickName ;
-		contact.commentary = data.commentary ;		
+		contact.commentary = data.commentary ;
+		contact.telephone = data.telephone ;
+		contact.email = data.email ;		
 		contact.lastProfileUpdate = new Date().getTime();
 		
 
@@ -2333,7 +2360,9 @@ Application.prototype.register = function(){
 				myPhotoPath : app.myPhotoPath , 
 				myArrayOfKeys : app.myArrayOfKeys ,
 				lastProfileUpdate : app.lastProfileUpdate,
-				handshakeToken : app.handshakeToken
+				handshakeToken : app.handshakeToken,
+				myTelephone : app.myTelephone,
+				myEmail : app.myEmail
 			});
 			
 			//trigger configuration as already loaded
@@ -2378,7 +2407,9 @@ Application.prototype.handshake = function(handshakeRequest){
 				myPhotoPath : app.myPhotoPath , 
 				myArrayOfKeys : result.myArrayOfKeys ,
 				lastProfileUpdate : new Date().getTime(),
-				handshakeToken : handshakeRequest.handshakeToken
+				handshakeToken : handshakeRequest.handshakeToken,
+				myTelephone : app.myTelephone,
+				myEmail : app.myEmail
 			});
 			
 
@@ -2718,8 +2749,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			contact.nickName = c.nickName ;
 			contact.commentary = c.commentary ;
 			contact.location.lat = parseFloat( c.location.lat );
-			contact.location.lon = parseFloat( c.location.lon );
-			
+			contact.location.lon = parseFloat( c.location.lon );			
 			//PRE: only if it is a persistent contact
 			contactsHandler.modifyContactOnDB(contact);
 			
@@ -2733,7 +2763,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 				location :  c.location,
 				path2photo : "./img/profile_black_195x195.png", 
 				nickName : c.nickName,
-				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary								
+				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary							
 			});
 			
 			contactsHandler.addNewContact(newContact);

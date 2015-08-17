@@ -470,7 +470,9 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			PostMan.prototype.isUUID(parameters.publicClientIDofSender) == false  || 
 			PostMan.prototype.lengthTest(parameters.nickName , config.MAX_SIZE_NICKNAME ) == false ||
 			PostMan.prototype.lengthTest(parameters.img , config.MAX_SIZE_IMG ) == false ||
-			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ) {
+			PostMan.prototype.lengthTest(parameters.telephone , config.MAX_SIZE_COMMENTARY ) == false ||
+			PostMan.prototype.lengthTest(parameters.email , config.MAX_SIZE_COMMENTARY ) == false ||
+			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false) {
 			
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 

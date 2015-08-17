@@ -120,7 +120,9 @@ CREATE TABLE public.client
   myarrayofkeys text,
   handshaketoken uuid,
   authtoken uuid,
-  lastprofileupdate bigint
+  lastprofileupdate bigint,
+  telephone text,
+  email text
 )
 WITH ( OIDS=FALSE );
 ALTER TABLE public.client OWNER TO visible;

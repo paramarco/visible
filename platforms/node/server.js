@@ -257,7 +257,9 @@ app.locals.profileUpdateHandler = function(input , socket) {
 	if (parameters == null) return;	
 	
 	client.nickName = parameters.nickName;
-	client.commentary = parameters.commentary;		
+	client.commentary = parameters.commentary;
+	client.telephone = parameters.telephone;
+	client.email = parameters.email;		
 	client.lastProfileUpdate = new Date().getTime();
 	
 	brokerOfVisibles.updateClientsProfile( client );

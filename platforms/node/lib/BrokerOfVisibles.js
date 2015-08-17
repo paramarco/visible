@@ -274,6 +274,8 @@ function BrokerOfVisibles(_io) {
 	    var query2send = squel.select()
     						.field("nickname")
     						.field("commentary")
+     						.field("telephone")
+    						.field("email")   						
     						.field("lastprofileupdate")
 						    .from("client")
 						    .where("publicclientid = '" + publicClientID + "'")
@@ -299,6 +301,8 @@ function BrokerOfVisibles(_io) {
 			    profile.publicClientID = publicClientID;
 			    profile.nickName = entry.nickname;
 			    profile.commentary = entry.commentary;
+			    profile.telephone = (typeof entry.telephone == "undefined" || entry.telephone == null ) ? "" : entry.telephone ;
+			    profile.email = (typeof entry.email == "undefined" || entry.email == null ) ? "" : entry.email ;
 			    profile.lastProfileUpdate = entry.lastprofileupdate;
 			    
     			var query2send = squel.select()
@@ -478,6 +482,15 @@ function BrokerOfVisibles(_io) {
 			client.commentary = BrokerOfVisibles.prototype.sanitize(client.commentary);
 		if ( client.nickName != null )
 			client.nickName = BrokerOfVisibles.prototype.sanitize(client.nickName);
+		if ( client.telephone != null )
+			client.telephone = BrokerOfVisibles.prototype.sanitize(client.telephone);
+		else
+			client.telephone = "";
+			
+		if ( client.email != null )
+			client.email = BrokerOfVisibles.prototype.sanitize(client.email);
+		else
+			client.email = "";
 		
 		var query2send = squel.update()
 							    .table("client")
@@ -486,6 +499,8 @@ function BrokerOfVisibles(_io) {
 							    .set("nickname", client.nickName)
 							    .set("commentary", client.commentary)
 							    .set("lastprofileupdate", client.lastProfileUpdate)
+							    .set("telephone", client.telephone)
+							    .set("email", client.email)							    
 							    .where("publicclientid = '" + client.publicClientID + "'")
 							    .toString();
 			query2send = "BEGIN; " + query2send + "; COMMIT;";				  
