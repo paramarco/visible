@@ -73,7 +73,7 @@ div.ui-controlgroup-label {
 label.ui-btn {
 	font-weight: bold;
 	border-width: 1px;
-	border-style: solid;
+	border-style: none;
 }
 .ui-btn:link {
 	text-decoration: none !important;

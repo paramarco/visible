@@ -1,8 +1,7 @@
 //MVP
 
 //TODO pay with paypal, GUI & backend
-//TODO translations in dictionary & stores & images
-//TODO refine inputs in Profile
+//TODO translations in stores & images
 //TODO analysis SMS from a non contact
 
 
@@ -2563,12 +2562,25 @@ Application.prototype.setLanguage = function(language) {
 	console.log('DEBUG ::: setLanguage ::: language.detected: ' + JSON.stringify(language) );
 	language.value = "";
 	switch (true){
-		case /en(?:\-[A-Z]{2}$)|en$|English$|english$/.test(language.detected):
+		case /en(?:\-[A-Z]{2}$)|EN$|en$|English$|english$/.test(language.detected):
 			language.value = "English";
 			break;
-		case /es(?:\-[A-Z]{2}$)|es$|espa\u00f1ol|Espa\u00f1ol/.test(language.detected):
+		case /es(?:\-[A-Z]{2}$)|ES$|es$|espa\u00f1ol$|Espa\u00f1ol$/.test(language.detected):
 			language.value = "espa\u00f1ol";
 			break;
+		case /de(?:\-[A-Z]{2}$)|DE$|de$|deutsch$|Deutsch$/.test(language.detected):
+			language.value = "Deutsch";
+			break;
+		case /it(?:\-[A-Z]{2}$)|IT$|it$|italiano$|Italiano$/.test(language.detected):
+			language.value = "italiano";
+			break;	
+		case /fr(?:\-[A-Z]{2}$)|FR$|fr$|fran\u00e7ais$|Fran\u00e7ais$/.test(language.detected):
+			language.value = "fran\u00e7ais";
+			break;
+		case /pt(?:\-[A-Z]{2}$)|PT$|pt$|portugu\u00EAs$|Portugu\u00EAs$/.test(language.detected):
+			language.value = "portugu\u00EAs";
+			break;			
+			
 		default:
 			language.value = "English";
 			break;	
@@ -2880,11 +2892,11 @@ function Dictionary(){
 		label_7: "envoyer",
 		label_8: "vous visible ...",
 		label_9: "Tout le monde",
-		label_10: "vous devez désactiver cette fonctionnalit&eacute;, seuls vos contacts verriez-vous en ligne, est pas ennuyeux?",
+		label_10: "vous devez d&eacute;sactiver cette fonctionnalit&eacute;, seuls vos contacts verriez-vous en ligne, est pas ennuyeux?",
 		label_11: "Ici, vous &ecirc;tes",
 		label_12: "est encore la r&eacute;flexion sur une belle commentaires",
 		label_13: "Je suis nouveau sur Visible!",
-		label_14: "ou glissez-déposez une image ici",
+		label_14: "ou glissez-d&eacute;posez une image ici",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
 		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
 		label_17: "Mon commentaire:",
