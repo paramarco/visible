@@ -36,7 +36,9 @@ var _ 				= require('underscore')._ ,
 	postMan = new PostMan(io);
 //DEBUG
 var redis = require('socket.io-redis');
+var paypal = require('./lib/Paypal.js'); 
 
+//DEBUG
 app.use(cors());
 app.use(express.bodyParser());
 
@@ -159,6 +161,69 @@ app.post('/handshake', function (req, res) {
 	});		  
 });
 
+app.post('/payment', function (req, res) {
+	
+	try {
+
+		if ( ! postMan.isPurchase (req.body.purchase) ) return;
+		if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
+		
+		var purchase = req.body.purchase;
+		var amount = 0;
+		if(purchase.licenseDurationChoosen == "fourYears") amount = amount + 3;
+		if(purchase.licenseDurationChoosen == "oneYear") amount = amount + 1;
+		if(purchase.isNGOdonationChecked) amount = amount + 1;
+		if(purchase.isFSIdonationChecked) amount = amount + 1;
+		if(purchase.isBackupChecked) amount = amount + 1;	
+		
+		var answer = {	
+			OK : true,
+			URL : ""
+		};
+		
+		var payment = paypal.init(
+			config.paypal.username, 
+			config.paypal.password, 
+			config.paypal.signature, 
+			config.paypal.returnURL, 
+			config.paypal.cancelURL, 
+			true // debug = true
+		);
+		
+		
+		payment.pay(req.body.handshakeToken, amount, 'Knet-app', 'EUR', function(err, url) {
+			
+			console.log ("DEBUG ::: payment.pay ::: enters");
+		    if (err) {
+		    	console.log ("DEBUG ::: payment ::: captures if err ");
+		        console.log(err);
+		        answer.OK = false;
+		        res.json( answer );
+		    }else{
+		    	answer.URL = url;
+		    	res.json( answer );
+		    	console.log("DEBUG ::: app.post(/payment) " + JSON.stringify(answer) );
+		    	//brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function (client){
+		    		
+		    	//});
+		    }
+		});	
+		
+		
+	}catch (ex) {
+		console.log("DEBUG ::: post/payment  :::  exceptrion thrown " + ex  );						
+	}
+	
+		  
+});
+
+app.post('/successPayment', function (req, res) {
+	res.end('It worked!');
+});
+
+app.post('/cancelPayment', function (req, res) {
+	res.end("It didn't work!");
+});
 
 
 
@@ -476,5 +541,6 @@ when.all ( DBConnectionEstablished ).then(function(){
 		function(){	
 			console.log('server is listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
 		}
-	);
+	);	
+	
 });

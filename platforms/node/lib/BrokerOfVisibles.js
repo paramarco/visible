@@ -359,6 +359,8 @@ function BrokerOfVisibles(_io) {
 							    .set("nickname", null)
 							    .set("commentary", null)
 							    .set("location", null)
+							    .set("telephone", null)
+							    .set("email", null)
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("lastprofileupdate", newClient.lastProfileUpdate)

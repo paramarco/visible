@@ -740,6 +740,10 @@ PostMan.prototype.isUUID = function(uuid) {
 		return	false;
 
 };
+//TODO
+PostMan.prototype.isPurchase = function(purchase) {	
+	return true;
+};
 
 PostMan.prototype.isRSAmodulus = function(modulus) {	
 

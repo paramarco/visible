@@ -20,6 +20,7 @@
 //TODO check how to reduce battery consumption
 //TODO viralization via SMS from the user's contacts
 
+	
 
 
 function ContactOfVisible(contact2create) {
@@ -406,12 +407,25 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 	}	
 };
 
+Postman.prototype.getParameterByName = function ( name, href ){
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( href );
+  if( results == null )
+    return "";
+  else
+    return decodeURIComponent(results[1].replace(/\+/g, " "));
+};
+
+
 //END Class UnWrapper
 
 function GUI() {
 	this.localNotificationText = "";
 	this.listOfImages4Gallery = [] ;
-	this.indexOfImages4Gallery = 0;	
+	this.indexOfImages4Gallery = 0;
+	this.inAppBrowser = null;
 };
 
 
@@ -1820,7 +1834,40 @@ GUI.prototype.loadProfile = function() {
 
 };
 
+GUI.prototype.inAppBrowserLoadHandler = function(event) {
+	
+	console.log("DEBUG ::: inAppBrowserLoadHandler ::: event " );
+	
+    if (event.url.match("success") !== null) {
+    	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandler);
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+		
+		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
+		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
+		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("name",event.url));
+		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
+		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
+		                
+		gui.inAppBrowser.close();
+    }    
+    if (event.url.match("cancel") !== null) {
+    	
+    	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.inAppBrowserExitHandler);
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+    	
+    	//router_to_gallery();
+    	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
+    	
+    	gui.inAppBrowser.close();
+    }
+        
+};
 
+GUI.prototype.inAppBrowserExitHandler = function (event)	{
+    //Lungo.Router.article("step2","gallery");        
+	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
+	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
+};
 
 function MailBox() {
 };
@@ -1955,19 +2002,45 @@ Application.prototype.init = function() {
 	
 };
 
-Application.prototype.processPayment= function() {
-	
-	if (typeof cordova == "undefined" || cordova == null ){
+Application.prototype.processPayment = function() {
+
+	$.when( deviceReady ).done(function(){
 		console.log("DEBUG ::: processPayment :::  ");
 		
-		var purchase = gui.getPurchaseDetails();	
-
-	}else{
-		$.when( deviceReady ).done(function(){
-						
-		});		
-	}	
+		var purchase = gui.getPurchaseDetails();		
+		app.go2paypal(purchase);
+	});					
+	
 };
+
+Application.prototype.go2paypal = function(myPurchase) {
+	
+	var jqxhr = $.post( 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment', 
+		{	
+			handshakeToken: app.handshakeToken , 
+			purchase : myPurchase
+		},
+		function() { }	,
+		"text"
+	);
+	jqxhr.done(function(result) {
+		console.log("DEBUG ::: go2paypal ::: returns from server: " + JSON.stringify(result)); 
+		
+		if ( result.OK == true){
+			// "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout-mobile&token="
+			gui.inAppBrowser = window.open( result.URL, '_blank', 'location=yes');
+			gui.inAppBrowser.addEventListener('loadstop', gui.inAppBrowserLoadHandler);
+			gui.inAppBrowser.addEventListener('exit', gui.inAppBrowserExitHandler);			
+		}
+	});
+	jqxhr.fail(function() {
+		console.log("DEBUG ::: go2paypal ::: failed: ");
+		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
+		//Lungo.Router.back();
+	});
+	jqxhr.always(function() {});		
+};		
+
 
 
 

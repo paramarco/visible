@@ -50,6 +50,13 @@ config.instance[2] = {
 	ipAddress : "",
 	portNumber : ""	
 };
+config.paypal = {
+	username : "",
+	password : "",
+	signature : "",
+	returnURL : "http://127.0.0.1:8090/successPayment",
+	cancelURL : "http://127.0.0.1:8090/cancelPayment"
+};
 
 
 
