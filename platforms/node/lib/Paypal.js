@@ -122,7 +122,7 @@ Paypal.prototype.pay = function(invoiceNumber, amout, description, currency, cal
 		}
 
 		if (data.ACK === 'Success') {
-			callback(null, self.redirect + '?cmd=_express-checkout&useraction=commit&token=' + data.TOKEN);
+			callback(null, self.redirect + '?cmd=_express-checkout-mobile&useraction=commit&token=' + data.TOKEN);
 			return;
 		}
 

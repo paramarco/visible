@@ -170,11 +170,12 @@ app.post('/payment', function (req, res) {
 		
 		var purchase = req.body.purchase;
 		var amount = 0;
+		console.log("DEBUG ::: payment ::: purchase:" +  JSON.stringify(purchase));
 		if(purchase.licenseDurationChoosen == "fourYears") amount = amount + 3;
 		if(purchase.licenseDurationChoosen == "oneYear") amount = amount + 1;
-		if(purchase.isNGOdonationChecked) amount = amount + 1;
-		if(purchase.isFSIdonationChecked) amount = amount + 1;
-		if(purchase.isBackupChecked) amount = amount + 1;	
+		if(purchase.isNGOdonationChecked == "true") amount = amount + 1;
+		if(purchase.isFSIdonationChecked == "true") amount = amount + 1;
+		if(purchase.isBackupChecked == "true") amount = amount + 1;	
 		
 		var answer = {	
 			OK : true,
@@ -193,16 +194,13 @@ app.post('/payment', function (req, res) {
 		
 		payment.pay(req.body.handshakeToken, amount, 'Knet-app', 'EUR', function(err, url) {
 			
-			console.log ("DEBUG ::: payment.pay ::: enters");
 		    if (err) {
-		    	console.log ("DEBUG ::: payment ::: captures if err ");
 		        console.log(err);
 		        answer.OK = false;
 		        res.json( answer );
 		    }else{
 		    	answer.URL = url;
 		    	res.json( answer );
-		    	console.log("DEBUG ::: app.post(/payment) " + JSON.stringify(answer) );
 		    	//brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function (client){
 		    		
 		    	//});
@@ -217,11 +215,11 @@ app.post('/payment', function (req, res) {
 		  
 });
 
-app.post('/successPayment', function (req, res) {
+app.get('/successPayment', function (req, res) {
 	res.end('It worked!');
 });
 
-app.post('/cancelPayment', function (req, res) {
+app.get('/cancelPayment', function (req, res) {
 	res.end("It didn't work!");
 });
 
@@ -430,7 +428,7 @@ app.locals.reconnectHandler = function( socket ) {
 
 
 //DEBUG
-io.adapter(redis({ host: 'localhost', port: 6379 }));
+//io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
 	

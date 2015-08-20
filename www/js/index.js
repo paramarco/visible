@@ -2005,8 +2005,6 @@ Application.prototype.init = function() {
 Application.prototype.processPayment = function() {
 
 	$.when( deviceReady ).done(function(){
-		console.log("DEBUG ::: processPayment :::  ");
-		
 		var purchase = gui.getPurchaseDetails();		
 		app.go2paypal(purchase);
 	});					
@@ -2024,11 +2022,9 @@ Application.prototype.go2paypal = function(myPurchase) {
 		"text"
 	);
 	jqxhr.done(function(result) {
-		console.log("DEBUG ::: go2paypal ::: returns from server: " + JSON.stringify(result)); 
-		
-		if ( result.OK == true){
-			// "https://www.sandbox.paypal.com/cgi-bin/webscr?cmd=_express-checkout-mobile&token="
-			gui.inAppBrowser = window.open( result.URL, '_blank', 'location=yes');
+		var response = JSON.parse(result);		
+		if ( response.OK == true){
+			gui.inAppBrowser = window.open( response.URL, '_blank', 'location=yes');
 			gui.inAppBrowser.addEventListener('loadstop', gui.inAppBrowserLoadHandler);
 			gui.inAppBrowser.addEventListener('exit', gui.inAppBrowserExitHandler);			
 		}
