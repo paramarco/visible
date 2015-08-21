@@ -20,6 +20,7 @@
 //TODO check how to reduce battery consumption
 //TODO viralization via SMS from the user's contacts
 
+	
 
 
 function ContactOfVisible(contact2create) {
@@ -406,12 +407,25 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 	}	
 };
 
+Postman.prototype.getParameterByName = function ( name, href ){
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( href );
+  if( results == null )
+    return "";
+  else
+    return decodeURIComponent(results[1].replace(/\+/g, " "));
+};
+
+
 //END Class UnWrapper
 
 function GUI() {
 	this.localNotificationText = "";
 	this.listOfImages4Gallery = [] ;
-	this.indexOfImages4Gallery = 0;	
+	this.indexOfImages4Gallery = 0;
+	this.inAppBrowser = null;
 };
 
 
@@ -905,19 +919,18 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "				<h2 id=\"label_1\">Profile<\/h2>							";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
-/*	strVar += "		<li data-icon=\"false\">";
+	strVar += "		<li data-icon=\"false\">";
 	strVar += "			<a href=\"#createGroup\" >							";
 	strVar += "				<img src=\"img\/group_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_2\" >Groups<\/h2>";
 	strVar += "			<\/a>";
-	strVar += "		<\/li>"; */
+	strVar += "		<\/li>"; 
 	strVar += "		<li data-icon=\"false\">";
 	strVar += "			<a href=\"#manageVisibles\" >							";
 	strVar += "				<img src=\"img\/visibles_black_195x195.png\" >";
-	strVar += "				<h2 id=\"label_3\" >Visibles<\/h2>";
+	strVar += "				<h2 id=\"label_3\">Search<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
-	strVar += "";
 	strVar += "		<li data-icon=\"false\">";
 	strVar += "			<a href=\"#activateAccount\" >							";
 	strVar += "				<img src=\"img\/account_black_195x195.png\" >";
@@ -947,20 +960,30 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->		";
-	strVar += "			<div data-role=\"content\" data-theme=\"b\">";
-	strVar += "				<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
-	strVar += "					<li>						";
-	strVar += "						<h2 id=\"label_8\"> you visible for...<\/h2>";	
-	strVar += "						<h3 id=\"label_9\">Anybody<\/h3>";
-	strVar += "						<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
-	strVar += "						<select name=\"flip-mini\" id=\"flip-mini\" data-role=\"slider\" data-mini=\"true\">";
-	strVar += "							<option value=\"on\">On<\/option>";
-	strVar += "							<option value=\"off\">Off<\/option>							";
-	strVar += "						<\/select>";
-	strVar += "					<\/li>							";
-	strVar += "				<\/ul>";
+	strVar += "			<div data-role=\"content\" data-theme=\"b\">";	
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">						";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<h1 id=\"label_6\">Not implemented yet<\/h1>";
+	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->			";
 	strVar += "		<\/div><!-- \/page manageVisibles-->";
+	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
@@ -976,15 +999,29 @@ GUI.prototype.loadBody = function() {
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\">							";
-	strVar += "				<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
-	strVar += "					<li>";
-	strVar += "						<h1 id=\"label_6\">Not implemented yet<\/h1>";
-	strVar += "					<\/li>					";
-	strVar += "				<\/ul>";
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">						";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<h1 id=\"label_21\">Not implemented yet<\/h1>";
+	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";	
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page createGroup-->";
-	strVar += "		";
-	strVar += "		";
+	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"profile\">";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
@@ -1015,17 +1052,15 @@ GUI.prototype.loadBody = function() {
 	strVar += "										<div class=\"hr-center\"><\/div>";
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
-	strVar += "								";
 	strVar += "							<\/div>";
 	strVar += "						<\/div>";
 	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
 	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\">						";
+	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<h1>Profile<\/h1>";
+	strVar += "										<h1 id=\"label_22\">Profile<\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
 	strVar += "										<p><\/p>";
-	//strVar += "										<form>";
 	strVar += "											<div class=\"row\">";
 	strVar += "												<div class=\"col-md-6\">";
 	strVar += "													<div class=\"form-group\">";
@@ -1042,21 +1077,28 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<\/div>";
 	strVar += "												<\/div>";
 	strVar += "											<\/div>";
-//	strVar += "											<div class=\"row\">";
-//	strVar += "												<button class=\"btn btn-lg btn-primary btn-block\">UPDATE<\/button>";
-//	strVar += "											<\/div>";
-//	strVar += "										<\/form>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<h2 id=\"label_8\"> you visible for...<\/h2>";	
+	strVar += "													<h3 id=\"label_9\">Anybody<\/h3>";
+	strVar += "													<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
+	strVar += "													<select name=\"flip-mini\" id=\"flip-mini\" data-role=\"slider\" >";
+	strVar += "														<option value=\"on\">On<\/option>";
+	strVar += "														<option value=\"off\">Off<\/option>";
+	strVar += "													<\/select>";	
+	strVar += "												<\/div>";	
+	strVar += "											<\/div>";	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
-	strVar += "							<\/div>";
+	strVar += "							<\/div>";	
 	strVar += "						<\/div>";
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page profile-->";
-	strVar += "		";
+
 	strVar += "		<div data-role=\"page\" data-cache=\"false\" id=\"map-page\" data-url=\"map-page\">";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
 	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
@@ -1069,13 +1111,11 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
-	strVar += "			";
 	strVar += "			<div role=\"main\" id=\"map-canvas\" >";
 	strVar += "		        	<!-- map loads here...  -->";
 	strVar += "		  	<\/div>";
-	strVar += "		  					";
-	strVar += "			<div data-role=\"content\" data-theme=\"a\">				 ";
-	strVar += "				<ul id=\"listOfContactsInMapPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">					";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">";
+	strVar += "				<ul id=\"listOfContactsInMapPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "				<\/ul>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"panel\" id=\"mypanel-map-page\" data-display=\"overlay\">";
@@ -1098,7 +1138,6 @@ GUI.prototype.loadBody = function() {
 	strVar += "								<h2>Visibles<\/h2>";
 	strVar += "							<\/a>";
 	strVar += "						<\/li>";
-	strVar += "";
 	strVar += "						<li data-icon=\"false\">";
 	strVar += "							<a href=\"#activateAccount\" >							";
 	strVar += "								<img src=\"img\/account_black_195x195.png\" >";
@@ -1108,7 +1147,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "					<\/ul>";
 	strVar += "			<\/div><!-- \/panel -->";
 	strVar += "		<\/div><!-- \/page map-page-->";
-	strVar += "		";
+
 	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
@@ -1547,7 +1586,7 @@ GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
 
 GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_1").innerHTML = dictionary.Literals.label_1;
-	//document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
+	document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
 	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
 	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
@@ -1556,12 +1595,22 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
 	document.getElementById("label_9").innerHTML = dictionary.Literals.label_9;
 	document.getElementById("label_10").innerHTML = dictionary.Literals.label_10;
-	//dictionary.Literals.label_11; ( dinamically inserted into the DOM , the maps...)
-	//dictionary.Literals.label_12; ( dinamically inserted into the DOM , the commentary...)
-	//dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
-	//dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
-	//label_15 saved contact, label_16 notification title
-	//document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;
+	/*dictionary.Literals.label_11; ( dinamically inserted into the DOM , the maps...)
+	dictionary.Literals.label_12; ( dinamically inserted into the DOM , the commentary...)
+	dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
+	dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
+	label_15 saved contact, label_16 notification title
+	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;	
+	dictionary.Literals.label_18,// 'Do you want to quit'
+	dictionary.Literals.label_19, // exit
+	dictionary.Literals.label_20 //'Yes, No
+	*/
+	document.getElementById("label_21").innerHTML = dictionary.Literals.label_6;
+	document.getElementById("label_22").innerHTML = dictionary.Literals.label_1;
+	$('#profileNameField').attr("placeholder", dictionary.Literals.label_23);
+	$('#profileCommentary').attr("placeholder", dictionary.Literals.label_24);
+	$('#profileTelephone').attr("placeholder", dictionary.Literals.label_25);
+	$('#profileEmail').attr("placeholder", dictionary.Literals.label_26);
 };
 
 GUI.prototype.firstLogin = function() {	
@@ -1820,7 +1869,40 @@ GUI.prototype.loadProfile = function() {
 
 };
 
+GUI.prototype.inAppBrowserLoadHandler = function(event) {
+	
+	console.log("DEBUG ::: inAppBrowserLoadHandler ::: event " );
+	
+    if (event.url.match("successPayment") !== null) {
+    	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandler);
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+		
+		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
+		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
+		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("name",event.url));
+		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
+		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
+		                
+		gui.inAppBrowser.close();
+    }    
+    if (event.url.match("cancelPayment") !== null) {
+    	
+    	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.inAppBrowserExitHandler);
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+    	
+    	//router_to_gallery();
+    	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
+    	
+    	gui.inAppBrowser.close();
+    }
+        
+};
 
+GUI.prototype.inAppBrowserExitHandler = function (event)	{
+    //Lungo.Router.article("step2","gallery");        
+	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
+	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
+};
 
 function MailBox() {
 };
@@ -1955,19 +2037,41 @@ Application.prototype.init = function() {
 	
 };
 
-Application.prototype.processPayment= function() {
-	
-	if (typeof cordova == "undefined" || cordova == null ){
-		console.log("DEBUG ::: processPayment :::  ");
-		
-		var purchase = gui.getPurchaseDetails();	
+Application.prototype.processPayment = function() {
 
-	}else{
-		$.when( deviceReady ).done(function(){
-						
-		});		
-	}	
+	$.when( deviceReady ).done(function(){
+		var purchase = gui.getPurchaseDetails();		
+		app.go2paypal(purchase);
+	});					
+	
 };
+
+Application.prototype.go2paypal = function(myPurchase) {
+	
+	var jqxhr = $.post( 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment', 
+		{	
+			handshakeToken: app.handshakeToken , 
+			purchase : myPurchase
+		},
+		function() { }	,
+		"text"
+	);
+	jqxhr.done(function(result) {
+		var response = JSON.parse(result);		
+		if ( response.OK == true){
+			gui.inAppBrowser = window.open( response.URL, '_blank', 'location=yes');
+			gui.inAppBrowser.addEventListener('loadstop', gui.inAppBrowserLoadHandler);
+			gui.inAppBrowser.addEventListener('exit', gui.inAppBrowserExitHandler);			
+		}
+	});
+	jqxhr.fail(function() {
+		console.log("DEBUG ::: go2paypal ::: failed: ");
+		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
+		//Lungo.Router.back();
+	});
+	jqxhr.always(function() {});		
+};		
+
 
 
 
@@ -2660,7 +2764,7 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.receivedEvent = function() {
 	
 	try{
-		
+		window.open = cordova.InAppBrowser.open;
 		deviceReady.resolve();		
 
 	}catch(err){
@@ -2784,11 +2888,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 		postman.send("ProfileRetrieval", profileRetrievalObject );
 	});
 };
-/*
-dictionary.Literals.label_18,// 'Do you want to quit'
-dictionary.Literals.label_19, // exit
-dictionary.Literals.label_20 //'Yes, No
-*/
+
 function Dictionary(){
 	
 	var _this = this;
@@ -2796,7 +2896,7 @@ function Dictionary(){
 	this.Literals_En = {
 		label_1: "Profile",
 		label_2: "Groups",
-		label_3: "Visibles",
+		label_3: "Search",
 		label_4: "Account",
 		label_5: "my nick Name:",
 		label_6: "Not implemented yet",
@@ -2813,13 +2913,17 @@ function Dictionary(){
 		label_17: "My commentary:",
 		label_18: "Do you really want to exit?",
 		label_19: "Exit",
-		label_20: "No,Yes"
+		label_20: "No,Yes",
+		label_23 : "Name...",
+		label_24 : "Commentary...",
+		label_25 : "Telephone...",
+		label_26 : "e-mail"
 
 	};
 	this.Literals_De = {
 		Label_1: "Profil",
 		Label_2: "Gruppen",
-		Label_3: "Visibles",
+		Label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
 		label_6: "Noch nicht implementiert",
@@ -2836,12 +2940,16 @@ function Dictionary(){
 		label_17: "Mein Kommentar:",
 		label_18: "Wollen Sie wirklich beenden?",
 		label_19: "Verlassen",
-		label_20: "Abbrechen,Ok"
+		label_20: "Abbrechen,Ok",
+		label_23 : "Name...",
+		label_24 : "Kommentar...",
+		label_25 : "Telefon...",
+		label_26 : "e-mail"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
 		Label_2: "Gruppi",
-		Label_3: "Visibles",
+		Label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
 		label_6: "Non ancora implementato",
@@ -2858,12 +2966,16 @@ function Dictionary(){
 		label_17: "Il mio commento:",
 		label_18: "Sei sicuro di voler uscire?",
 		label_19: "Uscire",
-		label_20: "Annulla,Ok"
+		label_20: "Annulla,Ok",
+		label_23 : "Nome...",
+		label_24 : "Commento...",
+		label_25 : "Telefono...",
+		label_26 : "e-mail"
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
 		label_2: "Grupos",
-		label_3: "Visibles",
+		label_3: "Buscar",
 		label_4: "Cuenta",
 		label_5: "mi apodo / nick:",
 		label_6: "no implementado aun",
@@ -2880,12 +2992,16 @@ function Dictionary(){
 		label_17: "Mi comentario:",
 		label_18: "De verdad quieres salir?",
 		label_19: "Salir",
-		label_20: "Cancelar,Ok"			
+		label_20: "Cancelar,Ok",
+		label_23 : "Nombre...",
+		label_24 : "Comentario...",
+		label_25 : "Teléfono...",
+		label_26 : "e-mail"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
 		label_2: "Groupes",
-		label_3: "Visibles",
+		label_3: "Recherche",
 		label_4: "Compte",
 		label_5: "mon surnom:",
 		label_6: "Pas encore mis en &#339;uvre",
@@ -2902,12 +3018,16 @@ function Dictionary(){
 		label_17: "Mon commentaire:",
 		label_18: "Voulez-vous vraiment quitter?",
 		label_19: "Quitter",
-		label_20: "Annuler,Ok"	
+		label_20: "Annuler,Ok",
+		label_23 : "Nom...",
+		label_24 : "Commentaire...",
+		label_25 : "Téléphone...",
+		label_26 : "e-mail"	
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
 		label_2: "Grupos",
-		label_3: "Visibles",
+		label_3: "Pesquisa",
 		label_4: "Conta",
 		label_5: "meu nick name:",
 		label_6: "Ainda n&atilde;o implementado",
@@ -2924,7 +3044,11 @@ function Dictionary(){
 		label_17: "Meu coment&aacute;rio:",
 		label_18: "Voce realmente deseja sair?",
 		label_19: "Sair",
-		label_20: "Cancelar,Ok"	
+		label_20: "Cancelar,Ok",
+		label_23 : "Nome ...",
+		label_24 : "Comentário...",
+		label_25 : "Telefone...",
+		label_26 : "e-mail"	
 	};
 	
 	this.AvailableLiterals = {

@@ -744,6 +744,17 @@ PostMan.prototype.isUUID = function(uuid) {
 PostMan.prototype.isPurchase = function(purchase) {	
 	return true;
 };
+//TODO
+PostMan.prototype.isPaypalToken = function(token) {	
+	return true;
+};
+//TODO
+PostMan.prototype.isPaypalPayer = function(payerID) {	
+	return true;
+};
+
+
+
 
 PostMan.prototype.isRSAmodulus = function(modulus) {	
 

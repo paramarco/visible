@@ -79,6 +79,16 @@
         url('./fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_vietnamese_cyrillic-800italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+.paypalButton{
+	
+  	width: 100%;
+	max-width: 600px;
+	position: relative;
+	margin-left: auto;
+    margin-right: auto;
+
+}
+
 .container {
   padding-right: 15px;
   padding-left: 15px;
@@ -798,7 +808,7 @@
 .darkink {
 	  height: auto!important;
 	  letter-spacing: -0.01em;
-	  background-color: #fff;
+/*	  background-color: #fff;*/
 	  -webkit-margin-end: 0px;
 	  -webkit-margin-start: 0px;
 	  -webkit-margin-after: 0.83em;

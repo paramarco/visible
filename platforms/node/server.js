@@ -170,7 +170,7 @@ app.post('/payment', function (req, res) {
 		
 		var purchase = req.body.purchase;
 		var amount = 0;
-		console.log("DEBUG ::: payment ::: purchase:" +  JSON.stringify(purchase));
+
 		if(purchase.licenseDurationChoosen == "fourYears") amount = amount + 3;
 		if(purchase.licenseDurationChoosen == "oneYear") amount = amount + 1;
 		if(purchase.isNGOdonationChecked == "true") amount = amount + 1;
@@ -216,7 +216,29 @@ app.post('/payment', function (req, res) {
 });
 
 app.get('/successPayment', function (req, res) {
+	
+	if ( ! postMan.isPaypalToken (req.query.token) ) return;
+	if ( ! postMan.isPaypalPayer(req.query.PayerID) ) return;
+	
 	res.end('It worked!');
+	
+	var payment = paypal.init(
+		config.paypal.username, 
+		config.paypal.password, 
+		config.paypal.signature, 
+		config.paypal.returnURL, 
+		config.paypal.cancelURL, 
+		true // debug = true
+	);
+	
+	payment.detail(req.query.token, req.query.PayerID, function(err, data, invoiceNumber, price) {
+
+	    if (err) {
+	        console.log(err);
+	        return;
+	    }
+
+	});
 });
 
 app.get('/cancelPayment', function (req, res) {
