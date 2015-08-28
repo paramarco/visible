@@ -1,6 +1,7 @@
 //	https://github.com/petersirka/node-paypal-express-checkout
 //	License: 	MIT 
 //	author :	petersirka@gmail.com
+//	author :	marco.vereda@instaltic.com
 
 var urlParser = require('url');
 var https = require('https');
@@ -89,21 +90,21 @@ Paypal.prototype.detail = function(token, payer, callback) {
 };
 
 /*
-	Get payment detail
+	SetExpressCheckout
 	@invoiceNumber {String}
-	@amout {Number}
+	@amount {Number}
 	@description {String}
 	@currency {String} :: EUR, USD
 	@callback {Function} :: callback(err, url);
 	return {Paypal}
 */
-Paypal.prototype.pay = function(invoiceNumber, amout, description, currency, callback) {
+Paypal.prototype.pay = function(invoiceNumber, amount, description, currency, callback) {
 
 	var self = this;
 	var params = self.params();
 
 	params.PAYMENTACTION = 'Sale';
-	params.AMT = prepareNumber(amout);
+	params.AMT = prepareNumber(amount);
 	params.RETURNURL = self.returnUrl;
 	params.CANCELURL = self.cancelUrl;
 	params.DESC = description;

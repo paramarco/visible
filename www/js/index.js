@@ -1205,7 +1205,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "        				<label id=\"label_32\" for=\"FSIdonation\">Donation for our Open Source Initiative<\/label>";
 	strVar += "    				<\/fieldset>";
 	strVar += "				<\/div>";
-	strVar += "				<h3 id=\"label_33\" class=\"darkink\"> Total : <spam id=\"price\"> 1 &euro;<\/spam><\/h3>";
+	strVar += "				<h3 class=\"darkink\"> <spam id=\"label_33\"> Total :<\/spam> <spam id=\"price\"> 1 &euro;<\/spam><\/h3>";
 	strVar += "				<button id=\"buyButton\">Buy<\/button>";
 	strVar += "				<div class=\"paypalButton\"><img id=\"paypal\" src=\"img\/AM_mc_vs_dc_ae.jpg\" width=\"100%\"><\/div>";
 	strVar += "			<\/div><!-- \/content -->";
@@ -2935,7 +2935,7 @@ function Dictionary(){
 		label_30 : "Back-up functionality",
 		label_31 : "Donation for associated NGOs",
 		label_32 : "Donation for our Open Source Initiative",
-		label_33 : "Total",
+		label_33 : "Total: ",
 		label_34 : "Buy"
 	};
 	this.Literals_De = {
@@ -2964,12 +2964,12 @@ function Dictionary(){
 		label_25 : "Telefon...",
 		label_26 : "e-mail",
 		label_27: "Benutzerkonto-Aktivierung",
-		label_28: "Lizenz g&uuml;ltig für ein Jahr",
-		label_29: "Lizenz g&uuml;ltig für 4 Jahre",
+		label_28: "Lizenz g&uuml;ltig f&uuml;r ein Jahr",
+		label_29: "Lizenz g&uuml;ltig f&uuml;r 4 Jahre",
 		label_30: "Back-up-Funktionalit&auml;t",
-		label_31: "Spende für assoziierten NGOs",
-		label_32: "Spende für unsere Open Source Initiative",
-		label_33: "Gesamtsumme",
+		label_31: "Spende f&uuml;r assoziierten NGOs",
+		label_32: "Spende f&uuml;r unsere Open Source Initiative",
+		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen"
 	};
 	this.Literals_It = {
@@ -3003,7 +3003,7 @@ function Dictionary(){
 		label_30: "Funzionalit&agrave; di back-up",
 		label_31: "Donazione per le ONG associate",
 		label_32: "Donazione per la nostra iniziativa Open Source",
-		label_33: "Totale",
+		label_33: "Totale: ",
 		label_34: "Acquistare"
 		
 	}; 
@@ -3038,7 +3038,7 @@ function Dictionary(){
 		label_30: "Funcionalidad de back-up",
 		label_31: "Donaci&oacute;n para las ONG asociadas",
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
-		label_33: "Total",
+		label_33: "Total: ",
 		label_34: "Comprar"			
 	}; 
 	this.Literals_Fr = {
@@ -3072,7 +3072,7 @@ function Dictionary(){
 		label_30: "fonctionnalit&eacute; de back-up",
 		label_31: "Don pour les ONG associ&eacute;es",
 		label_32: "Don pour notre Open Source Initiative",
-		label_33: "Total",
+		label_33: "Total: ",
 		label_34: "Acheter"
 	}; 
 	this.Literals_Pt = {
@@ -3101,12 +3101,12 @@ function Dictionary(){
 		label_25 : "Telefone...",
 		label_26 : "e-mail"	,
 		label_27: "Ativa&ccedil;&atilde;o de Conta de Usu&aacute;rio",
-		label_28: "Licença v&aacute;lida por um ano",
-		label_29: "licença v&aacute;lida por 4 anos",
+		label_28: "Licen&ccedil;a v&aacute;lida por um ano",
+		label_29: "licen&ccedil;a v&aacute;lida por 4 anos",
 		label_30: "back-up funcionalidade",
 		label_31: "Doa&ccedil;&atilde;o para as ONGs associadas",
 		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
-		label_33: "Total",
+		label_33: "Total: ",
 		label_34: "Comprar"
 	};
 	

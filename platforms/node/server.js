@@ -18,6 +18,7 @@ var http = require('http');//var https = require('https');
 var express = require('express');
 var app = express();
 var cors = require('cors');
+var bodyParser = require('body-parser');
 var	uuid = require('node-uuid');
 var when = require('when');
 var readline = require('readline');
@@ -36,11 +37,14 @@ var _ 				= require('underscore')._ ,
 	postMan = new PostMan(io);
 //DEBUG
 var redis = require('socket.io-redis');
-var paypal = require('./lib/Paypal.js'); 
 
 //DEBUG
+var paypal = require('./lib/Paypal.js'); 
+
 app.use(cors());
-app.use(express.bodyParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
 app.post('/login', function (req, res) {
 	
@@ -190,9 +194,10 @@ app.post('/payment', function (req, res) {
 			config.paypal.cancelURL, 
 			true // debug = true
 		);
+		var timestamp = new Date().getTime();
+		var invoiceNumber = req.body.handshakeToken + "_" + timestamp;
 		
-		
-		payment.pay(req.body.handshakeToken, amount, 'Knet-app', 'EUR', function(err, url) {
+		payment.pay( invoiceNumber ,  amount, 'Knet-app', 'EUR', function(err, url) {
 			
 		    if (err) {
 		        console.log(err);
@@ -220,7 +225,23 @@ app.get('/successPayment', function (req, res) {
 	if ( ! postMan.isPaypalToken (req.query.token) ) return;
 	if ( ! postMan.isPaypalPayer(req.query.PayerID) ) return;
 	
-	res.end('It worked!');
+	var options = {
+		root: __dirname + '/public/',
+		dotfiles: 'deny',
+		headers: {
+        	'x-timestamp': Date.now(),
+        	'x-sent': true
+		}
+	};
+
+	var fileName = 'successPayment.html';
+	
+	res.sendFile(fileName, options, function (err) {
+	    if (err) {
+	      console.log(err);
+	      res.status(err.status).end();
+	    }
+	});
 	
 	var payment = paypal.init(
 		config.paypal.username, 
@@ -242,7 +263,24 @@ app.get('/successPayment', function (req, res) {
 });
 
 app.get('/cancelPayment', function (req, res) {
-	res.end("It didn't work!");
+	
+	var options = {
+		root: __dirname + '/public/',
+		dotfiles: 'deny',
+		headers: {
+        	'x-timestamp': Date.now(),
+        	'x-sent': true
+		}
+	};
+
+	var fileName = 'cancelPayment.html';
+	
+	res.sendFile(fileName, options, function (err) {
+	    if (err) {
+	      console.log(err);
+	      res.status(err.status).end();
+	    }
+	});
 });
 
 
@@ -550,11 +588,16 @@ var DBConnectionEstablished = [
 ];
 
 when.all ( DBConnectionEstablished ).then(function(){
-	app.configure(function() {
+	
+	app.set('port', config.instance[id].portNumber);
+  	app.set('ipaddr', config.instance[id].ipAddress );
+
+/*
+ * 	app.configure(function() {
 		app.set('port', config.instance[id].portNumber);
 	  	app.set('ipaddr', config.instance[id].ipAddress );
 	});
-	
+*/
 	server.listen(	
 		app.get('port'),
 		app.get('ipaddr'), 

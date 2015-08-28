@@ -36,8 +36,8 @@ config.instance[0] = {
 };
 config.instance[1] = {
 	db : { 
-		user : "visible",
-		pass : "paramarco"
+		user : "",
+		pass : ""
 	},
 	ipAddress : "127.0.0.1",
 	portNumber : "8090"
