@@ -265,12 +265,7 @@ app.get('/successPayment', function (req, res) {
 app.get('/cancelPayment', function (req, res) {
 	
 	var options = {
-		root: __dirname + '/public/',
-		dotfiles: 'deny',
-		headers: {
-        	'x-timestamp': Date.now(),
-        	'x-sent': true
-		}
+		root: __dirname + '/public/'
 	};
 
 	var fileName = 'cancelPayment.html';
