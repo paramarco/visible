@@ -782,14 +782,7 @@
 	
 }
 
-
-
-.btn-group
-
-
-
-
-
+/* .btn-group */
 
 .profileImage {
 	display: block;  
@@ -801,6 +794,19 @@
 	border: 0;
 	max-width : 500px;
 	max-height : 500px;
+	width: 100%;
+	height: 100%; 
+}
+
+.betaImg {
+	display: block; 
+	margin-top: 20px; 
+	margin-left : auto;
+	margin-right : auto;
+	padding: 0;
+	border: 0;
+	max-width : 50px;
+	max-height : 50px;
 	width: 100%;
 	height: 100%;      
 }

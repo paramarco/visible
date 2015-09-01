@@ -122,7 +122,9 @@ CREATE TABLE public.client
   authtoken uuid,
   lastprofileupdate bigint,
   telephone text,
-  email text
+  email text,
+  visibility text
+
 )
 WITH ( OIDS=FALSE );
 ALTER TABLE public.client OWNER TO visible;

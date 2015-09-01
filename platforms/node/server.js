@@ -379,6 +379,7 @@ app.locals.profileUpdateHandler = function(input , socket) {
 	client.telephone = parameters.telephone;
 	client.email = parameters.email;		
 	client.lastProfileUpdate = new Date().getTime();
+	client.visibility = parameters.visibility;
 	
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );

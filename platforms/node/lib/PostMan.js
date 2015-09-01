@@ -472,7 +472,8 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			PostMan.prototype.lengthTest(parameters.img , config.MAX_SIZE_IMG ) == false ||
 			PostMan.prototype.lengthTest(parameters.telephone , config.MAX_SIZE_COMMENTARY ) == false ||
 			PostMan.prototype.lengthTest(parameters.email , config.MAX_SIZE_COMMENTARY ) == false ||
-			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false) {
+			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ||
+			!(parameters.visibility == "on" || parameters.visibility == "off" )   ) {
 			
 			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 

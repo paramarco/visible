@@ -21,7 +21,25 @@
 //TODO viralization via SMS from the user's contacts
 
 	
+function UserSettings (myUser){
+	this.index = (typeof myUser.index == "undefined" ) ? 0 : myUser.index;
+	this.publicClientID = (typeof myUser.publicClientID == "undefined" ) ? null :myUser.publicClientID;
+	this.myCurrentNick = (typeof myUser.myCurrentNick == "undefined" ) ? "" : myUser.myCurrentNick;
+	this.myCommentary = (typeof myUser.myCommentary == "undefined" ) ? "" : myUser.myCommentary;	     		
+	this.myPhotoPath = (typeof myUser.myPhotoPath == "undefined" ) ? "" : myUser.myPhotoPath; 
+	this.myArrayOfKeys = (typeof myUser.myArrayOfKeys == "undefined" ) ? null : myUser.myArrayOfKeys; 
+	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null :myUser.lastProfileUpdate;
+	this.handshakeToken = (typeof myUser.handshakeToken == "undefined" ) ? null : myUser.handshakeToken;
+	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
+	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
+	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
+};
 
+UserSettings.prototype.updateUserSettings = function() {
+	var transaction = db.transaction(["usersettings"],"readwrite");	
+	var store = transaction.objectStore("usersettings");	
+	var request = store.put(user);	
+};
 
 function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
@@ -350,7 +368,7 @@ Postman.prototype.encrypt = function(message) {
 		
 		//console.log("DEBUG ::: encrypt ::: iv " +  iv  );
 		
-		cipher.start({iv: app.myArrayOfKeys[iv] });
+		cipher.start({iv: user.myArrayOfKeys[iv] });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
 		cipher.finish();		
 		
@@ -372,7 +390,7 @@ Postman.prototype.decrypt = function(encrypted) {
 
 		var iv = parseInt(encrypted.substring(0,1));
 
-		decipher.start({iv: app.myArrayOfKeys[iv] });
+		decipher.start({iv: user.myArrayOfKeys[iv] });
 		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();
 		
@@ -497,7 +515,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
 		
-	if (message.from == app.publicClientID){
+	if (message.from == user.publicClientID){
 		authorOfMessage = " ";
 
 		classOfmessageStateColor = "red-no-rx-by-srv";		
@@ -587,7 +605,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	
 	var $newMsg = $(html2insert);
 	
-	if (message.from != app.publicClientID){
+	if (message.from != user.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); 
 	}
 	if (isReverse){
@@ -786,7 +804,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	//request an update of the last photo of this Contact
 	var profileRetrievalObject = {	
-		publicClientIDofRequester : app.publicClientID, 
+		publicClientIDofRequester : user.publicClientID, 
 		publicClientID2getImg : contact.publicClientID,
 		lastProfileUpdate : contact.lastProfileUpdate
 	};
@@ -880,7 +898,7 @@ GUI.prototype.showImagePic = function() {
 		 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
-				from : app.publicClientID , 
+				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
 			message2send.setACKfromServer(false);
@@ -1082,9 +1100,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<h2 id=\"label_8\"> you visible for...<\/h2>";	
 	strVar += "													<h3 id=\"label_9\">Anybody<\/h3>";
 	strVar += "													<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
-	strVar += "													<select name=\"flip-mini\" id=\"flip-mini\" data-role=\"slider\" >";
-	strVar += "														<option value=\"on\">On<\/option>";
-	strVar += "														<option value=\"off\">Off<\/option>";
+	strVar += "													<select name=\"flip-visible\" id=\"flip-visible\" data-role=\"slider\" >";
+	strVar += "														<option value=\"on\">on<\/option>";
+	strVar += "														<option value=\"off\">off<\/option>";
 	strVar += "													<\/select>";	
 	strVar += "												<\/div>";	
 	strVar += "											<\/div>";	
@@ -1227,7 +1245,7 @@ GUI.prototype.chatInputHandler = function() {
 	
 	var message2send = new Message(	{ 	
 		to : app.currentChatWith, 
-		from : app.publicClientID , 
+		from : user.publicClientID , 
 		messageBody : gui.sanitize(textMessage) 
 	});
 	message2send.setACKfromServer(false);
@@ -1328,10 +1346,7 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }
-
-
-	    
+	    }	    
 	    gui.hideLoadingSpinner();
 	});
 	
@@ -1383,18 +1398,23 @@ GUI.prototype.bindDOMevents = function(){
 		$('body').pagecontainer('change', '#MainPage');
 	});
 	
-	$(document).on("pageshow","#profile",function(event){
-		if(app.myCurrentNick == ""){
-			$("#nickNameInProfile").html(app.publicClientID);
+	$(document).on("pageshow","#profile",function(event){		
+		
+		if(user.myCurrentNick == ""){
+			$("#nickNameInProfile").html(user.publicClientID);
 		} else{
-			$("#nickNameInProfile").html(app.myCurrentNick);
+			$("#nickNameInProfile").html(user.myCurrentNick);
 		}
 		
-		$("#profileNameField").val(app.myCurrentNick);
-		$("#commentaryInProfile").html(app.myCommentary);
-		$("#profileCommentary").val(app.myCommentary);
-		$("#profileTelephone").val(app.myTelephone);
-		$("#profileEmail").val(app.myEmail);		
+		$("#profileNameField").val(user.myCurrentNick);
+		$("#commentaryInProfile").html(user.myCommentary);
+		$("#profileCommentary").val(user.myCommentary);
+		$("#profileTelephone").val(user.myTelephone);
+		$("#profileEmail").val(user.myEmail);
+		//$("#flip-visible").val(user.visibility);
+		$("#flip-visible").val(user.visibility).slider("refresh");
+		//console.dir(user.visibility);
+		//$("#flip-visible option[value='" + user.visibility + "']").prop('selected', true);
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1402,21 +1422,25 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 	$("#profileNameField").on("input", function() {
-		app.myCurrentNick = $("#profileNameField").val();	
-		$("#nickNameInProfile").text(app.myCurrentNick);
+		user.myCurrentNick = $("#profileNameField").val();	
+		$("#nickNameInProfile").text(user.myCurrentNick);
 		app.profileIsChanged = true;
 	});
 	$("#profileCommentary").on("input", function() {
-		app.myCommentary = $("#profileCommentary").val();
-		$("#commentaryInProfile").text(app.myCommentary);	
+		user.myCommentary = $("#profileCommentary").val();
+		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
 		$("#profileTelephone").on("input", function() {
-		app.myTelephone = $("#profileTelephone").val();	
+		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
 	});
 	$("#profileEmail").on("input", function() {
-		app.myEmail = $("#profileEmail").val();
+		user.myEmail = $("#profileEmail").val();
+		app.profileIsChanged = true;
+	});
+	$("#flip-visible").on("change", function() {
+		user.visibility = $("#flip-visible").val();
 		app.profileIsChanged = true;
 	});
 	
@@ -1453,9 +1477,7 @@ GUI.prototype.bindDOMevents = function(){
 		
 	});
 	
-	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );
-	
-	
+	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
 	
 	$(document).on("click","#link2panel",function() {
 		$( "#mypanel" ).panel( "open" );
@@ -1567,7 +1589,7 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 		displayHeight: $(window).height() * 0.80 , 
 		navToolsEnabled : true,
  		imageUpdated: function(img){
- 			app.myPhotoPath = img.src;	     			
+ 			user.myPhotoPath = img.src;	     			
  		}
  	});  	
 	         	    
@@ -1626,9 +1648,9 @@ GUI.prototype.setLocalLabels = function() {
 
 GUI.prototype.firstLogin = function() {	
 	
-	app.myCurrentNick = $("#firstLoginNameField").val();
+	user.myCurrentNick = $("#firstLoginNameField").val();
 	
-	if ( app.myCurrentNick == null || app.myCurrentNick == "" ||  app.myPhotoPath == null) {
+	if ( user.myCurrentNick == null || user.myCurrentNick == "" ||  user.myPhotoPath == null) {
 		
 		$("#popupDiv").remove();
 		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
@@ -1814,23 +1836,12 @@ GUI.prototype.sortContacts = function() {
 };
 
 GUI.prototype.profileUpdateHandler = function() {
-		
+	
 	if (app.profileIsChanged){
-		app.lastProfileUpdate = new Date().getTime();
+		user.lastProfileUpdate = new Date().getTime();
 		app.profileIsChanged = false;			
 		app.sendProfileUpdate();
-		app.updateConfig({
-			index : 0,	
-			publicClientID : app.publicClientID , 
-			myCurrentNick : app.myCurrentNick, 
-			myCommentary : app.myCommentary,
-			myPhotoPath : app.myPhotoPath , 
-			myArrayOfKeys : app.myArrayOfKeys ,
-			lastProfileUpdate : app.lastProfileUpdate ,
-			handshakeToken : app.handshakeToken,
-			myTelephone : app.myTelephone,
-			myEmail : app.myEmail
-		});					
+		user.updateUserSettings();					
 	}
 };
 
@@ -1868,11 +1879,11 @@ GUI.prototype.loadProfile = function() {
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
-		defaultImage: app.myPhotoPath,
+		defaultImage: user.myPhotoPath,
 		imageUpdated: function(img){
 			
-			app.myPhotoPath = img.src;
-			app.lastProfileUpdate = new Date().getTime();
+			user.myPhotoPath = img.src;
+			user.lastProfileUpdate = new Date().getTime();
 			app.profileIsChanged = true;
 
 		}
@@ -2017,24 +2028,14 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 
 function Application() {
 	this.currentChatWith = null;
-	this.myCurrentNick = "";
-	this.myCommentary = "";
-	this.myPhotoPath = "";
-	this.myArrayOfKeys = [];
-	this.publicClientID = null;
 	this.myPosition = { coords : { latitude : "",  longitude : ""} };  
-	this.lastProfileUpdate = null;
 	this.symetricKey2use = null;
-	this.handshakeToken = null;
 	this.profileIsChanged = false;
 	this.map = null;
 	this.connecting = false;
 	this.inBackground = false;
 	this.initialized = false;
-	this.tokenSigned = null;
-	this.myTelephone = "";
-	this.myEmail = "";
-	
+	this.tokenSigned = null;	
 };
 
 Application.prototype.init = function() {
@@ -2049,6 +2050,8 @@ Application.prototype.init = function() {
 };
 
 Application.prototype.processPayment = function() {
+	
+	gui.showLoadingSpinner();
 
 	$.when( deviceReady ).done(function(){
 		var purchase = gui.getPurchaseDetails();		
@@ -2061,7 +2064,7 @@ Application.prototype.go2paypal = function(myPurchase) {
 	
 	var jqxhr = $.post( 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment', 
 		{	
-			handshakeToken: app.handshakeToken , 
+			handshakeToken: user.handshakeToken  , 
 			purchase : myPurchase
 		},
 		function() { }	,
@@ -2080,7 +2083,7 @@ Application.prototype.go2paypal = function(myPurchase) {
 		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
 		//Lungo.Router.back();
 	});
-	jqxhr.always(function() {});		
+	jqxhr.always(function() { gui.hideLoadingSpinner(); });		
 };		
 
 
@@ -2098,12 +2101,12 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 11);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 12);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
-		if(!thisDB.objectStoreNames.contains("myconfig")){
-			var objectStore = thisDB.createObjectStore("myconfig", { keyPath: "index" });
+		if(!thisDB.objectStoreNames.contains("usersettings")){
+			var objectStore = thisDB.createObjectStore("usersettings", { keyPath: "index" });
 		}
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
@@ -2120,7 +2123,7 @@ Application.prototype.openDB = function() {
 				
 		setTimeout(
 			function (){
-				app.loadMyConfig();				
+				app.loadUserSettings();				
 				gui.loadContacts();
 			},
 			config.TIME_WAIT_DB
@@ -2131,7 +2134,6 @@ Application.prototype.openDB = function() {
 		
 		console.log("DEBUG ::: Database error ::: app.init  ");
  		app.register();
- 		//gui.loadVisibleFirstTimeOnMainPage();
 		
 	};
 	this.indexedDBHandler.onblocked = function(){
@@ -2143,52 +2145,39 @@ Application.prototype.openDB = function() {
 Application.prototype.sendProfileUpdate = function() {
 	
 	var profileResponseObject = {	
-		publicClientIDofSender : app.publicClientID, 
-		img : app.myPhotoPath,
-		commentary : app.myCommentary,
-		nickName: app.myCurrentNick,
-		telephone: app.myTelephone,
-		email : app.myEmail				
+		publicClientIDofSender : user.publicClientID, 
+		img : user.myPhotoPath,
+		commentary : user.myCommentary,
+		nickName: user.myCurrentNick,
+		telephone: user.myTelephone,
+		email : user.myEmail,
+		visibility : user.visibility		
 	};			
-	console.dir(profileResponseObject );
 	postman.send("profileUpdate", profileResponseObject );	
 };
 
-Application.prototype.loadMyConfig = function(){
+Application.prototype.loadUserSettings = function(){
 	
 	var singleKeyRange = IDBKeyRange.only(0);
 
 	try{
 	
-		db.transaction(["myconfig"], "readonly").objectStore("myconfig").openCursor(singleKeyRange).onsuccess = function(e) {
+		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
 			
 			var cursor = e.target.result;
-	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {
-	     		
-				app.publicClientID = cursor.value.publicClientID;
-	     		app.myCurrentNick = cursor.value.myCurrentNick;
-	     		app.myCommentary = cursor.value.myCommentary;	     		
-	     		app.myPhotoPath = cursor.value.myPhotoPath; 
-				app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
-				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
-				app.handshakeToken = cursor.value.handshakeToken;
-				app.myTelephone = cursor.value.myTelephone;
-				app.myEmail = cursor.value.myEmail;
-				//	trigger configuration as already loaded     		
-				configLoaded.resolve(); 
+	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {	     		
+	     		user = new UserSettings(cursor.value);	
+				userSettingsLoaded.resolve(); 
 	     		return;
-	     	}else{
-	     	
+	     	}else{	     	
 	     		app.register();
-	     		//gui.loadVisibleFirstTimeOnMainPage();	     	   	
-	     	   	return;
-	     		
+	     	   	return;	     		
 	     	}
 		};
 		
 	}catch(e){
 		
-		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");		   
+		   console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
 		   app.register();
 		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
@@ -2206,7 +2195,7 @@ Application.prototype.login2server = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
-	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
+	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: user.handshakeToken  })
 		.done(function (result) { 
 			app.connect2server(result);
 		})
@@ -2222,11 +2211,11 @@ Application.prototype.login2server = function(){
 
 Application.prototype.connect2server = function(result){
 	
-	app.symetricKey2use = app.myArrayOfKeys[result.index];
+	app.symetricKey2use = user.myArrayOfKeys[result.index];
 	
 	var challengeClear = postman.decrypt(result.challenge).challenge;	
 	var token2sign = { 			
-		handshakeToken : app.handshakeToken ,
+		handshakeToken : user.handshakeToken  ,
 		challenge :  encodeURI( postman.encrypt( { challengeClear : challengeClear } ) )
   	};
   	app.tokenSigned = postman.signToken(token2sign);
@@ -2248,7 +2237,6 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('connect', function () {
 		
-		console.log("DEBUG ::: socket.on.connect :::");		
 		app.connecting = false;	
 	
 		var newerDate = new Date().getTime();	
@@ -2390,7 +2378,7 @@ Application.prototype.connect2server = function(result){
 		var requestParameters = postman.getParametersOfProfileRequest(input);
 	
 		if ( requestParameters != null && 
-			 requestParameters.lastProfileUpdate <  app.lastProfileUpdate  ){
+			 requestParameters.lastProfileUpdate <  user.lastProfileUpdate  ){
 	
 			app.sendProfileUpdate();			 			
 		}	
@@ -2456,17 +2444,18 @@ Application.prototype.register = function(){
 	 	}else{
 		
 	 		console.log("DEBUG ::: register ::: saving onto DB....." );	
-			//update app object	
-			app.publicClientID = answer.publicClientID;
-			app.myCurrentNick = answer.publicClientID;
-			app.myArrayOfKeys = answer.myArrayOfKeys;
-			app.handshakeToken = answer.handshakeToken;
-			app.lastProfileUpdate = new Date().getTime();			
+			//update app object
+	 		
+	 		user = new UserSettings(answer);			
+	 		user.myCurrentNick = user.publicClientID;
+	 		user.lastProfileUpdate = new Date().getTime();			
 			
+	 		console.log("DEBUG ::: register ::: user: " + JSON.stringify(user) );	
 	 		//update internal DB
-			var transaction = db.transaction(["myconfig"],"readwrite");	
-			var store = transaction.objectStore("myconfig");
-			var request = store.add({
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );
+			/*var request = store.add({
 				index : 0,	
 				publicClientID : app.publicClientID , 
 				myCurrentNick : app.myCurrentNick,
@@ -2478,9 +2467,9 @@ Application.prototype.register = function(){
 				myTelephone : app.myTelephone,
 				myEmail : app.myEmail
 			});
-			
-			//trigger configuration as already loaded
-			configLoaded.resolve(); 		
+			*/
+			//trigger userSettingsLoaded as already loaded
+			userSettingsLoaded.resolve(); 		
 	 	}
  		
  	}).fail(function() {
@@ -2505,30 +2494,17 @@ Application.prototype.handshake = function(handshakeRequest){
 	 		console.log("DEBUG ::: handshake ::: done we go to the next step ....." );
 			
 			//update app object	
-			app.publicClientID = result.publicClientID;
-			app.myArrayOfKeys = result.myArrayOfKeys;
-			app.lastProfileUpdate = new Date().getTime();
-			app.handshakeToken = handshakeRequest.handshakeToken;
+	 		user = new userSettings(result);			
+	 		user.handshakeToken = handshakeRequest.handshakeToken;
+	 		user.lastProfileUpdate = new Date().getTime();	
 			
 	 		//update internal DB
-			var transaction = db.transaction(["myconfig"],"readwrite");	
-			var store = transaction.objectStore("myconfig");
-			var request = store.add({
-				index : 0,	
-				publicClientID : result.publicClientID , 
-				myCurrentNick : app.myCurrentNick,
-				myCommentary : app.myCommentary,
-				myPhotoPath : app.myPhotoPath , 
-				myArrayOfKeys : result.myArrayOfKeys ,
-				lastProfileUpdate : new Date().getTime(),
-				handshakeToken : handshakeRequest.handshakeToken,
-				myTelephone : app.myTelephone,
-				myEmail : app.myEmail
-			});
-			
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );			
 
 			//trigger configuration as already loaded
-			configLoaded.resolve();			
+			userSettingsLoaded.resolve();			
 			gui.removeVisibleFirstTimeOnMainPage();	
  		
 	 	}
@@ -2674,7 +2650,7 @@ Application.prototype.getLanguage = function() {
 };
 
 Application.prototype.setLanguage = function(language) {
-	console.log('DEBUG ::: setLanguage ::: language.detected: ' + JSON.stringify(language) );
+
 	language.value = "";
 	switch (true){
 		case /en(?:\-[A-Z]{2}$)|EN$|en$|English$|english$/.test(language.detected):
@@ -2702,21 +2678,13 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
+		//console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
 	}else{
-		console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
+		//console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
 		language.value = "English" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
 	gui.setLocalLabels(); 
-};
-
-Application.prototype.updateConfig = function(object) {
-	//update internal DB
-	var transaction = db.transaction(["myconfig"],"readwrite");	
-	var store = transaction.objectStore("myconfig");
-	var request = store.put(object);
-	
 };
 
 Application.prototype.setMultimediaAsOpen = function() {
@@ -2725,7 +2693,7 @@ Application.prototype.setMultimediaAsOpen = function() {
 
 Application.prototype.onOnlineCustom =  function() {
 	
-	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
+	$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){	
 		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 
 	});
 	
@@ -2865,7 +2833,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
-			publicClientIDofRequester : app.publicClientID, 
+			publicClientIDofRequester : user.publicClientID, 
 			publicClientID2getImg : c.publicClientID,
 			lastProfileUpdate : config.beginingOf2015
 		};
@@ -2910,7 +2878,7 @@ function Dictionary(){
 		label_3: "Search",
 		label_4: "Account",
 		label_5: "my nick Name:",
-		label_6: "Not implemented yet",
+		label_6: "coming soon",
 		label_7: "send",
 		label_8: "who can see me...",
 		label_9: "Anybody",
@@ -2944,7 +2912,7 @@ function Dictionary(){
 		Label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
-		label_6: "Noch nicht implementiert",
+		label_6: "kommt bald",
 		label_7: "Senden",
 		label_8: "Sie sind sichtbar ...",
 		label_9: "Alle",
@@ -2978,7 +2946,7 @@ function Dictionary(){
 		Label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
-		label_6: "Non ancora implementato",
+		label_6: "in arrivo",
 		label_7: "invia",
 		label_8: "Ti visibile per ...",
 		label_9: "Chiunque",
@@ -3013,7 +2981,7 @@ function Dictionary(){
 		label_3: "Buscar",
 		label_4: "Cuenta",
 		label_5: "mi apodo / nick:",
-		label_6: "no implementado aun",
+		label_6: "pr&oacute;ximamente",
 		label_7: "enviar",
 		label_8: "eres visible para...",
 		label_9: "todo el mundo",
@@ -3047,7 +3015,7 @@ function Dictionary(){
 		label_3: "Recherche",
 		label_4: "Compte",
 		label_5: "mon surnom:",
-		label_6: "Pas encore mis en &#339;uvre",
+		label_6: "&agrave; venir",
 		label_7: "envoyer",
 		label_8: "vous visible ...",
 		label_9: "Tout le monde",
@@ -3081,7 +3049,7 @@ function Dictionary(){
 		label_3: "Pesquisa",
 		label_4: "Conta",
 		label_5: "meu nick name:",
-		label_6: "Ainda n&atilde;o implementado",
+		label_6: "em breve",
 		label_7: "enviar",
 		label_8: "voc&ecirc; vis&iacute;vel para ...",
 		label_9: "Qualquer um",
@@ -3136,7 +3104,8 @@ var gui = new GUI();
 var postman = new Postman();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
-var dictionary = new Dictionary();	
+var dictionary = new Dictionary();
+var user;
 var app = new Application();
 
 
@@ -3147,11 +3116,11 @@ var app = new Application();
  * *********************************************************************************************/
 var documentReady = new $.Deferred();
 var mainPageReady = new $.Deferred();
-var configLoaded  = new $.Deferred();
+var userSettingsLoaded  = new $.Deferred();
 var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
 
-$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){
+$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){
 
 	app.initialized = true;
 	gui.loadProfile(); 

@@ -494,6 +494,9 @@ function BrokerOfVisibles(_io) {
 		else
 			client.email = "";
 		
+		if ( typeof client.visibility == "undefined" || client.visibility == null )
+			client.visibility = "on";
+		
 		var query2send = squel.update()
 							    .table("client")
 							    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")')" , {dontQuote: true} )
@@ -502,7 +505,8 @@ function BrokerOfVisibles(_io) {
 							    .set("commentary", client.commentary)
 							    .set("lastprofileupdate", client.lastProfileUpdate)
 							    .set("telephone", client.telephone)
-							    .set("email", client.email)							    
+							    .set("email", client.email)
+							    .set("visibility", client.visibility)	
 							    .where("publicclientid = '" + client.publicClientID + "'")
 							    .toString();
 			query2send = "BEGIN; " + query2send + "; COMMIT;";				  
