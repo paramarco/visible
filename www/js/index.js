@@ -872,7 +872,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 GUI.prototype.showEmojis = function() {
 	
     $('#chat-input').emojiPicker('toggle');
-    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
+//    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
     
 };
 
@@ -1173,10 +1173,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "				    <div class=\"ui-block-b\">";
 	strVar += "					   	<a id=\"link2profileOfContact\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
 	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
-	strVar += "				   		<\/a> 				       	";
-	strVar += "				       	<strong id=\"nameOfChatThreadInChatPage\"><\/strong>";
+	strVar += "				   		<\/a>";
 	strVar += "			       	<\/div>";
-	strVar += "				    <div class=\"ui-block-c\"><strong id=\"nameOfChatThreadInChatPage\"><\/strong><\/div>";
+	strVar += "				    <div class=\"ui-block-c\"><\/div>";
 	strVar += "				    <div class=\"ui-block-d\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  	<\/div>";
@@ -1359,8 +1358,8 @@ GUI.prototype.bindDOMevents = function(){
 	$('#chat-input').css("height", 51  );
 	
 	$('#chat-input').emojiPicker({
-	    width: '300px',
-	    height: '200px',
+	    width: $(document).width() ,
+	    height: $(document).height(),
 	    button: false
 	});
 	
@@ -1411,10 +1410,7 @@ GUI.prototype.bindDOMevents = function(){
 		$("#profileCommentary").val(user.myCommentary);
 		$("#profileTelephone").val(user.myTelephone);
 		$("#profileEmail").val(user.myEmail);
-		//$("#flip-visible").val(user.visibility);
 		$("#flip-visible").val(user.visibility).slider("refresh");
-		//console.dir(user.visibility);
-		//$("#flip-visible option[value='" + user.visibility + "']").prop('selected', true);
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1426,6 +1422,13 @@ GUI.prototype.bindDOMevents = function(){
 		$("#nickNameInProfile").text(user.myCurrentNick);
 		app.profileIsChanged = true;
 	});
+	$("#profileNameField").on("focus", function() {
+		if (user.myCurrentNick == user.publicClientID){
+			$("#nickNameInProfile").html("");
+			$("#profileNameField").val("");
+		}		
+	});
+	
 	$("#profileCommentary").on("input", function() {
 		user.myCommentary = $("#profileCommentary").val();
 		$("#commentaryInProfile").text(user.myCommentary);	
@@ -1467,14 +1470,15 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(window).on("debouncedresize", function( event ) {
 
+		$('#chat-input').emojiPicker('reset');
 		$('#chat-input').css("width", $(document).width() * 0.75 );
-		$('#chat-input').css("height", 51  );
-		$('#chat-input').emojiPicker({
-		    width: '300px',
-		    height: '200px',
+		$('#chat-input').css("height", 51  );		
+/*		$('#chat-input').emojiPicker({
+		    width: $(document).width()  ,
+		    height: $(document).height()* 0.50,
 		    button: false
 		});
-		
+	*/	
 	});
 	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	

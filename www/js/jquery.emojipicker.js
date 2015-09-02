@@ -4,8 +4,8 @@
       defaults = {
         width: '200',
         height: '350',
-        position: 'bottom',
-        fadeTime: 100,
+        position: 'top',
+        fadeTime: 10,
         iconColor: 'black',
         iconBackgroundColor: '#eee',
         container: 'body',
@@ -13,10 +13,10 @@
       };
 
   var MIN_WIDTH = 200,
-      MAX_WIDTH = 600,
+      MAX_WIDTH = $(window).width(),
       MIN_HEIGHT = 100,
-      MAX_HEIGHT = 350,
-      MAX_ICON_HEIGHT = 50;
+      MAX_HEIGHT = $(window).height(),
+      MAX_ICON_HEIGHT = 200;
 
   function Plugin( element, options ) {
 
@@ -98,7 +98,7 @@
 
       // Tab size based on width
       if (this.settings.width < 240) {
-        this.$picker.find('.emoji').css({'width':'1em', 'height':'1em'});
+        this.$picker.find('.emoji').css({'width':'2em', 'height':'2em'});
       }
 
     },
@@ -151,10 +151,11 @@
       //     this.$pickerWrap.css({'top':'-10px', 'right': -right + 'px'});
       //     break;
       // }
-
+      top = 0; left = 0;
       this.$picker.css({
           top: top + 15,
-          left: left + this.$el.outerWidth() - this.settings.width
+          //left: left + this.$el.outerWidth() - this.settings.width
+          left: left 
       });
       return this;
     },
@@ -166,7 +167,7 @@
     },
 
     show: function() {
-      this.$el.focus();
+      //this.$el.focus();
       this.updatePosition();
       this.$picker.show(this.settings.fadeTime, 'linear', function() {
         this.active = true;
@@ -180,17 +181,28 @@
     iconClicked : function(e) {
       if ( this.$picker.is(':hidden') ) {
         this.show();
+		$(this.element).blur();
       } else {
         this.hide();
       }
+    },
+    
+    reset : function() {
+    	 this.hide();
+    	 MAX_WIDTH = $(document).width();
+         MAX_HEIGHT = $(document).height();
+         this.settings.width = $(document).width();
+         this.settings.height = $(document).height();
+         this.init();         
     },
 
     emojiClicked: function(e) {
     	
       var emojiShortcode = $(e.target).attr('class').split('emoji-')[1];
       var emojiUnicode = toUnicode(findEmoji(emojiShortcode).unicode);
-		console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
+      console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
       insertAtCaret(this.element, emojiUnicode);
+      this.hide();
     },
 
     emojiCategoryClicked: function(e) {
@@ -232,7 +244,11 @@
         switch(options) {
           case 'toggle':
             plugin.iconClicked();
-          break;
+            break;
+          case 'reset':
+        	plugin.reset();
+        	break;
+          default: break;
         }
       });
       return this;
