@@ -161,12 +161,16 @@
     },
 
     hide: function() {
+    	    	    	    	      console.log("DEBUG ::: emoji ::: hide :  ");
+
       this.$picker.hide(this.settings.fadeTime, 'linear', function() {
         this.active = false;
       }.bind(this));
     },
 
     show: function() {
+    	    	    	      console.log("DEBUG ::: emoji ::: show :  ");
+
       //this.$el.focus();
       this.updatePosition();
       this.$picker.show(this.settings.fadeTime, 'linear', function() {
@@ -179,6 +183,8 @@
      ************/
 
     iconClicked : function(e) {
+    	console.log("DEBUG ::: emoji ::: iconClicked :  ");
+
       if ( this.$picker.is(':hidden') ) {
         this.show();
 		$(this.element).blur();
@@ -188,6 +194,7 @@
     },
     
     reset : function() {
+    	 console.log("DEBUG ::: emoji ::: reset :  ");
     	 this.hide();
     	 MAX_WIDTH = $(document).width();
          MAX_HEIGHT = $(document).height();
@@ -224,6 +231,8 @@
     },
 
     pickerClicked: function(e) {
+    	    	      console.log("DEBUG ::: emoji ::: pickerClicked :  ");
+
       e.stopPropagation();
     },
 

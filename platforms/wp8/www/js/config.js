@@ -1,11 +1,13 @@
 function Config ()  {  
 
-	this.ipServerAuth = "217.127.199.47";		
-	//this.ipServerAuth = "127.0.0.1";
-	this.portServerAuth	= "80";
+	this.ipServerAuth = "217.127.199.47";
+	this.portServerAuth	= "80";		
+//	this.ipServerAuth = "127.0.0.1";
+//	this.portServerAuth	= "8090";
 	this.ipServerSockets = "217.127.199.47";
-	//this.ipServerAuth = "127.0.0.1";		
 	this.portServerSockets	= "80";
+//	this.ipServerSockets = "127.0.0.1";
+//	this.portServerSockets	= "8090";
 		
 	this.limitOfflineMessages2Get = 30; 
 	this.beginingOf2015 = 1420070401000; // 2015 UNIX EPOC

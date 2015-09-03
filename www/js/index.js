@@ -1909,7 +1909,7 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
 		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
 		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
-		gui.inAppBrowser.close();
+		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
     if (event.url.match("cancelPayment") !== null) {
     	
@@ -1919,7 +1919,8 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
     	//router_to_gallery();
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
-    	gui.inAppBrowser.close();
+		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
+
     }
         
 };
@@ -2747,7 +2748,7 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.receivedEvent = function() {
 	
 	try{
-		window.open = cordova.InAppBrowser.open;
+		//window.open = cordova.InAppBrowser.open;
 		deviceReady.resolve();		
 
 	}catch(err){

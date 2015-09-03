@@ -21,7 +21,25 @@
 //TODO viralization via SMS from the user's contacts
 
 	
+function UserSettings (myUser){
+	this.index = (typeof myUser.index == "undefined" ) ? 0 : myUser.index;
+	this.publicClientID = (typeof myUser.publicClientID == "undefined" ) ? null :myUser.publicClientID;
+	this.myCurrentNick = (typeof myUser.myCurrentNick == "undefined" ) ? "" : myUser.myCurrentNick;
+	this.myCommentary = (typeof myUser.myCommentary == "undefined" ) ? "" : myUser.myCommentary;	     		
+	this.myPhotoPath = (typeof myUser.myPhotoPath == "undefined" ) ? "" : myUser.myPhotoPath; 
+	this.myArrayOfKeys = (typeof myUser.myArrayOfKeys == "undefined" ) ? null : myUser.myArrayOfKeys; 
+	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null :myUser.lastProfileUpdate;
+	this.handshakeToken = (typeof myUser.handshakeToken == "undefined" ) ? null : myUser.handshakeToken;
+	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
+	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
+	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
+};
 
+UserSettings.prototype.updateUserSettings = function() {
+	var transaction = db.transaction(["usersettings"],"readwrite");	
+	var store = transaction.objectStore("usersettings");	
+	var request = store.put(user);	
+};
 
 function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
@@ -350,7 +368,7 @@ Postman.prototype.encrypt = function(message) {
 		
 		//console.log("DEBUG ::: encrypt ::: iv " +  iv  );
 		
-		cipher.start({iv: app.myArrayOfKeys[iv] });
+		cipher.start({iv: user.myArrayOfKeys[iv] });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
 		cipher.finish();		
 		
@@ -372,7 +390,7 @@ Postman.prototype.decrypt = function(encrypted) {
 
 		var iv = parseInt(encrypted.substring(0,1));
 
-		decipher.start({iv: app.myArrayOfKeys[iv] });
+		decipher.start({iv: user.myArrayOfKeys[iv] });
 		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();
 		
@@ -497,7 +515,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
 		
-	if (message.from == app.publicClientID){
+	if (message.from == user.publicClientID){
 		authorOfMessage = " ";
 
 		classOfmessageStateColor = "red-no-rx-by-srv";		
@@ -587,7 +605,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	
 	var $newMsg = $(html2insert);
 	
-	if (message.from != app.publicClientID){
+	if (message.from != user.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); 
 	}
 	if (isReverse){
@@ -786,7 +804,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	//request an update of the last photo of this Contact
 	var profileRetrievalObject = {	
-		publicClientIDofRequester : app.publicClientID, 
+		publicClientIDofRequester : user.publicClientID, 
 		publicClientID2getImg : contact.publicClientID,
 		lastProfileUpdate : contact.lastProfileUpdate
 	};
@@ -854,7 +872,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 GUI.prototype.showEmojis = function() {
 	
     $('#chat-input').emojiPicker('toggle');
-    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
+//    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
     
 };
 
@@ -880,7 +898,7 @@ GUI.prototype.showImagePic = function() {
 		 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
-				from : app.publicClientID , 
+				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
 			message2send.setACKfromServer(false);
@@ -1082,9 +1100,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<h2 id=\"label_8\"> you visible for...<\/h2>";	
 	strVar += "													<h3 id=\"label_9\">Anybody<\/h3>";
 	strVar += "													<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
-	strVar += "													<select name=\"flip-mini\" id=\"flip-mini\" data-role=\"slider\" >";
-	strVar += "														<option value=\"on\">On<\/option>";
-	strVar += "														<option value=\"off\">Off<\/option>";
+	strVar += "													<select name=\"flip-visible\" id=\"flip-visible\" data-role=\"slider\" >";
+	strVar += "														<option value=\"on\">on<\/option>";
+	strVar += "														<option value=\"off\">off<\/option>";
 	strVar += "													<\/select>";	
 	strVar += "												<\/div>";	
 	strVar += "											<\/div>";	
@@ -1155,10 +1173,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "				    <div class=\"ui-block-b\">";
 	strVar += "					   	<a id=\"link2profileOfContact\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
 	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
-	strVar += "				   		<\/a> 				       	";
-	strVar += "				       	<strong id=\"nameOfChatThreadInChatPage\"><\/strong>";
+	strVar += "				   		<\/a>";
 	strVar += "			       	<\/div>";
-	strVar += "				    <div class=\"ui-block-c\"><strong id=\"nameOfChatThreadInChatPage\"><\/strong><\/div>";
+	strVar += "				    <div class=\"ui-block-c\"><\/div>";
 	strVar += "				    <div class=\"ui-block-d\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  	<\/div>";
@@ -1190,25 +1207,26 @@ GUI.prototype.loadBody = function() {
 	strVar += "			  	<\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div id=\"activateAccount-content\" role=\"main\" class=\"ui-content\">";
-	strVar += "				<h1 class=\"darkink\"> User account Activation  <\/h1>          "   ;
+	strVar += "				<h1 id=\"label_27\" class=\"darkink\"> User account Activation  <\/h1>          "   ;
 	strVar += "				<div class=\"ui-field-contain\">";
 	strVar += "    				<fieldset data-role=\"controlgroup\">";
 	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1a\" value=\"oneYear\" checked=\"checked\">";
-	strVar += "        				<label for=\"radio-choice-v-1a\">License valid for a year<\/label>";
+	strVar += "        				<label id=\"label_28\" for=\"radio-choice-v-1a\">License valid for a year<\/label>";
 	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1b\" value=\"fourYears\">";
-	strVar += "        				<label for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
+	strVar += "        				<label id=\"label_29\" for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
 	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
-	strVar += "        				<label for=\"Backup\">Back-up functionality<\/label>";
+	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"NGOdonation\" id=\"NGOdonation\">";
-	strVar += "        				<label for=\"NGOdonation\">Donation for associated NGOs<\/label>";
+	strVar += "        				<label id=\"label_31\" for=\"NGOdonation\">Donation for associated NGOs<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"FSIdonation\" id=\"FSIdonation\">";
-	strVar += "        				<label for=\"FSIdonation\">Donation for our Open Source Initiative<\/label>";
+	strVar += "        				<label id=\"label_32\" for=\"FSIdonation\">Donation for our Open Source Initiative<\/label>";
 	strVar += "    				<\/fieldset>";
 	strVar += "				<\/div>";
-	strVar += "				<h3 class=\"darkink\"> Total : <spam id=\"price\"> 1 &euro;<\/spam><\/h3>";
+	strVar += "				<h3 class=\"darkink\"> <spam id=\"label_33\"> Total :<\/spam> <spam id=\"price\"> 1 &euro;<\/spam><\/h3>";
 	strVar += "				<button id=\"buyButton\">Buy<\/button>";
+	strVar += "				<div class=\"paypalButton\"><img id=\"paypal\" src=\"img\/AM_mc_vs_dc_ae.jpg\" width=\"100%\"><\/div>";
 	strVar += "			<\/div><!-- \/content -->";
-	strVar += "		<\/div><!-- \/activateAccount page-->		";
+	strVar += "		<\/div><!-- \/activateAccount page-->";
 			
 	$("body").append(strVar); 
 	
@@ -1226,7 +1244,7 @@ GUI.prototype.chatInputHandler = function() {
 	
 	var message2send = new Message(	{ 	
 		to : app.currentChatWith, 
-		from : app.publicClientID , 
+		from : user.publicClientID , 
 		messageBody : gui.sanitize(textMessage) 
 	});
 	message2send.setACKfromServer(false);
@@ -1327,10 +1345,7 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }
-
-
-	    
+	    }	    
 	    gui.hideLoadingSpinner();
 	});
 	
@@ -1343,8 +1358,8 @@ GUI.prototype.bindDOMevents = function(){
 	$('#chat-input').css("height", 51  );
 	
 	$('#chat-input').emojiPicker({
-	    width: '300px',
-	    height: '200px',
+	    width: $(document).width() ,
+	    height: $(document).height(),
 	    button: false
 	});
 	
@@ -1382,18 +1397,20 @@ GUI.prototype.bindDOMevents = function(){
 		$('body').pagecontainer('change', '#MainPage');
 	});
 	
-	$(document).on("pageshow","#profile",function(event){
-		if(app.myCurrentNick == ""){
-			$("#nickNameInProfile").html(app.publicClientID);
+	$(document).on("pageshow","#profile",function(event){		
+		
+		if(user.myCurrentNick == ""){
+			$("#nickNameInProfile").html(user.publicClientID);
 		} else{
-			$("#nickNameInProfile").html(app.myCurrentNick);
+			$("#nickNameInProfile").html(user.myCurrentNick);
 		}
 		
-		$("#profileNameField").val(app.myCurrentNick);
-		$("#commentaryInProfile").html(app.myCommentary);
-		$("#profileCommentary").val(app.myCommentary);
-		$("#profileTelephone").val(app.myTelephone);
-		$("#profileEmail").val(app.myEmail);		
+		$("#profileNameField").val(user.myCurrentNick);
+		$("#commentaryInProfile").html(user.myCommentary);
+		$("#profileCommentary").val(user.myCommentary);
+		$("#profileTelephone").val(user.myTelephone);
+		$("#profileEmail").val(user.myEmail);
+		$("#flip-visible").val(user.visibility).slider("refresh");
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
@@ -1401,21 +1418,32 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 	$("#profileNameField").on("input", function() {
-		app.myCurrentNick = $("#profileNameField").val();	
-		$("#nickNameInProfile").text(app.myCurrentNick);
+		user.myCurrentNick = $("#profileNameField").val();	
+		$("#nickNameInProfile").text(user.myCurrentNick);
 		app.profileIsChanged = true;
 	});
+	$("#profileNameField").on("focus", function() {
+		if (user.myCurrentNick == user.publicClientID){
+			$("#nickNameInProfile").html("");
+			$("#profileNameField").val("");
+		}		
+	});
+	
 	$("#profileCommentary").on("input", function() {
-		app.myCommentary = $("#profileCommentary").val();
-		$("#commentaryInProfile").text(app.myCommentary);	
+		user.myCommentary = $("#profileCommentary").val();
+		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
 		$("#profileTelephone").on("input", function() {
-		app.myTelephone = $("#profileTelephone").val();	
+		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
 	});
 	$("#profileEmail").on("input", function() {
-		app.myEmail = $("#profileEmail").val();
+		user.myEmail = $("#profileEmail").val();
+		app.profileIsChanged = true;
+	});
+	$("#flip-visible").on("change", function() {
+		user.visibility = $("#flip-visible").val();
 		app.profileIsChanged = true;
 	});
 	
@@ -1442,19 +1470,18 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(window).on("debouncedresize", function( event ) {
 
+		//$('#chat-input').emojiPicker('reset');
 		$('#chat-input').css("width", $(document).width() * 0.75 );
-		$('#chat-input').css("height", 51  );
-		$('#chat-input').emojiPicker({
-		    width: '300px',
-		    height: '200px',
+		$('#chat-input').css("height", 51  );		
+/*		$('#chat-input').emojiPicker({
+		    width: $(document).width()  ,
+		    height: $(document).height()* 0.50,
 		    button: false
 		});
-		
+	*/	
 	});
 	
-	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );
-	
-	
+	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
 	
 	$(document).on("click","#link2panel",function() {
 		$( "#mypanel" ).panel( "open" );
@@ -1566,7 +1593,7 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 		displayHeight: $(window).height() * 0.80 , 
 		navToolsEnabled : true,
  		imageUpdated: function(img){
- 			app.myPhotoPath = img.src;	     			
+ 			user.myPhotoPath = img.src;	     			
  		}
  	});  	
 	         	    
@@ -1607,17 +1634,27 @@ GUI.prototype.setLocalLabels = function() {
 	*/
 	document.getElementById("label_21").innerHTML = dictionary.Literals.label_6;
 	document.getElementById("label_22").innerHTML = dictionary.Literals.label_1;
-	$('#profileNameField').attr("placeholder", dictionary.Literals.label_23);
-	$('#profileCommentary').attr("placeholder", dictionary.Literals.label_24);
-	$('#profileTelephone').attr("placeholder", dictionary.Literals.label_25);
-	$('#profileEmail').attr("placeholder", dictionary.Literals.label_26);
+	document.getElementById("profileNameField").placeholder = dictionary.Literals.label_23;
+	document.getElementById("profileCommentary").placeholder = dictionary.Literals.label_24;
+	document.getElementById("profileTelephone").placeholder = dictionary.Literals.label_25;
+	document.getElementById("profileEmail").placeholder = dictionary.Literals.label_26;
+	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
+	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
+	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
+	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
+	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
+	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
+	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
+	document.getElementById("buyButton").innerHTML = dictionary.Literals.label_34;
+
+
 };
 
 GUI.prototype.firstLogin = function() {	
 	
-	app.myCurrentNick = $("#firstLoginNameField").val();
+	user.myCurrentNick = $("#firstLoginNameField").val();
 	
-	if ( app.myCurrentNick == null || app.myCurrentNick == "" ||  app.myPhotoPath == null) {
+	if ( user.myCurrentNick == null || user.myCurrentNick == "" ||  user.myPhotoPath == null) {
 		
 		$("#popupDiv").remove();
 		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
@@ -1803,23 +1840,12 @@ GUI.prototype.sortContacts = function() {
 };
 
 GUI.prototype.profileUpdateHandler = function() {
-		
+	
 	if (app.profileIsChanged){
-		app.lastProfileUpdate = new Date().getTime();
+		user.lastProfileUpdate = new Date().getTime();
 		app.profileIsChanged = false;			
 		app.sendProfileUpdate();
-		app.updateConfig({
-			index : 0,	
-			publicClientID : app.publicClientID , 
-			myCurrentNick : app.myCurrentNick, 
-			myCommentary : app.myCommentary,
-			myPhotoPath : app.myPhotoPath , 
-			myArrayOfKeys : app.myArrayOfKeys ,
-			lastProfileUpdate : app.lastProfileUpdate ,
-			handshakeToken : app.handshakeToken,
-			myTelephone : app.myTelephone,
-			myEmail : app.myEmail
-		});					
+		user.updateUserSettings();					
 	}
 };
 
@@ -1857,11 +1883,11 @@ GUI.prototype.loadProfile = function() {
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
-		defaultImage: app.myPhotoPath,
+		defaultImage: user.myPhotoPath,
 		imageUpdated: function(img){
 			
-			app.myPhotoPath = img.src;
-			app.lastProfileUpdate = new Date().getTime();
+			user.myPhotoPath = img.src;
+			user.lastProfileUpdate = new Date().getTime();
 			app.profileIsChanged = true;
 
 		}
@@ -1883,7 +1909,7 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
 		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
 		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
-		gui.inAppBrowser.close();
+		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
     if (event.url.match("cancelPayment") !== null) {
     	
@@ -1893,7 +1919,8 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
     	//router_to_gallery();
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
-    	gui.inAppBrowser.close();
+		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
+
     }
         
 };
@@ -2006,24 +2033,14 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 
 function Application() {
 	this.currentChatWith = null;
-	this.myCurrentNick = "";
-	this.myCommentary = "";
-	this.myPhotoPath = "";
-	this.myArrayOfKeys = [];
-	this.publicClientID = null;
 	this.myPosition = { coords : { latitude : "",  longitude : ""} };  
-	this.lastProfileUpdate = null;
 	this.symetricKey2use = null;
-	this.handshakeToken = null;
 	this.profileIsChanged = false;
 	this.map = null;
 	this.connecting = false;
 	this.inBackground = false;
 	this.initialized = false;
-	this.tokenSigned = null;
-	this.myTelephone = "";
-	this.myEmail = "";
-	
+	this.tokenSigned = null;	
 };
 
 Application.prototype.init = function() {
@@ -2038,6 +2055,8 @@ Application.prototype.init = function() {
 };
 
 Application.prototype.processPayment = function() {
+	
+	gui.showLoadingSpinner();
 
 	$.when( deviceReady ).done(function(){
 		var purchase = gui.getPurchaseDetails();		
@@ -2050,7 +2069,7 @@ Application.prototype.go2paypal = function(myPurchase) {
 	
 	var jqxhr = $.post( 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment', 
 		{	
-			handshakeToken: app.handshakeToken , 
+			handshakeToken: user.handshakeToken  , 
 			purchase : myPurchase
 		},
 		function() { }	,
@@ -2069,7 +2088,7 @@ Application.prototype.go2paypal = function(myPurchase) {
 		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
 		//Lungo.Router.back();
 	});
-	jqxhr.always(function() {});		
+	jqxhr.always(function() { gui.hideLoadingSpinner(); });		
 };		
 
 
@@ -2087,12 +2106,12 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 11);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 12);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
-		if(!thisDB.objectStoreNames.contains("myconfig")){
-			var objectStore = thisDB.createObjectStore("myconfig", { keyPath: "index" });
+		if(!thisDB.objectStoreNames.contains("usersettings")){
+			var objectStore = thisDB.createObjectStore("usersettings", { keyPath: "index" });
 		}
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
@@ -2109,7 +2128,7 @@ Application.prototype.openDB = function() {
 				
 		setTimeout(
 			function (){
-				app.loadMyConfig();				
+				app.loadUserSettings();				
 				gui.loadContacts();
 			},
 			config.TIME_WAIT_DB
@@ -2120,7 +2139,6 @@ Application.prototype.openDB = function() {
 		
 		console.log("DEBUG ::: Database error ::: app.init  ");
  		app.register();
- 		//gui.loadVisibleFirstTimeOnMainPage();
 		
 	};
 	this.indexedDBHandler.onblocked = function(){
@@ -2132,52 +2150,39 @@ Application.prototype.openDB = function() {
 Application.prototype.sendProfileUpdate = function() {
 	
 	var profileResponseObject = {	
-		publicClientIDofSender : app.publicClientID, 
-		img : app.myPhotoPath,
-		commentary : app.myCommentary,
-		nickName: app.myCurrentNick,
-		telephone: app.myTelephone,
-		email : app.myEmail				
+		publicClientIDofSender : user.publicClientID, 
+		img : user.myPhotoPath,
+		commentary : user.myCommentary,
+		nickName: user.myCurrentNick,
+		telephone: user.myTelephone,
+		email : user.myEmail,
+		visibility : user.visibility		
 	};			
-	console.dir(profileResponseObject );
 	postman.send("profileUpdate", profileResponseObject );	
 };
 
-Application.prototype.loadMyConfig = function(){
+Application.prototype.loadUserSettings = function(){
 	
 	var singleKeyRange = IDBKeyRange.only(0);
 
 	try{
 	
-		db.transaction(["myconfig"], "readonly").objectStore("myconfig").openCursor(singleKeyRange).onsuccess = function(e) {
+		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
 			
 			var cursor = e.target.result;
-	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {
-	     		
-				app.publicClientID = cursor.value.publicClientID;
-	     		app.myCurrentNick = cursor.value.myCurrentNick;
-	     		app.myCommentary = cursor.value.myCommentary;	     		
-	     		app.myPhotoPath = cursor.value.myPhotoPath; 
-				app.myArrayOfKeys = cursor.value.myArrayOfKeys; 
-				app.lastProfileUpdate = cursor.value.lastProfileUpdate;
-				app.handshakeToken = cursor.value.handshakeToken;
-				app.myTelephone = cursor.value.myTelephone;
-				app.myEmail = cursor.value.myEmail;
-				//	trigger configuration as already loaded     		
-				configLoaded.resolve(); 
+	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {	     		
+	     		user = new UserSettings(cursor.value);	
+				userSettingsLoaded.resolve(); 
 	     		return;
-	     	}else{
-	     	
+	     	}else{	     	
 	     		app.register();
-	     		//gui.loadVisibleFirstTimeOnMainPage();	     	   	
-	     	   	return;
-	     		
+	     	   	return;	     		
 	     	}
 		};
 		
 	}catch(e){
 		
-		   console.log("DEBUG ::: Database error ::: loadMyConfig  ");		   
+		   console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
 		   app.register();
 		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
@@ -2195,7 +2200,7 @@ Application.prototype.login2server = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
-	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: app.handshakeToken })
+	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: user.handshakeToken  })
 		.done(function (result) { 
 			app.connect2server(result);
 		})
@@ -2211,11 +2216,11 @@ Application.prototype.login2server = function(){
 
 Application.prototype.connect2server = function(result){
 	
-	app.symetricKey2use = app.myArrayOfKeys[result.index];
+	app.symetricKey2use = user.myArrayOfKeys[result.index];
 	
 	var challengeClear = postman.decrypt(result.challenge).challenge;	
 	var token2sign = { 			
-		handshakeToken : app.handshakeToken ,
+		handshakeToken : user.handshakeToken  ,
 		challenge :  encodeURI( postman.encrypt( { challengeClear : challengeClear } ) )
   	};
   	app.tokenSigned = postman.signToken(token2sign);
@@ -2237,7 +2242,6 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('connect', function () {
 		
-		console.log("DEBUG ::: socket.on.connect :::");		
 		app.connecting = false;	
 	
 		var newerDate = new Date().getTime();	
@@ -2379,7 +2383,7 @@ Application.prototype.connect2server = function(result){
 		var requestParameters = postman.getParametersOfProfileRequest(input);
 	
 		if ( requestParameters != null && 
-			 requestParameters.lastProfileUpdate <  app.lastProfileUpdate  ){
+			 requestParameters.lastProfileUpdate <  user.lastProfileUpdate  ){
 	
 			app.sendProfileUpdate();			 			
 		}	
@@ -2445,17 +2449,18 @@ Application.prototype.register = function(){
 	 	}else{
 		
 	 		console.log("DEBUG ::: register ::: saving onto DB....." );	
-			//update app object	
-			app.publicClientID = answer.publicClientID;
-			app.myCurrentNick = answer.publicClientID;
-			app.myArrayOfKeys = answer.myArrayOfKeys;
-			app.handshakeToken = answer.handshakeToken;
-			app.lastProfileUpdate = new Date().getTime();			
+			//update app object
+	 		
+	 		user = new UserSettings(answer);			
+	 		user.myCurrentNick = user.publicClientID;
+	 		user.lastProfileUpdate = new Date().getTime();			
 			
+	 		console.log("DEBUG ::: register ::: user: " + JSON.stringify(user) );	
 	 		//update internal DB
-			var transaction = db.transaction(["myconfig"],"readwrite");	
-			var store = transaction.objectStore("myconfig");
-			var request = store.add({
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );
+			/*var request = store.add({
 				index : 0,	
 				publicClientID : app.publicClientID , 
 				myCurrentNick : app.myCurrentNick,
@@ -2467,9 +2472,9 @@ Application.prototype.register = function(){
 				myTelephone : app.myTelephone,
 				myEmail : app.myEmail
 			});
-			
-			//trigger configuration as already loaded
-			configLoaded.resolve(); 		
+			*/
+			//trigger userSettingsLoaded as already loaded
+			userSettingsLoaded.resolve(); 		
 	 	}
  		
  	}).fail(function() {
@@ -2494,30 +2499,17 @@ Application.prototype.handshake = function(handshakeRequest){
 	 		console.log("DEBUG ::: handshake ::: done we go to the next step ....." );
 			
 			//update app object	
-			app.publicClientID = result.publicClientID;
-			app.myArrayOfKeys = result.myArrayOfKeys;
-			app.lastProfileUpdate = new Date().getTime();
-			app.handshakeToken = handshakeRequest.handshakeToken;
+	 		user = new userSettings(result);			
+	 		user.handshakeToken = handshakeRequest.handshakeToken;
+	 		user.lastProfileUpdate = new Date().getTime();	
 			
 	 		//update internal DB
-			var transaction = db.transaction(["myconfig"],"readwrite");	
-			var store = transaction.objectStore("myconfig");
-			var request = store.add({
-				index : 0,	
-				publicClientID : result.publicClientID , 
-				myCurrentNick : app.myCurrentNick,
-				myCommentary : app.myCommentary,
-				myPhotoPath : app.myPhotoPath , 
-				myArrayOfKeys : result.myArrayOfKeys ,
-				lastProfileUpdate : new Date().getTime(),
-				handshakeToken : handshakeRequest.handshakeToken,
-				myTelephone : app.myTelephone,
-				myEmail : app.myEmail
-			});
-			
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );			
 
 			//trigger configuration as already loaded
-			configLoaded.resolve();			
+			userSettingsLoaded.resolve();			
 			gui.removeVisibleFirstTimeOnMainPage();	
  		
 	 	}
@@ -2663,7 +2655,7 @@ Application.prototype.getLanguage = function() {
 };
 
 Application.prototype.setLanguage = function(language) {
-	console.log('DEBUG ::: setLanguage ::: language.detected: ' + JSON.stringify(language) );
+
 	language.value = "";
 	switch (true){
 		case /en(?:\-[A-Z]{2}$)|EN$|en$|English$|english$/.test(language.detected):
@@ -2691,21 +2683,13 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
+		//console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
 	}else{
-		console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
+		//console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
 		language.value = "English" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
 	gui.setLocalLabels(); 
-};
-
-Application.prototype.updateConfig = function(object) {
-	//update internal DB
-	var transaction = db.transaction(["myconfig"],"readwrite");	
-	var store = transaction.objectStore("myconfig");
-	var request = store.put(object);
-	
 };
 
 Application.prototype.setMultimediaAsOpen = function() {
@@ -2714,7 +2698,7 @@ Application.prototype.setMultimediaAsOpen = function() {
 
 Application.prototype.onOnlineCustom =  function() {
 	
-	$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){	
+	$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){	
 		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 
 	});
 	
@@ -2764,7 +2748,7 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.receivedEvent = function() {
 	
 	try{
-		window.open = cordova.InAppBrowser.open;
+		//window.open = cordova.InAppBrowser.open;
 		deviceReady.resolve();		
 
 	}catch(err){
@@ -2854,7 +2838,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 
 		//request an update of the last photo of this Contact
 		var profileRetrievalObject = {	
-			publicClientIDofRequester : app.publicClientID, 
+			publicClientIDofRequester : user.publicClientID, 
 			publicClientID2getImg : c.publicClientID,
 			lastProfileUpdate : config.beginingOf2015
 		};
@@ -2899,7 +2883,7 @@ function Dictionary(){
 		label_3: "Search",
 		label_4: "Account",
 		label_5: "my nick Name:",
-		label_6: "Not implemented yet",
+		label_6: "coming soon",
 		label_7: "send",
 		label_8: "who can see me...",
 		label_9: "Anybody",
@@ -2917,8 +2901,15 @@ function Dictionary(){
 		label_23 : "Name...",
 		label_24 : "Commentary...",
 		label_25 : "Telephone...",
-		label_26 : "e-mail"
-
+		label_26 : "e-mail",
+		label_27 : "User account Activation",
+		label_28 : "License valid for a year",
+		label_29 : "License valid for 4 years",
+		label_30 : "Back-up functionality",
+		label_31 : "Donation for associated NGOs",
+		label_32 : "Donation for our Open Source Initiative",
+		label_33 : "Total: ",
+		label_34 : "Buy"
 	};
 	this.Literals_De = {
 		Label_1: "Profil",
@@ -2926,7 +2917,7 @@ function Dictionary(){
 		Label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
-		label_6: "Noch nicht implementiert",
+		label_6: "kommt bald",
 		label_7: "Senden",
 		label_8: "Sie sind sichtbar ...",
 		label_9: "Alle",
@@ -2944,7 +2935,15 @@ function Dictionary(){
 		label_23 : "Name...",
 		label_24 : "Kommentar...",
 		label_25 : "Telefon...",
-		label_26 : "e-mail"
+		label_26 : "e-mail",
+		label_27: "Benutzerkonto-Aktivierung",
+		label_28: "Lizenz g&uuml;ltig f&uuml;r ein Jahr",
+		label_29: "Lizenz g&uuml;ltig f&uuml;r 4 Jahre",
+		label_30: "Back-up-Funktionalit&auml;t",
+		label_31: "Spende f&uuml;r assoziierten NGOs",
+		label_32: "Spende f&uuml;r unsere Open Source Initiative",
+		label_33: "Gesamtsumme: ",
+		label_34: "Kaufen"
 	};
 	this.Literals_It = {
 		Label_1: "Profilo",
@@ -2952,7 +2951,7 @@ function Dictionary(){
 		Label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
-		label_6: "Non ancora implementato",
+		label_6: "in arrivo",
 		label_7: "invia",
 		label_8: "Ti visibile per ...",
 		label_9: "Chiunque",
@@ -2970,7 +2969,16 @@ function Dictionary(){
 		label_23 : "Nome...",
 		label_24 : "Commento...",
 		label_25 : "Telefono...",
-		label_26 : "e-mail"
+		label_26 : "e-mail",
+		label_27: "Conto di attivazione per l'utente",
+		label_28: "Licenza valida per un anno",
+		label_29: "Licenza valida per 4 anni",
+		label_30: "Funzionalit&agrave; di back-up",
+		label_31: "Donazione per le ONG associate",
+		label_32: "Donazione per la nostra iniziativa Open Source",
+		label_33: "Totale: ",
+		label_34: "Acquistare"
+		
 	}; 
 	this.Literals_Es = {
 		label_1: "Perfil",
@@ -2978,7 +2986,7 @@ function Dictionary(){
 		label_3: "Buscar",
 		label_4: "Cuenta",
 		label_5: "mi apodo / nick:",
-		label_6: "no implementado aun",
+		label_6: "pr&oacute;ximamente",
 		label_7: "enviar",
 		label_8: "eres visible para...",
 		label_9: "todo el mundo",
@@ -2995,8 +3003,16 @@ function Dictionary(){
 		label_20: "Cancelar,Ok",
 		label_23 : "Nombre...",
 		label_24 : "Comentario...",
-		label_25 : "Teléfono...",
-		label_26 : "e-mail"			
+		label_25 : "Tel\xE9fono...",
+		label_26 : "e-mail",
+		label_27: "Activaci&oacute;n de cuenta de usuario",
+		label_28: "Licencia v&aacute;lida por un a&ntilde;o",
+		label_29: "Licencia v&aacute;lida por 4 a&ntilde;os",
+		label_30: "Funcionalidad de back-up",
+		label_31: "Donaci&oacute;n para las ONG asociadas",
+		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
+		label_33: "Total: ",
+		label_34: "Comprar"			
 	}; 
 	this.Literals_Fr = {
 		Label_1: "Profil",
@@ -3004,7 +3020,7 @@ function Dictionary(){
 		label_3: "Recherche",
 		label_4: "Compte",
 		label_5: "mon surnom:",
-		label_6: "Pas encore mis en &#339;uvre",
+		label_6: "&agrave; venir",
 		label_7: "envoyer",
 		label_8: "vous visible ...",
 		label_9: "Tout le monde",
@@ -3021,8 +3037,16 @@ function Dictionary(){
 		label_20: "Annuler,Ok",
 		label_23 : "Nom...",
 		label_24 : "Commentaire...",
-		label_25 : "Téléphone...",
-		label_26 : "e-mail"	
+		label_25 : "T\xE9l\xE9phone...",
+		label_26 : "e-mail",
+		label_27: "Activation du compte de l'utilisateur",
+		label_28: "licence valide pour un an",
+		label_29: "licence valide pour 4 ans",
+		label_30: "fonctionnalit&eacute; de back-up",
+		label_31: "Don pour les ONG associ&eacute;es",
+		label_32: "Don pour notre Open Source Initiative",
+		label_33: "Total: ",
+		label_34: "Acheter"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3030,7 +3054,7 @@ function Dictionary(){
 		label_3: "Pesquisa",
 		label_4: "Conta",
 		label_5: "meu nick name:",
-		label_6: "Ainda n&atilde;o implementado",
+		label_6: "em breve",
 		label_7: "enviar",
 		label_8: "voc&ecirc; vis&iacute;vel para ...",
 		label_9: "Qualquer um",
@@ -3046,9 +3070,17 @@ function Dictionary(){
 		label_19: "Sair",
 		label_20: "Cancelar,Ok",
 		label_23 : "Nome ...",
-		label_24 : "Comentário...",
+		label_24 : "Comentario...",
 		label_25 : "Telefone...",
-		label_26 : "e-mail"	
+		label_26 : "e-mail"	,
+		label_27: "Ativa&ccedil;&atilde;o de Conta de Usu&aacute;rio",
+		label_28: "Licen&ccedil;a v&aacute;lida por um ano",
+		label_29: "licen&ccedil;a v&aacute;lida por 4 anos",
+		label_30: "back-up funcionalidade",
+		label_31: "Doa&ccedil;&atilde;o para as ONGs associadas",
+		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
+		label_33: "Total: ",
+		label_34: "Comprar"
 	};
 	
 	this.AvailableLiterals = {
@@ -3077,7 +3109,8 @@ var gui = new GUI();
 var postman = new Postman();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
-var dictionary = new Dictionary();	
+var dictionary = new Dictionary();
+var user;
 var app = new Application();
 
 
@@ -3088,11 +3121,11 @@ var app = new Application();
  * *********************************************************************************************/
 var documentReady = new $.Deferred();
 var mainPageReady = new $.Deferred();
-var configLoaded  = new $.Deferred();
+var userSettingsLoaded  = new $.Deferred();
 var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
 
-$.when( documentReady, mainPageReady, configLoaded , deviceReady).done(function(){
+$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){
 
 	app.initialized = true;
 	gui.loadProfile(); 

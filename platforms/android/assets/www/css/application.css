@@ -79,6 +79,16 @@
         url('./fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_vietnamese_cyrillic-800italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+.paypalButton{
+	
+  	width: 100%;
+	max-width: 400px;
+	position: relative;
+	margin-left: auto;
+    margin-right: auto;
+
+}
+
 .container {
   padding-right: 15px;
   padding-left: 15px;
@@ -772,14 +782,7 @@
 	
 }
 
-
-
-.btn-group
-
-
-
-
-
+/* .btn-group */
 
 .profileImage {
 	display: block;  
@@ -791,6 +794,19 @@
 	border: 0;
 	max-width : 500px;
 	max-height : 500px;
+	width: 100%;
+	height: 100%; 
+}
+
+.betaImg {
+	display: block; 
+	margin-top: 20px; 
+	margin-left : auto;
+	margin-right : auto;
+	padding: 0;
+	border: 0;
+	max-width : 50px;
+	max-height : 50px;
 	width: 100%;
 	height: 100%;      
 }
@@ -874,7 +890,11 @@
 	margin-left: auto;
     margin-right: auto;
     width: 100%;
-    height: 100%; 
+    height: 100%;
+    min-width: 350px;
+    min-height: 350px; 
+     
+     
     padding: 0;
     background-color: white;
 }
