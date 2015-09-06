@@ -869,11 +869,8 @@ GUI.prototype.loadGalleryInDOM = function() {
 	
 };
 
-GUI.prototype.showEmojis = function() {
-	
-    $('#chat-input').emojiPicker('toggle');
-//    setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_LOAD_EMOJI );
-    
+GUI.prototype.showEmojis = function() {	
+     $('#chat-input').emojiPicker('toggle');
 };
 
 GUI.prototype.showImagePic = function() {
@@ -1187,12 +1184,12 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
-	strVar += "					<a href=\"\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\" width=\"100%\" class=\"button\"><\/a>					";
+	strVar += "					<a href=\"\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
 	strVar += "				 <\/div>";
 	strVar += "				<div class=\"ui-block-80percent\">							";
-	strVar += "					<textarea  id=\"chat-input\" class=\"textarea-chat\"> <\/textarea> 				   								";
+	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
 	strVar += "				<\/div>";
-	strVar += "			   <button id=\"chat-input-button\" type=\"submit\" data-theme=\"a\">send<\/button>			";
+	//strVar += "			   <button id=\"chat-input-button\" type=\"submit\" data-theme=\"a\">send<\/button>			";
 	strVar += "			<\/div><!-- \/footer -->";
 	strVar += "		<\/div><!-- \/page chat-page-->		";
 	
@@ -1354,12 +1351,12 @@ GUI.prototype.bindDOMevents = function(){
 		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
 	});
 	
-	$('#chat-input').css("width", $(document).width() * 0.75 );
-	$('#chat-input').css("height", 51  );
+	$('#chat-input').css("width", $(window).width() * 0.70 );
+	$('#chat-input').css("height", 54  );
 	
 	$('#chat-input').emojiPicker({
-	    width: $(document).width() ,
-	    height: $(document).height(),
+	    width: $(window).width() ,
+	    height: $(window).height(),
 	    button: false
 	});
 	
@@ -1369,27 +1366,27 @@ GUI.prototype.bindDOMevents = function(){
 			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
 		}else{
-			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
 			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 		}
 	});
 	
 	$("#chat-input").keyup(function( event ) {
 		if (event.keyCode == 13){
-			$("#chat-input-button").click();
+			gui.chatInputHandler();
 		}	
 	});
 	
 	$('#chat-input').focus(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
 		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 	});
 	$('#chat-input').click(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
 		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 	});
 	
-	$(document).on("click","#chat-input-button", gui.chatInputHandler );
+	//$(document).on("click","#chat-input-button", gui.chatInputHandler );
 	
 	$("#chat-multimedia-button").bind("click", gui.showImagePic );
 	
@@ -1470,15 +1467,11 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(window).on("debouncedresize", function( event ) {
 
-		//$('#chat-input').emojiPicker('reset');
-		$('#chat-input').css("width", $(document).width() * 0.75 );
-		$('#chat-input').css("height", 51  );		
-/*		$('#chat-input').emojiPicker({
-		    width: $(document).width()  ,
-		    height: $(document).height()* 0.50,
-		    button: false
-		});
-	*/	
+		$('#chat-input').css("width", $(window).width() * 0.70 );
+		$('#chat-input').css("height", 54  );	
+		setTimeout( $('#chat-input').emojiPicker("reset") , config.TIME_LOAD_EMOJI );	
+
+		
 	});
 	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
@@ -1618,7 +1611,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
 	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
 	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
-	document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
+	//document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
 	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
 	document.getElementById("label_9").innerHTML = dictionary.Literals.label_9;
 	document.getElementById("label_10").innerHTML = dictionary.Literals.label_10;

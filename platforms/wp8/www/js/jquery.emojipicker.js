@@ -119,20 +119,11 @@
 
       this.$picker.click( $.proxy(this.pickerClicked, this) );
 
-      $(document.body).click( $.proxy(this.clickOutside, this) );
+      //$(document.body).click( $.proxy(this.clickOutside, this) );
     },
 
     updatePosition: function() {
       var top, left;
-      if (this.settings.container === 'body') {
-          top = this.$el.offset().top + this.$el.height();
-          left = this.$el.offset().left;
-      }
-      else {
-          top = this.$el.position().top + this.$el.height();
-          left = this.$el.position().left;
-      }
-
       // Picker position
       // switch(this.settings.position) {
       //   case 'top':
@@ -151,26 +142,23 @@
       //     this.$pickerWrap.css({'top':'-10px', 'right': -right + 'px'});
       //     break;
       // }
-      top = 0; left = 0;
+      
+      top = this.$el.offset().top - $(window).height() + 70;
+      left = 0;
       this.$picker.css({
-          top: top + 15,
-          //left: left + this.$el.outerWidth() - this.settings.width
+          top: top ,
           left: left 
       });
       return this;
     },
 
     hide: function() {
-    	    	    	    	      console.log("DEBUG ::: emoji ::: hide :  ");
-
       this.$picker.hide(this.settings.fadeTime, 'linear', function() {
         this.active = false;
       }.bind(this));
     },
 
     show: function() {
-    	    	    	      console.log("DEBUG ::: emoji ::: show :  ");
-
       //this.$el.focus();
       this.updatePosition();
       this.$picker.show(this.settings.fadeTime, 'linear', function() {
@@ -187,7 +175,7 @@
 
       if ( this.$picker.is(':hidden') ) {
         this.show();
-		$(this.element).blur();
+		//$(this.element).blur();
       } else {
         this.hide();
       }
@@ -267,6 +255,9 @@
       // Don't attach to the same element twice
       if ( !$.data( this, pluginName ) ) {
         $.data( this, pluginName, new Plugin( this, options ) );
+      }else{
+      	$.data( this, pluginName, {} );
+      	$.data( this, pluginName, new Plugin( this, options ) );
       }
     });
     return this;
