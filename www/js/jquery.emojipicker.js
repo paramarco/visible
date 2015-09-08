@@ -143,7 +143,8 @@
       //     break;
       // }
       
-      top = this.$el.offset().top - $(window).height() + 70;
+      //top = this.$el.offset().top - $(window).height() + 70;
+      top = 0;
       left = 0;
       this.$picker.css({
           top: top ,
@@ -182,7 +183,6 @@
     },
     
     reset : function() {
-    	 console.log("DEBUG ::: emoji ::: reset :  ");
          this.$picker.width( $(window).width() );
          this.$picker.height( $(window).height() );               
     },
@@ -193,6 +193,7 @@
       var emojiUnicode = toUnicode(findEmoji(emojiShortcode).unicode);
       console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
       insertAtCaret(this.element, emojiUnicode);
+      $('body').pagecontainer('change', '#chat-page');
       this.hide();
     },
 
@@ -240,6 +241,9 @@
             break;
           case 'reset':
         	plugin.reset();
+        	break;
+          case 'hide':
+        	plugin.clickOutside();
         	break;
           default: break;
         }

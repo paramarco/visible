@@ -361,7 +361,7 @@ Postman.prototype.encryptHandshake = function(message) {
 
 Postman.prototype.encrypt = function(message) {
 	try {    
-		console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
+		//console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
 		var iv = Math.floor((Math.random() * 7) + 0);
@@ -394,7 +394,7 @@ Postman.prototype.decrypt = function(encrypted) {
 		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();
 		
-		console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
+		//console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
 		
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 
@@ -870,7 +870,9 @@ GUI.prototype.loadGalleryInDOM = function() {
 };
 
 GUI.prototype.showEmojis = function() {	
-     $('#chat-input').emojiPicker('toggle');
+//	$.mobile.silentScroll(0);
+//     $('#chat-input').emojiPicker('toggle');
+    $('body').pagecontainer('change', '#emoticons');
 };
 
 GUI.prototype.showImagePic = function() {
@@ -1224,6 +1226,11 @@ GUI.prototype.loadBody = function() {
 	strVar += "				<div class=\"paypalButton\"><img id=\"paypal\" src=\"img\/AM_mc_vs_dc_ae.jpg\" width=\"100%\"><\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/activateAccount page-->";
+	
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"emoticons\">";
+	strVar += "			<div role=\"main\" class=\"ui-content\">";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page createGroup-->";
 			
 	$("body").append(strVar); 
 	
@@ -1342,14 +1349,27 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }	    
+	    }
+	        
 	    gui.hideLoadingSpinner();
 	});
 	
-	$(document).on("pageshow","#chat-page",function(event){ 
-		$.mobile.silentScroll($(document).height());	
-		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
-	});
+	$( "body" ).on( "pagecontainershow", function( event, ui ) {
+		 if ( event.target.baseURI.match("emoticons") !== null ){
+		 	$('#chat-input').emojiPicker("toggle");	
+		 }
+		 if ( event.target.baseURI.match("chat-page") !== null ){
+		 	$.mobile.silentScroll($(document).height());	
+			$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
+			$('#chat-input').emojiPicker("hide");	
+			if ( ui.prevPage[0].id == "emoticons"){
+				$('#chat-input').focus();
+			}
+		 }
+		 
+
+	} );	
+	
 	
 	$('#chat-input').css("width", $(window).width() * 0.70 );
 	$('#chat-input').css("height", 54  );
@@ -1469,8 +1489,7 @@ GUI.prototype.bindDOMevents = function(){
 
 		$('#chat-input').css("width", $(window).width() * 0.70 );
 		$('#chat-input').css("height", 54  );	
-		setTimeout( $('#chat-input').emojiPicker("reset") , config.TIME_LOAD_EMOJI );	
-
+		setTimeout( $('#chat-input').emojiPicker("reset") , config.TIME_LOAD_EMOJI );
 		
 	});
 	
