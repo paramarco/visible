@@ -2905,9 +2905,9 @@ function Dictionary(){
 		label_34 : "Buy"
 	};
 	this.Literals_De = {
-		Label_1: "Profil",
-		Label_2: "Gruppen",
-		Label_3: "Suchen",
+		label_1: "Profil",
+		label_2: "Gruppen",
+		label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
 		label_6: "kommt bald",
@@ -2939,9 +2939,9 @@ function Dictionary(){
 		label_34: "Kaufen"
 	};
 	this.Literals_It = {
-		Label_1: "Profilo",
-		Label_2: "Gruppi",
-		Label_3: "Ricerca",
+		label_1: "Profilo",
+		label_2: "Gruppi",
+		label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
 		label_6: "in arrivo",
