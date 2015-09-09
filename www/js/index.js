@@ -779,7 +779,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 		}else {
 			gui.hideLoadingSpinner();
 			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-			setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
+			//setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
 		}
 	});	
 };
@@ -870,21 +870,19 @@ GUI.prototype.loadGalleryInDOM = function() {
 };
 
 GUI.prototype.showEmojis = function() {	
-//	$.mobile.silentScroll(0);
-//     $('#chat-input').emojiPicker('toggle');
-    $('body').pagecontainer('change', '#emoticons');
+    $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
 
 GUI.prototype.showImagePic = function() {
 	
-	$("#popupDivMultimedia").remove();
+	
 	var prompt2show = 	
-		'<div id="popupDivMultimedia" data-role="popup"> '+
+		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
 		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-		'	<input data-role="none" type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
-	$("#chat-page-content").append(prompt2show);
-	$("#chat-page-content").trigger("create");
+	$("#multimedia-content").append(prompt2show);
+	$("#multimedia-content").trigger("create");
 	
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : config.MAX_WIDTH_IMG ,
@@ -892,8 +890,11 @@ GUI.prototype.showImagePic = function() {
 		displayWidth: $(window).width() * 0.80 ,
 		displayHeight: $(window).height() * 0.60 , 
 		navToolsEnabled : false,
-		porup2remove : '#popupDivMultimedia',
- 		imageUpdated: function(img){ 
+		callmeAtImageCreation : function(){
+			$("#popupDivMultimedia").popup( "close" );
+			$("#popupDivMultimedia").remove();
+		},
+ 		imageUpdated: function(img){  			
 		 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
@@ -902,15 +903,13 @@ GUI.prototype.showImagePic = function() {
 			});
 			message2send.setACKfromServer(false);
 			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith); 
-		
-			//stores to DB
-			mailBox.storeMessage(message2send); 
+			message2send.setChatWith(app.currentChatWith);
 			
 			//print message on the GUI
-			gui.insertMessageInConversation(message2send,false,true);
-					
+			gui.insertMessageInConversation(message2send,false,true);					
 			$.mobile.silentScroll($(document).height());
+			//stores to DB
+			mailBox.storeMessage(message2send); 
 			
 			//sends message	
 			postman.send("messagetoserver", message2send );
@@ -1186,7 +1185,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
-	strVar += "					<a href=\"\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
+	strVar += "					<a href=\"#\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
 	strVar += "				 <\/div>";
 	strVar += "				<div class=\"ui-block-80percent\">							";
 	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
@@ -1230,7 +1229,12 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"emoticons\">";
 	strVar += "			<div role=\"main\" class=\"ui-content\">";
 	strVar += "			<\/div><!-- \/content -->";
-	strVar += "		<\/div><!-- \/page createGroup-->";
+	strVar += "		<\/div><!-- \/page emoticons-->";
+	
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"multimedia\">";
+	strVar += "			<div id=\"multimedia-content\" role=\"main\" class=\"ui-content\">";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page emoticons-->";
 			
 	$("body").append(strVar); 
 	
@@ -1354,14 +1358,15 @@ GUI.prototype.bindDOMevents = function(){
 	    gui.hideLoadingSpinner();
 	});
 	
-	$( "body" ).on( "pagecontainershow", function( event, ui ) {
+/*	$( "body" ).on( "pagecontainershow", function( event, ui ) {
+		console.log("DEBUG ::: pagecontainershow ::: event.target.baseURI:" + event.target.baseURI);
 		 if ( event.target.baseURI.match("emoticons") !== null ){
 		 	$('#chat-input').emojiPicker("toggle");	
 		 }
 		 if ( event.target.baseURI.match("chat-page") !== null ){
 		 	$.mobile.silentScroll($(document).height());	
 			$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
-			$('#chat-input').emojiPicker("hide");	
+			//$('#chat-input').emojiPicker("hide");	
 			if ( ui.prevPage[0].id == "emoticons"){
 				$('#chat-input').focus();
 			}
@@ -1369,7 +1374,21 @@ GUI.prototype.bindDOMevents = function(){
 		 
 
 	} );	
-	
+*/
+	$(document).on("pageshow","#emoticons",function(event){
+		$('#chat-input').emojiPicker("toggle");
+	});
+	$(document).on("pageshow","#chat-page",function(event, ui){
+				
+		$.mobile.silentScroll($(document).height());	
+		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
+		$('#chat-input').emojiPicker("hide");
+		console.log("DEBUG ::: pageshow chat-page:: ui.prevPage :" + ui.prevPage.attr('id'));	
+		if ( ui.prevPage.attr('id') == "emoticons"){ 
+			$('#chat-input').focus();
+			//setTimeout( $('#chat-input').focus() , config.TIME_LOAD_EMOJI );
+		}
+	});		
 	
 	$('#chat-input').css("width", $(window).width() * 0.70 );
 	$('#chat-input').css("height", 54  );
@@ -1411,7 +1430,7 @@ GUI.prototype.bindDOMevents = function(){
 	$("#chat-multimedia-button").bind("click", gui.showImagePic );
 	
 	$(document).on("click","#arrowBackInChatPage",function() {
-		$('body').pagecontainer('change', '#MainPage');
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 	});
 	
 	$(document).on("pageshow","#profile",function(event){		
@@ -1431,7 +1450,7 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 	$(document).on("click","#arrowBackProfilePage",function() {
-		$('body').pagecontainer('change', '#MainPage');
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 	});
 	
 	$("#profileNameField").on("input", function() {
@@ -1466,13 +1485,13 @@ GUI.prototype.bindDOMevents = function(){
 	
 	$(document).on("click","#mapButtonInMainPage",function() {
 		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page');
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
 		}
 	});
 	
 	$(document).on("click","#mapButtonInChatPage",function() {
 		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page');
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
 		}
 	});
 	
@@ -1747,8 +1766,12 @@ GUI.prototype.backButtonHandler = function() {
 			dictionary.Literals.label_20 //'Yes, No' 
 		);	
 
+	}
+	
+	if ( $.mobile.activePage.attr( "id" ) == 'emoticons'){
+		$('body').pagecontainer('change', '#chat-page', { transition : "none" });
 	}else{
-		$('body').pagecontainer('change', '#MainPage');
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 	}
 	
 };
@@ -1831,7 +1854,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
 	$("body").append(strVar);
-	$('body').pagecontainer('change', '#ProfileOfContact-page');
+	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
 
 };
 
@@ -2924,9 +2947,9 @@ function Dictionary(){
 		label_34 : "Buy"
 	};
 	this.Literals_De = {
-		label_1: "Profil",
-		label_2: "Gruppen",
-		label_3: "Suchen",
+		Label_1: "Profil",
+		Label_2: "Gruppen",
+		Label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
 		label_6: "kommt bald",
@@ -2958,9 +2981,9 @@ function Dictionary(){
 		label_34: "Kaufen"
 	};
 	this.Literals_It = {
-		label_1: "Profilo",
-		label_2: "Gruppi",
-		label_3: "Ricerca",
+		Label_1: "Profilo",
+		Label_2: "Gruppi",
+		Label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
 		label_6: "in arrivo",

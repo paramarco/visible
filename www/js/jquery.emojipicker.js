@@ -172,8 +172,6 @@
      ************/
 
     iconClicked : function(e) {
-    	console.log("DEBUG ::: emoji ::: iconClicked :  ");
-
       if ( this.$picker.is(':hidden') ) {
         this.show();
 		//$(this.element).blur();
@@ -189,12 +187,13 @@
 
     emojiClicked: function(e) {
     	
+      
       var emojiShortcode = $(e.target).attr('class').split('emoji-')[1];
       var emojiUnicode = toUnicode(findEmoji(emojiShortcode).unicode);
-      console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
-      insertAtCaret(this.element, emojiUnicode);
+      insertAtCaret(this.element, emojiUnicode);            
       $('body').pagecontainer('change', '#chat-page');
       this.hide();
+      
     },
 
     emojiCategoryClicked: function(e) {
@@ -216,8 +215,6 @@
     },
 
     pickerClicked: function(e) {
-    	    	      console.log("DEBUG ::: emoji ::: pickerClicked :  ");
-
       e.stopPropagation();
     },
 
