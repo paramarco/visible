@@ -444,6 +444,8 @@ function GUI() {
 	this.listOfImages4Gallery = [] ;
 	this.indexOfImages4Gallery = 0;
 	this.inAppBrowser = null;
+	this.photoGallery = null;
+	this.photoGalleryClosed = true;
 };
 
 
@@ -503,9 +505,23 @@ GUI.prototype.showGallery = function(index) {
 	options.tapToClose = false;
 	options.tapToToggleControls = false;
 
-	var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
-	gallery.init();		
-	
+	gui.photoGalleryClosed = false;
+	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
+	gui.photoGallery.init();
+/*	$("#chat-page-header").toolbar({
+		position: "fixed",
+		create: function( event, ui ) {
+		  $.mobile.resetActivePageHeight();
+		}
+	});
+	$( "#chat-page-header" ).toolbar( "hide" );
+	gallery.listen('destroy', function() { 
+		$( "#chat-page-header" ).toolbar( "show" );
+	});
+*/	
+	gui.photoGallery.listen('destroy', function() { 
+		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
+	});
 };
 
 
@@ -616,7 +632,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}
 	if (withFX){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 		
+		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
 	}
 };
 
@@ -873,8 +889,7 @@ GUI.prototype.showEmojis = function() {
     $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
 
-GUI.prototype.showImagePic = function() {
-	
+GUI.prototype.showImagePic = function() {	
 	
 	var prompt2show = 	
 		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
@@ -882,17 +897,21 @@ GUI.prototype.showImagePic = function() {
 		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
 	$("#multimedia-content").append(prompt2show);
-	$("#multimedia-content").trigger("create");
+	$("#multimedia-content").trigger("create");	
+	$( "#popupDivMultimedia" ).bind({
+	  popupafterclose: function(event, ui) {
+		  $("#popupDivMultimedia").remove();
+	  }
+	});
 	
 	$('#picPopupDivMultimedia').picEdit({
-		maxWidth : config.MAX_WIDTH_IMG ,
-		maxHeight : config.MAX_HEIGHT_IMG ,
-		displayWidth: $(window).width() * 0.80 ,
+		maxWidth : (config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
+		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
+		displayWidth: $(window).width() * 0.70 ,
 		displayHeight: $(window).height() * 0.60 , 
 		navToolsEnabled : false,
 		callmeAtImageCreation : function(){
-			$("#popupDivMultimedia").popup( "close" );
-			$("#popupDivMultimedia").remove();
+			$("#popupDivMultimedia").popup( "close" );						
 		},
  		imageUpdated: function(img){  			
 		 			
@@ -1165,7 +1184,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<\/div><!-- \/page map-page-->";
 
 	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "			<div id=\"chat-page-header\" data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
 	strVar += "					<div class=\"ui-block-a\"><a id=\"arrowBackInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\">";
@@ -1329,21 +1348,20 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 
 
 
+/* $( "body" ).on( "pagecontainershow", function( event, ui ) { does not work on Android ... */
+/* $(document).on("click","#chat-input-button", gui.chatInputHandler );  (removed) */
 
 GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
-	    if (ui.options.target == "#MainPage"){			
-	    	
+	    if (ui.options.target == "#MainPage"){	    	
 	    	$("#chat-page-content").empty();
 	    	$("#ProfileOfContact-page").empty();
 			app.currentChatWith = null;
 			gui.listOfImages4Gallery = null;
 			gui.listOfImages4Gallery = [];
-			gui.indexOfImages4Gallery = 0;
-			
+			gui.indexOfImages4Gallery = 0;			
 			gui.profileUpdateHandler();
-
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
@@ -1353,94 +1371,26 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }
-	        
+	    }	        
 	    gui.hideLoadingSpinner();
-	});
-	
-/*	$( "body" ).on( "pagecontainershow", function( event, ui ) {
-		console.log("DEBUG ::: pagecontainershow ::: event.target.baseURI:" + event.target.baseURI);
-		 if ( event.target.baseURI.match("emoticons") !== null ){
-		 	$('#chat-input').emojiPicker("toggle");	
-		 }
-		 if ( event.target.baseURI.match("chat-page") !== null ){
-		 	$.mobile.silentScroll($(document).height());	
-			$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
-			//$('#chat-input').emojiPicker("hide");	
-			if ( ui.prevPage[0].id == "emoticons"){
-				$('#chat-input').focus();
-			}
-		 }
-		 
-
-	} );	
-*/
+	});	
 	$(document).on("pageshow","#emoticons",function(event){
 		$('#chat-input').emojiPicker("toggle");
 	});
-	$(document).on("pageshow","#chat-page",function(event, ui){
-				
+	$(document).on("pageshow","#chat-page",function(event, ui){				
 		$.mobile.silentScroll($(document).height());	
 		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
 		$('#chat-input').emojiPicker("hide");
-		console.log("DEBUG ::: pageshow chat-page:: ui.prevPage :" + ui.prevPage.attr('id'));	
 		if ( ui.prevPage.attr('id') == "emoticons"){ 
 			$('#chat-input').focus();
-			//setTimeout( $('#chat-input').focus() , config.TIME_LOAD_EMOJI );
 		}
-	});		
-	
-	$('#chat-input').css("width", $(window).width() * 0.70 );
-	$('#chat-input').css("height", 54  );
-	
-	$('#chat-input').emojiPicker({
-	    width: $(window).width() ,
-	    height: $(window).height(),
-	    button: false
-	});
-	
-	$('#chat-input').on("input", function() {
-		var textMessage = $("#chat-input").val();
-		if (textMessage == '') {
-			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
-		}else{
-			$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-		}
-	});
-	
-	$("#chat-input").keyup(function( event ) {
-		if (event.keyCode == 13){
-			gui.chatInputHandler();
-		}	
-	});
-	
-	$('#chat-input').focus(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	$('#chat-input').click(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	
-	//$(document).on("click","#chat-input-button", gui.chatInputHandler );
-	
-	$("#chat-multimedia-button").bind("click", gui.showImagePic );
-	
-	$(document).on("click","#arrowBackInChatPage",function() {
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	});
-	
+	});	
 	$(document).on("pageshow","#profile",function(event){		
-		
 		if(user.myCurrentNick == ""){
 			$("#nickNameInProfile").html(user.publicClientID);
 		} else{
 			$("#nickNameInProfile").html(user.myCurrentNick);
-		}
-		
+		}		
 		$("#profileNameField").val(user.myCurrentNick);
 		$("#commentaryInProfile").html(user.myCommentary);
 		$("#profileCommentary").val(user.myCommentary);
@@ -1448,29 +1398,63 @@ GUI.prototype.bindDOMevents = function(){
 		$("#profileEmail").val(user.myEmail);
 		$("#flip-visible").val(user.visibility).slider("refresh");
 	});
+
+	$("#chat-input")
+	    .css( { "width": $(window).width() * 0.70 , "height" : 54 } )
+	    .emojiPicker({
+		    width: $(window).width(),
+		    height: $(window).height(),
+		    button: false
+		})
+		.on("input", function() {
+			var textMessage = $("#chat-input").val();
+			if (textMessage == '') {
+				$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
+			}else{
+				$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+			}
+		})
+		.keyup(function( event ) {
+			if (event.keyCode == 13){
+				gui.chatInputHandler();
+			}	
+		})
+		.focus(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		})
+		.click(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		});	
 	
-	$(document).on("click","#arrowBackProfilePage",function() {
+	$("#chat-multimedia-button").bind("click", gui.showImagePic );	
+	$("#arrowBackInChatPage").on("click",function() {
 		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	});
-	
-	$("#profileNameField").on("input", function() {
-		user.myCurrentNick = $("#profileNameField").val();	
-		$("#nickNameInProfile").text(user.myCurrentNick);
-		app.profileIsChanged = true;
-	});
-	$("#profileNameField").on("focus", function() {
-		if (user.myCurrentNick == user.publicClientID){
-			$("#nickNameInProfile").html("");
-			$("#profileNameField").val("");
-		}		
-	});
-	
+	});	
+	$("#arrowBackProfilePage").on("click",function() {
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+	});	
+	$("#profileNameField")
+		.on("input", function() {
+			user.myCurrentNick = $("#profileNameField").val();	
+			$("#nickNameInProfile").text(user.myCurrentNick);
+			app.profileIsChanged = true;
+		})
+		.on("focus", function() {
+			if (user.myCurrentNick == user.publicClientID){
+				$("#nickNameInProfile").html("");
+				$("#profileNameField").val("");
+			}		
+		});	
 	$("#profileCommentary").on("input", function() {
 		user.myCommentary = $("#profileCommentary").val();
 		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
-		$("#profileTelephone").on("input", function() {
+	$("#profileTelephone").on("input", function() {
 		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
 	});
@@ -1483,43 +1467,35 @@ GUI.prototype.bindDOMevents = function(){
 		app.profileIsChanged = true;
 	});
 	
-	$(document).on("click","#mapButtonInMainPage",function() {
+	$("#mapButtonInMainPage").on("click",function() {
 		if ( app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
+		}
+	});	
+	$("#mapButtonInChatPage").on("click" ,function() {
+		if ( app.myPosition.coords.latitude != "" && gui.photoGalleryClosed ){
 			$('body').pagecontainer('change', '#map-page', { transition : "none" });
 		}
 	});
 	
-	$(document).on("click","#mapButtonInChatPage",function() {
-		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page', { transition : "none" });
-		}
-	});
+	$("#buyButton").on("click", app.processPayment );	
+	$("input[name='license-choice']").on("change", gui.updatePurchasePrice );
+	$("#NGOdonation").on("change", gui.updatePurchasePrice );
+	$("#FSIdonation").on("change", gui.updatePurchasePrice );
+	$("#Backup").on("change", gui.updatePurchasePrice );
 	
-	$(document).on("click","#buyButton", app.processPayment );	
-	
-	$(document).on("change","input[name='license-choice']", gui.updatePurchasePrice );
-	$(document).on("change","#NGOdonation", gui.updatePurchasePrice );
-	$(document).on("change","#FSIdonation", gui.updatePurchasePrice );
-	$(document).on("change","#Backup", gui.updatePurchasePrice );	
-	
-	$(document).on("click","#firstLoginInputButton", gui.firstLogin );	
+	$(document).on("click","#firstLoginInputButton", gui.firstLogin );
 	
 	$(window).on("debouncedresize", function( event ) {
-
-		$('#chat-input').css("width", $(window).width() * 0.70 );
-		$('#chat-input').css("height", 54  );	
-		setTimeout( $('#chat-input').emojiPicker("reset") , config.TIME_LOAD_EMOJI );
-		
-	});
-	
+		$('#chat-input')
+			.css( { "width": $(window).width() * 0.70 , "height" : 54 } ) 
+			.emojiPicker("reset"); 
+	});	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
-	
-	$(document).on("click","#link2panel",function() {
+	$("#link2panel").on("click",function() {
 		$( "#mypanel" ).panel( "open" );
 	});
-	
 	documentReady.resolve();
-
 		
 };
 
@@ -1951,7 +1927,6 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
     	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.inAppBrowserExitHandler);
     	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
     	
-    	//router_to_gallery();
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
@@ -1961,7 +1936,6 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
 };
 
 GUI.prototype.inAppBrowserExitHandler = function (event)	{
-    //Lungo.Router.article("step2","gallery");        
 	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
 	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
 };
@@ -2081,6 +2055,7 @@ function Application() {
 Application.prototype.init = function() {
 	
 	gui.loadBody();
+	gui.bindDOMevents();
 	gui.loadAsideMenuMainPage();
 	app.locateMyPosition();
 	app.getLanguage();
@@ -2131,9 +2106,11 @@ Application.prototype.go2paypal = function(myPurchase) {
 
 Application.prototype.loadPersistentData = function() {
 	if (typeof cordova == "undefined" || cordova == null ){
-		app.openDB();
+		$.when( documentReady ).done(function(){
+			app.openDB();			
+		});		
 	}else{
-		$.when( deviceReady ).done(function(){
+		$.when( deviceReady , documentReady).done(function(){
 			app.openDB();			
 		});		
 	}	
@@ -2947,9 +2924,9 @@ function Dictionary(){
 		label_34 : "Buy"
 	};
 	this.Literals_De = {
-		Label_1: "Profil",
-		Label_2: "Gruppen",
-		Label_3: "Suchen",
+		label_1: "Profil",
+		label_2: "Gruppen",
+		label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
 		label_6: "kommt bald",
@@ -2981,9 +2958,9 @@ function Dictionary(){
 		label_34: "Kaufen"
 	};
 	this.Literals_It = {
-		Label_1: "Profilo",
-		Label_2: "Gruppi",
-		Label_3: "Ricerca",
+		label_1: "Profilo",
+		label_2: "Gruppi",
+		label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
 		label_6: "in arrivo",
@@ -3050,7 +3027,7 @@ function Dictionary(){
 		label_34: "Comprar"			
 	}; 
 	this.Literals_Fr = {
-		Label_1: "Profil",
+		label_1: "Profil",
 		label_2: "Groupes",
 		label_3: "Recherche",
 		label_4: "Compte",
@@ -3173,7 +3150,7 @@ $(document).ready(function() {
 	gui.showLoadingSpinner();		
 	app.init();	
 	app.initializeDevice();
-	gui.bindDOMevents();	
+		
 	
 });
 
