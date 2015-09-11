@@ -592,12 +592,13 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}else if (typeof message.messageBody == "object"){
 		if (message.messageBody.messageType == "multimedia"){		
 			
-			htmlOfContent = '<div class="image-preview"> ' + 
-						  	'	<a target="_blank" href="#">  ' +   
-						    '		<img class="image-embed" data-indexInGallery=' + gui.indexOfImages4Gallery + ' src="' + message.messageBody.src  + '" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-						  	'	</a>' + 
-						  	'	<div class="name"></div>' + 
-							'</div>' ;
+			htmlOfContent = 
+				'<div class="image-preview"> ' + 
+				' <a>' +   
+				'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+				' </a>' + 
+				' <div class="name"></div>' + 
+				'</div>' ;
 			
 			gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
 			gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
@@ -610,12 +611,12 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	var html2insert = 	
 		'<div class="activity">'+
 		'	<span class="posted_at">'+
-		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+ 
-				timeStampOfMessage.toLocaleString() +
-		 '</span>'+
+		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
+			timeStampOfMessage.toLocaleString() +
+		' </span>'+
 		'	<div class="readable">'+
-		'		<span class="user">    '+ authorOfMessage   +'  </span>'+
-		'		<span class="content">    '+ htmlOfContent + htmlOfVideoPreview +'  </span>'+
+		'		<span class="user">'+ authorOfMessage   +'</span>'+
+		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
 		'	</div>' +
 		'</div>		' ;
 	
@@ -656,21 +657,16 @@ GUI.prototype.loadContactsOnMapPage = function() {
 		var cursor = e.target.result;
      	if (cursor) { 
      		contactsHandler.addNewContact(cursor.value);      	
-        	gui.insertContactOnMapPage(cursor.value,false);
+        	gui.insertContactOnMapPage(cursor.value);
          	cursor.continue(); 
      	}
 	};	
 };
 
-GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
+GUI.prototype.insertContactOnMapPage = function(contact) {
 	
-	var attributesOfLink = "" ; 
-		
-	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
-							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
-	}
-	
+	var attributesOfLink = "" ; 	
+
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
 	}
@@ -681,18 +677,21 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 	
 	
 	var html2insert = 	
-		'<li id="' + contact.publicClientID + '">'+
-		'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
-		'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
-		'	<h2>'+ contact.nickName   + '</h2> '+
-		'	<p>' + contact.commentary + '</p></a>'+
-		'	<a id="linkAddNewContact' + contact.publicClientID + '" ></a>'+
+		'<li id="' + contact.publicClientID + '-inMap">'+
+		' <a>  '+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'  <h2>'+ contact.nickName   + '</h2> '+
+		'  <p>' + contact.commentary + '</p></a>'+
+		' <a></a>'+
 		'</li>';
 		
-	$("#listOfContactsInMapPage").append(html2insert);
-
-	$('#listOfContactsInMapPage').listview().listview('refresh');
-	
+	$("#listOfContactsInMapPage")
+		.append(html2insert)
+		.listview().listview('refresh')
+		.find('#' + contact.publicClientID + "-inMap").first().on("click", function(){			 
+			gui.go2ChatWith(contact.publicClientID);
+		});
+	 
 	var latlng = L.latLng(contact.location.lat, contact.location.lon);
 	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(app.map);
 	
@@ -703,8 +702,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
-							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
@@ -721,7 +719,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
-		'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+		'	<a id="link2go2ChatWith_'+ contact.publicClientID  + '">'+ 
 		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 		'		<h2>'+ contact.nickName   + '</h2> '+
 		'		<p>' + contact.commentary + '</p>'+
@@ -730,17 +728,22 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 		'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
 		'</li>';
 				
-	$("#listOfContactsInMainPage").append(html2insert);
+	$("#listOfContactsInMainPage")
+		.append(html2insert)
+		.find("#link2go2ChatWith_"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
 	
-	gui.sortContacts();
-
-		
+	if (isNewContact){
+		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB(contact.publicClientID); } );
+	}else{
+		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
+	}
+	
+	gui.sortContacts();		
 
 };
 
 GUI.prototype.showCounterOfContact = function(contact) {
 	
-	console.log("DEBUG ::: showCounterOfContact ::: contact.counterOfUnreadSMS: " + JSON.stringify(contact));
 	if ( contact.counterOfUnreadSMS > 0 ){
 		$("#counterOf_" + contact.publicClientID ).text(contact.counterOfUnreadSMS);		
 		$("#counterOf_" + contact.publicClientID ).attr("class", "ui-li-count");
@@ -802,8 +805,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
-	
-	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
+	//$('#link2go2ChatWith_' + app.currentChatWith).unbind('click');
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
@@ -893,7 +895,7 @@ GUI.prototype.showImagePic = function() {
 	
 	var prompt2show = 	
 		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
-		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+		'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
 		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
 	$("#multimedia-content").append(prompt2show);
@@ -985,7 +987,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "	    		<\/div>";
@@ -1023,7 +1025,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "		    	<\/div>";
@@ -1061,7 +1063,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"\" id=\"arrowBackProfilePage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a id=\"arrowBackProfilePage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> 		    		";
 	strVar += "	    		<\/div>";
@@ -1136,14 +1138,14 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> ";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div role=\"main\" id=\"map-canvas\" >";
@@ -1204,7 +1206,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
-	strVar += "					<a href=\"#\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
+	strVar += "					<a data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
 	strVar += "				 <\/div>";
 	strVar += "				<div class=\"ui-block-80percent\">							";
 	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
@@ -1379,7 +1381,7 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	$(document).on("pageshow","#chat-page",function(event, ui){				
 		$.mobile.silentScroll($(document).height());	
-		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");
+		//$('#link2go2ChatWith_' + app.currentChatWith).on('click', function(){ gui.go2ChatWith(app.currentChatWith); } );
 		$('#chat-input').emojiPicker("hide");
 		if ( ui.prevPage.attr('id') == "emoticons"){ 
 			$('#chat-input').focus();
@@ -1582,7 +1584,7 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 	strVar += "		<\/div>";
 	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
 	strVar += "			<li id=\"firstLoginInputButton\">";
-	strVar += "				<a href=\"#\">";
+	strVar += "				<a>";
 	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
 	strVar += "				<\/a>";
 	strVar += "			<\/li>";
@@ -1665,7 +1667,7 @@ GUI.prototype.firstLogin = function() {
 		
 		$("#popupDiv").remove();
 		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-							'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+							'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
 							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
 							'</div>';
 		$("#contentOfvisibleFirstTime").append(prompt2show);
@@ -1764,7 +1766,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> ";
 	strVar += "	    		<\/div>";
@@ -2786,13 +2788,15 @@ ContactsHandler.prototype.getContactById = function(id) {
 
 //this method assumes that the contact is already inserted on the Array listOfContacts
 ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
-	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
-	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
+	$('#linkAddNewContact' + publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
+		.unbind("click")
+		.on("click", function(){ gui.go2ChatWith(publicClientID); });
 	
 	$("#popupDiv").remove();
 	var prompt2show = 	
 		'<div id="popupDiv" data-role="popup"> '+
-		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
+		'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
 		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
 		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
 		'</div>';
@@ -3150,10 +3154,10 @@ $(document).ready(function() {
 	gui.showLoadingSpinner();		
 	app.init();	
 	app.initializeDevice();
-		
+	FastClick.attach(document.body);	
 	
 });
 
-window.shimIndexedDB.__debug(true);
+window.shimIndexedDB.__debug(false);
 
 
