@@ -79,6 +79,7 @@
         url('./fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_vietnamese_cyrillic-800italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+.backButton{}
 /* ---------------------------------------- */
 /*  P R E L O A D I N G   S T Y L E
 /* ---------------------------------------- */

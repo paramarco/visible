@@ -895,17 +895,20 @@ GUI.prototype.showImagePic = function() {
 	
 	var prompt2show = 	
 		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
-		'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
 		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
 	$("#multimedia-content").append(prompt2show);
-	$("#multimedia-content").trigger("create");	
+	$("#multimedia-content").trigger("create");
+	$(".backButton").on("click", function(){			 
+		gui.backButtonHandler();
+	});	
 	$( "#popupDivMultimedia" ).bind({
 	  popupafterclose: function(event, ui) {
 		  $("#popupDivMultimedia").remove();
 	  }
 	});
-	
+		
 	$('#picPopupDivMultimedia').picEdit({
 		maxWidth : (config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
 		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
@@ -916,7 +919,6 @@ GUI.prototype.showImagePic = function() {
 			$("#popupDivMultimedia").popup( "close" );						
 		},
  		imageUpdated: function(img){  			
-		 			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
 				from : user.publicClientID , 
@@ -987,7 +989,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "	    		<\/div>";
@@ -1025,7 +1027,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "		    	<\/div>";
@@ -1063,7 +1065,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a id=\"arrowBackProfilePage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> 		    		";
 	strVar += "	    		<\/div>";
@@ -1138,7 +1140,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> ";
 	strVar += "	    		<\/div>";
@@ -1188,7 +1190,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
 	strVar += "			<div id=\"chat-page-header\" data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
-	strVar += "					<div class=\"ui-block-a\"><a id=\"arrowBackInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "					<div class=\"ui-block-a\"><a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\">";
 	strVar += "					   	<a id=\"link2profileOfContact\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
 	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
@@ -1218,7 +1220,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<div data-role=\"page\" id=\"activateAccount\" data-url=\"activateAccount\" >";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
-	strVar += "					<div class=\"ui-block-a\"><a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "					<div class=\"ui-block-a\"><a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\"><\/div>";
 	strVar += "				    <div class=\"ui-block-c\"><\/div>";
 	strVar += "				    <div class=\"ui-block-d\"><\/div>";
@@ -1433,11 +1435,9 @@ GUI.prototype.bindDOMevents = function(){
 		});	
 	
 	$("#chat-multimedia-button").bind("click", gui.showImagePic );	
-	$("#arrowBackInChatPage").on("click",function() {
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	});	
-	$("#arrowBackProfilePage").on("click",function() {
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+
+	$(".backButton").on("click",function() {
+		gui.backButtonHandler();
 	});	
 	$("#profileNameField")
 		.on("input", function() {
@@ -1729,32 +1729,39 @@ GUI.prototype.hideLocalNotifications = function() {
 	}, this);
 };
 
-GUI.prototype.backButtonHandler = function() {	
+GUI.prototype.backButtonHandler = function() {
 	
-	console.log("DEBUG ::: backButtonHandler ::: activePage " + $.mobile.activePage.attr( "id" ) );
+	var page = $.mobile.activePage.attr( "id" );
+	switch (true){
+		case /MainPage/.test(page):
+				function onConfirmQuit(button){
+			       if(button == 2){
+			        navigator.app.exitApp();
+			       }
+				}
+				navigator.notification.confirm(
+					dictionary.Literals.label_18,// 'Do you want to quit?'
+					onConfirmQuit,
+					dictionary.Literals.label_19, // exit
+					dictionary.Literals.label_20 //'Yes, No' 
+				);
 
-	if ( $.mobile.activePage.attr( "id" ) == 'MainPage'){
-	
-		function onConfirmQuit(button){
-	       if(button == 2){
-	        navigator.app.exitApp();
-	       }
-		}
-		navigator.notification.confirm(
-			dictionary.Literals.label_18,// 'Do you want to quit?'
-			onConfirmQuit,
-			dictionary.Literals.label_19, // exit
-			dictionary.Literals.label_20 //'Yes, No' 
-		);	
-
+			break;
+		case /chat-page/.test(page):
+			if ( $(".ui-popup-active").length > 0){
+		     	$("#popupDivMultimedia").popup( "close" );
+			}else{
+				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			}
+			break;
+		case /emoticons/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;			
+		default:
+			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			break;	
 	}
-	
-	if ( $.mobile.activePage.attr( "id" ) == 'emoticons'){
-		$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-	}else{
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	}
-	
+		
 };
 
 GUI.prototype.showProfileOfContact = function() {	
@@ -1769,9 +1776,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
-	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
-	strVar += "		    		<\/a> ";
+	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a>";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
@@ -1836,6 +1841,10 @@ GUI.prototype.showProfileOfContact = function() {
 	
 	$("body").append(strVar);
 	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
+	$(".backButton").on("click",function() {
+		gui.backButtonHandler();
+	});	
+
 
 };
 
