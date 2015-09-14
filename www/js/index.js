@@ -1502,7 +1502,7 @@ GUI.prototype.bindDOMevents = function(){
 };
 
 GUI.prototype.showLoadingSpinner = function(text2show){
-	if (text2show){
+/*	if (text2show){
 		$.mobile.loader.prototype.options.text = text2show;
 		$.mobile.loader.prototype.options.textVisible = true;
 	}else{
@@ -1516,11 +1516,14 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 		theme: $.mobile.loader.prototype.options.theme,
 		textonly: false,
 		html: ""
-	});	
+	});
+	*/
+	$('.mask-color').fadeIn('fast');
 };
 
 GUI.prototype.hideLoadingSpinner = function(){
-	$.mobile.loading( "hide" );
+	//$.mobile.loading( "hide" );
+	$('.mask-color').fadeOut('slow');
 };
 
 GUI.prototype.testUrlForMedia = function(url) {
@@ -3151,7 +3154,6 @@ $.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(fun
 
 $(document).ready(function() {
 		
-	gui.showLoadingSpinner();		
 	app.init();	
 	app.initializeDevice();
 	FastClick.attach(document.body);	

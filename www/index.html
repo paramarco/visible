@@ -25,6 +25,14 @@
         <title>Visible</title>
     </head>
 	<body>
+	    <div class="mask-color">
+            <div id="preview-area">
+                <div class="spinner">
+                  <div class="dot1"></div>
+                  <div class="dot2"></div>
+                </div>
+            </div>
+        </div>
 		<div data-role="page" data-theme="a" id="MainPage">
 			<div data-role="header" data-position="fixed">							
 			  <div class="ui-grid-d">
@@ -35,7 +43,8 @@
 			    <div class="ui-block-e"><a id="mapButtonInMainPage" data-role="button" class="ui-nodisc-icon icon-list"><img src="img/mundo_36x36.png" alt="lists" class="ui-li-icon ui-corner-none "></a></div>
 			  </div>
 			</div>
-			<div id="contentOfMainPage" data-role="content" data-theme="a">				
+			<div id="contentOfMainPage" data-role="content" data-theme="a">
+				
 				<ul id="listOfContactsInMainPage" data-role="listview" data-inset="true" data-divider-theme="a">					
 				</ul>
 			</div>
@@ -53,6 +62,7 @@
 		<script src="js/forge.min.js"></script>
 		
 		<script src="js/jquery-1.10.2.min.js"></script>
+	 	<script src="js/jquery-mobile-mobileinit.js"></script> 
 		<script src="js/jquery.mobile-1.4.2.min.js"></script>
 		
 	<!--  <script src="js/socket.io-1.0.6.js"></script> -->  
