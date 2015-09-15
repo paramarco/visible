@@ -119,7 +119,7 @@
 
       this.$picker.click( $.proxy(this.pickerClicked, this) );
 
-      //$(document.body).click( $.proxy(this.clickOutside, this) );
+      $(document.body).click( $.proxy(this.clickOutside, this) );
     },
 
     updatePosition: function() {
@@ -143,7 +143,8 @@
       //     break;
       // }
       
-      top = this.$el.offset().top - $(window).height() + 70;
+      //top = this.$el.offset().top - $(window).height() + 70;
+      top = 0;
       left = 0;
       this.$picker.css({
           top: top ,
@@ -171,8 +172,6 @@
      ************/
 
     iconClicked : function(e) {
-    	console.log("DEBUG ::: emoji ::: iconClicked :  ");
-
       if ( this.$picker.is(':hidden') ) {
         this.show();
 		//$(this.element).blur();
@@ -182,22 +181,19 @@
     },
     
     reset : function() {
-    	 console.log("DEBUG ::: emoji ::: reset :  ");
-    	 this.hide();
-    	 MAX_WIDTH = $(document).width();
-         MAX_HEIGHT = $(document).height();
-         this.settings.width = $(document).width();
-         this.settings.height = $(document).height();
-         this.init();         
+         this.$picker.width( $(window).width() );
+         this.$picker.height( $(window).height() );               
     },
 
     emojiClicked: function(e) {
     	
+      
       var emojiShortcode = $(e.target).attr('class').split('emoji-')[1];
       var emojiUnicode = toUnicode(findEmoji(emojiShortcode).unicode);
-      console.log("DEBUG ::: emojiClicked ::: emojiUnicode :  " + emojiUnicode);
-      insertAtCaret(this.element, emojiUnicode);
+      insertAtCaret(this.element, emojiUnicode);            
+      $('body').pagecontainer('change', '#chat-page');
       this.hide();
+      
     },
 
     emojiCategoryClicked: function(e) {
@@ -219,8 +215,6 @@
     },
 
     pickerClicked: function(e) {
-    	    	      console.log("DEBUG ::: emoji ::: pickerClicked :  ");
-
       e.stopPropagation();
     },
 
@@ -244,6 +238,9 @@
             break;
           case 'reset':
         	plugin.reset();
+        	break;
+          case 'hide':
+        	plugin.clickOutside();
         	break;
           default: break;
         }

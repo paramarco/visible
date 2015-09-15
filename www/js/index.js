@@ -900,7 +900,7 @@ GUI.prototype.showImagePic = function() {
 		'</div>';
 	$("#multimedia-content").append(prompt2show);
 	$("#multimedia-content").trigger("create");
-	$(".backButton").on("click", function(){			 
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
 		gui.backButtonHandler();
 	});	
 	$( "#popupDivMultimedia" ).bind({
@@ -1841,7 +1841,7 @@ GUI.prototype.showProfileOfContact = function() {
 	
 	$("body").append(strVar);
 	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
-	$(".backButton").on("click",function() {
+	$(".backButton").unbind("click").bind("click",function() {
 		gui.backButtonHandler();
 	});	
 

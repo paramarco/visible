@@ -361,7 +361,7 @@ Postman.prototype.encryptHandshake = function(message) {
 
 Postman.prototype.encrypt = function(message) {
 	try {    
-		console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
+		//console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
 		var iv = Math.floor((Math.random() * 7) + 0);
@@ -394,7 +394,7 @@ Postman.prototype.decrypt = function(encrypted) {
 		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
 		decipher.finish();
 		
-		console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
+		//console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
 		
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 
@@ -444,6 +444,8 @@ function GUI() {
 	this.listOfImages4Gallery = [] ;
 	this.indexOfImages4Gallery = 0;
 	this.inAppBrowser = null;
+	this.photoGallery = null;
+	this.photoGalleryClosed = true;
 };
 
 
@@ -503,9 +505,23 @@ GUI.prototype.showGallery = function(index) {
 	options.tapToClose = false;
 	options.tapToToggleControls = false;
 
-	var gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
-	gallery.init();		
-	
+	gui.photoGalleryClosed = false;
+	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
+	gui.photoGallery.init();
+/*	$("#chat-page-header").toolbar({
+		position: "fixed",
+		create: function( event, ui ) {
+		  $.mobile.resetActivePageHeight();
+		}
+	});
+	$( "#chat-page-header" ).toolbar( "hide" );
+	gallery.listen('destroy', function() { 
+		$( "#chat-page-header" ).toolbar( "show" );
+	});
+*/	
+	gui.photoGallery.listen('destroy', function() { 
+		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
+	});
 };
 
 
@@ -576,12 +592,13 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}else if (typeof message.messageBody == "object"){
 		if (message.messageBody.messageType == "multimedia"){		
 			
-			htmlOfContent = '<div class="image-preview"> ' + 
-						  	'	<a target="_blank" href="#">  ' +   
-						    '		<img class="image-embed" data-indexInGallery=' + gui.indexOfImages4Gallery + ' src="' + message.messageBody.src  + '" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-						  	'	</a>' + 
-						  	'	<div class="name"></div>' + 
-							'</div>' ;
+			htmlOfContent = 
+				'<div class="image-preview"> ' + 
+				' <a>' +   
+				'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+				' </a>' + 
+				' <div class="name"></div>' + 
+				'</div>' ;
 			
 			gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
 			gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
@@ -594,12 +611,12 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	var html2insert = 	
 		'<div class="activity">'+
 		'	<span class="posted_at">'+
-		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+ 
-				timeStampOfMessage.toLocaleString() +
-		 '</span>'+
+		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
+			timeStampOfMessage.toLocaleString() +
+		' </span>'+
 		'	<div class="readable">'+
-		'		<span class="user">    '+ authorOfMessage   +'  </span>'+
-		'		<span class="content">    '+ htmlOfContent + htmlOfVideoPreview +'  </span>'+
+		'		<span class="user">'+ authorOfMessage   +'</span>'+
+		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
 		'	</div>' +
 		'</div>		' ;
 	
@@ -616,7 +633,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}
 	if (withFX){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( $.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 		
+		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
 	}
 };
 
@@ -640,21 +657,16 @@ GUI.prototype.loadContactsOnMapPage = function() {
 		var cursor = e.target.result;
      	if (cursor) { 
      		contactsHandler.addNewContact(cursor.value);      	
-        	gui.insertContactOnMapPage(cursor.value,false);
+        	gui.insertContactOnMapPage(cursor.value);
          	cursor.continue(); 
      	}
 	};	
 };
 
-GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
+GUI.prototype.insertContactOnMapPage = function(contact) {
 	
-	var attributesOfLink = "" ; 
-		
-	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
-							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
-	}
-	
+	var attributesOfLink = "" ; 	
+
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
 	}
@@ -665,18 +677,21 @@ GUI.prototype.insertContactOnMapPage = function(contact,isNewContact) {
 	
 	
 	var html2insert = 	
-		'<li id="' + contact.publicClientID + '">'+
-		'	<a onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
-		'	<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
-		'	<h2>'+ contact.nickName   + '</h2> '+
-		'	<p>' + contact.commentary + '</p></a>'+
-		'	<a id="linkAddNewContact' + contact.publicClientID + '" ></a>'+
+		'<li id="' + contact.publicClientID + '-inMap">'+
+		' <a>  '+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'  <h2>'+ contact.nickName   + '</h2> '+
+		'  <p>' + contact.commentary + '</p></a>'+
+		' <a></a>'+
 		'</li>';
 		
-	$("#listOfContactsInMapPage").append(html2insert);
-
-	$('#listOfContactsInMapPage').listview().listview('refresh');
-	
+	$("#listOfContactsInMapPage")
+		.append(html2insert)
+		.listview().listview('refresh')
+		.find('#' + contact.publicClientID + "-inMap").first().on("click", function(){			 
+			gui.go2ChatWith(contact.publicClientID);
+		});
+	 
 	var latlng = L.latLng(contact.location.lat, contact.location.lon);
 	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(app.map);
 	
@@ -687,8 +702,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
-		attributesOfLink += ' onclick="contactsHandler.addNewContactOnDB(\'' + contact.publicClientID + '\');" ' +
-							' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
 	if (contact.commentary == ""){
 		contact.commentary = dictionary.Literals.label_13 ;
@@ -705,7 +719,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
-		'	<a id="link2go2ChatWith_'+ contact.publicClientID + '" onclick="gui.go2ChatWith(\'' + contact.publicClientID + '\');">  '+
+		'	<a id="link2go2ChatWith_'+ contact.publicClientID  + '">'+ 
 		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
 		'		<h2>'+ contact.nickName   + '</h2> '+
 		'		<p>' + contact.commentary + '</p>'+
@@ -714,17 +728,22 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 		'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
 		'</li>';
 				
-	$("#listOfContactsInMainPage").append(html2insert);
+	$("#listOfContactsInMainPage")
+		.append(html2insert)
+		.find("#link2go2ChatWith_"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
 	
-	gui.sortContacts();
-
-		
+	if (isNewContact){
+		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB(contact.publicClientID); } );
+	}else{
+		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
+	}
+	
+	gui.sortContacts();		
 
 };
 
 GUI.prototype.showCounterOfContact = function(contact) {
 	
-	console.log("DEBUG ::: showCounterOfContact ::: contact.counterOfUnreadSMS: " + JSON.stringify(contact));
 	if ( contact.counterOfUnreadSMS > 0 ){
 		$("#counterOf_" + contact.publicClientID ).text(contact.counterOfUnreadSMS);		
 		$("#counterOf_" + contact.publicClientID ).attr("class", "ui-li-count");
@@ -779,15 +798,14 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 		}else {
 			gui.hideLoadingSpinner();
 			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-			setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
+			//setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
 		}
 	});	
 };
 
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
-	
-	$("#link2go2ChatWith_" + publicClientID).attr("onclick","");
+	//$('#link2go2ChatWith_' + app.currentChatWith).unbind('click');
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
@@ -869,32 +887,38 @@ GUI.prototype.loadGalleryInDOM = function() {
 	
 };
 
-GUI.prototype.showEmojis = function() {
-	
-    $('#chat-input').emojiPicker('toggle');
-    
+GUI.prototype.showEmojis = function() {	
+    $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
 
-GUI.prototype.showImagePic = function() {
+GUI.prototype.showImagePic = function() {	
 	
-	$("#popupDivMultimedia").remove();
 	var prompt2show = 	
-		'<div id="popupDivMultimedia" data-role="popup"> '+
-		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
-		'	<input data-role="none" type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
+		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
+		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
 		'</div>';
-	$("#chat-page-content").append(prompt2show);
-	$("#chat-page-content").trigger("create");
-	
+	$("#multimedia-content").append(prompt2show);
+	$("#multimedia-content").trigger("create");
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
+		gui.backButtonHandler();
+	});	
+	$( "#popupDivMultimedia" ).bind({
+	  popupafterclose: function(event, ui) {
+		  $("#popupDivMultimedia").remove();
+	  }
+	});
+		
 	$('#picPopupDivMultimedia').picEdit({
-		maxWidth : config.MAX_WIDTH_IMG ,
-		maxHeight : config.MAX_HEIGHT_IMG ,
-		displayWidth: $(window).width() * 0.80 ,
+		maxWidth : (config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
+		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
+		displayWidth: $(window).width() * 0.70 ,
 		displayHeight: $(window).height() * 0.60 , 
 		navToolsEnabled : false,
-		porup2remove : '#popupDivMultimedia',
- 		imageUpdated: function(img){ 
-		 			
+		callmeAtImageCreation : function(){
+			$("#popupDivMultimedia").popup( "close" );						
+		},
+ 		imageUpdated: function(img){  			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
 				from : user.publicClientID , 
@@ -902,15 +926,13 @@ GUI.prototype.showImagePic = function() {
 			});
 			message2send.setACKfromServer(false);
 			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith); 
-		
-			//stores to DB
-			mailBox.storeMessage(message2send); 
+			message2send.setChatWith(app.currentChatWith);
 			
 			//print message on the GUI
-			gui.insertMessageInConversation(message2send,false,true);
-					
+			gui.insertMessageInConversation(message2send,false,true);					
 			$.mobile.silentScroll($(document).height());
+			//stores to DB
+			mailBox.storeMessage(message2send); 
 			
 			//sends message	
 			postman.send("messagetoserver", message2send );
@@ -967,7 +989,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "	    		<\/div>";
@@ -1005,7 +1027,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
 	strVar += "		    	<\/div>";
@@ -1043,7 +1065,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"\" id=\"arrowBackProfilePage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> 		    		";
 	strVar += "	    		<\/div>";
@@ -1118,14 +1140,14 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a> ";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div role=\"main\" id=\"map-canvas\" >";
@@ -1166,9 +1188,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<\/div><!-- \/page map-page-->";
 
 	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "			<div id=\"chat-page-header\" data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
-	strVar += "					<div class=\"ui-block-a\"><a id=\"arrowBackInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "					<div class=\"ui-block-a\"><a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\">";
 	strVar += "					   	<a id=\"link2profileOfContact\" data-role=\"button\" class=\"imgOfChat-page\" data-inline=\"false\">";
 	strVar += "				       		<img id=\"imgOfChat-page-header\" src=\"\" class=\"imgOfChat-page-header\">";
@@ -1186,7 +1208,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
-	strVar += "					<a href=\"\" data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
+	strVar += "					<a data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
 	strVar += "				 <\/div>";
 	strVar += "				<div class=\"ui-block-80percent\">							";
 	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
@@ -1198,7 +1220,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<div data-role=\"page\" id=\"activateAccount\" data-url=\"activateAccount\" >";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "				<div class=\"ui-grid-d\">";
-	strVar += "					<div class=\"ui-block-a\"><a data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "					<div class=\"ui-block-a\"><a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-b\"><\/div>";
 	strVar += "				    <div class=\"ui-block-c\"><\/div>";
 	strVar += "				    <div class=\"ui-block-d\"><\/div>";
@@ -1226,6 +1248,16 @@ GUI.prototype.loadBody = function() {
 	strVar += "				<div class=\"paypalButton\"><img id=\"paypal\" src=\"img\/AM_mc_vs_dc_ae.jpg\" width=\"100%\"><\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/activateAccount page-->";
+	
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"emoticons\">";
+	strVar += "			<div role=\"main\" class=\"ui-content\">";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page emoticons-->";
+	
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"multimedia\">";
+	strVar += "			<div id=\"multimedia-content\" role=\"main\" class=\"ui-content\">";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page emoticons-->";
 			
 	$("body").append(strVar); 
 	
@@ -1320,21 +1352,20 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 
 
 
+/* $( "body" ).on( "pagecontainershow", function( event, ui ) { does not work on Android ... */
+/* $(document).on("click","#chat-input-button", gui.chatInputHandler );  (removed) */
 
 GUI.prototype.bindDOMevents = function(){
 	
 	$("body").on('pagecontainertransition', function( event, ui ) {
-	    if (ui.options.target == "#MainPage"){			
-	    	
+	    if (ui.options.target == "#MainPage"){	    	
 	    	$("#chat-page-content").empty();
 	    	$("#ProfileOfContact-page").empty();
 			app.currentChatWith = null;
 			gui.listOfImages4Gallery = null;
 			gui.listOfImages4Gallery = [];
-			gui.indexOfImages4Gallery = 0;
-			
+			gui.indexOfImages4Gallery = 0;			
 			gui.profileUpdateHandler();
-
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
@@ -1344,66 +1375,26 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }	    
+	    }	        
 	    gui.hideLoadingSpinner();
+	});	
+	$(document).on("pageshow","#emoticons",function(event){
+		$('#chat-input').emojiPicker("toggle");
 	});
-	
-	$(document).on("pageshow","#chat-page",function(event){ 
+	$(document).on("pageshow","#chat-page",function(event, ui){				
 		$.mobile.silentScroll($(document).height());	
-		$('#link2go2ChatWith_' + app.currentChatWith).attr( 'onclick', "gui.go2ChatWith(\'" + app.currentChatWith + "\');");					
-	});
-	
-	$('#chat-input').css("width", $(window).width() * 0.70 );
-	$('#chat-input').css("height", 54  );
-	
-	$('#chat-input').emojiPicker({
-	    width: $(window).width() ,
-	    height: $(window).height(),
-	    button: false
-	});
-	
-	$('#chat-input').on("input", function() {
-		var textMessage = $("#chat-input").val();
-		if (textMessage == '') {
-			$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
-		}else{
-			$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		//$('#link2go2ChatWith_' + app.currentChatWith).on('click', function(){ gui.go2ChatWith(app.currentChatWith); } );
+		$('#chat-input').emojiPicker("hide");
+		if ( ui.prevPage.attr('id') == "emoticons"){ 
+			$('#chat-input').focus();
 		}
-	});
-	
-	$("#chat-input").keyup(function( event ) {
-		if (event.keyCode == 13){
-			gui.chatInputHandler();
-		}	
-	});
-	
-	$('#chat-input').focus(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	$('#chat-input').click(function() {
-		$('#chat-multimedia-image').attr("src", "img/smile_32x33.png");
-		$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-	});
-	
-	//$(document).on("click","#chat-input-button", gui.chatInputHandler );
-	
-	$("#chat-multimedia-button").bind("click", gui.showImagePic );
-	
-	$(document).on("click","#arrowBackInChatPage",function() {
-		$('body').pagecontainer('change', '#MainPage');
-	});
-	
+	});	
 	$(document).on("pageshow","#profile",function(event){		
-		
 		if(user.myCurrentNick == ""){
 			$("#nickNameInProfile").html(user.publicClientID);
 		} else{
 			$("#nickNameInProfile").html(user.myCurrentNick);
-		}
-		
+		}		
 		$("#profileNameField").val(user.myCurrentNick);
 		$("#commentaryInProfile").html(user.myCommentary);
 		$("#profileCommentary").val(user.myCommentary);
@@ -1411,29 +1402,61 @@ GUI.prototype.bindDOMevents = function(){
 		$("#profileEmail").val(user.myEmail);
 		$("#flip-visible").val(user.visibility).slider("refresh");
 	});
+
+	$("#chat-input")
+	    .css( { "width": $(window).width() * 0.70 , "height" : 54 } )
+	    .emojiPicker({
+		    width: $(window).width(),
+		    height: $(window).height(),
+		    button: false
+		})
+		.on("input", function() {
+			var textMessage = $("#chat-input").val();
+			if (textMessage == '') {
+				$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
+			}else{
+				$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+			}
+		})
+		.keyup(function( event ) {
+			if (event.keyCode == 13){
+				gui.chatInputHandler();
+			}	
+		})
+		.focus(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		})
+		.click(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		});	
 	
-	$(document).on("click","#arrowBackProfilePage",function() {
-		$('body').pagecontainer('change', '#MainPage');
-	});
-	
-	$("#profileNameField").on("input", function() {
-		user.myCurrentNick = $("#profileNameField").val();	
-		$("#nickNameInProfile").text(user.myCurrentNick);
-		app.profileIsChanged = true;
-	});
-	$("#profileNameField").on("focus", function() {
-		if (user.myCurrentNick == user.publicClientID){
-			$("#nickNameInProfile").html("");
-			$("#profileNameField").val("");
-		}		
-	});
-	
+	$("#chat-multimedia-button").bind("click", gui.showImagePic );	
+
+	$(".backButton").on("click",function() {
+		gui.backButtonHandler();
+	});	
+	$("#profileNameField")
+		.on("input", function() {
+			user.myCurrentNick = $("#profileNameField").val();	
+			$("#nickNameInProfile").text(user.myCurrentNick);
+			app.profileIsChanged = true;
+		})
+		.on("focus", function() {
+			if (user.myCurrentNick == user.publicClientID){
+				$("#nickNameInProfile").html("");
+				$("#profileNameField").val("");
+			}		
+		});	
 	$("#profileCommentary").on("input", function() {
 		user.myCommentary = $("#profileCommentary").val();
 		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
-		$("#profileTelephone").on("input", function() {
+	$("#profileTelephone").on("input", function() {
 		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
 	});
@@ -1446,52 +1469,40 @@ GUI.prototype.bindDOMevents = function(){
 		app.profileIsChanged = true;
 	});
 	
-	$(document).on("click","#mapButtonInMainPage",function() {
+	$("#mapButtonInMainPage").on("click",function() {
 		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page');
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
+		}
+	});	
+	$("#mapButtonInChatPage").on("click" ,function() {
+		if ( app.myPosition.coords.latitude != "" && gui.photoGalleryClosed ){
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
 		}
 	});
 	
-	$(document).on("click","#mapButtonInChatPage",function() {
-		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page');
-		}
-	});
+	$("#buyButton").on("click", app.processPayment );	
+	$("input[name='license-choice']").on("change", gui.updatePurchasePrice );
+	$("#NGOdonation").on("change", gui.updatePurchasePrice );
+	$("#FSIdonation").on("change", gui.updatePurchasePrice );
+	$("#Backup").on("change", gui.updatePurchasePrice );
 	
-	$(document).on("click","#buyButton", app.processPayment );	
-	
-	$(document).on("change","input[name='license-choice']", gui.updatePurchasePrice );
-	$(document).on("change","#NGOdonation", gui.updatePurchasePrice );
-	$(document).on("change","#FSIdonation", gui.updatePurchasePrice );
-	$(document).on("change","#Backup", gui.updatePurchasePrice );	
-	
-	$(document).on("click","#firstLoginInputButton", gui.firstLogin );	
+	$(document).on("click","#firstLoginInputButton", gui.firstLogin );
 	
 	$(window).on("debouncedresize", function( event ) {
-
-		$('#chat-input').css("width", $(window).width() * 0.70 );
-		$('#chat-input').css("height", 54  );		
-		$('#chat-input').emojiPicker({
-		    width: $(window).width()  ,
-		    height: $(window).height(),
-		    button: false
-		});
-		
-	});
-	
+		$('#chat-input')
+			.css( { "width": $(window).width() * 0.70 , "height" : 54 } ) 
+			.emojiPicker("reset"); 
+	});	
 	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
-	
-	$(document).on("click","#link2panel",function() {
+	$("#link2panel").on("click",function() {
 		$( "#mypanel" ).panel( "open" );
 	});
-	
 	documentReady.resolve();
-
 		
 };
 
 GUI.prototype.showLoadingSpinner = function(text2show){
-	if (text2show){
+/*	if (text2show){
 		$.mobile.loader.prototype.options.text = text2show;
 		$.mobile.loader.prototype.options.textVisible = true;
 	}else{
@@ -1505,11 +1516,14 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 		theme: $.mobile.loader.prototype.options.theme,
 		textonly: false,
 		html: ""
-	});	
+	});
+	*/
+	$('.mask-color').fadeIn('fast');
 };
 
 GUI.prototype.hideLoadingSpinner = function(){
-	$.mobile.loading( "hide" );
+	//$.mobile.loading( "hide" );
+	$('.mask-color').fadeOut('slow');
 };
 
 GUI.prototype.testUrlForMedia = function(url) {
@@ -1573,7 +1587,7 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
 	strVar += "		<\/div>";
 	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
 	strVar += "			<li id=\"firstLoginInputButton\">";
-	strVar += "				<a href=\"#\">";
+	strVar += "				<a>";
 	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
 	strVar += "				<\/a>";
 	strVar += "			<\/li>";
@@ -1656,7 +1670,7 @@ GUI.prototype.firstLogin = function() {
 		
 		$("#popupDiv").remove();
 		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-							'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+							'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
 							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
 							'</div>';
 		$("#contentOfvisibleFirstTime").append(prompt2show);
@@ -1715,28 +1729,39 @@ GUI.prototype.hideLocalNotifications = function() {
 	}, this);
 };
 
-GUI.prototype.backButtonHandler = function() {	
+GUI.prototype.backButtonHandler = function() {
 	
-	console.log("DEBUG ::: backButtonHandler ::: activePage " + $.mobile.activePage.attr( "id" ) );
+	var page = $.mobile.activePage.attr( "id" );
+	switch (true){
+		case /MainPage/.test(page):
+				function onConfirmQuit(button){
+			       if(button == 2){
+			        navigator.app.exitApp();
+			       }
+				}
+				navigator.notification.confirm(
+					dictionary.Literals.label_18,// 'Do you want to quit?'
+					onConfirmQuit,
+					dictionary.Literals.label_19, // exit
+					dictionary.Literals.label_20 //'Yes, No' 
+				);
 
-	if ( $.mobile.activePage.attr( "id" ) == 'MainPage'){
-	
-		function onConfirmQuit(button){
-	       if(button == 2){
-	        navigator.app.exitApp();
-	       }
-		}
-		navigator.notification.confirm(
-			dictionary.Literals.label_18,// 'Do you want to quit?'
-			onConfirmQuit,
-			dictionary.Literals.label_19, // exit
-			dictionary.Literals.label_20 //'Yes, No' 
-		);	
-
-	}else{
-		$('body').pagecontainer('change', '#MainPage');
+			break;
+		case /chat-page/.test(page):
+			if ( $(".ui-popup-active").length > 0){
+		     	$("#popupDivMultimedia").popup( "close" );
+			}else{
+				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			}
+			break;
+		case /emoticons/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;			
+		default:
+			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			break;	
 	}
-	
+		
 };
 
 GUI.prototype.showProfileOfContact = function() {	
@@ -1751,9 +1776,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a href=\"#\" data-rel=\"back\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\">";
-	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
-	strVar += "		    		<\/a> ";
+	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a>";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
@@ -1817,7 +1840,11 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
 	$("body").append(strVar);
-	$('body').pagecontainer('change', '#ProfileOfContact-page');
+	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
+	$(".backButton").unbind("click").bind("click",function() {
+		gui.backButtonHandler();
+	});	
+
 
 };
 
@@ -1914,7 +1941,6 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
     	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.inAppBrowserExitHandler);
     	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
     	
-    	//router_to_gallery();
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
@@ -1924,7 +1950,6 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
 };
 
 GUI.prototype.inAppBrowserExitHandler = function (event)	{
-    //Lungo.Router.article("step2","gallery");        
 	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
 	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
 };
@@ -2044,6 +2069,7 @@ function Application() {
 Application.prototype.init = function() {
 	
 	gui.loadBody();
+	gui.bindDOMevents();
 	gui.loadAsideMenuMainPage();
 	app.locateMyPosition();
 	app.getLanguage();
@@ -2094,9 +2120,11 @@ Application.prototype.go2paypal = function(myPurchase) {
 
 Application.prototype.loadPersistentData = function() {
 	if (typeof cordova == "undefined" || cordova == null ){
-		app.openDB();
+		$.when( documentReady ).done(function(){
+			app.openDB();			
+		});		
 	}else{
-		$.when( deviceReady ).done(function(){
+		$.when( deviceReady , documentReady).done(function(){
 			app.openDB();			
 		});		
 	}	
@@ -2772,13 +2800,15 @@ ContactsHandler.prototype.getContactById = function(id) {
 
 //this method assumes that the contact is already inserted on the Array listOfContacts
 ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
-	$('#linkAddNewContact' + publicClientID).attr( 'class', "icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r" );
-	$('#linkAddNewContact' + publicClientID).attr( 'onclick', "gui.go2ChatWith(\'" + publicClientID + "\');");
+	$('#linkAddNewContact' + publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
+		.unbind("click")
+		.on("click", function(){ gui.go2ChatWith(publicClientID); });
 	
 	$("#popupDiv").remove();
 	var prompt2show = 	
 		'<div id="popupDiv" data-role="popup"> '+
-		'	<a href="#" data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
+		'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
 		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
 		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
 		'</div>';
@@ -2910,9 +2940,9 @@ function Dictionary(){
 		label_34 : "Buy"
 	};
 	this.Literals_De = {
-		Label_1: "Profil",
-		Label_2: "Gruppen",
-		Label_3: "Suchen",
+		label_1: "Profil",
+		label_2: "Gruppen",
+		label_3: "Suchen",
 		label_4: "Konto",
 		label_5: "Mein Spitzname:",
 		label_6: "kommt bald",
@@ -2944,9 +2974,9 @@ function Dictionary(){
 		label_34: "Kaufen"
 	};
 	this.Literals_It = {
-		Label_1: "Profilo",
-		Label_2: "Gruppi",
-		Label_3: "Ricerca",
+		label_1: "Profilo",
+		label_2: "Gruppi",
+		label_3: "Ricerca",
 		label_4: "Account",
 		label_5: "il mio nick name:",
 		label_6: "in arrivo",
@@ -3013,7 +3043,7 @@ function Dictionary(){
 		label_34: "Comprar"			
 	}; 
 	this.Literals_Fr = {
-		Label_1: "Profil",
+		label_1: "Profil",
 		label_2: "Groupes",
 		label_3: "Recherche",
 		label_4: "Compte",
@@ -3133,13 +3163,12 @@ $.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(fun
 
 $(document).ready(function() {
 		
-	gui.showLoadingSpinner();		
 	app.init();	
 	app.initializeDevice();
-	gui.bindDOMevents();	
+	FastClick.attach(document.body);	
 	
 });
 
-window.shimIndexedDB.__debug(true);
+window.shimIndexedDB.__debug(false);
 
 

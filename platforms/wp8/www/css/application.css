@@ -79,6 +79,87 @@
         url('./fonts/open-sans-v13-latin-ext_latin_cyrillic-ext_greek-ext_greek_vietnamese_cyrillic-800italic.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
 }
 
+.backButton{}
+/* ---------------------------------------- */
+/*  P R E L O A D I N G   S T Y L E
+/* ---------------------------------------- */
+.mask-color{
+   position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -50px;
+    margin-left: -50px;    
+    width: 10%;
+    height: 10%;
+    z-index: 99999999;
+}
+#preview-area{
+    width: 60px;
+    height: 60px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 60px;
+    right: 0;
+    margin: auto auto;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+.spinner{
+    margin: 0 auto;
+    width: 40px;
+    height: 40px;
+    position: relative;
+    text-align: center;
+    -webkit-animation: rotate-pin 2.0s infinite linear;
+    animation: rotate-pin 2.0s infinite linear;
+}
+.dot1, .dot2{
+    width: 60%;
+    height: 60%;
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    background-color: #FF9720;
+    border-radius: 100%;
+    -webkit-animation: bounce-pin 2.0s infinite ease-in-out;
+    animation: bounce-pin 2.0s infinite ease-in-out;
+}
+.dot2{
+    top: auto;
+    bottom: 0px;
+    -webkit-animation-delay: -1.0s;
+    animation-delay: -1.0s;
+}
+@-webkit-keyframes rotate-pin{
+    100%{
+        -webkit-transform: rotate(360deg)
+    }
+}
+@keyframes rotate{
+    100%{
+        transform: rotate(360deg)
+    }
+}
+@-webkit-keyframes bounce-pin{
+    0%, 100%{
+        -webkit-transform: scale(0.0)
+    }
+    50%{
+        -webkit-transform: scale(1.0)
+    }
+}
+ @keyframes bounce-pin{
+    0%, 100%{
+        transform: scale(0.0)
+    }
+    50%{
+        transform: scale(1.0)
+    }
+}
+
 .paypalButton{
 	
   	width: 100%;
@@ -800,15 +881,14 @@
 
 .betaImg {
 	display: block; 
-	margin-top: 20px; 
+	margin-top: 10px; 
 	margin-left : auto;
 	margin-right : auto;
 	padding: 0;
 	border: 0;
-	max-width : 50px;
-	max-height : 50px;
-	width: 100%;
-	height: 100%;      
+	max-width : 20px;
+	max-height : 20px;
+     
 }
 
 .darkink {
@@ -891,10 +971,8 @@
     margin-right: auto;
     width: 100%;
     height: 100%;
-    min-width: 350px;
-    min-height: 350px; 
-     
-     
+   /* min-width: 250px;
+    min-height: 350px; */     
     padding: 0;
     background-color: white;
 }

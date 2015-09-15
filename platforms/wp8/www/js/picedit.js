@@ -34,7 +34,8 @@
 			aspectRatio: true,				// Preserve aspect ratio
             defaultImage: false,            // Default image to be used with the plugin
             navToolsEnabled: true,
-            porup2remove : false
+            porup2remove : false,
+            callmeAtImageCreation : function(){}
         };
 
     // The actual plugin constructor
@@ -523,7 +524,8 @@
 		},
 		// Create and update image from datasrc
 		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
-			if (this.options.porup2remove)	$(this.options.porup2remove).remove();
+			
+			if(this.options.callmeAtImageCreation) this.options.callmeAtImageCreation();
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
