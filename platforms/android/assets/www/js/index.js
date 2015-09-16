@@ -1308,12 +1308,13 @@ GUI.prototype.loadMaps = function(){
 	
 	app.map = L.map('map-canvas');
 	
-	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
 			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
 			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
-		id: 'examples.map-i875mjb7',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
 	}).addTo(app.map);
 	
@@ -1334,12 +1335,13 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 	
 	var newMap = L.map('mapProfile');
 	
-	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
 			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
 			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
-		id: 'examples.map-i875mjb7',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
 	}).addTo(newMap);
 	
@@ -2132,7 +2134,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 12);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 21);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
