@@ -2134,7 +2134,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 21);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 22);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
