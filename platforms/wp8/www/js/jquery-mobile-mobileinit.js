@@ -1,5 +1,5 @@
 $( document ).on( "mobileinit", function() {
 	$.mobile.defaultPageTransition = 'none';
-	$.mobile.linkBindingEnabled = true;
+	$.mobile.linkBindingEnabled = false;
 	$.mobile.allowCrossDomainPages = true; 
 });
