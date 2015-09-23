@@ -35,7 +35,8 @@
             defaultImage: false,            // Default image to be used with the plugin
             navToolsEnabled: true,
             porup2remove : false,
-            callmeAtImageCreation : function(){}
+            callmeAtImageCreation : function(){},
+            callmeAtNativeInvocation : function(){}
         };
 
     // The actual plugin constructor
@@ -313,12 +314,13 @@
 				this._fileinput.click();
 			}else{
 				
+				
+				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
+				
 				var cameraOptions = { 
 					destinationType : navigator.camera.DestinationType.FILE_URI,
 					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
 				};
-				
-				app.setMultimediaAsOpen();
 				
 				navigator.camera.getPicture(	
 					function (datasrc){ 
@@ -454,6 +456,9 @@
 					}
 				);
 			}else{
+				
+				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
+				
 				var cameraOptions = { 
 					//quality : 75,
 					destinationType : navigator.camera.DestinationType.FILE_URI,
@@ -462,8 +467,7 @@
 					//targetWidth: 300,
 					//targetHeight: 300,
 					//saveToPhotoAlbum: true
-				};				
-				app.setMultimediaAsOpen();
+				};
 								
 				navigator.camera.getPicture(	
 					function (datasrc){ 

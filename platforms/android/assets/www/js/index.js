@@ -492,6 +492,10 @@ GUI.prototype.insertImgInGallery = function(index, src) {
 
 GUI.prototype.showGallery = function(index) {	
 	
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+
 	var pswpElement = document.querySelectorAll('.pswp')[0];
 	
 	var options = {};
@@ -508,17 +512,6 @@ GUI.prototype.showGallery = function(index) {
 	gui.photoGalleryClosed = false;
 	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
 	gui.photoGallery.init();
-/*	$("#chat-page-header").toolbar({
-		position: "fixed",
-		create: function( event, ui ) {
-		  $.mobile.resetActivePageHeight();
-		}
-	});
-	$( "#chat-page-header" ).toolbar( "hide" );
-	gallery.listen('destroy', function() { 
-		$( "#chat-page-header" ).toolbar( "show" );
-	});
-*/	
 	gui.photoGallery.listen('destroy', function() { 
 		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
 	});
@@ -840,8 +833,12 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
-	var strVar="";
-//	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">";
+
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+    var strVar = "";
+	
 	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
 	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
 	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
@@ -884,7 +881,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "    <\/div>";
 	
 	$("#chat-page-content").append(strVar);
-	
+
 };
 
 GUI.prototype.showEmojis = function() {	
@@ -918,6 +915,9 @@ GUI.prototype.showImagePic = function() {
 		callmeAtImageCreation : function(){
 			$("#popupDivMultimedia").popup( "close" );						
 		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
+		},		
  		imageUpdated: function(img){  			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
@@ -952,26 +952,26 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	var strVar="";
 	strVar += "<div data-role=\"panel\" id=\"mypanel\" data-display=\"overlay\">";
 	strVar += "    <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
-	strVar += "		<li id=\"link2profileFromMyPanel\" data-icon=\"false\">";
-	strVar += "			<a href=\"#profile\">";
+	strVar += "		<li id=\"link2profile\" data-icon=\"false\">";
+	strVar += "			<a>";
 	strVar += "				<img src=\"img\/profile_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_1\">Profile<\/h2>							";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
-	strVar += "		<li data-icon=\"false\">";
-	strVar += "			<a href=\"#createGroup\" >							";
+	strVar += "		<li id=\"link2createGroup\" data-icon=\"false\">";
+	strVar += "			<a>";
 	strVar += "				<img src=\"img\/group_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_2\" >Groups<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>"; 
-	strVar += "		<li data-icon=\"false\">";
-	strVar += "			<a href=\"#manageVisibles\" >							";
+	strVar += "		<li id=\"link2manageVisibles\" data-icon=\"false\">";
+	strVar += "			<a>";
 	strVar += "				<img src=\"img\/visibles_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_3\">Search<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
-	strVar += "		<li data-icon=\"false\">";
-	strVar += "			<a href=\"#activateAccount\" >							";
+	strVar += "		<li id=\"link2activateAccount\" data-icon=\"false\">";
+	strVar += "			<a>";
 	strVar += "				<img src=\"img\/account_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_4\">Account<\/h2>";
 	strVar += "			<\/a>";
@@ -979,7 +979,21 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "	<\/ul>";
 	strVar += "<\/div><!-- \/panel -->"; 
 		
-	$("#MainPage").append(strVar); 
+	$("#MainPage").append(strVar);
+	
+	$("#link2profile").click(function(){ 
+		$('body').pagecontainer('change', '#profile', { transition : "none" });
+	});
+	$("#link2createGroup").click(function(){ 
+		$('body').pagecontainer('change', '#createGroup', { transition : "none" });
+	});
+	$("#link2manageVisibles").click(function(){ 
+		$('body').pagecontainer('change', '#manageVisibles', { transition : "none" });
+	});
+	$("#link2activateAccount").click(function(){ 
+		$('body').pagecontainer('change', '#activateAccount', { transition : "none" });
+	});
+
 	$('#MainPage').trigger('create'); 
 };
 
@@ -1146,7 +1160,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><a data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" class=\"button2mainPage button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><a id=\"mapButtonInmap-page\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
@@ -1157,34 +1171,6 @@ GUI.prototype.loadBody = function() {
 	strVar += "				<ul id=\"listOfContactsInMapPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "				<\/ul>";
 	strVar += "			<\/div><!-- \/content -->";
-	strVar += "			<div data-role=\"panel\" id=\"mypanel-map-page\" data-display=\"overlay\">";
-	strVar += "				    <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
-	strVar += "						<li data-icon=\"false\">";
-	strVar += "							<a href=\"#profile\">";
-	strVar += "								<img src=\"img\/profile_black_195x195.png\" >";
-	strVar += "								<h2>Profile<\/h2>								";
-	strVar += "							<\/a>";
-	strVar += "						<\/li>";
-	strVar += "						<li data-icon=\"false\">";
-	strVar += "							<a href=\"#createGroup\" >							";
-	strVar += "								<img src=\"img\/group_black_195x195.png\" >";
-	strVar += "								<h2>Groups<\/h2>";
-	strVar += "							<\/a>";
-	strVar += "						<\/li>";
-	strVar += "						<li data-icon=\"false\">";
-	strVar += "							<a href=\"#manageVisibles\" >							";
-	strVar += "								<img src=\"img\/visibles_black_195x195.png\" >";
-	strVar += "								<h2>Visibles<\/h2>";
-	strVar += "							<\/a>";
-	strVar += "						<\/li>";
-	strVar += "						<li data-icon=\"false\">";
-	strVar += "							<a href=\"#activateAccount\" >							";
-	strVar += "								<img src=\"img\/account_black_195x195.png\" >";
-	strVar += "								<h2>Account<\/h2>";
-	strVar += "							<\/a>";
-	strVar += "						<\/li>";
-	strVar += "					<\/ul>";
-	strVar += "			<\/div><!-- \/panel -->";
 	strVar += "		<\/div><!-- \/page map-page-->";
 
 	strVar += "		<div data-role=\"page\" id=\"chat-page\" data-url=\"chat-page\" >";
@@ -1197,7 +1183,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "				   		<\/a>";
 	strVar += "			       	<\/div>";
 	strVar += "				    <div class=\"ui-block-c\"><\/div>";
-	strVar += "				    <div class=\"ui-block-d\"><a href=\"#MainPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a><\/div>";
+	strVar += "				    <div class=\"ui-block-d\"><a data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/bubble_36x36.png\" alt=\"lists\" class=\"button2mainPage button ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "				    <div class=\"ui-block-e\"><a id=\"mapButtonInChatPage\" data-role=\"button\" class=\"ui-nodisc-icon icon-list\"><img src=\"img\/mundo_36x36.png\" alt=\"lists\" class=\"ui-li-icon ui-corner-none \"><\/a><\/div>";
 	strVar += "			  	<\/div>";
 	strVar += "			<\/div><!-- \/header -->";
@@ -1310,15 +1296,13 @@ GUI.prototype.loadMaps = function(){
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
 		id: 'instaltic.lbgoad0c',
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
 	}).addTo(app.map);
 	
-	console.log("DEBUG ::: loadMaps ::: " + JSON.stringify(app.myPosition.coords) );
 	app.map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
 	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
 	L.marker(latlng).addTo(app.map).bindPopup(dictionary.Literals.label_11).openPopup();
@@ -1337,9 +1321,8 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
 		id: 'instaltic.lbgoad0c',
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
@@ -1440,7 +1423,11 @@ GUI.prototype.bindDOMevents = function(){
 
 	$(".backButton").on("click",function() {
 		gui.backButtonHandler();
+	});
+	$(".button2mainPage").on("click",function() {
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 	});	
+	
 	$("#profileNameField")
 		.on("input", function() {
 			user.myCurrentNick = $("#profileNameField").val();	
@@ -1569,12 +1556,10 @@ GUI.prototype.parseLinks = function(htmlOfContent) {
 	
 	return result;
 };
-
+/*
 GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
-
 	
-	$('#listOfContactsInMainPage').hide();
-	
+	$('#listOfContactsInMainPage').hide();	
 	var strVar="";
 	strVar += "		<div hidden id=\"formInFirstLogin\">";
 	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
@@ -1611,13 +1596,14 @@ GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
  		}
  	});  	
 	         	    
-	$("#link2profileFromMyPanel").remove();
+	//$("#link2profileFromMyPanel").remove();
 	$.mobile.loading( "hide" );
 	
 	$("#formInFirstLogin").show();
 	$("#listInFirstLogin").show();
 
 };
+*/
 
 GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
 	$("#formInFirstLogin").remove();
@@ -1672,11 +1658,14 @@ GUI.prototype.firstLogin = function() {
 		
 		$("#popupDiv").remove();
 		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-							'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+
+							'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
 							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
 							'</div>';
 		$("#contentOfvisibleFirstTime").append(prompt2show);
 		$("#contentOfvisibleFirstTime").trigger("create");
+		$(".backButton").unbind( "click" ).bind("click", function(){			 
+			gui.backButtonHandler();
+		});	
 		$("#popupDiv").popup("open");		
 		return;
 	}
@@ -1736,27 +1725,37 @@ GUI.prototype.backButtonHandler = function() {
 	var page = $.mobile.activePage.attr( "id" );
 	switch (true){
 		case /MainPage/.test(page):
-				function onConfirmQuit(button){
-			       if(button == 2){
-			        navigator.app.exitApp();
-			       }
-				}
-				navigator.notification.confirm(
-					dictionary.Literals.label_18,// 'Do you want to quit?'
-					onConfirmQuit,
-					dictionary.Literals.label_19, // exit
-					dictionary.Literals.label_20 //'Yes, No' 
-				);
-
+			if ( $(".ui-popup-active").length > 0){
+		     	$("#popupDiv").popup( "close" );
+			}else{
+				if (typeof cordova != "undefined" && cordova != null ){	
+					$.when( deviceReady , documentReady).done(function(){
+						function onConfirmQuit(button){
+					       if(button == 2){	navigator.app.exitApp(); }
+						}
+						navigator.notification.confirm(
+							dictionary.Literals.label_18,// 'Do you want to quit?'
+							onConfirmQuit,
+							dictionary.Literals.label_19, // exit
+							dictionary.Literals.label_20 //'Yes, No' 
+						);
+					});		
+				}					
+			}
 			break;
 		case /chat-page/.test(page):
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
-			}else{
+			}else if( gui.photoGalleryClosed == false ){
+				gui.photoGallery.close();
+			}else{				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			}
 			break;
 		case /emoticons/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;
+		case /ProfileOfContact/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
 			break;			
 		default:
@@ -1859,7 +1858,7 @@ GUI.prototype.sortContacts = function() {
 	    li = ul.children('li');
 	    
 	    li.detach().sort(function(a,b) {
-	        return ( $(a).data('sortby') < $(b).data('sortby') ) ;  
+	        return ( parseInt($(a).data('sortby')) < parseInt($(b).data('sortby')) ) ;  
 	    });
 	    ul.empty();	    
 	    ul.append(li);
@@ -1917,6 +1916,9 @@ GUI.prototype.loadProfile = function() {
 			user.lastProfileUpdate = new Date().getTime();
 			app.profileIsChanged = true;
 
+		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
 		}
 	});
 
@@ -2065,7 +2067,8 @@ function Application() {
 	this.connecting = false;
 	this.inBackground = false;
 	this.initialized = false;
-	this.tokenSigned = null;	
+	this.tokenSigned = null;
+	this.devicePlatform = "";
 };
 
 Application.prototype.init = function() {
@@ -2134,7 +2137,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 21);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 22);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2615,6 +2618,7 @@ Application.prototype.askServerWhoisAround = function(position){
 		  	}
 		};
 		
+		gui.showLoadingSpinner();
 		postman.send("RequestOfListOfPeopleAround", whoIsAround );
 	}
 		
@@ -2777,6 +2781,7 @@ Application.prototype.receivedEvent = function() {
 	
 	try{
 		//window.open = cordova.InAppBrowser.open;
+		app.devicePlatform  = device.platform;
 		deviceReady.resolve();		
 
 	}catch(err){
@@ -2810,12 +2815,15 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$("#popupDiv").remove();
 	var prompt2show = 	
 		'<div id="popupDiv" data-role="popup"> '+
-		'	<a data-rel="back" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" class="ui-btn-right"></a>'+		
+		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
 		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
 		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
 		'</div>';
 	$("#listOfContactsInMainPage").append(prompt2show);
 	$("#listOfContactsInMainPage").trigger("create");
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
+		gui.backButtonHandler();
+	});	
 	$("#popupDiv").popup("open");
 	
 	var contact = this.getContactById(publicClientID);
@@ -2861,6 +2869,7 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 };
 
 ContactsHandler.prototype.setNewContacts = function(input) {
+	gui.hideLoadingSpinner();
 	var data = postman.getParametersOfSetNewContacts(input);
 	if (data == null ) { return;}
 
@@ -3168,9 +3177,5 @@ $(document).ready(function() {
 	app.init();	
 	app.initializeDevice();
 	FastClick.attach(document.body);	
-	
+	window.shimIndexedDB.__debug(false);
 });
-
-window.shimIndexedDB.__debug(false);
-
-

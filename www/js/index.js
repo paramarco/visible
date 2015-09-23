@@ -492,6 +492,10 @@ GUI.prototype.insertImgInGallery = function(index, src) {
 
 GUI.prototype.showGallery = function(index) {	
 	
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+
 	var pswpElement = document.querySelectorAll('.pswp')[0];
 	
 	var options = {};
@@ -829,14 +833,13 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
-	var strVar="";
+
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+    var strVar = "";
 	
-	if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT" ){
-		strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">";
-	}else{
-		strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
-	}
-	
+	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
 	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
 	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
 	strVar += "			<div data-role=\"none\" class=\"pswp__container\">";
@@ -878,7 +881,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "    <\/div>";
 	
 	$("#chat-page-content").append(strVar);
-	
+
 };
 
 GUI.prototype.showEmojis = function() {	
@@ -912,6 +915,9 @@ GUI.prototype.showImagePic = function() {
 		callmeAtImageCreation : function(){
 			$("#popupDivMultimedia").popup( "close" );						
 		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
+		},		
  		imageUpdated: function(img){  			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
@@ -1290,15 +1296,13 @@ GUI.prototype.loadMaps = function(){
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
 		id: 'instaltic.lbgoad0c',
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
 	}).addTo(app.map);
 	
-	console.log("DEBUG ::: loadMaps ::: " + JSON.stringify(app.myPosition.coords) );
 	app.map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
 	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
 	L.marker(latlng).addTo(app.map).bindPopup(dictionary.Literals.label_11).openPopup();
@@ -1317,9 +1321,8 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
-		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
-			'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-			'Imagery &copy; <a href="http://mapbox.com">Mapbox</a>',
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
 		id: 'instaltic.lbgoad0c',
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
@@ -1743,7 +1746,9 @@ GUI.prototype.backButtonHandler = function() {
 		case /chat-page/.test(page):
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
-			}else{
+			}else if( gui.photoGalleryClosed == false ){
+				gui.photoGallery.close();
+			}else{				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			}
 			break;
@@ -1911,6 +1916,9 @@ GUI.prototype.loadProfile = function() {
 			user.lastProfileUpdate = new Date().getTime();
 			app.profileIsChanged = true;
 
+		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
 		}
 	});
 
@@ -2610,6 +2618,7 @@ Application.prototype.askServerWhoisAround = function(position){
 		  	}
 		};
 		
+		gui.showLoadingSpinner();
 		postman.send("RequestOfListOfPeopleAround", whoIsAround );
 	}
 		
@@ -2860,6 +2869,7 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 };
 
 ContactsHandler.prototype.setNewContacts = function(input) {
+	gui.hideLoadingSpinner();
 	var data = postman.getParametersOfSetNewContacts(input);
 	if (data == null ) { return;}
 
@@ -3167,9 +3177,5 @@ $(document).ready(function() {
 	app.init();	
 	app.initializeDevice();
 	FastClick.attach(document.body);	
-	
+	window.shimIndexedDB.__debug(false);
 });
-
-window.shimIndexedDB.__debug(false);
-
-
