@@ -1317,7 +1317,8 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 	var contact = contactsHandler.getContactById(app.currentChatWith); 
 	if (typeof contact == "undefined") return;
 	
-	var newMap = L.map('mapProfile');
+	gui.mapOfContact = null ;
+	gui.mapOfContact = L.map('mapProfile');
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
@@ -1326,12 +1327,12 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		id: 'instaltic.lbgoad0c',
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
-	}).addTo(newMap);
+	}).addTo(gui.mapOfContact);
 	
-	newMap.setView([contact.location.lat, contact.location.lon], 14);  
+	gui.mapOfContact.setView([contact.location.lat, contact.location.lon], 14);  
 	var latlng = L.latLng(contact.location.lat, contact.location.lon);
-	L.marker(latlng).addTo(newMap).bindPopup(contact.nickName);	
-	L.circle(latlng, 200).addTo(newMap); 	
+	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(contact.nickName);	
+	L.circle(latlng, 200).addTo(gui.mapOfContact); 	
 		
 };
 
@@ -1368,7 +1369,6 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	$(document).on("pageshow","#chat-page",function(event, ui){				
 		$.mobile.silentScroll($(document).height());	
-		//$('#link2go2ChatWith_' + app.currentChatWith).on('click', function(){ gui.go2ChatWith(app.currentChatWith); } );
 		$('#chat-input').emojiPicker("hide");
 		if ( ui.prevPage.attr('id') == "emoticons"){ 
 			$('#chat-input').focus();
@@ -1511,7 +1511,6 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 };
 
 GUI.prototype.hideLoadingSpinner = function(){
-	//$.mobile.loading( "hide" );
 	$('.mask-color').fadeOut('slow');
 };
 
@@ -1825,12 +1824,10 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "					    	      				<p><\/p>";
 	strVar += "					        	  			<\/div>";
 	strVar += "					          			<\/div>";
-//	strVar += "					          			<div class=\"row\">";
-	strVar += "					          				<div class=\"col-md-12\">";
-	strVar += "					          					<div id=\"mapProfile\">";
-	strVar += "					          					<\/div>";
+	strVar += "					          			<div class=\"col-md-12\">";
+	strVar += "					          				<div id=\"mapProfile\">";
 	strVar += "					          				<\/div>";
-	strVar += "					   	    	   		<\/div>";
+	strVar += "					          			<\/div>";
 	strVar += "					    	      	<\/div>";	
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";
@@ -2115,7 +2112,6 @@ Application.prototype.go2paypal = function(myPurchase) {
 	jqxhr.fail(function() {
 		console.log("DEBUG ::: go2paypal ::: failed: ");
 		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
-		//Lungo.Router.back();
 	});
 	jqxhr.always(function() { gui.hideLoadingSpinner(); });		
 };		
