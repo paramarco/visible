@@ -9,16 +9,12 @@
 
 //TODO develop web
 //TODO push notifications (plugin configuration on client side)
-//TODO check whats going on on Gallery for windows
 //TODO have our own emoticons
-//TODO FIX shareButtons for the gallery
 //TODO Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
-//TODO viralization with email & SMS (plugin)
 //TODO try to save img as files in mobile version(save to file as they're received)
 //TODO a wall of my news
 //TODO chineese,arab, japaneese
-//TODO check how to reduce battery consumption
-//TODO viralization via SMS from the user's contacts
+//TODO viralization via email, SMS from the user's contacts
 
 	
 function UserSettings (myUser){
@@ -1475,7 +1471,7 @@ GUI.prototype.bindDOMevents = function(){
 	$("#FSIdonation").on("change", gui.updatePurchasePrice );
 	$("#Backup").on("change", gui.updatePurchasePrice );
 	
-	$(document).on("click","#firstLoginInputButton", gui.firstLogin );
+	//$(document).on("click","#firstLoginInputButton", gui.firstLogin );
 	
 	$(window).on("debouncedresize", function( event ) {
 		$('#chat-input')
@@ -2464,50 +2460,51 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.register = function(){
 	
- 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register').done(function (answer) {
- 		
- 		if (typeof answer == "undefined" || answer == null || 
- 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
- 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
- 			
-	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
-	 		app.register();
-	 		
-	 	}else{
+	// generate an RSA key pair 
+	forge.pki.rsa.generateKeyPair( { bits: 2048, e: 0x10001 }, function (err, keypair ){
 		
-	 		console.log("DEBUG ::: register ::: saving onto DB....." );	
-			//update app object
-	 		
-	 		user = new UserSettings(answer);			
-	 		user.myCurrentNick = user.publicClientID;
-	 		user.lastProfileUpdate = new Date().getTime();			
-			
-	 		console.log("DEBUG ::: register ::: user: " + JSON.stringify(user) );	
-	 		//update internal DB
-			var transaction = db.transaction(["usersettings"],"readwrite");	
-			var store = transaction.objectStore("usersettings");
-			var request = store.add( user );
-			/*var request = store.add({
-				index : 0,	
-				publicClientID : app.publicClientID , 
-				myCurrentNick : app.myCurrentNick,
-				myCommentary : app.myCommentary ,
-				myPhotoPath : app.myPhotoPath , 
-				myArrayOfKeys : app.myArrayOfKeys ,
-				lastProfileUpdate : app.lastProfileUpdate,
-				handshakeToken : app.handshakeToken,
-				myTelephone : app.myTelephone,
-				myEmail : app.myEmail
-			});
-			*/
-			//trigger userSettingsLoaded as already loaded
-			userSettingsLoaded.resolve(); 		
-	 	}
- 		
- 	}).fail(function() {
-		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
-	});	
-
+		if (err) {
+			console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
+			app.register();
+		}
+		
+		var publicKeyClient = { n : keypair.publicKey.n.toString(32) };
+		
+	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient )
+	 		.done(function (answer) {
+	 			
+		 		if (typeof answer == "undefined" || answer == null || 
+		 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
+		 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
+		 			
+			 		console.log("DEBUG ::: register ::: another attemp....." );	 		
+			 		app.register();
+			 		
+			 	}else{
+				
+			 		console.log("DEBUG ::: register ::: saving onto DB....." );	
+					//update app object
+			 		
+			 		user = new UserSettings(answer);			
+			 		user.myCurrentNick = user.publicClientID;
+			 		user.lastProfileUpdate = new Date().getTime();			
+					
+			 		//update internal DB
+					var transaction = db.transaction(["usersettings"],"readwrite");	
+					var store = transaction.objectStore("usersettings");
+					var request = store.add( user );
+	
+					//trigger userSettingsLoaded as already loaded
+					userSettingsLoaded.resolve(); 		
+			 	}
+		 		
+		 	})
+		 	.fail(function() {
+				setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+		 	});// END HTTP POST
+	 	
+	});// END PKI generation
+	
 };	
 
 Application.prototype.handshake = function(handshakeRequest){	
@@ -2546,13 +2543,11 @@ Application.prototype.handshake = function(handshakeRequest){
 	});	
 	
 };
-
+/*
 Application.prototype.firstLogin = function(){
 	
-	var rsa = forge.pki.rsa;
-
 	// generate an RSA key pair synchronously
-	var keypair = rsa.generateKeyPair({bits: 2048, e: 0x10001});
+	var keypair = forge.pki.rsa.generateKeyPair({bits: 2048, e: 0x10001});
 	var publicKeyClient = { 
 		n : keypair.publicKey.n.toString(32)
 	};
@@ -2595,13 +2590,11 @@ Application.prototype.firstLogin = function(){
 
 
 };
-
+*/
 
 Application.prototype.askServerWhoisAround = function(position){	
 	
 	if (position && position != null){			
-		//app.myPosition.coords.latitude = parseFloat( location.lat ); 
-		//app.myPosition.coords.longitude = parseFloat( location.lon );
 		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
 		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
 	}	
@@ -2629,8 +2622,6 @@ Application.prototype.locateMyPosition = function(){
 	            app.askServerWhoisAround();
 	        }
 	        function fail(error) {
-	        	//if (app.myPosition == null)
-	        	//	app.myPosition = { coords : { latitude : "" , longitude : ""  } };
 	        	positionLoaded.resolve();
 	        }
 	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
@@ -2641,13 +2632,10 @@ Application.prototype.locateMyPosition = function(){
     	$.when( deviceReady ).done(function(){
 		    function success(pos) {
 	            app.myPosition = pos;
-	            console.log("DEBUG ::: locateMyPosition ::: success cordova ");
 	            app.askServerWhoisAround();
 	            navigator.geolocation.watchPosition(function(){}, function(){});
 	        }
 	        function fail(error) {
-	        	console.log("DEBUG ::: locateMyPosition ::: fail cordova ");
-
 	        }	
     		navigator.geolocation.getCurrentPosition( app.askServerWhoisAround , fail );
     	});
@@ -2761,12 +2749,9 @@ Application.prototype.bindEvents = function() {
     document.addEventListener('searchbutton', function(){}, false);
     document.addEventListener('startcallbutton', function(){}, false);
     document.addEventListener('endcallbutton', function(){}, false);
-    //The event fires when an application is put into the background
     document.addEventListener("pause", function(){ app.inBackground = true; }, false);
-    //The event fires when an application is retrieved from the background
     document.addEventListener("resume", this.onResumeCustom  , false);   
-    document.addEventListener("online", this.onOnlineCustom, false);
-    
+    document.addEventListener("online", this.onOnlineCustom, false);    
 };
 // deviceready Event Handler 
 Application.prototype.onDeviceReady = function() {
@@ -2776,7 +2761,6 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.receivedEvent = function() {
 	
 	try{
-		//window.open = cordova.InAppBrowser.open;
 		app.devicePlatform  = device.platform;
 		deviceReady.resolve();		
 
@@ -2784,8 +2768,6 @@ Application.prototype.receivedEvent = function() {
     	console.log("DEBUG ::: Application.prototype.receivedEvent ::: exception " + err.message );
     }	
 };
-
-
 //END Class Application
 
 

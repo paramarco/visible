@@ -67,8 +67,8 @@ app.post('/login', function (req, res) {
 		// DEBUG
 		if ( ip == "127.0.0.1")
 			ip = "129.247.31.224";
-
 		// DEBUG
+		
 		var clientUpdate = [ 
              brokerOfVisibles.updateClientsLocation( client, ip ) ,
 		     brokerOfVisibles.updateClientsHandshake( client )
@@ -91,6 +91,13 @@ app.post('/login', function (req, res) {
 });
 
 app.post('/register', function (req, res) {
+	
+	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
+	
+	var publicKeyClient = forge.pki.rsa.setPublicKey( 
+		new forge.jsbn.BigInteger(req.body.n , 32) , 
+		new forge.jsbn.BigInteger("2001" , 32) 
+	);
 	
 	brokerOfVisibles.createNewClient().then(function (newClient){		
 				
@@ -483,8 +490,7 @@ app.locals.reconnectHandler = function( socket ) {
 };
 
 
-//DEBUG
-//io.adapter(redis({ host: 'localhost', port: 6379 }));
+io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
 	
