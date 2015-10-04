@@ -99,7 +99,7 @@ app.post('/register', function (req, res) {
 		new forge.jsbn.BigInteger("2001" , 32) 
 	);
 	
-	brokerOfVisibles.createNewClient().then(function (newClient){		
+	brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
 				
 		var answer = {
 			publicClientID : newClient.publicClientID , 
@@ -298,7 +298,8 @@ app.locals.notifyNeighbours = function (client, online){
 				publicClientID : client.publicClientID,
 				location : client.location,
 				nickName : client.nickName,
-	  			commentary : client.commentary
+	  			commentary : client.commentary,
+	  			rsamodulus : client.rsamodulus
 			}; 
 			var list2send = [];
 			list2send.push(visible);

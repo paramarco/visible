@@ -123,7 +123,8 @@ CREATE TABLE public.client
   lastprofileupdate bigint,
   telephone text,
   email text,
-  visibility text
+  visibility text,
+  rsamodulus text
 
 )
 WITH ( OIDS=FALSE );

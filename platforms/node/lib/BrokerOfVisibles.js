@@ -84,7 +84,8 @@ function BrokerOfVisibles(_io) {
 							publicClientID : r.publicclientid,
 							location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
 							nickName : r.nickname,
-				  			commentary :  (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary
+				  			commentary :  (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary,
+				  			rsamodulus : r.rsamodulus
 				  		}; 
 						listOfVisibles.push(visible);
 					}
@@ -202,6 +203,7 @@ function BrokerOfVisibles(_io) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
+	    						.field("rsamodulus")
 							    .from("client")
 							    .where("handshaketoken = '" + handshakeToken + "'")							    
 							    .toString();
@@ -252,6 +254,7 @@ function BrokerOfVisibles(_io) {
 			    
 			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
 			    client.lastProfileUpdate = entry.lastprofileupdate;
+			    client.rsamodulus = entry.rsamodulus;
 			    	
 	    
 			    return  d.resolve(client);
@@ -340,9 +343,9 @@ function BrokerOfVisibles(_io) {
 
 	};
 	
-	this.createNewClient = function() {
+	this.createNewClient = function(RSAmodulus) {
 		
-		var newClient = new Client ();		
+		var newClient = new Client (RSAmodulus);		
 		var d = when.defer();	
 		
 		for (i = 0; i < newClient.myArrayOfKeys.length; i++) { 
@@ -364,6 +367,7 @@ function BrokerOfVisibles(_io) {
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("lastprofileupdate", newClient.lastProfileUpdate)
+							    .set("rsamodulus", newClient.RSAmodulus)
 							    .toString() ;
 			query2send += " ; " ;
 			query2send += squel.insert()

@@ -39,15 +39,16 @@ UserSettings.prototype.updateUserSettings = function() {
 
 function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
-	this.path2photo = contact2create.path2photo;
+	this.path2photo = "./img/profile_black_195x195.png";
 	this.nickName = contact2create.nickName;
 	this.location = contact2create.location;
-	this.commentary = contact2create.commentary;
+	this.commentary = (contact2create.commentary == "") ? dictionary.Literals.label_12 : contact2create.commentary;
 	this.lastProfileUpdate = config.beginingOf2015;
 	this.counterOfUnreadSMS = 0;
 	this.timeLastSMS = 0;
 	this.telephone = "";
 	this.email = "";
+	this.rsamodulus = contact2create.rsamodulus;
 };
 
 
@@ -214,7 +215,8 @@ Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {
 				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
 				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
 				typeof listOfNewContacts[i].location !== 'object'||
-				Object.keys(listOfNewContacts[i]).length != 4  ) {	
+				typeof listOfNewContacts[i].rsamodulus !== 'string'
+				Object.keys(listOfNewContacts[i]).length != 5  ) {	
 				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
 				return null;
 			}
@@ -2460,8 +2462,9 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.register = function(){
 	
+	gui.showLoadingSpinner();
 	// generate an RSA key pair 
-	forge.pki.rsa.generateKeyPair( { bits: 2048, e: 0x10001 }, function (err, keypair ){
+	forge.pki.rsa.generateKeyPair( { bits: 2048, e: 0x10001, workerScript : "js/prime.worker.js" }, function (err, keypair ){
 		
 		if (err) {
 			console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
@@ -2875,14 +2878,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			}
 			
 		}else{			
-			var newContact = new ContactOfVisible({	
-				publicClientID : c.publicClientID  ,
-				location :  c.location,
-				path2photo : "./img/profile_black_195x195.png", 
-				nickName : c.nickName,
-				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary							
-			});
-			
+			var newContact = new ContactOfVisible(c);			
 			contactsHandler.addNewContact(newContact);
 			gui.insertContactInMainPage(newContact,true);			
 		}	
