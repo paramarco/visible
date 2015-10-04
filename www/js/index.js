@@ -215,7 +215,7 @@ Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {
 				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
 				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
 				typeof listOfNewContacts[i].location !== 'object'||
-				typeof listOfNewContacts[i].rsamodulus !== 'string'
+				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
 				Object.keys(listOfNewContacts[i]).length != 5  ) {	
 				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
 				return null;
@@ -2878,7 +2878,9 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			}
 			
 		}else{			
-			var newContact = new ContactOfVisible(c);			
+			var newContact = new ContactOfVisible(c);
+			//send my encryption keys
+			//request its encryption keys			
 			contactsHandler.addNewContact(newContact);
 			gui.insertContactInMainPage(newContact,true);			
 		}	
