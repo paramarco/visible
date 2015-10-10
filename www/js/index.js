@@ -29,6 +29,7 @@ function UserSettings (myUser){
 	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
 	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
 	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
+	this.privateKey = (typeof myUser.privateKey == "undefined" ) ? {} : myUser.privateKey;
 };
 
 UserSettings.prototype.updateUserSettings = function() {
@@ -39,18 +40,20 @@ UserSettings.prototype.updateUserSettings = function() {
 
 function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
-	this.path2photo = "./img/profile_black_195x195.png";
+	this.path2photo = (contact2create.path2photo) ? contact2create.path2photo : "./img/profile_black_195x195.png";
 	this.nickName = contact2create.nickName;
 	this.location = contact2create.location;
 	this.commentary = (contact2create.commentary == "") ? dictionary.Literals.label_12 : contact2create.commentary;
-	this.lastProfileUpdate = config.beginingOf2015;
-	this.counterOfUnreadSMS = 0;
-	this.timeLastSMS = 0;
-	this.telephone = "";
-	this.email = "";
+	this.lastProfileUpdate = (contact2create.lastProfileUpdate) ? contact2create.lastProfileUpdate : config.beginingOf2015;
+	this.counterOfUnreadSMS = (contact2create.counterOfUnreadSMS) ? contact2create.counterOfUnreadSMS : 0;
+	this.timeLastSMS = (contact2create.timeLastSMS) ? contact2create.timeLastSMS : 0 ;
+	this.telephone = (contact2create.telephone) ? contact2create.telephone : "";
+	this.email = (contact2create.email) ? contact2create.email : "";
 	this.rsamodulus = contact2create.rsamodulus;
+	this.encryptionKeys = (contact2create.encryptionKeys) ? contact2create.encryptionKeys : null;
+	this.decryptionKeys = (contact2create.decryptionKeys) ? contact2create.decryptionKeys : null;
+	this.persistent = false;
 };
-
 
 
 function Message(input) {
@@ -320,6 +323,26 @@ Postman.prototype.getParametersOfLocationFromServer = function(input) {
 	}	
 };
 
+Postman.prototype.getKeysDelivery = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID(input.to) == false  ||
+			PostMan.prototype.isUUID(input.from) == false  ||
+			typeof input.setOfKeys != 'object' ||
+			Object.keys(input).length != 3 ) {	
+			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
+			return null;
+		}
+		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
 
 
 Postman.prototype.signToken = function(message) {	
@@ -332,28 +355,6 @@ Postman.prototype.signToken = function(message) {
 		return stringJWS; 
 	}
 	catch (ex) {	return null;	}	
-};
-
-
-Postman.prototype.encryptHandshake = function(message) {
-	try {    
-		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
-
-		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
-
-		cipher.start({iv: app.symetricKey2use });
-		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
-		cipher.finish();		
-		
-		var envelope =  cipher.output.data  ;
-					
-		return envelope ;
-
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
-		return null;
-	}	
 };
 
 
@@ -403,6 +404,28 @@ Postman.prototype.decrypt = function(encrypted) {
 	}	
 };
 
+
+Postman.prototype.encryptHandshake = function(message) {
+	try {    
+		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
+
+		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
+
+		cipher.start({iv: app.symetricKey2use });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		var envelope =  cipher.output.data  ;
+					
+		return envelope ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		return null;
+	}	
+};
+
 Postman.prototype.decryptHandshake = function(encrypted) {	
 	try {    
 
@@ -422,6 +445,72 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 		return null;
 	}	
 };
+//TODO
+Postman.prototype.encryptMsg = function(message, toContact) {
+	try {    
+		
+		if ( toContact.encryptionKeys == null){
+			contactsHandler.setEncryptionKeys(toContact);		
+			console.log("DEBUG ::: encryptMsg ::: " + JSON.stringify(toContact) );
+		}
+			
+
+		var index4Key = Math.floor((Math.random() * 7) + 0);
+		var index4iv = Math.floor((Math.random() * 7) + 0);		
+		
+		var symetricKey2use = toContact.encryptionKeys[index4Key];
+		var iv2use = toContact.encryptionKeys[index4iv];
+		
+		var cipher = forge.cipher.createCipher('AES-CBC', symetricKey2use );
+		cipher.start({iv: iv2use });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		var envelope =  { 
+			index4Key : index4Key , 
+			index4iv : index4iv , 
+			encryptedMsg : cipher.output.data 
+		};
+		
+		return envelope ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encryptMsg  :::  " + ex);
+		return null;
+	}	
+};
+//TODO
+Postman.prototype.decryptMsg = function(message, fromContact) {	
+	try {    
+
+		if ( fromContact.decryptionKeys == null){
+			//generate symmetric keys for this contact
+			//save it
+			//trigger keyDelivery(fromClient,toClient,keySet)
+		}
+
+
+		var iv = fromContact.decryptionKeys[parseInt(message.index4iv)];
+		var symetricKey2use = fromContact.decryptionKeys[parseInt(message.index4Key)];
+		
+		var decipher = forge.cipher.createDecipher('AES-CBC', symetricKey2use);
+		decipher.start({ iv: iv });
+		decipher.update(forge.util.createBuffer( message.encryptedMsg ) );
+		decipher.finish();
+		
+		//console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
+		
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: decryptMsg  :::  " + ex);
+		return null;
+	}	
+};
+
+
 
 Postman.prototype.getParameterByName = function ( name, href ){
   name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
@@ -1282,6 +1371,10 @@ GUI.prototype.chatInputHandler = function() {
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
+	
+	//TODO
+	
+	postman.encryptMsg( message2send.messageBody , contactsHandler.getContactById(app.currentChatWith)  );
 
 };
 
@@ -2456,9 +2549,53 @@ Application.prototype.connect2server = function(result){
 
 	});//END locationFromServer	
 	  
-	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact	
+	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact
+	
+//TODO	
+	socket.on("KeysDelivery", function (input){
+		
+		var data = postman.getKeysDelivery(input); 
+		if (data == null) { return;	}
+		
+		if ( data.from == user.publicClientID ){
+			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );
+		}else{
+			
+			var contact = contactsHandler.getContactById( data.from );
+			if ( contact.decryptionKeys == null ){
+				
+				var privateKey = forge.pki.rsa.setPrivateKey(
+					new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
+					new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
+					new forge.jsbn.BigInteger(user.privateKey.d, 32) ,
+					new forge.jsbn.BigInteger(user.privateKey.p, 32) ,
+					new forge.jsbn.BigInteger(user.privateKey.q, 32) ,
+					new forge.jsbn.BigInteger(user.privateKey.dP, 32) ,
+					new forge.jsbn.BigInteger(user.privateKey.dQ, 32) ,
+					new forge.jsbn.BigInteger(user.privateKey.qInv, 32) 
+				); 
+	 			var masterKeydecrypted = privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
+	 			console.log("DEBUG ::: KeysDelivery ::: masterKeydecrypted : " + masterKeydecrypted );
+			}
+			
+			/*var data = {
+				from :  user.publicClientID,
+				to : contact.publicClientID,
+				setOfKeys : {
+					masterKeyEncrypted : masterKeyEncrypted,
+					symKeysEncrypted : { 
+						iv2use : iv2use , 
+						keysEncrypted : cipher.output.data 
+					}
+				}
+			};	*/
+			
+		}
+	});
+	
 	
 };//END of connect2server
+//TODO
 
 Application.prototype.register = function(){
 	
@@ -2471,7 +2608,7 @@ Application.prototype.register = function(){
 			app.register();
 		}
 		
-		var publicKeyClient = { n : keypair.publicKey.n.toString(32) };
+		var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
 		
 	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient )
 	 		.done(function (answer) {
@@ -2485,13 +2622,23 @@ Application.prototype.register = function(){
 			 		
 			 	}else{
 				
-			 		console.log("DEBUG ::: register ::: saving onto DB....." );	
-					//update app object
-			 		
+			 		console.log("DEBUG ::: register ::: saving onto DB....." );
+			 			
+			 		var privateKey = {
+						n: keypair.privateKey.n.toString(32),
+					    e: keypair.privateKey.e.toString(32),
+					    d: keypair.privateKey.d.toString(32),
+					    p: keypair.privateKey.p.toString(32),
+					    q: keypair.privateKey.q.toString(32),
+					    dP: keypair.privateKey.dP.toString(32),
+					    dQ: keypair.privateKey.dQ.toString(32),
+					    qInv: keypair.privateKey.qInv.toString(32)
+					};
+							 		
 			 		user = new UserSettings(answer);			
 			 		user.myCurrentNick = user.publicClientID;
 			 		user.lastProfileUpdate = new Date().getTime();			
-					
+					user.privateKey = privateKey;
 			 		//update internal DB
 					var transaction = db.transaction(["usersettings"],"readwrite");	
 					var store = transaction.objectStore("usersettings");
@@ -2509,7 +2656,7 @@ Application.prototype.register = function(){
 	});// END PKI generation
 	
 };	
-
+/*
 Application.prototype.handshake = function(handshakeRequest){	
 	
  	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
@@ -2546,6 +2693,7 @@ Application.prototype.handshake = function(handshakeRequest){
 	});	
 	
 };
+*/
 /*
 Application.prototype.firstLogin = function(){
 	
@@ -2782,8 +2930,121 @@ ContactsHandler.prototype.addNewContact = function(contact) {
 	this.listOfContacts.push(contact);
 };
 
+ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
+	contactsHandler.generateKeys(toContact);
+	contactsHandler.setContactOnDB(toContact);
+	contactsHandler.keyDelivery(toContact);	
+};
+
+ContactsHandler.prototype.generateKeys = function(toContact) {
+	toContact.encryptionKeys = [
+		forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32)
+	];	
+};
+
+ContactsHandler.prototype.setContactOnDB = function(contact) {
+	if (contact.persistent == false){
+		contact.persistent = true;
+		contactsHandler.addContactOnDB(contact);
+	}else{
+		contactsHandler.modifyContactOnDB(contact);
+	}	
+};	
+//TODO
+ContactsHandler.prototype.keyDelivery = function(contact) {
+	
+	var masterKey = forge.random.getBytesSync(32);
+	
+	var publicKeyClient = forge.pki.rsa.setPublicKey( 
+		new forge.jsbn.BigInteger(contact.rsamodulus , 32) , 
+		new forge.jsbn.BigInteger("2001" , 32) 
+	);
+	
+	var masterKeyEncrypted = publicKeyClient.encrypt( masterKey , 'RSA-OAEP');
+
+	var iv2use = forge.random.getBytesSync(32);
+
+	var cipher = forge.cipher.createCipher('AES-CBC', masterKey );
+	cipher.start( { iv: iv2use  });
+	cipher.update(forge.util.createBuffer( JSON.stringify(contact.encryptionKeys) ) );
+	cipher.finish();		
+		
+	var data = {
+		from :  user.publicClientID,
+		to : contact.publicClientID,
+		setOfKeys : {
+			masterKeyEncrypted : masterKeyEncrypted,
+			symKeysEncrypted : { 
+				iv2use : iv2use , 
+				keysEncrypted : cipher.output.data 
+			}
+		}
+	};	
+	postman.send("KeysDelivery", data );
+	console.log("DEBUG ::: ContactsHandler.prototype.keyDelivery ::: masterKey : " + masterKey + "data : " + JSON.stringify(data) );
+};
+
+
 ContactsHandler.prototype.getContactById = function(id) {
 	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
+};
+
+	
+
+	
+ContactsHandler.prototype.addContactOnDB = function(contact) {
+	
+	this.listOfContacts.forEach(function(part, index, theArray) {
+	  if (theArray[index].publicClientID == contact.publicClientID){
+	  	theArray[index] = contact;	
+	  }	  	
+	});
+
+	try {
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");		
+		var request = store.add(contact);
+	}
+	catch(e){
+		console.log("DEBUG ::: addContactOnDB ::: exception trown ");
+	}
+	
+};
+
+//this function assumes that the contact is already inserted on the DB
+ContactsHandler.prototype.modifyContactOnDB = function(contact) {
+	
+	this.listOfContacts.forEach(function(part, index, theArray) {
+	  if (theArray[index].publicClientID == contact.publicClientID){
+	  	theArray[index] = contact;	
+	  }	  	
+	});
+	
+	
+	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
+	
+	try {			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		message = cursor.value;
+	     		store.put(contact);	     		
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: modifyContact ::: exception trown ");
+	}		
 };
 
 //this method assumes that the contact is already inserted on the Array listOfContacts
@@ -2821,33 +3082,7 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	}	
 };
 
-//this function assumes that the contact is already inserted on the DB
-ContactsHandler.prototype.modifyContactOnDB = function(contact) {
-	
-	this.listOfContacts.forEach(function(part, index, theArray) {
-	  if (theArray[index].publicClientID == contact.publicClientID){
-	  	theArray[index] = contact;	
-	  }	  	
-	});
-	
-	
-	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
-	
-	try {			
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		message = cursor.value;
-	     		store.put(contact);	     		
-	     	}     	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: modifyContact ::: exception trown ");
-	}		
-};
+
 
 ContactsHandler.prototype.setNewContacts = function(input) {
 	gui.hideLoadingSpinner();

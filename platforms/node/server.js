@@ -491,6 +491,31 @@ app.locals.reconnectHandler = function( socket ) {
 };
 
 
+app.locals.KeysDeliveryHandler = function( input, socket){		
+
+	var client = socket.visibleClient;
+	
+	var keysDelivery = postMan.getKeysDelivery(input , client);		
+	if ( keysDelivery == null ) return;
+	
+	console.log('DEBUG ::: KeysDeliveryHandler ::: input ' + JSON.stringify(keysDelivery) );
+	
+	if ( keysDelivery.from != client.publicClientID ){
+		console.log('DEBUG ::: KeysDeliveryHandler ::: something went wrong on KeysDeliveryHandler ' );
+		return;
+	}
+				
+	brokerOfVisibles.isClientOnline(keysDelivery.to).then(function(clientReceiver){				
+		if ( clientReceiver != null ){			
+			postMan.send("KeysDelivery",  keysDelivery , clientReceiver ); 					
+ 		}else {
+ 			postMan.archiveKeysDelivery(keysDelivery);
+ 		}		
+	});
+
+};
+
+
 io.adapter(redis({ host: 'localhost', port: 6379 }));
 	
 io.use(function(socket, next){
@@ -576,6 +601,8 @@ io.sockets.on("connection", function (socket) {
 	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } );
 	
 	socket.on("reconnectNotification", function (msg){ app.locals.reconnectHandler ( socket) } );	
+	
+	socket.on("KeysDelivery", function (msg){ app.locals.KeysDeliveryHandler ( msg , socket) } );
 	
 
 });

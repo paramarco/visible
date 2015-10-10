@@ -216,6 +216,28 @@ function PostMan(_io) {
 		});
 		
 	};
+	//TODO this.archiveKeysDelivery
+	this.archiveKeysDelivery = function(input) {
+		
+	/*	var query2send = squel.insert()
+			    .into("keysdelivery")
+			    .set("from", input.from)
+			    .set("to", input.to)
+			    .set("data", input.data)
+			    .toString() ;
+		
+		clientOfDB.query(query2send, function(err, result) {
+	
+			if(err) {
+				console.error('DEBUG ::: archiveKeysDelivery :::error running query', err);	
+				console.error('DEBUG ::: archiveKeysDelivery ::: query error: ', query2send);
+			}		    
+		
+		});
+	*/	
+	};
+	
+	
 
 	this.sendMessageACKs = function(client) {
 
@@ -732,6 +754,29 @@ PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {
 		return null;
 	}	
 };
+
+
+PostMan.prototype.getKeysDelivery = function(encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID(input.to) == false  ||
+			PostMan.prototype.isUUID(input.from) == false  ||
+			typeof input.setOfKeys != 'object' ||
+			Object.keys(input).length != 3 ) {	
+			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
+			return null;
+		}
+		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
 
 PostMan.prototype.isUUID = function(uuid) {	
 
