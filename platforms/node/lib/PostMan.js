@@ -159,7 +159,7 @@ function PostMan(_io) {
 	};
 	
 	
-
+//TODO problems with JSON encrypted
 	this.archiveMessage = function(msg) {
 		
 		var query2send = squel.insert()
@@ -168,6 +168,7 @@ function PostMan(_io) {
 							    .set("receiver", msg.to)
 							    .set("sender", msg.from)
 							    .set("messagebody", JSON.stringify(msg.messageBody) )
+							    //.set("messagebody", msg.messageBody )
 							    .set("timestamp", msg.timestamp)							    
 							    .toString() ;
 				    
