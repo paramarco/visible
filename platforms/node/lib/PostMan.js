@@ -226,13 +226,28 @@ function PostMan(_io) {
 			    .set("data", input.data)
 			    .toString() ;
 		
-		clientOfDB.query(query2send, function(err, result) {
-	
+		clientOfDB.query(query2send, function(err, result) {	
 			if(err) {
 				console.error('DEBUG ::: archiveKeysDelivery :::error running query', err);	
 				console.error('DEBUG ::: archiveKeysDelivery ::: query error: ', query2send);
-			}		    
+			}		
+		});
+	*/	
+	};
+	
+	this.archiveKeysRequest = function(input) {
 		
+	/*	var query2send = squel.insert()
+			    .into("keysrequest")
+			    .set("from", input.from)
+			    .set("to", input.to)
+			    .toString() ;
+		
+		clientOfDB.query(query2send, function(err, result) {	
+			if(err) {
+				console.error('DEBUG ::: archiveKeysRequest :::error running query', err);	
+				console.error('DEBUG ::: archiveKeysRequest ::: query error: ', query2send);
+			}		
 		});
 	*/	
 	};
@@ -351,6 +366,17 @@ function PostMan(_io) {
 		
 		try{		
 			io.sockets.to(client.socketid).emit(event2trigger, PostMan.prototype.encrypt( data, client ) );
+						
+		}catch(e){
+			console.log("DEBUG ::: postman ::: send ::: exception"  + e);
+		}		
+			
+	};
+	
+	this.sendMsg = function( msg , client ) {
+		
+		try{		
+			io.sockets.to(client.socketid).emit("MessageFromClient", msg );
 						
 		}catch(e){
 			console.log("DEBUG ::: postman ::: send ::: exception"  + e);
@@ -778,6 +804,27 @@ PostMan.prototype.getKeysDelivery = function(encrypted, client) {
 };
 
 
+PostMan.prototype.getKeysRequest = function(encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID(input.to) == false  ||
+			PostMan.prototype.isUUID(input.from) == false  ||
+			Object.keys(input).length != 2 ) {	
+			console.log("DEBUG ::: getKeysRequest ::: didnt pass the format check 1 :" + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
+
+
 PostMan.prototype.isUUID = function(uuid) {	
 
 	if (typeof uuid == 'string')
@@ -785,6 +832,10 @@ PostMan.prototype.isUUID = function(uuid) {
 	else
 		return	false;
 
+};
+
+PostMan.prototype.isInt = function(timeStamp) {	
+	return /^[0-9]+$/.test(String(timeStamp)) ;
 };
 //TODO
 PostMan.prototype.isPurchase = function(purchase) {	

@@ -153,8 +153,21 @@ Postman.prototype.send = function(event2trigger, data  ) {
 		console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
 	}		
 		
-};	
-
+};
+// TODO what if socket is closed?  it should save the message
+Postman.prototype.sendMsg = function( msg ) {
+	
+	try{		
+		msg.messageBody = postman.encryptMsgBody( msg );	
+	
+		if (typeof socket != "undefined" && socket.connected == true){
+			socket.emit("message2client", msg );
+		}					
+	}catch(e){
+		console.log("DEBUG ::: Postman.prototype.sendMsg ::: exception: "  + JSON.stringify(e));
+	}	
+	
+};
 
 Postman.prototype.getMessageFromServer = function(encrypted) {
 
@@ -328,8 +341,8 @@ Postman.prototype.getKeysDelivery = function(encrypted) {
 		var input = Postman.prototype.decrypt(encrypted);
 		
 		if (input == null ||
-			PostMan.prototype.isUUID(input.to) == false  ||
-			PostMan.prototype.isUUID(input.from) == false  ||
+			Postman.prototype.isUUID(input.to) == false  ||
+			Postman.prototype.isUUID(input.from) == false  ||
 			typeof input.setOfKeys != 'object' ||
 			Object.keys(input).length != 3 ) {	
 			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
@@ -343,6 +356,53 @@ Postman.prototype.getKeysDelivery = function(encrypted) {
 		return null;
 	}	
 };
+
+Postman.prototype.getKeysRequest = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype.isUUID(input.to) == false  ||
+			Postman.prototype.isUUID(input.from) == false  ||
+			Object.keys(input).length != 2 ) {	
+			console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check 1 :" + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
+Postman.prototype.getMessageFromClient = function( input ) {	
+	try {
+		
+		input.msgBody = Postman.prototype.decryptMsgBody( input );
+		
+		if ( input.msgBody == null ||
+			Postman.prototype.isUUID( input.to ) == false  ||
+			Postman.prototype.isUUID( input.from ) == false  ||
+			Postman.prototype.isUUID( input.msgID ) == false ){
+				
+			console.log("DEBUG ::: Postman.prototype.getMessageFromClient  :::  " + inputMessage);
+			return null;
+		}
+		
+		var message = new Message( input );	
+		message.setACKfromServer(true);
+		message.setACKfromAddressee(true);		
+		
+		return message; 	
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: Postman.prototype.getMessageFromClient :::  " + ex);
+		return null;
+	}
+};
+
+
 
 
 Postman.prototype.signToken = function(message) {	
@@ -445,15 +505,14 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 		return null;
 	}	
 };
-//TODO
-Postman.prototype.encryptMsg = function(message, toContact) {
-	try {    
-		
+
+Postman.prototype.encryptMsgBody = function( message ) {
+	try {
+		var toContact = contactsHandler.getContactById( message.to );
+				
 		if ( toContact.encryptionKeys == null){
 			contactsHandler.setEncryptionKeys(toContact);		
-			console.log("DEBUG ::: encryptMsg ::: " + JSON.stringify(toContact) );
 		}
-			
 
 		var index4Key = Math.floor((Math.random() * 7) + 0);
 		var index4iv = Math.floor((Math.random() * 7) + 0);		
@@ -461,51 +520,52 @@ Postman.prototype.encryptMsg = function(message, toContact) {
 		var symetricKey2use = toContact.encryptionKeys[index4Key];
 		var iv2use = toContact.encryptionKeys[index4iv];
 		
-		var cipher = forge.cipher.createCipher('AES-CBC', symetricKey2use );
-		cipher.start({iv: iv2use });
-		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		var cipher = forge.cipher.createCipher( 'AES-CBC', symetricKey2use );
+		cipher.start( { iv: iv2use } );
+		cipher.update( forge.util.createBuffer( JSON.stringify( message.messageBody ) ) );
 		cipher.finish();		
 		
-		var envelope =  { 
+		var messageBody =  { 
 			index4Key : index4Key , 
 			index4iv : index4iv , 
 			encryptedMsg : cipher.output.data 
-		};
-		
-		return envelope ;
-
+		};		
+		return messageBody;
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: encryptMsg  :::  " + ex);
+		console.log("DEBUG ::: Postman.prototype.encryptMsgBody  :::  " + ex);
 		return null;
 	}	
 };
-//TODO
-Postman.prototype.decryptMsg = function(message, fromContact) {	
-	try {    
 
+/**
+ * Postman.prototype.decryptMsgBody
+ *
+ * @param message the "Message" Object.
+ * 
+ * @return the decrypted "Message.messageBody" Object.
+ */
+Postman.prototype.decryptMsgBody = function( message ) {	
+	try {		
+		var fromContact = contactsHandler.getContactById( message.from );		
 		if ( fromContact.decryptionKeys == null){
-			//generate symmetric keys for this contact
-			//save it
-			//trigger keyDelivery(fromClient,toClient,keySet)
+			postman.send("KeysRequest", { from : user.publicClientID , to : fromContact.publicClientID } );
+			//TODO save this message for later decryption
+			return null;			
 		}
-
-
-		var iv = fromContact.decryptionKeys[parseInt(message.index4iv)];
-		var symetricKey2use = fromContact.decryptionKeys[parseInt(message.index4Key)];
+		
+		var iv = fromContact.decryptionKeys[parseInt(message.messageBody.index4iv)];
+		var symetricKey2use = fromContact.decryptionKeys[parseInt(message.messageBody.index4Key)];
 		
 		var decipher = forge.cipher.createDecipher('AES-CBC', symetricKey2use);
 		decipher.start({ iv: iv });
-		decipher.update(forge.util.createBuffer( message.encryptedMsg ) );
+		decipher.update(forge.util.createBuffer( message.messageBody.encryptedMsg ) );
 		decipher.finish();
 		
-		//console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
-		
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
-
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: decryptMsg  :::  " + ex);
+		console.log("DEBUG ::: Postman.prototype.decryptMsgBody  :::  " + ex);
 		return null;
 	}	
 };
@@ -521,6 +581,15 @@ Postman.prototype.getParameterByName = function ( name, href ){
     return "";
   else
     return decodeURIComponent(results[1].replace(/\+/g, " "));
+};
+
+Postman.prototype.isUUID = function(uuid) {	
+
+	if (typeof uuid == 'string')
+		return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+	else
+		return	false;
+
 };
 
 
@@ -1367,14 +1436,15 @@ GUI.prototype.chatInputHandler = function() {
 	
 	//sends message				 
 	postman.send("messagetoserver", message2send );
+	postman.sendMsg( message2send );
+	
 	
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
 	
-	//TODO
-	
-	postman.encryptMsg( message2send.messageBody , contactsHandler.getContactById(app.currentChatWith)  );
+
+
 
 };
 
@@ -2551,7 +2621,6 @@ Application.prototype.connect2server = function(result){
 	  
 	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact
 	
-//TODO	
 	socket.on("KeysDelivery", function (input){
 		
 		var data = postman.getKeysDelivery(input); 
@@ -2559,43 +2628,99 @@ Application.prototype.connect2server = function(result){
 		
 		if ( data.from == user.publicClientID ){
 			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );
-		}else{
-			
-			var contact = contactsHandler.getContactById( data.from );
-			if ( contact.decryptionKeys == null ){
-				
-				var privateKey = forge.pki.rsa.setPrivateKey(
-					new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
-					new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
-					new forge.jsbn.BigInteger(user.privateKey.d, 32) ,
-					new forge.jsbn.BigInteger(user.privateKey.p, 32) ,
-					new forge.jsbn.BigInteger(user.privateKey.q, 32) ,
-					new forge.jsbn.BigInteger(user.privateKey.dP, 32) ,
-					new forge.jsbn.BigInteger(user.privateKey.dQ, 32) ,
-					new forge.jsbn.BigInteger(user.privateKey.qInv, 32) 
-				); 
-	 			var masterKeydecrypted = privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
-	 			console.log("DEBUG ::: KeysDelivery ::: masterKeydecrypted : " + masterKeydecrypted );
-			}
-			
-			/*var data = {
-				from :  user.publicClientID,
-				to : contact.publicClientID,
-				setOfKeys : {
-					masterKeyEncrypted : masterKeyEncrypted,
-					symKeysEncrypted : { 
-						iv2use : iv2use , 
-						keysEncrypted : cipher.output.data 
-					}
-				}
-			};	*/
-			
-		}
-	});
+		}else{			
+			try {				
+				var contact = contactsHandler.getContactById( data.from );
+				if ( contact.decryptionKeys == null ){					
+					
+					var privateKey = forge.pki.rsa.setPrivateKey(
+						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
+						new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
+						new forge.jsbn.BigInteger(user.privateKey.d, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.p, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.q, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.dP, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.dQ, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.qInv, 32) 
+					); 
+		 			var masterKeydecrypted = privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
+		 				
+					var decipher = forge.cipher.createDecipher('AES-CBC', masterKeydecrypted);
+					decipher.start({ iv: data.setOfKeys.symKeysEncrypted.iv2use });
+					decipher.update(forge.util.createBuffer( data.setOfKeys.symKeysEncrypted.keysEncrypted ) );
+					decipher.finish();					
+					var keysDecrypted = KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+					contact.decryptionKeys = keysDecrypted.setOfSymKeys;
+					contactsHandler.setContactOnDB(contact);				
+				} //END IF
+			}catch (ex) {	
+				console.log("DEBUG ::: KeysDelivery event :::  " + ex);
+				return null;
+			}	
+	 	} // END else			
+	});//END KeysDelivery event
 	
+	socket.on("KeysRequest", function (input){
+		
+		var data = postman.getKeysRequest(input); 
+		if (data == null) { return;	}
+		
+		if ( data.from == user.publicClientID ){
+			console.log("DEBUG ::: KeysRequest ::: discard my own Request ..." );
+		}else{			
+			try {				
+				var contact = contactsHandler.getContactById( data.from );
+				contactsHandler.keyDelivery(contact);		
+
+			}catch (ex) {	
+				console.log("DEBUG ::: KeysRequest event :::  " + ex);
+				return null;
+			}	
+	 	}		
+	});//END KeysRequest event
+	
+	socket.on("MessageFromClient", function (input){
+		
+		var msg = postman.getMessageFromClient( input ); 
+		if (msg == null) { return;	}		
+			
+  		var messageACK = {	
+  			to : msg.to, 
+  			from : msg.from,
+  			msgID : msg.msgID, 
+  			typeOfACK : "ACKfromAddressee"
+  		};
+  		postman.send("MessageDeliveryACK", messageACK );
+  		
+  		mailBox.getMessageByID( msg.msgID ).done(function (message){
+  			if (typeof message == 'undefined' ){ 
+
+  				msg.setChatWith( msg.from );  					
+  				mailBox.storeMessage( msg ); 
+  				
+  				var contact = contactsHandler.getContactById( msg.from ); 
+  				if (typeof contact == "undefined") return;
+  				 		 		
+  				if ( app.currentChatWith == msg.from ){
+  		 			gui.insertMessageInConversation( msg, false, true);
+  		  		}else{
+					contact.counterOfUnreadSMS++ ;
+					gui.showCounterOfContact( contact );  		  			
+  		  		}
+  		  		
+  		  		contact.timeLastSMS = msg.timestamp;
+  		  		contactsHandler.modifyContactOnDB( contact );
+				
+				gui.setTimeLastSMS( contact );  				
+				gui.sortContacts();				
+  				gui.showLocalNotification( msg );	
+  			}  		
+  		}); 
+	
+	});//END MessageFromClient event	
 	
 };//END of connect2server
-//TODO
+
 
 Application.prototype.register = function(){
 	
@@ -2958,8 +3083,10 @@ ContactsHandler.prototype.setContactOnDB = function(contact) {
 		contactsHandler.modifyContactOnDB(contact);
 	}	
 };	
-//TODO
+
 ContactsHandler.prototype.keyDelivery = function(contact) {
+	
+	var setOfSymKeys = { setOfSymKeys : contact.encryptionKeys };
 	
 	var masterKey = forge.random.getBytesSync(32);
 	
@@ -2974,7 +3101,7 @@ ContactsHandler.prototype.keyDelivery = function(contact) {
 
 	var cipher = forge.cipher.createCipher('AES-CBC', masterKey );
 	cipher.start( { iv: iv2use  });
-	cipher.update(forge.util.createBuffer( JSON.stringify(contact.encryptionKeys) ) );
+	cipher.update(forge.util.createBuffer( JSON.stringify(setOfSymKeys) ) );
 	cipher.finish();		
 		
 	var data = {
@@ -2989,16 +3116,13 @@ ContactsHandler.prototype.keyDelivery = function(contact) {
 		}
 	};	
 	postman.send("KeysDelivery", data );
-	console.log("DEBUG ::: ContactsHandler.prototype.keyDelivery ::: masterKey : " + masterKey + "data : " + JSON.stringify(data) );
+	console.log("DEBUG ::: ContactsHandler.prototype.keyDelivery ::: setOfSymKeys : " + JSON.stringify(setOfSymKeys) );
 };
 
 
 ContactsHandler.prototype.getContactById = function(id) {
 	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
 };
-
-	
-
 	
 ContactsHandler.prototype.addContactOnDB = function(contact) {
 	

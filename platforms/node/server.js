@@ -490,7 +490,6 @@ app.locals.reconnectHandler = function( socket ) {
 	
 };
 
-
 app.locals.KeysDeliveryHandler = function( input, socket){		
 
 	var client = socket.visibleClient;
@@ -514,6 +513,53 @@ app.locals.KeysDeliveryHandler = function( input, socket){
 	});
 
 };
+
+app.locals.KeysRequestHandler = function( input, socket){		
+
+	var client = socket.visibleClient;
+	
+	var KeysRequest = postMan.getKeysRequest( input , client);		
+	if ( KeysRequest == null ) return;
+	
+	console.log('DEBUG ::: KeysRequestHandler ::: KeysRequest: ' + JSON.stringify(KeysRequest) );
+	
+	if ( KeysRequest.from != client.publicClientID ){
+		console.log('DEBUG ::: KeysRequestHandler ::: something went wrong on KeysRequest ' );
+		return;
+	}
+				
+	brokerOfVisibles.isClientOnline(KeysRequest.to).then(function(clientReceiver){				
+		if ( clientReceiver != null ){			
+			postMan.send("KeysRequest",  KeysRequest , clientReceiver ); 					
+ 		}else {
+ 			postMan.archiveKeysRequest(KeysRequest);
+ 		}		
+	});
+
+};
+
+app.locals.message2clientHandler = function( msg , socket){		
+
+	var client = socket.visibleClient;	
+	if ( postMan.isUUID( msg.to ) == false  ||
+		 postMan.isUUID( msg.from ) == false ||
+		 postMan.isUUID( msg.msgID ) == false ||
+		 postMan.isInt( msg.timestamp ) == false ||
+		 msg.from != client.publicClientID   ){
+		console.log('DEBUG ::: message2clientHandler ::: something went wrong' + JSON.stringify(msg) );
+		return;
+	}
+				
+	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
+		if ( clientReceiver != null ){			
+			postMan.sendMsg( msg , clientReceiver ); 					
+ 		}else {
+ 			postMan.archiveMessage( msg );
+ 		}		
+	});
+
+};
+
 
 
 io.adapter(redis({ host: 'localhost', port: 6379 }));
@@ -603,6 +649,12 @@ io.sockets.on("connection", function (socket) {
 	socket.on("reconnectNotification", function (msg){ app.locals.reconnectHandler ( socket) } );	
 	
 	socket.on("KeysDelivery", function (msg){ app.locals.KeysDeliveryHandler ( msg , socket) } );
+
+	socket.on("KeysRequest", function (msg){ app.locals.KeysRequestHandler ( msg , socket) } );	
+
+	socket.on("message2client", function (msg){ app.locals.message2clientHandler ( msg , socket) } );	
+	
+	
 	
 
 });
