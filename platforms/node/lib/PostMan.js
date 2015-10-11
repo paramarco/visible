@@ -216,14 +216,14 @@ function PostMan(_io) {
 		});
 		
 	};
-	//TODO this.archiveKeysDelivery
-	this.archiveKeysDelivery = function(input) {
+	
+	this.archiveKeysDelivery = function( keysDelivery ) {
 		
-	/*	var query2send = squel.insert()
+		var query2send = squel.insert()
 			    .into("keysdelivery")
-			    .set("from", input.from)
-			    .set("to", input.to)
-			    .set("data", input.data)
+			    .set("sender", keysDelivery.from)
+			    .set("receiver", keysDelivery.to)
+			    .set("setofkeys", JSON.stringify(keysDelivery.setOfKeys) )
 			    .toString() ;
 		
 		clientOfDB.query(query2send, function(err, result) {	
@@ -232,15 +232,15 @@ function PostMan(_io) {
 				console.error('DEBUG ::: archiveKeysDelivery ::: query error: ', query2send);
 			}		
 		});
-	*/	
+				
 	};
-	
-	this.archiveKeysRequest = function(input) {
+
+	this.archiveKeysRequest = function( input ) {
 		
-	/*	var query2send = squel.insert()
+		var query2send = squel.insert()
 			    .into("keysrequest")
-			    .set("from", input.from)
-			    .set("to", input.to)
+			    .set("sender", input.from)
+			    .set("receiver", input.to)
 			    .toString() ;
 		
 		clientOfDB.query(query2send, function(err, result) {	
@@ -249,10 +249,8 @@ function PostMan(_io) {
 				console.error('DEBUG ::: archiveKeysRequest ::: query error: ', query2send);
 			}		
 		});
-	*/	
+		
 	};
-	
-	
 
 	this.sendMessageACKs = function(client) {
 
@@ -263,19 +261,16 @@ function PostMan(_io) {
 							    .from("messageack")							    
 							    .where("sender = '" + client.publicClientID + "'")							    
 							    .toString();
-	    
-
+							    
 		clientOfDB.query(query2send, function(err, result) {
 		
 			if(err) {
 				console.error('DEBUG ::: sendMessageACKs ::: error running query', err);	
-			}
-			
-			try {
-			
+			}			
+			try {			
 				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
-					return;				
-				
+					return;
+					
 				result.rows.map(function(r){
 					var deliveryReceipt = { 
 						msgID : r.msgid, 
@@ -283,21 +278,91 @@ function PostMan(_io) {
 						to : r.receiver 	
 					};
 
-					io.sockets.to(client.socketid).emit("MessageDeliveryReceipt", PostMan.prototype.encrypt(deliveryReceipt, client ) , self.deleteMessageAndACK(deliveryReceipt) );
-				});								
+					io.sockets.to(client.socketid).emit(
+						"MessageDeliveryReceipt", 
+						PostMan.prototype.encrypt(deliveryReceipt, client ) , 
+						self.deleteMessageAndACK(deliveryReceipt) 
+					);
+				});
+			}catch (ex) {
+				console.log("DEBUG ::: sendMessageACKs  :::  exceptrion thrown " + ex  );						
+			}		
+		});		
+	};
+	
+	this.sendKeysRequests = function(client) {
+
+	    var query2send = squel.select()
+							.field("sender")
+							.field("receiver")
+						    .from("keysrequest")							    
+						    .where("receiver = '" + client.publicClientID + "'")							    
+						    .toString();
+			
+		clientOfDB.query(query2send, function(err, result) {
+		
+			if(err) console.error('DEBUG ::: sendKeysRequests ::: error running query', err);
+			try {			
+				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
+					return;				
+				
+				result.rows.map(function(r){
+					var KeysRequest = { 
+						from : r.sender, 
+						to : r.receiver 	
+					};	
+					io.sockets.to(client.socketid).emit(
+						"KeysRequest", 
+						PostMan.prototype.encrypt( KeysRequest, client ) , 
+						self.deleteKeysRequest( KeysRequest )
+					);
+				});				
 			
 			}catch (ex) {
 				console.log("DEBUG ::: sendMessageACKs  :::  exceptrion thrown " + ex  );						
-			}
+			}		
+		});		
+	}; // END sendKeysRequests
+	
+	this.sendKeysDeliveries = function(client) {
+
+	    var query2send = squel.select()
+							.field("sender")
+							.field("receiver")
+							.field("setofkeys")
+						    .from("keysdelivery")							    
+						    .where("receiver = '" + client.publicClientID + "'")							    
+						    .toString();
+			
+		clientOfDB.query(query2send, function(err, result) {
 		
-		});
-		
-	};
+			if(err) console.error('DEBUG ::: sendKeysDeliveries ::: error running query', err);
+			try {			
+				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
+					return;				
+				
+				result.rows.map(function(r){
+					var KeysDelivery = { 
+						from : r.sender, 
+						to : r.receiver,
+						setOfKeys : r.setofkeys 	
+					};	
+					io.sockets.to(client.socketid).emit(
+						"KeysDelivery", 
+						PostMan.prototype.encrypt( KeysDelivery, client ) , 
+						self.deleteKeysDelivery( KeysDelivery )
+					);
+				});				
+			
+			}catch (ex) {
+				console.log("DEBUG ::: sendKeysDeliveries  :::  exceptrion thrown " + ex  );						
+			}		
+		});		
+	}; // END sendKeysDeliveries		
 	
 	this.sendDetectedLocation = function(client) {
 
-		try{
-			
+		try{			
 			var position = {
 				coords : {
 					latitude : client.location.lat,
@@ -342,6 +407,44 @@ function PostMan(_io) {
 		});	
 	
 	};
+	
+	this.deleteKeysRequest = function( KeysRequest ) {
+	    
+		var query2send = squel.delete()
+						    .from("keysrequest")
+						    .where("sender = '" + KeysRequest.from + "'")							    
+						    .where("receiver = '" + KeysRequest.to + "'")							    
+						    .toString() 
+		   
+		clientOfDB.query(query2send, function(err, result) {
+			try {		
+				if(err) {
+					console.error('DEBUG ::: deleteKeysRequest ::: error running query', err);	
+				}		
+			}catch (ex) {
+				console.log("DEBUG ::: deleteKeysRequest  :::  exception thrown " + ex  );						
+			}
+		});	
+	};
+	
+	this.deleteKeysDelivery = function( KeysDelivery ) {
+	    
+		var query2send = squel.delete()
+						    .from("keysdelivery")
+						    .where("sender = '" + KeysDelivery.from + "'")							    
+						    .where("receiver = '" + KeysDelivery.to + "'")							    
+						    .toString() 
+		   
+		clientOfDB.query(query2send, function(err, result) {
+			try {		
+				if(err) {
+					console.error('DEBUG ::: deleteKeysDelivery ::: error running query', err);	
+				}		
+			}catch (ex) {
+				console.log("DEBUG ::: deleteKeysDelivery  :::  exception thrown " + ex  );						
+			}
+		});	
+	};	
 	
 	this.getRightServer2connect = function() {
 		

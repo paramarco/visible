@@ -246,7 +246,46 @@ CREATE TABLE public.profilesphoto
 WITH (
   OIDS=FALSE
 );
-ALTER TABLE public.profilesphoto
-  OWNER TO visible;
+ALTER TABLE public.profilesphoto OWNER TO visible;
+
+
+--
+-- Name: keysdelivery; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+--
+
+-- Table: public.keysdelivery
+
+-- DROP TABLE public.keysdelivery;
+
+CREATE TABLE public.keysdelivery
+(
+  sender uuid,
+  receiver uuid,
+  setofkeys json
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.keysdelivery  OWNER TO visible;
+
+--
+-- Name: keysrequest; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+--
+
+-- Table: public.keysrequest
+
+-- DROP TABLE public.keysrequest;
+
+CREATE TABLE public.keysrequest
+(
+  sender uuid,
+  receiver uuid
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.keysrequest  OWNER TO visible;
+
+
 
 

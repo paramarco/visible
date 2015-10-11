@@ -434,35 +434,6 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 	
 };
 
-app.locals.messagetoserverHandler = function( msg , socket) {
-	
-	var client = socket.visibleClient;
-	
-	var message = postMan.getMessage( msg , client);
-	if ( message == null )  return;		
-	if (postMan.isPostBoxFull(message) == true) return;				
-	
-	var deliveryReceipt = { 
-		msgID : message.msgID, 
-		typeOfACK : "ACKfromServer", 
-		to : message.to
-	};
-	
-	postMan.send("MessageDeliveryReceipt",  deliveryReceipt , client);		
-	
-	brokerOfVisibles.isClientOnline( message.to ).then(function(clientReceiver){
-		
-		if ( clientReceiver != null ){			
-			postMan.send("messageFromServer",  message , clientReceiver);
- 		}else { 			
- 			postMan.archiveMessage(message);
- 		}			
-		
-	});
-
-	
-};
-
 app.locals.messageRetrievalHandler = function( input, socket) {		
 	
 	var client = socket.visibleClient;		
@@ -616,8 +587,10 @@ io.sockets.on("connection", function (socket) {
 	console.log("DEBUG ::: connection ::: " + client.publicClientID );
 		
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
-	postMan.sendMessageHeaders(client);	
-	postMan.sendMessageACKs(client);
+	postMan.sendMessageHeaders( client );	
+	postMan.sendMessageACKs( client );
+	postMan.sendKeysRequests( client );
+	postMan.sendKeysDeliveries( client );	
 	
 	//XEP-0080: User Location
 	postMan.sendDetectedLocation(client);	
@@ -628,9 +601,6 @@ io.sockets.on("connection", function (socket) {
 	//XEP-0077: In-Band Registration
 	socket.on('disconnect',  function (msg){ app.locals.disconnectHandler( socket) } );
    
-	//XEP-0184: Message Delivery Receipts
-	socket.on("messagetoserver", function (msg){ app.locals.messagetoserverHandler( msg , socket) } );
-	
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("messageRetrieval", function (msg){ app.locals.messageRetrievalHandler ( msg , socket) } );
 
@@ -652,11 +622,9 @@ io.sockets.on("connection", function (socket) {
 
 	socket.on("KeysRequest", function (msg){ app.locals.KeysRequestHandler ( msg , socket) } );	
 
-	socket.on("message2client", function (msg){ app.locals.message2clientHandler ( msg , socket) } );	
+	//XEP-0184: Message Delivery Receipts
+	socket.on("message2client", function (msg){ app.locals.message2clientHandler ( msg , socket) } );
 	
-	
-	
-
 });
 
 //$ sudo node server.js --instanceNumber=[number] &

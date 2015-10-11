@@ -102,17 +102,18 @@ Message.prototype.assignmd5sum = function(){
 };
 */
 //this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
-
+//TODO
 Message.prototype.calculateSize = function(){
 	
-	if (typeof this.messageBody == 'string' )
+/*	if (typeof this.messageBody == 'string' )
 		this.size = this.messageBody.length;
 	else
-		this.size = this.messageBody.src.length;	
+		this.size = this.messageBody.src.length;
+		*/	
 };
 
 Message.prototype.convertToUTF = function(){
-	this.messageBody = encodeURI(this.messageBody);
+	this.messageBody.text = encodeURI(this.messageBody.text);
 };
 
 
@@ -166,33 +167,6 @@ Postman.prototype.sendMsg = function( msg ) {
 	}catch(e){
 		console.log("DEBUG ::: Postman.prototype.sendMsg ::: exception: "  + JSON.stringify(e));
 	}	
-	
-};
-
-Postman.prototype.getMessageFromServer = function(encrypted) {
-
-	try {
-		var inputMessage = Postman.prototype.decrypt(encrypted);
-		
-		if (inputMessage == null ||
-			typeof inputMessage.to !== 'string' ||
-			typeof inputMessage.from !== 'string' ||
-			typeof inputMessage.msgID !== 'string' ){
-				
-			console.log("DEBUG ::: getMessageFromServer  :::  " + inputMessage);
-			return null;
-		}
-		
-		var message = new Message(inputMessage);	
-		message.setACKfromServer(true);
-		message.setACKfromAddressee(true);		
-		
-		return message; 	
-	} 
-	catch (ex) {	
-		console.log("DEBUG ::: getMessageFromServer :::  " + ex);
-		return null;
-	}
 	
 };
 
@@ -379,14 +353,14 @@ Postman.prototype.getKeysRequest = function(encrypted) {
 Postman.prototype.getMessageFromClient = function( input ) {	
 	try {
 		
-		input.msgBody = Postman.prototype.decryptMsgBody( input );
+		input.messageBody = Postman.prototype.decryptMsgBody( input );
 		
-		if ( input.msgBody == null ||
+		if ( input.messageBody == null ||
 			Postman.prototype.isUUID( input.to ) == false  ||
 			Postman.prototype.isUUID( input.from ) == false  ||
 			Postman.prototype.isUUID( input.msgID ) == false ){
 				
-			console.log("DEBUG ::: Postman.prototype.getMessageFromClient  :::  " + inputMessage);
+			console.log("DEBUG ::: Postman.prototype.getMessageFromClient  :::  input: " + JSON.stringify(input) );
 			return null;
 		}
 		
@@ -550,6 +524,7 @@ Postman.prototype.decryptMsgBody = function( message ) {
 		var fromContact = contactsHandler.getContactById( message.from );		
 		if ( fromContact.decryptionKeys == null){
 			postman.send("KeysRequest", { from : user.publicClientID , to : fromContact.publicClientID } );
+			console.log("DEBUG ::: fromContact.decryptionKeys == null  :::  message: " + JSON.stringify(message) );
 			//TODO save this message for later decryption
 			return null;			
 		}
@@ -714,8 +689,8 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}
 	var htmlOfContent = "";
 	var htmlOfVideoPreview ="";
-	if ( typeof message.messageBody == "string")	{
-		htmlOfContent = this.sanitize(message.messageBody);
+	if ( message.messageBody.messageType == "text")	{
+		htmlOfContent = this.sanitize(message.messageBody.text);
 		htmlOfContent = decodeURI(htmlOfContent);
 		var parsedLinks = this.parseLinks(htmlOfContent);
 		htmlOfContent = parsedLinks.htmlOfContent;
@@ -738,22 +713,21 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 			}
 		});
 		
-	}else if (typeof message.messageBody == "object"){
-		if (message.messageBody.messageType == "multimedia"){		
+	}else if (message.messageBody.messageType == "multimedia"){
+					
+		htmlOfContent = 
+			'<div class="image-preview"> ' + 
+			' <a>' +   
+			'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+			' </a>' + 
+			' <div class="name"></div>' + 
+			'</div>' ;
+		
+		gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
+		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 			
-			htmlOfContent = 
-				'<div class="image-preview"> ' + 
-				' <a>' +   
-				'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-				' </a>' + 
-				' <div class="name"></div>' + 
-				'</div>' ;
-			
-			gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
-			gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
-			
-		}		
-	}
+	}		
+	
 	
 	var timeStampOfMessage = new Date(message.timestamp);
 	
@@ -1091,8 +1065,7 @@ GUI.prototype.showImagePic = function() {
 			mailBox.storeMessage(message2send); 
 			
 			//sends message	
-			postman.send("messagetoserver", message2send );
-
+			postman.sendMsg( message2send );
 					
  		}// END imageUpdated
  	});// END picEdit construct
@@ -1418,7 +1391,7 @@ GUI.prototype.chatInputHandler = function() {
 	var message2send = new Message(	{ 	
 		to : app.currentChatWith, 
 		from : user.publicClientID , 
-		messageBody : gui.sanitize(textMessage) 
+		messageBody : { messageType : "text", text : gui.sanitize(textMessage) }
 	});
 	message2send.setACKfromServer(false);
 	message2send.setACKfromServer(false);
@@ -1435,17 +1408,11 @@ GUI.prototype.chatInputHandler = function() {
 	document.getElementById('chat-input').value='';
 	
 	//sends message				 
-	postman.send("messagetoserver", message2send );
-	postman.sendMsg( message2send );
-	
+	postman.sendMsg( message2send );	
 	
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
-	
-
-
-
 };
 
 
@@ -2203,7 +2170,7 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 			olderDate < config.beginingOf2015 ){
 							
 			listOfMessages.map(function(message){
-				postman.send("messagetoserver", message );											
+				postman.sendMsg( message );											
 			});
 			
 		}else {			
@@ -2491,59 +2458,10 @@ Application.prototype.connect2server = function(result){
   	  			mailBox.updateMessage(message);	  			
   	  		});  			
   		}, config.TIME_WAIT_DB);   		
-	});
-  
-  socket.on("messageFromServer", function(inputMsg) {
-  	
-  	  	var messageFromServer = postman.getMessageFromServer(inputMsg);
-  		if (messageFromServer == null) { return; }
-  		
-  		var messageACK = {	
-  			to : messageFromServer.to, 
-  			from : messageFromServer.from,
-  			msgID : messageFromServer.msgID, 
-  			typeOfACK : "ACKfromAddressee"
-  		};
+	});  
 
-  		postman.send("MessageDeliveryACK", messageACK );
-  		
-  		//double check to avoid saving messages twice...(which should never be received...)
-  		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
-  		
-  		getAsyncMessageFromDB.done(function (message){
-  			if (typeof message == 'undefined' ){ 
-
-  				messageFromServer.setChatWith(messageFromServer.from); 	
-  				//stores in IndexDB			
-  				mailBox.storeMessage(messageFromServer); 
-  				
-  				var contact = contactsHandler.getContactById(messageFromServer.from); 
-  				if (typeof contact == "undefined") return;
-  				 		 		
-  				if (app.currentChatWith == messageFromServer.from ){
-  		 			gui.insertMessageInConversation(messageFromServer,false,true);
-  		  		}else{
-					contact.counterOfUnreadSMS++ ;
-					gui.showCounterOfContact(contact);  		  			
-  		  		}
-  		  		
-  		  		contact.timeLastSMS = messageFromServer.timestamp;
-  		  		
-  		  		gui.setTimeLastSMS(contact);
-  		  		//only if it is a persistent contact
-				contactsHandler.modifyContactOnDB(contact);
-  				
-				gui.sortContacts();
-				
-  				gui.showLocalNotification(messageFromServer);
-	
-  			}  		
-  		}); 
-		
-  });//END messageFromServer
-	 
-	// start a loop requesting a message one by one 
-  socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
+  // start a loop requesting a message one by one 
+	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
