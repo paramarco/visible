@@ -522,7 +522,7 @@ Postman.prototype.encryptMsgBody = function( message ) {
 Postman.prototype.decryptMsgBody = function( message ) {	
 	try {		
 		var fromContact = contactsHandler.getContactById( message.from );		
-		if ( fromContact.decryptionKeys == null){
+		if ( fromContact != null && fromContact.decryptionKeys == null){
 			postman.send("KeysRequest", { from : user.publicClientID , to : fromContact.publicClientID } );
 			console.log("DEBUG ::: fromContact.decryptionKeys == null  :::  message: " + JSON.stringify(message) );
 			//TODO save this message for later decryption
@@ -2549,7 +2549,7 @@ Application.prototype.connect2server = function(result){
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
-				if ( contact.decryptionKeys == null ){					
+				if ( contact != null && contact.decryptionKeys == null ){					
 					
 					var privateKey = forge.pki.rsa.setPrivateKey(
 						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
@@ -2569,7 +2569,8 @@ Application.prototype.connect2server = function(result){
 					decipher.finish();					
 					var keysDecrypted = KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 					contact.decryptionKeys = keysDecrypted.setOfSymKeys;
-					contactsHandler.setContactOnDB(contact);				
+					contactsHandler.setContactOnDB(contact);
+					console.log("DEBUG ::: KeysDelivery ::: contact.decryptionKeys : " + JSON.stringify(contact.decryptionKeys) );				
 				} //END IF
 			}catch (ex) {	
 				console.log("DEBUG ::: KeysDelivery event :::  " + ex);

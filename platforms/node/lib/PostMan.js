@@ -143,6 +143,7 @@ function PostMan(_io) {
 			    message.to = entry.receiver;
 			    message.from = entry.sender;
 			    message.messageBody = entry.messagebody ;
+			    message.messageBody.encryptedMsg = message.messageBody.encryptedMsg.replace(/##\&#39##/g, "'");
 			    message.timestamp = entry.timestamp ;			    			   		    
 			    
 			    return  d.resolve(message);
@@ -163,26 +164,21 @@ function PostMan(_io) {
 	this.archiveMessage = function(msg) {
 		
 		var query2send = squel.insert()
-							    .into("message")
-							    .set("msgid", msg.msgID)
-							    .set("receiver", msg.to)
-							    .set("sender", msg.from)
-							    .set("messagebody", JSON.stringify(msg.messageBody) )
-							    //.set("messagebody", msg.messageBody )
-							    .set("timestamp", msg.timestamp)							    
-							    .toString() ;
+						    .into("message")
+						    .set("msgid", msg.msgID)
+						    .set("receiver", msg.to)
+						    .set("sender", msg.from)
+						    .set("messagebody", JSON.stringify(msg.messageBody) )
+						    .set("timestamp", msg.timestamp)							    
+						    .toString() ;
 				    
-		clientOfDB.query(query2send, function(err, result) {
-		     
-			//clientOfDB.done();
-		    
+		clientOfDB.query(query2send, function(err, result) {		     
+			//clientOfDB.done();		    
 			if(err) {
 		    	console.error('DEBUG ::: archiveMessage :::error running query', err);	
 		    	console.error('DEBUG ::: archiveMessage ::: query error: ', query2send);
-		    }		    
-		    
+		    }	    
 		});
-		
 	};
 
 	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
@@ -217,7 +213,19 @@ function PostMan(_io) {
 		});
 		
 	};
-	
+	/**
+	 var data = {
+		from :  user.publicClientID,
+		to : contact.publicClientID,
+		setOfKeys : {
+			masterKeyEncrypted : masterKeyEncrypted,
+			symKeysEncrypted : { 
+				iv2use : iv2use , 
+				keysEncrypted : cipher.output.data 
+			}
+		}
+	};	 
+	 */
 	this.archiveKeysDelivery = function( keysDelivery ) {
 		
 		var query2send = squel.insert()
@@ -343,15 +351,21 @@ function PostMan(_io) {
 					return;				
 				
 				result.rows.map(function(r){
-					var KeysDelivery = { 
+					var keysDelivery = {						
 						from : r.sender, 
 						to : r.receiver,
 						setOfKeys : r.setofkeys 	
-					};	
+					};
+										
+					keysDelivery.setOfKeys.masterKeyEncrypted = 
+ 						keysDelivery.setOfKeys.masterKeyEncrypted.replace(/##\&#39##/g, "'");
+					keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted = 
+						keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted.replace(/##\&#39##/g, "'");
+					 	
 					io.sockets.to(client.socketid).emit(
 						"KeysDelivery", 
-						PostMan.prototype.encrypt( KeysDelivery, client ) , 
-						self.deleteKeysDelivery( KeysDelivery )
+						PostMan.prototype.encrypt( keysDelivery, client ) , 
+						self.deleteKeysDelivery( keysDelivery )
 					);
 				});				
 			
@@ -715,10 +729,6 @@ PostMan.prototype.encrypt = function(message , client) {
 
 	try {
 		
-		if ( typeof message.messageBody == "string")	{
-			message.messageBody = PostMan.prototype.sanitize(message.messageBody);
-		}
-		
 		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
 		var iv = Math.floor((Math.random() * 7) + 0);
 
@@ -775,10 +785,6 @@ PostMan.prototype.decryptHandshake = function(encrypted, client) {
 PostMan.prototype.encryptHandshake = function(message , client) {	
 
 	try {
-		
-		if ( typeof message.messageBody == "string")	{
-			message.messageBody = PostMan.prototype.sanitize(message.messageBody);
-		}
 		
 		var key = client.myArrayOfKeys[client.indexOfCurrentKey];
 		var iv = key;
@@ -982,9 +988,7 @@ PostMan.prototype.isACKtype = function(typeOfACK) {
 
 PostMan.prototype.lengthTest = function( obj , sizeLimit ) {
 	try { 
-		if ( typeof obj == 'string' && obj.length < sizeLimit )
-			return true;
-		else if (typeof obj == 'object' && obj.src.length < sizeLimit){
+		if ( typeof obj == 'string' && obj.length < sizeLimit ){
 			return true;
 		}else{
 			console.log("DEBUG ::: lengthTest ::: is too big ");

@@ -479,6 +479,10 @@ app.locals.KeysDeliveryHandler = function( input, socket){
 		if ( clientReceiver != null ){			
 			postMan.send("KeysDelivery",  keysDelivery , clientReceiver ); 					
  		}else {
+ 			keysDelivery.setOfKeys.masterKeyEncrypted = 
+ 				keysDelivery.setOfKeys.masterKeyEncrypted.replace(/'/g, "##&#39##");
+			keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted = 
+				keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted.replace(/'/g, "##&#39##");
  			postMan.archiveKeysDelivery(keysDelivery);
  		}		
 	});
@@ -508,7 +512,7 @@ app.locals.KeysRequestHandler = function( input, socket){
 	});
 
 };
-
+//TODO
 app.locals.message2clientHandler = function( msg , socket){		
 
 	var client = socket.visibleClient;	
@@ -516,19 +520,30 @@ app.locals.message2clientHandler = function( msg , socket){
 		 postMan.isUUID( msg.from ) == false ||
 		 postMan.isUUID( msg.msgID ) == false ||
 		 postMan.isInt( msg.timestamp ) == false ||
-		 msg.from != client.publicClientID   ){
+		 postMan.isInt( msg.messageBody.index4Key ) == false ||
+		 postMan.isInt( msg.messageBody.index4iv ) == false ||
+		 postMan.lengthTest(msg.messageBody.encryptedMsg , config.MAX_SIZE_SMS ) == false ||		  
+		 msg.from != client.publicClientID ||
+		 postMan.isPostBoxFull(message) == true  ){
 		console.log('DEBUG ::: message2clientHandler ::: something went wrong' + JSON.stringify(msg) );
 		return;
 	}
-				
+	
+	var deliveryReceipt = { 
+		msgID : msg.msgID, 
+		typeOfACK : "ACKfromServer", 
+		to : msg.to
+	};	
+	postMan.send("MessageDeliveryReceipt",  deliveryReceipt , client);
+	
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){			
 			postMan.sendMsg( msg , clientReceiver ); 					
  		}else {
+ 			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
  			postMan.archiveMessage( msg );
  		}		
 	});
-
 };
 
 
