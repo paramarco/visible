@@ -185,9 +185,8 @@ function PostMan(_io) {
 	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
 	this.isPostBoxFull= function(message) {
 		//get from the message the sender and receiver
-		var isPostBoxFull = false;
-		
-		return isPostBoxFull;
+		//var isPostBoxFull = false;		
+		return false;
 	
 	};
 	
@@ -344,11 +343,9 @@ function PostMan(_io) {
 						    .toString();
 			
 		clientOfDB.query(query2send, function(err, result) {
-		
-			if(err) console.error('DEBUG ::: sendKeysDeliveries ::: error running query', err);
-			try {			
-				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
-					return;				
+			try {
+				if(err) console.error('DEBUG ::: sendKeysDeliveries ::: error running query', err);						
+				if ( typeof result.rows == "undefined" || result.rows.length == 0 )	 return;				
 				
 				result.rows.map(function(r){
 					var keysDelivery = {						
@@ -361,14 +358,14 @@ function PostMan(_io) {
  						keysDelivery.setOfKeys.masterKeyEncrypted.replace(/##\&#39##/g, "'");
 					keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted = 
 						keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted.replace(/##\&#39##/g, "'");
-					 	
+					keysDelivery.setOfKeys.symKeysEncrypted.iv2use = 
+					 	keysDelivery.setOfKeys.symKeysEncrypted.iv2use.replace(/##\&#39##/g, "'");
 					io.sockets.to(client.socketid).emit(
 						"KeysDelivery", 
 						PostMan.prototype.encrypt( keysDelivery, client ) , 
 						self.deleteKeysDelivery( keysDelivery )
 					);
-				});				
-			
+				});			
 			}catch (ex) {
 				console.log("DEBUG ::: sendKeysDeliveries  :::  exceptrion thrown " + ex  );						
 			}		

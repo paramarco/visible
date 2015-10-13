@@ -41,18 +41,35 @@ UserSettings.prototype.updateUserSettings = function() {
 function ContactOfVisible(contact2create) {
 	this.publicClientID = contact2create.publicClientID;
 	this.path2photo = (contact2create.path2photo) ? contact2create.path2photo : "./img/profile_black_195x195.png";
-	this.nickName = contact2create.nickName;
-	this.location = contact2create.location;
+	this.nickName = (contact2create.nickName) ? contact2create.nickName : dictionary.Literals.label_23;
+	this.location = (contact2create.location) ? contact2create.location : { lat : "", lon : "" };
 	this.commentary = (contact2create.commentary == "") ? dictionary.Literals.label_12 : contact2create.commentary;
 	this.lastProfileUpdate = (contact2create.lastProfileUpdate) ? contact2create.lastProfileUpdate : config.beginingOf2015;
 	this.counterOfUnreadSMS = (contact2create.counterOfUnreadSMS) ? contact2create.counterOfUnreadSMS : 0;
 	this.timeLastSMS = (contact2create.timeLastSMS) ? contact2create.timeLastSMS : 0 ;
 	this.telephone = (contact2create.telephone) ? contact2create.telephone : "";
 	this.email = (contact2create.email) ? contact2create.email : "";
-	this.rsamodulus = contact2create.rsamodulus;
+	this.rsamodulus = (contact2create.rsamodulus) ? contact2create.rsamodulus : null;
 	this.encryptionKeys = (contact2create.encryptionKeys) ? contact2create.encryptionKeys : null;
 	this.decryptionKeys = (contact2create.decryptionKeys) ? contact2create.decryptionKeys : null;
 	this.persistent = false;
+};
+
+ContactOfVisible.prototype.set = function( data ) {
+	this.publicClientID = (data.publicClientID) ? data.publicClientID ;
+	this.path2photo = (data.path2photo) ? data.path2photo ;
+	this.nickName = (data.nickName) ? data.nickName ;
+	this.location = (data.location) ? data.location ;
+	this.commentary = (data.commentary) ? data.commentary;
+	this.lastProfileUpdate = (data.lastProfileUpdate) ? data.lastProfileUpdate ;
+	this.counterOfUnreadSMS = (data.counterOfUnreadSMS) ? data.counterOfUnreadSMS ;
+	this.timeLastSMS = (data.timeLastSMS) ? data.timeLastSMS  ;
+	this.telephone = (data.telephone) ? data.telephone ;
+	this.email = (data.email) ? data.email;
+	this.rsamodulus = (data.rsamodulus) ? data.rsamodulus ;
+	this.encryptionKeys = (data.encryptionKeys) ? data.encryptionKeys ;
+	this.decryptionKeys = (data.decryptionKeys) ? data.decryptionKeys ;
+	this.persistent = (data.persistent) ? data.persistent;
 };
 
 
@@ -764,8 +781,10 @@ GUI.prototype.loadContacts = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
-     	if (cursor) { 
-     		contactsHandler.addNewContact(cursor.value);      	
+     	if (cursor) {
+     		var contact = new ContactOfVisible(cursor.value);
+     		contact.persistent = true; 
+     		contactsHandler.addNewContact(contact);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
@@ -779,7 +798,6 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value);
          	cursor.continue(); 
      	}
@@ -797,8 +815,7 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 	if (contact.path2photo == ""){
 		contact.path2photo = "./img/profile_black_195x195.png" ;
 	}
-	
-	
+		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '-inMap">'+
 		' <a>  '+
@@ -891,14 +908,12 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 							
 			newList.map(function(message){			
 				gui.insertMessageInConversation(message, false, true);
-			});
-			
+			});			
 			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
 			
 		}else {	
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
-			
 			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
 		}
 	});
@@ -916,19 +931,17 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 		if ( olderDate > config.beginingOf2015 ){
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
-
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
 		}else {
 			gui.hideLoadingSpinner();
 			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-			//setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
 		}
 	});	
 };
 
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
-	//$('#link2go2ChatWith_' + app.currentChatWith).unbind('click');
+
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
@@ -943,23 +956,14 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
-	//request an update of the last photo of this Contact
-	var profileRetrievalObject = {	
-		publicClientIDofRequester : user.publicClientID, 
-		publicClientID2getImg : contact.publicClientID,
-		lastProfileUpdate : contact.lastProfileUpdate
-	};
-	postman.send("ProfileRetrieval", profileRetrievalObject );
-	
+	contactsHandler.requestProfile( contact );
+		
 	if (contact.counterOfUnreadSMS > 0){
 		contact.counterOfUnreadSMS = 0;
 		gui.showCounterOfContact(contact);
 		//only if it is a persistent contact
 		contactsHandler.modifyContactOnDB(contact);
-	}
-	
-	
-	
+	}	
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
@@ -2545,11 +2549,15 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );
+			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );			
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
-				if ( contact != null && contact.decryptionKeys == null ){					
+				
+				if ( typeof contact == 'undefined' || contact == null ){
+					contact = new ContactOfVisible({ publicClientID : data.from });
+				}
+				if ( contact.decryptionKeys == null ){					
 					
 					var privateKey = forge.pki.rsa.setPrivateKey(
 						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
@@ -2570,10 +2578,11 @@ Application.prototype.connect2server = function(result){
 					var keysDecrypted = KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 					contact.decryptionKeys = keysDecrypted.setOfSymKeys;
 					contactsHandler.setContactOnDB(contact);
+					contactsHandler.requestProfile(contact);
 					console.log("DEBUG ::: KeysDelivery ::: contact.decryptionKeys : " + JSON.stringify(contact.decryptionKeys) );				
-				} //END IF
+				} 
 			}catch (ex) {	
-				console.log("DEBUG ::: KeysDelivery event :::  " + ex);
+				console.log("DEBUG ::: KeysDelivery event :::  contact : " + JSON.stringify(contact) + "data : " + JSON.stringify(data) );
 				return null;
 			}	
 	 	} // END else			
@@ -3069,8 +3078,7 @@ ContactsHandler.prototype.modifyContactOnDB = function(contact) {
 	  if (theArray[index].publicClientID == contact.publicClientID){
 	  	theArray[index] = contact;	
 	  }	  	
-	});
-	
+	});	
 	
 	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
 	
@@ -3125,8 +3133,6 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	}	
 };
 
-
-
 ContactsHandler.prototype.setNewContacts = function(input) {
 	gui.hideLoadingSpinner();
 	var data = postman.getParametersOfSetNewContacts(input);
@@ -3134,36 +3140,27 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 
 	data.map(function(c){
 
-		//request an update of the last photo of this Contact
-		var profileRetrievalObject = {	
-			publicClientIDofRequester : user.publicClientID, 
-			publicClientID2getImg : c.publicClientID,
-			lastProfileUpdate : config.beginingOf2015
-		};
-		
 		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
-			
-			contact.nickName = c.nickName ;
-			contact.commentary = c.commentary ;
-			contact.location.lat = parseFloat( c.location.lat );
-			contact.location.lon = parseFloat( c.location.lon );			
-			//PRE: only if it is a persistent contact
-			contactsHandler.modifyContactOnDB(contact);
-			
-			if (contact.lastProfileUpdate > config.beginingOf2015  ){
-				profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;				
-			}
-			
+			contact.set(c);			
+			contactsHandler.modifyContactOnDB(contact);			
 		}else{			
-			var newContact = new ContactOfVisible(c);
-			//send my encryption keys
-			//request its encryption keys			
-			contactsHandler.addNewContact(newContact);
-			gui.insertContactInMainPage(newContact,true);			
-		}	
-		postman.send("ProfileRetrieval", profileRetrievalObject );
+			contact = new ContactOfVisible(c);
+			contactsHandler.addNewContact( contact );
+			gui.insertContactInMainPage( contact , true);			
+		}
+		contactsHandler.requestProfile( contact );	
 	});
+};
+
+ContactsHandler.prototype.requestProfile = function( contact ) {
+
+	var profileRetrievalObject = {	
+		publicClientIDofRequester : user.publicClientID, 
+		publicClientID2getImg : contact.publicClientID,
+		lastProfileUpdate : contact.lastProfileUpdate 
+	};	
+	postman.send("ProfileRetrieval", profileRetrievalObject );
 };
 
 function Dictionary(){

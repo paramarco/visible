@@ -271,7 +271,7 @@ function BrokerOfVisibles(_io) {
 		return d.promise;
 		
 	};
-	
+	//TODO it should also return the rsamodulus
 	this.getProfileByID = function( publicClientID ) {	
 		
 		var d = when.defer();

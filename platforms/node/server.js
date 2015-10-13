@@ -483,6 +483,8 @@ app.locals.KeysDeliveryHandler = function( input, socket){
  				keysDelivery.setOfKeys.masterKeyEncrypted.replace(/'/g, "##&#39##");
 			keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted = 
 				keysDelivery.setOfKeys.symKeysEncrypted.keysEncrypted.replace(/'/g, "##&#39##");
+			keysDelivery.setOfKeys.symKeysEncrypted.iv2use = 	
+				keysDelivery.setOfKeys.symKeysEncrypted.iv2use.replace(/'/g, "##&#39##");
  			postMan.archiveKeysDelivery(keysDelivery);
  		}		
 	});
@@ -524,7 +526,7 @@ app.locals.message2clientHandler = function( msg , socket){
 		 postMan.isInt( msg.messageBody.index4iv ) == false ||
 		 postMan.lengthTest(msg.messageBody.encryptedMsg , config.MAX_SIZE_SMS ) == false ||		  
 		 msg.from != client.publicClientID ||
-		 postMan.isPostBoxFull(message) == true  ){
+		 postMan.isPostBoxFull(msg) == true  ){
 		console.log('DEBUG ::: message2clientHandler ::: something went wrong' + JSON.stringify(msg) );
 		return;
 	}
