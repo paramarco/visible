@@ -438,12 +438,12 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	
 	var client = socket.visibleClient;		
 	
-	var retrievalParameters = postMan.getMessageRetrievalParameters(input , client);		
+	var retrievalParameters = postMan.getMessageRetrievalParameters( input , client);		
 	if (retrievalParameters == null) return;		
 	
 	postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
 		if (message != null){
-			postMan.send("messageFromServer",  message , client);				
+			postMan.sendMsg( message , client);				
 		}
 	});
 	

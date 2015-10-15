@@ -160,7 +160,6 @@ function PostMan(_io) {
 	};
 	
 	
-//TODO problems with JSON encrypted
 	this.archiveMessage = function(msg) {
 		
 		var query2send = squel.insert()
@@ -576,7 +575,7 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 
 	return joinParameters; 	
 };
-//TODO check rigth format of input
+
 PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 	var parameters = null;
 

@@ -38,38 +38,36 @@ UserSettings.prototype.updateUserSettings = function() {
 	var request = store.put(user);	
 };
 
-function ContactOfVisible(contact2create) {
-	this.publicClientID = contact2create.publicClientID;
-	this.path2photo = (contact2create.path2photo) ? contact2create.path2photo : "./img/profile_black_195x195.png";
-	this.nickName = (contact2create.nickName) ? contact2create.nickName : dictionary.Literals.label_23;
-	this.location = (contact2create.location) ? contact2create.location : { lat : "", lon : "" };
-	this.commentary = (contact2create.commentary == "") ? dictionary.Literals.label_12 : contact2create.commentary;
-	this.lastProfileUpdate = (contact2create.lastProfileUpdate) ? contact2create.lastProfileUpdate : config.beginingOf2015;
-	this.counterOfUnreadSMS = (contact2create.counterOfUnreadSMS) ? contact2create.counterOfUnreadSMS : 0;
-	this.timeLastSMS = (contact2create.timeLastSMS) ? contact2create.timeLastSMS : 0 ;
-	this.telephone = (contact2create.telephone) ? contact2create.telephone : "";
-	this.email = (contact2create.email) ? contact2create.email : "";
-	this.rsamodulus = (contact2create.rsamodulus) ? contact2create.rsamodulus : null;
-	this.encryptionKeys = (contact2create.encryptionKeys) ? contact2create.encryptionKeys : null;
-	this.decryptionKeys = (contact2create.decryptionKeys) ? contact2create.decryptionKeys : null;
-	this.persistent = false;
+function ContactOfVisible( c ) {
+	this.publicClientID = c.publicClientID;
+	this.path2photo = (typeof c.path2photo == 'undefined' || c.path2photo == "" || c.path2photo == null ) ? "./img/profile_black_195x195.png" : c.path2photo ;
+	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
+	this.location = (c.location) ? c.location : { lat : "", lon : "" };
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? c.lastProfileUpdate : config.beginingOf2015;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
+	this.timeLastSMS = (c.timeLastSMS) ? c.timeLastSMS : 0 ;
+	this.telephone = (c.telephone) ? c.telephone : "";
+	this.email = (c.email) ? c.email : "";
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
 };
 
-ContactOfVisible.prototype.set = function( data ) {
-	this.publicClientID = (data.publicClientID) ? data.publicClientID ;
-	this.path2photo = (data.path2photo) ? data.path2photo ;
-	this.nickName = (data.nickName) ? data.nickName ;
-	this.location = (data.location) ? data.location ;
-	this.commentary = (data.commentary) ? data.commentary;
-	this.lastProfileUpdate = (data.lastProfileUpdate) ? data.lastProfileUpdate ;
-	this.counterOfUnreadSMS = (data.counterOfUnreadSMS) ? data.counterOfUnreadSMS ;
-	this.timeLastSMS = (data.timeLastSMS) ? data.timeLastSMS  ;
-	this.telephone = (data.telephone) ? data.telephone ;
-	this.email = (data.email) ? data.email;
-	this.rsamodulus = (data.rsamodulus) ? data.rsamodulus ;
-	this.encryptionKeys = (data.encryptionKeys) ? data.encryptionKeys ;
-	this.decryptionKeys = (data.decryptionKeys) ? data.decryptionKeys ;
-	this.persistent = (data.persistent) ? data.persistent;
+ContactOfVisible.prototype.set = function( c ) {
+	this.publicClientID = (c.publicClientID) ? c.publicClientID : this.publicClientID;
+	this.path2photo = (typeof c.path2photo == 'undefined' || c.path2photo == "" || c.path2photo == null ) ? this.path2photo : c.path2photo ;
+	this.nickName = (c.nickName) ? c.nickName : this.nickName;
+	this.location = (c.location) ? c.location : this.location;
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? this.commentary : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? c.lastProfileUpdate : this.lastProfileUpdate;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : this.counterOfUnreadSMS;
+	this.timeLastSMS = (c.timeLastSMS) ? c.timeLastSMS : this.timeLastSMS ;
+	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
+	this.email = (c.email) ? c.email : this.email;
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
 };
 
 
@@ -686,11 +684,10 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}else {		
 		
 		var contact = contactsHandler.getContactById(message.from); 		
-		if (contact) {	
-			authorOfMessage = contact.nickName;
-		}else{
+		if (typeof contact == 'undefined' || contact == null) 
 			return;
-		}
+			
+		authorOfMessage = contact.nickName;
 				
 		if (message.markedAsRead == false) {		  	
 			var messageACK = {	
@@ -783,8 +780,7 @@ GUI.prototype.loadContacts = function() {
 		var cursor = e.target.result;
      	if (cursor) {
      		var contact = new ContactOfVisible(cursor.value);
-     		contact.persistent = true; 
-     		contactsHandler.addNewContact(contact);      	
+     		contactsHandler.setContactOnList(contact);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
@@ -806,15 +802,7 @@ GUI.prototype.loadContactsOnMapPage = function() {
 
 GUI.prototype.insertContactOnMapPage = function(contact) {
 	
-	var attributesOfLink = "" ; 	
-
-	if (contact.commentary == ""){
-		contact.commentary = dictionary.Literals.label_13 ;
-	}
-	
-	if (contact.path2photo == ""){
-		contact.path2photo = "./img/profile_black_195x195.png" ;
-	}
+	var attributesOfLink = "" ; 
 		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '-inMap">'+
@@ -844,12 +832,6 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	if (isNewContact){
 		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
-	if (contact.commentary == ""){
-		contact.commentary = dictionary.Literals.label_13 ;
-	}
-	if (contact.path2photo == ""){
-		contact.path2photo = "./img/profile_black_195x195.png" ;
-	}
 	var htmlOfCounter = "";
 	if ( contact.counterOfUnreadSMS > 0 ){
 		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class="ui-li-count">'+ contact.counterOfUnreadSMS + '</span>';
@@ -947,7 +929,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
     gui.showLoadingSpinner();			
 
 	var contact = contactsHandler.getContactById(publicClientID); 		
-	if (typeof contact == "undefined") return;
+	if (typeof contact == "undefined" || contact == null) return;
 	
 	$("#imgOfChat-page-header").attr("src",contact.path2photo );
 	
@@ -956,14 +938,14 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
+	if (contact.counterOfUnreadSMS > 0){
+		contact.counterOfUnreadSMS = 0;		
+		contactsHandler.setContactOnList( contact );
+		contactsHandler.setContactOnDB( contact );
+		gui.showCounterOfContact( contact );
+	}
 	contactsHandler.requestProfile( contact );
 		
-	if (contact.counterOfUnreadSMS > 0){
-		contact.counterOfUnreadSMS = 0;
-		gui.showCounterOfContact(contact);
-		//only if it is a persistent contact
-		contactsHandler.modifyContactOnDB(contact);
-	}	
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
@@ -2207,8 +2189,7 @@ Application.prototype.init = function() {
 	gui.loadAsideMenuMainPage();
 	app.locateMyPosition();
 	app.getLanguage();
-	app.loadPersistentData();
-	
+	app.loadPersistentData();	
 	
 };
 
@@ -2464,7 +2445,7 @@ Application.prototype.connect2server = function(result){
   		}, config.TIME_WAIT_DB);   		
 	});  
 
-  // start a loop requesting a message one by one 
+	//XEP-0013: Flexible Off-line Message Retrieval :: 2.4 Retrieving Specific Messages
 	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
@@ -2472,7 +2453,6 @@ Application.prototype.connect2server = function(result){
 		
 		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
 
-		//XEP-0013: Flexible Off-line Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();				
@@ -2502,26 +2482,17 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("ProfileFromServer", function(input) {
 		
-		var data = postman.getParametersOfProfileFromServer(input); 
-		if (data == null) { return;	}
+		var contactUpdate = postman.getParametersOfProfileFromServer(input); 
+		if (contactUpdate == null) { return;	}
 		
-		var contact = contactsHandler.getContactById(data.publicClientID); 
-  		if (typeof contact == "undefined") return;
-  		
-  		if (data.img == ""){
-  			contact.path2photo = "./img/profile_black_195x195.png" ;
-  		}else{
-  			contact.path2photo = data.img;	
-  		}  		
-		contact.nickName = data.nickName ;
-		contact.commentary = data.commentary ;
-		contact.telephone = data.telephone ;
-		contact.email = data.email ;		
+		var contact = contactsHandler.getContactById(contactUpdate.publicClientID); 
+  		if (typeof contact == "undefined" || contact == null) return;  		
 		contact.lastProfileUpdate = new Date().getTime();
 		
+		contactsHandler.setContactOnList( contactUpdate );		
 
-		$("#profilePhoto" + data.publicClientID ).attr("src", contact.path2photo);		
-		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
+		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.path2photo);		
+		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
@@ -2529,9 +2500,6 @@ Application.prototype.connect2server = function(result){
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
-		//only if it is a persistent contact
-		contactsHandler.modifyContactOnDB(contact);
-
 	});//END ProfileFromServer
 	
 	
@@ -2556,6 +2524,7 @@ Application.prototype.connect2server = function(result){
 				
 				if ( typeof contact == 'undefined' || contact == null ){
 					contact = new ContactOfVisible({ publicClientID : data.from });
+					contactsHandler.setContactOnList(contact);
 				}
 				if ( contact.decryptionKeys == null ){					
 					
@@ -2577,6 +2546,7 @@ Application.prototype.connect2server = function(result){
 					decipher.finish();					
 					var keysDecrypted = KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 					contact.decryptionKeys = keysDecrypted.setOfSymKeys;
+					contactsHandler.setContactOnList(contact);
 					contactsHandler.setContactOnDB(contact);
 					contactsHandler.requestProfile(contact);
 					console.log("DEBUG ::: KeysDelivery ::: contact.decryptionKeys : " + JSON.stringify(contact.decryptionKeys) );				
@@ -2634,10 +2604,10 @@ Application.prototype.connect2server = function(result){
   		  		}else{
 					contact.counterOfUnreadSMS++ ;
 					gui.showCounterOfContact( contact );  		  			
-  		  		}
-  		  		
+  		  		}  		  		
   		  		contact.timeLastSMS = msg.timestamp;
-  		  		contactsHandler.modifyContactOnDB( contact );
+  		  		contactsHandler.setContactOnList( contact );
+  		  		contactsHandler.setContactOnDB( contact );
 				
 				gui.setTimeLastSMS( contact );  				
 				gui.sortContacts();				
@@ -2979,10 +2949,6 @@ function ContactsHandler() {
 	this.listOfContacts = [];
 };
 
-ContactsHandler.prototype.addNewContact = function(contact) {
-	this.listOfContacts.push(contact);
-};
-
 ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
 	contactsHandler.generateKeys(toContact);
 	contactsHandler.setContactOnDB(toContact);
@@ -3003,13 +2969,38 @@ ContactsHandler.prototype.generateKeys = function(toContact) {
 	];	
 };
 
-ContactsHandler.prototype.setContactOnDB = function(contact) {
-	if (contact.persistent == false){
-		contact.persistent = true;
-		contactsHandler.addContactOnDB(contact);
-	}else{
-		contactsHandler.modifyContactOnDB(contact);
-	}	
+ContactsHandler.prototype.setContactOnList = function(contact) {
+	var found = false;
+	this.listOfContacts.map(function(c){
+		if ( c.publicClientID == contact.publicClientID ){
+	  		c.set( contact );
+	  		found = true; 
+	  		return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.listOfContacts.push(contact);
+	}
+			
+};
+
+ContactsHandler.prototype.setContactOnDB = function(contact) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}else{
+	     		store.add( contact );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: ContactsHandler.setContactOnDB ::: exception trown ");
+	}
 };	
 
 ContactsHandler.prototype.keyDelivery = function(contact) {
@@ -3052,53 +3043,7 @@ ContactsHandler.prototype.getContactById = function(id) {
 	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
 };
 	
-ContactsHandler.prototype.addContactOnDB = function(contact) {
-	
-	this.listOfContacts.forEach(function(part, index, theArray) {
-	  if (theArray[index].publicClientID == contact.publicClientID){
-	  	theArray[index] = contact;	
-	  }	  	
-	});
 
-	try {
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");		
-		var request = store.add(contact);
-	}
-	catch(e){
-		console.log("DEBUG ::: addContactOnDB ::: exception trown ");
-	}
-	
-};
-
-//this function assumes that the contact is already inserted on the DB
-ContactsHandler.prototype.modifyContactOnDB = function(contact) {
-	
-	this.listOfContacts.forEach(function(part, index, theArray) {
-	  if (theArray[index].publicClientID == contact.publicClientID){
-	  	theArray[index] = contact;	
-	  }	  	
-	});	
-	
-	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
-	
-	try {			
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		message = cursor.value;
-	     		store.put(contact);	     		
-	     	}     	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: modifyContact ::: exception trown ");
-	}		
-};
-
-//this method assumes that the contact is already inserted on the Array listOfContacts
 ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$('#linkAddNewContact' + publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
@@ -3120,36 +3065,26 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$("#popupDiv").popup("open");
 	
 	var contact = this.getContactById(publicClientID);
-	
-	if (contact){		
-		try {
-			var transaction = db.transaction(["contacts"],"readwrite");	
-			var store = transaction.objectStore("contacts");		
-			var request = store.add(contact);
-		}
-		catch(e){
-			console.log("DEBUG ::: addNewContactOnDB ::: exception trown ");
-		}	
-	}	
+	contactsHandler.setContactOnDB (contact);
 };
 
 ContactsHandler.prototype.setNewContacts = function(input) {
 	gui.hideLoadingSpinner();
-	var data = postman.getParametersOfSetNewContacts(input);
-	if (data == null ) { return;}
+	var list = postman.getParametersOfSetNewContacts(input);
+	if (list == null ) { return;}
 
-	data.map(function(c){
+	list.map(function(c){
 
 		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
-			contact.set(c);			
-			contactsHandler.modifyContactOnDB(contact);			
+			contactsHandler.setContactOnList( c );			
 		}else{			
-			contact = new ContactOfVisible(c);
-			contactsHandler.addNewContact( contact );
+			contact = new ContactOfVisible( c );
+			contactsHandler.setContactOnList( contact );
 			gui.insertContactInMainPage( contact , true);			
 		}
-		contactsHandler.requestProfile( contact );	
+		contactsHandler.requestProfile( contact );
+			
 	});
 };
 
