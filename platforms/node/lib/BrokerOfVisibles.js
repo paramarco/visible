@@ -327,7 +327,7 @@ function BrokerOfVisibles(_io) {
 				    	return  d.resolve(null);
 				    }
 		    		    
-			  		profile.img = result.rows[0].photo;
+			  		profile.imgsrc = result.rows[0].photo;
 		
 					return d.resolve(profile);
 		

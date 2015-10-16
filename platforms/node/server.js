@@ -413,21 +413,20 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 		return;
 	}
 				
-	brokerOfVisibles.isClientOnline(messageACKparameters.from).then(function(clientSender){									
+	brokerOfVisibles.isClientOnline(messageACKparameters.from).then(function(clientSender){	
+		
+		var deliveryReceipt = { 
+			msgID : messageACKparameters.msgID, 
+			typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
+			to : messageACKparameters.to 	
+		};								
 				
-		if ( clientSender != null ){
-			
-			var deliveryReceipt = { 
-				msgID : messageACKparameters.msgID, 
-				typeOfACK : (messageACKparameters.typeOfACK == "ACKfromAddressee") ? "ACKfromAddressee" : "ReadfromAddressee",
-				to : messageACKparameters.to 	
-			};
-			
+		if ( clientSender != null ){			
 			postMan.send("MessageDeliveryReceipt",  deliveryReceipt , clientSender );
 			postMan.deleteMessageAndACK(deliveryReceipt);
- 					
  		}else {
- 			postMan.archiveACK(messageACKparameters);
+ 			postMan.deleteMessage( deliveryReceipt );
+ 			postMan.archiveACK( messageACKparameters );
  		}
 		
 	});
@@ -449,16 +448,16 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 	
 };
 
+//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 app.locals.reconnectHandler = function( socket ) {		
 	
 	var client = socket.visibleClient;		
 	client.socketid = socket.id ;
-	// update DB
+
 	brokerOfVisibles.updateClientsProfile(client);	
-	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 	postMan.sendMessageHeaders(client);	
 	postMan.sendMessageACKs(client);
-	
+		
 };
 
 app.locals.KeysDeliveryHandler = function( input, socket){		
@@ -514,7 +513,7 @@ app.locals.KeysRequestHandler = function( input, socket){
 	});
 
 };
-//TODO
+
 app.locals.message2clientHandler = function( msg , socket){		
 
 	var client = socket.visibleClient;	
@@ -603,11 +602,11 @@ io.sockets.on("connection", function (socket) {
 	
 	console.log("DEBUG ::: connection ::: " + client.publicClientID );
 		
-	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
-	postMan.sendMessageHeaders( client );	
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
+	postMan.sendKeysDeliveries( client ); 
 	postMan.sendMessageACKs( client );
-	postMan.sendKeysRequests( client );
-	postMan.sendKeysDeliveries( client );	
+	postMan.sendMessageHeaders( client );
+	postMan.sendKeysRequests( client );		
 	
 	//XEP-0080: User Location
 	postMan.sendDetectedLocation(client);	
@@ -659,12 +658,6 @@ when.all ( DBConnectionEstablished ).then(function(){
 	app.set('port', config.instance[id].portNumber);
   	app.set('ipaddr', config.instance[id].ipAddress );
 
-/*
- * 	app.configure(function() {
-		app.set('port', config.instance[id].portNumber);
-	  	app.set('ipaddr', config.instance[id].ipAddress );
-	});
-*/
 	server.listen(	
 		app.get('port'),
 		app.get('ipaddr'), 

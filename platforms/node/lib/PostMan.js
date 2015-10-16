@@ -54,10 +54,9 @@ function PostMan(_io) {
 	var self = this;
 	var lastServerAsigned = 0;
 
-    //TODO : what about this?
-    //call `done()` to release the client back to the pool
-    //done();
-    //client.end();
+    //TODO : what about calling `done()` to release the client back to the pool
+    //	done();
+    //	client.end();
 	this.initDBConnection = function (user, pass){
 		var d = when.defer();
 		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
@@ -415,6 +414,26 @@ function PostMan(_io) {
 				console.log("DEBUG ::: deleteMessageAndACK  :::  exception thrown " + ex  );						
 			}
 		
+		});	
+	
+	};
+	
+	this.deleteMessage = function(deliveryReceipt) {
+	    
+		var query2send = squel.delete()
+						    .from("message")
+						    .where("msgid = '" + deliveryReceipt.msgID + "'")							    
+						    .where("receiver = '" + deliveryReceipt.to + "'")							    
+						    .toString() 
+		   
+		clientOfDB.query(query2send, function(err, result) {
+			try {		
+				if(err) {
+					console.error('DEBUG ::: deleteMessage ::: error running query', err);	
+				}			
+			}catch (ex) {
+				console.log("DEBUG ::: deleteMessage  :::  exception thrown " + ex  );						
+			}		
 		});	
 	
 	};

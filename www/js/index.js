@@ -2,8 +2,6 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in stores & images
-//TODO analysis SMS from a non contact
-
 
 //non MVP
 
@@ -24,7 +22,7 @@ function UserSettings (myUser){
 	this.myCommentary = (typeof myUser.myCommentary == "undefined" ) ? "" : myUser.myCommentary;	     		
 	this.myPhotoPath = (typeof myUser.myPhotoPath == "undefined" ) ? "" : myUser.myPhotoPath; 
 	this.myArrayOfKeys = (typeof myUser.myArrayOfKeys == "undefined" ) ? null : myUser.myArrayOfKeys; 
-	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null :myUser.lastProfileUpdate;
+	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null : parseInt(myUser.lastProfileUpdate);
 	this.handshakeToken = (typeof myUser.handshakeToken == "undefined" ) ? null : myUser.handshakeToken;
 	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
 	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
@@ -40,13 +38,13 @@ UserSettings.prototype.updateUserSettings = function() {
 
 function ContactOfVisible( c ) {
 	this.publicClientID = c.publicClientID;
-	this.path2photo = (typeof c.path2photo == 'undefined' || c.path2photo == "" || c.path2photo == null ) ? "./img/profile_black_195x195.png" : c.path2photo ;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
 	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
 	this.location = (c.location) ? c.location : { lat : "", lon : "" };
 	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
-	this.lastProfileUpdate = (c.lastProfileUpdate) ? c.lastProfileUpdate : config.beginingOf2015;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.beginingOf2015;
 	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
-	this.timeLastSMS = (c.timeLastSMS) ? c.timeLastSMS : 0 ;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
 	this.telephone = (c.telephone) ? c.telephone : "";
 	this.email = (c.email) ? c.email : "";
 	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
@@ -56,13 +54,13 @@ function ContactOfVisible( c ) {
 
 ContactOfVisible.prototype.set = function( c ) {
 	this.publicClientID = (c.publicClientID) ? c.publicClientID : this.publicClientID;
-	this.path2photo = (typeof c.path2photo == 'undefined' || c.path2photo == "" || c.path2photo == null ) ? this.path2photo : c.path2photo ;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? this.imgsrc : c.imgsrc ;
 	this.nickName = (c.nickName) ? c.nickName : this.nickName;
 	this.location = (c.location) ? c.location : this.location;
 	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? this.commentary : c.commentary;
-	this.lastProfileUpdate = (c.lastProfileUpdate) ? c.lastProfileUpdate : this.lastProfileUpdate;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : this.lastProfileUpdate;
 	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : this.counterOfUnreadSMS;
-	this.timeLastSMS = (c.timeLastSMS) ? c.timeLastSMS : this.timeLastSMS ;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : this.timeLastSMS ;
 	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
 	this.email = (c.email) ? c.email : this.email;
 	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
@@ -74,25 +72,15 @@ ContactOfVisible.prototype.set = function( c ) {
 function Message(input) {
 	this.to = input.to;
 	this.from = input.from;
+	this.msgID = (input.msgID) ? input.msgID : this.assignMsgID();
 	this.messageBody = input.messageBody;
-	this.msgID = "" ;
-	this.size = 0 ;
-	this.timestamp = new Date().getTime();
-	this.markedAsRead = false; 
-	this.chatWith = null;
-	this.ACKfromServer = false;
-	this.ACKfromAddressee = false;
+	this.size = (input.size) ? input.size : this.calculateSize();
+	this.timestamp = (input.timestamp) ? parseInt(input.timestamp) : new Date().getTime();
+	this.markedAsRead = (typeof input.markedAsRead != 'undefined') ? input.markedAsRead : false; 
+	this.chatWith = (input.chatWith) ? input.chatWith : null;
+	this.ACKfromServer = (typeof input.ACKfromServer != 'undefined') ? input.ACKfromServer : false; 
+	this.ACKfromAddressee = (typeof input.ACKfromAddressee != 'undefined') ? input.ACKfromAddressee : false; 
 
-	switch (Object.keys(input).length )	{
-		case 3 :
-			this.assignMsgID();
-			this.calculateSize();
-			break;
-		default:	
-			this.msgID = input.msgID;
-			this.size = input.size;
-			break;			
-	}
 };
 // http://www.ietf.org/rfc/rfc4122.txt
 Message.prototype.assignMsgID = function () {
@@ -105,7 +93,7 @@ Message.prototype.assignMsgID = function () {
     s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
     s[8] = s[13] = s[18] = s[23] = "-";
 
-    this.msgID = s.join("");
+    return s.join("");
 };
 
 Message.prototype.getMsgID = function(){
@@ -116,15 +104,13 @@ Message.prototype.assignmd5sum = function(){
 	this.md5sum = window.md5(this.from + this.to + this.messageBody);
 };
 */
-//this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
-//TODO
 Message.prototype.calculateSize = function(){
 	
-/*	if (typeof this.messageBody == 'string' )
-		this.size = this.messageBody.length;
-	else
-		this.size = this.messageBody.src.length;
-		*/	
+ 	if (messageBody.messageType == "text"){
+		return this.messageBody.text.length;
+	}else{
+		return this.messageBody.src.length;
+	}
 };
 
 Message.prototype.convertToUTF = function(){
@@ -145,8 +131,6 @@ Message.prototype.setACKfromAddressee = function(bool){
 };
 
 //END Class Message
-
-
 
 function Postman() {
 };
@@ -287,7 +271,7 @@ Postman.prototype.getParametersOfProfileFromServer = function(input) {
 			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
 			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
 			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
-			typeof parameters.img !== 'string' || parameters.img == null ||
+			typeof parameters.imgsrc !== 'string' || parameters.imgsrc == null ||
 			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
 			typeof parameters.email !== 'string' || parameters.email == null) {
 			
@@ -536,11 +520,10 @@ Postman.prototype.encryptMsgBody = function( message ) {
  */
 Postman.prototype.decryptMsgBody = function( message ) {	
 	try {		
-		var fromContact = contactsHandler.getContactById( message.from );		
-		if ( fromContact != null && fromContact.decryptionKeys == null){
+		var fromContact = contactsHandler.getContactById( message.from );
+		if (typeof fromContact == "undefined" || fromContact.decryptionKeys == null){
 			postman.send("KeysRequest", { from : user.publicClientID , to : fromContact.publicClientID } );
-			console.log("DEBUG ::: fromContact.decryptionKeys == null  :::  message: " + JSON.stringify(message) );
-			//TODO save this message for later decryption
+			mailBox.storeMessage( message );
 			return null;			
 		}
 		
@@ -559,8 +542,6 @@ Postman.prototype.decryptMsgBody = function( message ) {
 		return null;
 	}	
 };
-
-
 
 Postman.prototype.getParameterByName = function ( name, href ){
   name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
@@ -581,9 +562,7 @@ Postman.prototype.isUUID = function(uuid) {
 		return	false;
 
 };
-
-
-//END Class UnWrapper
+//END Class Postman
 
 function GUI() {
 	this.localNotificationText = "";
@@ -698,7 +677,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		  	};					
 			postman.send("MessageDeliveryACK", messageACK );
 			message.markedAsRead = true;
-			mailBox.updateMessage(message);						
+			mailBox.storeMessage(message);						
 		}		
 	}
 	var htmlOfContent = "";
@@ -807,7 +786,7 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '-inMap">'+
 		' <a>  '+
-		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
 		'  <h2>'+ contact.nickName   + '</h2> '+
 		'  <p>' + contact.commentary + '</p></a>'+
 		' <a></a>'+
@@ -825,7 +804,7 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 	
 };
 
-GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
+GUI.prototype.insertContactInMainPage = function( contact, isNewContact) {
 	
 	var attributesOfLink = "" ; 
 		
@@ -842,7 +821,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
 		'	<a id="link2go2ChatWith_'+ contact.publicClientID  + '">'+ 
-		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
 		'		<h2>'+ contact.nickName   + '</h2> '+
 		'		<p>' + contact.commentary + '</p>'+
 				htmlOfCounter	+   
@@ -931,7 +910,7 @@ GUI.prototype.go2ChatWith = function(publicClientID) {
 	var contact = contactsHandler.getContactById(publicClientID); 		
 	if (typeof contact == "undefined" || contact == null) return;
 	
-	$("#imgOfChat-page-header").attr("src",contact.path2photo );
+	$("#imgOfChat-page-header").attr("src",contact.imgsrc );
 	
 	var newerDate = new Date().getTime();	
 	var olderDate = new Date(newerDate - config.oneMonth).getTime();
@@ -1023,7 +1002,7 @@ GUI.prototype.showImagePic = function() {
 	});
 		
 	$('#picPopupDivMultimedia').picEdit({
-		maxWidth : (config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
+		maxWidth : ( config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
 		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
 		displayWidth: $(window).width() * 0.70 ,
 		displayHeight: $(window).height() * 0.60 , 
@@ -1040,25 +1019,20 @@ GUI.prototype.showImagePic = function() {
 				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
-			message2send.setACKfromServer(false);
-			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith);
+			message2send.setChatWith( app.currentChatWith );
+
+			var msg2store = new Message( message2send );
+			mailBox.storeMessage( msg2store );
 			
-			//print message on the GUI
-			gui.insertMessageInConversation(message2send,false,true);					
+			gui.insertMessageInConversation( msg2store, false, true);					
 			$.mobile.silentScroll($(document).height());
-			//stores to DB
-			mailBox.storeMessage(message2send); 
 			
-			//sends message	
 			postman.sendMsg( message2send );
 					
  		}// END imageUpdated
- 	});// END picEdit construct
-	
+ 	});// END picEdit construct	
 		
 	$("#popupDivMultimedia").popup("open");
-	
 	
 };
 
@@ -1369,31 +1343,23 @@ GUI.prototype.chatInputHandler = function() {
 	var textMessage = $("#chat-input").val();	
 	textMessage = textMessage.replace(/\n/g, "");
 
-	if ( textMessage == '' ){
-		document.getElementById('chat-input').value='';
-		return;
-	}
+	document.getElementById('chat-input').value='';
+
+	if ( textMessage == '' ){ 	return;	}
 	
 	var message2send = new Message(	{ 	
 		to : app.currentChatWith, 
 		from : user.publicClientID , 
-		messageBody : { messageType : "text", text : gui.sanitize(textMessage) }
+		messageBody : { messageType : "text", text : gui.sanitize( textMessage ) }
 	});
-	message2send.setACKfromServer(false);
-	message2send.setACKfromServer(false);
-	message2send.setChatWith(app.currentChatWith); 
+	message2send.setChatWith( app.currentChatWith ); 
 	message2send.convertToUTF();	
 
-	//stores to DB
-	mailBox.storeMessage(message2send); 
+	var msg2store = new Message( message2send );
+	mailBox.storeMessage( msg2store ); 
 	
-	//print message on the GUI
-	gui.insertMessageInConversation(message2send,false,true);
+	gui.insertMessageInConversation( msg2store, false, true);
 
-	// clear chat-input	
-	document.getElementById('chat-input').value='';
-	
-	//sends message				 
 	postman.sendMsg( message2send );	
 	
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
@@ -1906,7 +1872,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
 	strVar += "									<div class=\"text-center\">";
-	strVar += "										<img src=\"" + contact.path2photo + "\" class=\"img-circle\">";
+	strVar += "										<img src=\"" + contact.imgsrc + "\" class=\"img-circle\">";
 	strVar += "									<\/div>";
 	strVar += "									<div class=\"user-head\">";
 	strVar += "										<h1>" + contact.nickName  + "<\/h1>";
@@ -2072,22 +2038,26 @@ GUI.prototype.inAppBrowserExitHandler = function (event)	{
 function MailBox() {
 };
 
-MailBox.prototype.storeMessage = function(message2Store) {
+MailBox.prototype.storeMessage = function( msg2Store ) {
 
-	var transaction = db.transaction(["messages"],"readwrite");	
-	var store = transaction.objectStore("messages");
-	var request = store.add(message2Store);
+	try {
+		var singleKeyRange = IDBKeyRange.only( msg2Store.msgID ); 			
+		var transaction = db.transaction(["messages"],"readwrite");	
+		var store = transaction.objectStore("messages");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( msg2Store );     		
+	     	}else{
+	     		store.add( msg2Store );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: MailBox.storeMessage ::: exception trown ");
+	}
  		
 };
-
-MailBox.prototype.updateMessage = function(message2update) {
-
-	var transaction = db.transaction(["messages"],"readwrite");	
-	var store = transaction.objectStore("messages");
-	var request = store.put(message2update);
- 		
-};
-
 
 MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 
@@ -2168,6 +2138,62 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 	
 };
 
+MailBox.prototype.unwrapMessagesOf = function( contact ) {
+
+	try {
+		var singleKeyRange = IDBKeyRange.only( contact.publicClientID ); 			
+		var transaction = db.transaction(["messages"],"readonly");	
+		var store = transaction.objectStore("messages");
+		store.index("publicclientid").openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		if ( cursor.value.messageBody.hasOwnProperty('index4Key') ){
+					mailBox.messageFromClientHandler(cursor.value); 
+					console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: recovering msg ");			
+	     		}
+			}    	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: exception trown ");
+	}
+
+};
+
+MailBox.prototype.messageFromClientHandler = function ( input ){
+	
+	var msg = postman.getMessageFromClient( input ); 
+	if (msg == null) { return;	}		
+		
+	var messageACK = {	
+		to : msg.to, 
+		from : msg.from,
+		msgID : msg.msgID, 
+		typeOfACK : "ACKfromAddressee"
+	};
+	postman.send("MessageDeliveryACK", messageACK );
+	
+	msg.setChatWith( msg.from );  					
+	mailBox.storeMessage( msg ); 
+	
+	var contact = contactsHandler.getContactById( msg.from ); 
+	if (typeof contact == "undefined") return;
+	 		 		
+	if ( app.currentChatWith == msg.from ){
+		gui.insertMessageInConversation( msg, false, true);
+	}else{
+		contact.counterOfUnreadSMS++ ;
+		gui.showCounterOfContact( contact );  		  			
+	}  		  		
+	contact.timeLastSMS = msg.timestamp;
+	contactsHandler.setContactOnList( contact );
+	contactsHandler.setContactOnDB( contact );
+	
+	gui.setTimeLastSMS( contact );  				
+	gui.sortContacts();				
+	gui.showLocalNotification( msg );	
+
+};
 
 function Application() {
 	this.currentChatWith = null;
@@ -2246,7 +2272,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 22);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 23);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2256,6 +2282,7 @@ Application.prototype.openDB = function() {
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
 			objectStore.createIndex("timestamp","timestamp",{unique:false});
+			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
@@ -2324,9 +2351,7 @@ Application.prototype.loadUserSettings = function(){
 		
 		   console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
 		   app.register();
-		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
-	
 
 };
 
@@ -2411,6 +2436,7 @@ Application.prototype.connect2server = function(result){
 		console.log("DEBUG ::: socket.on.reconnect ::: ");
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	empty : "" } );
+  		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 	});
 
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
@@ -2418,30 +2444,26 @@ Application.prototype.connect2server = function(result){
   		var deliveryReceipt = postman.getDeliveryReceipt(inputDeliveryReceipt);
   		if ( deliveryReceipt == null) { return; }	
   		
-  		// delay introduced just to avoid receiving a ACKfromServer before the message 
-  		// was written in the local DB, weird but it could happen
   		setTimeout(function (){
-  			var getAsyncMessageFromDB = mailBox.getMessageByID(deliveryReceipt.msgID);
-  	  		getAsyncMessageFromDB.done(function (message){
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
-  	  				message.ACKfromServer = true;
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
-  	  			}
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromAddressee" && message.ACKfromAddressee == false) {
-  	  				message.ACKfromServer = true;
-  	  				message.ACKfromAddressee = true;	
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
-  	  			}
-  	  			if (deliveryReceipt.typeOfACK == "ReadfromAddressee") {
-  	  				message.ACKfromServer = true;
-  	  				message.ACKfromAddressee = true;	
-  	  				message.markedAsRead = true;
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
-  	  				$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);
-
-  	  			}
-  	  			mailBox.updateMessage(message);	  			
-  	  		});  			
+	  	  	mailBox.getMessageByID(deliveryReceipt.msgID).done(function (message){
+	  	  		if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
+	  	  			message.ACKfromServer = true;
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
+	  	  		}
+	  	  		if (deliveryReceipt.typeOfACK == "ACKfromAddressee" && message.ACKfromAddressee == false) {
+	  	  			message.ACKfromServer = true;
+	  	  			message.ACKfromAddressee = true;	
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
+	  	  		}
+	  	  		if (deliveryReceipt.typeOfACK == "ReadfromAddressee") {
+	  	  			message.ACKfromServer = true;
+	  	  			message.ACKfromAddressee = true;	
+	  	  			message.markedAsRead = true;
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
+	  	  			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);
+	  			}
+	  			mailBox.storeMessage(message);	  			
+	  		});  			
   		}, config.TIME_WAIT_DB);   		
 	});  
 
@@ -2489,14 +2511,16 @@ Application.prototype.connect2server = function(result){
   		if (typeof contact == "undefined" || contact == null) return;  		
 		contact.lastProfileUpdate = new Date().getTime();
 		
-		contactsHandler.setContactOnList( contactUpdate );		
+		contactsHandler.setContactOnList( contactUpdate );
+		contactsHandler.updateContactOnDB (contact );
+		
 
-		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.path2photo);		
-		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
+		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
+		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		if ( contact.path2photo != "" ) kids.find("img").attr("src", contact.path2photo);		
+		if ( contact.imgsrc != "" ) kids.find("img").attr("src", contact.imgsrc);		
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
@@ -2524,10 +2548,10 @@ Application.prototype.connect2server = function(result){
 				
 				if ( typeof contact == 'undefined' || contact == null ){
 					contact = new ContactOfVisible({ publicClientID : data.from });
-					contactsHandler.setContactOnList(contact);
+					contactsHandler.setContactOnList( contact );
+					gui.insertContactInMainPage ( contact, false );
 				}
 				if ( contact.decryptionKeys == null ){					
-					
 					var privateKey = forge.pki.rsa.setPrivateKey(
 						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
 						new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
@@ -2543,13 +2567,14 @@ Application.prototype.connect2server = function(result){
 					var decipher = forge.cipher.createDecipher('AES-CBC', masterKeydecrypted);
 					decipher.start({ iv: data.setOfKeys.symKeysEncrypted.iv2use });
 					decipher.update(forge.util.createBuffer( data.setOfKeys.symKeysEncrypted.keysEncrypted ) );
-					decipher.finish();					
-					var keysDecrypted = KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
-					contact.decryptionKeys = keysDecrypted.setOfSymKeys;
-					contactsHandler.setContactOnList(contact);
-					contactsHandler.setContactOnDB(contact);
-					contactsHandler.requestProfile(contact);
-					console.log("DEBUG ::: KeysDelivery ::: contact.decryptionKeys : " + JSON.stringify(contact.decryptionKeys) );				
+					decipher.finish();
+										
+					contact.decryptionKeys = KJUR.jws.JWS.readSafeJSONString(decipher.output.data).setOfSymKeys;
+					contactsHandler.setContactOnList( contact );
+					contactsHandler.setContactOnDB( contact );
+					contactsHandler.requestProfile( contact );
+
+					mailBox.unwrapMessagesOf( contact );
 				} 
 			}catch (ex) {	
 				console.log("DEBUG ::: KeysDelivery event :::  contact : " + JSON.stringify(contact) + "data : " + JSON.stringify(data) );
@@ -2578,44 +2603,8 @@ Application.prototype.connect2server = function(result){
 	});//END KeysRequest event
 	
 	socket.on("MessageFromClient", function (input){
-		
-		var msg = postman.getMessageFromClient( input ); 
-		if (msg == null) { return;	}		
-			
-  		var messageACK = {	
-  			to : msg.to, 
-  			from : msg.from,
-  			msgID : msg.msgID, 
-  			typeOfACK : "ACKfromAddressee"
-  		};
-  		postman.send("MessageDeliveryACK", messageACK );
-  		
-  		mailBox.getMessageByID( msg.msgID ).done(function (message){
-  			if (typeof message == 'undefined' ){ 
-
-  				msg.setChatWith( msg.from );  					
-  				mailBox.storeMessage( msg ); 
-  				
-  				var contact = contactsHandler.getContactById( msg.from ); 
-  				if (typeof contact == "undefined") return;
-  				 		 		
-  				if ( app.currentChatWith == msg.from ){
-  		 			gui.insertMessageInConversation( msg, false, true);
-  		  		}else{
-					contact.counterOfUnreadSMS++ ;
-					gui.showCounterOfContact( contact );  		  			
-  		  		}  		  		
-  		  		contact.timeLastSMS = msg.timestamp;
-  		  		contactsHandler.setContactOnList( contact );
-  		  		contactsHandler.setContactOnDB( contact );
-				
-				gui.setTimeLastSMS( contact );  				
-				gui.sortContacts();				
-  				gui.showLocalNotification( msg );	
-  			}  		
-  		}); 
-	
-	});//END MessageFromClient event	
+		mailBox.messageFromClientHandler( input );	
+	});//END MessageFromClient event
 	
 };//END of connect2server
 
@@ -3001,7 +2990,25 @@ ContactsHandler.prototype.setContactOnDB = function(contact) {
 	catch(e){
 		console.log("DEBUG ::: ContactsHandler.setContactOnDB ::: exception trown ");
 	}
-};	
+};
+
+ContactsHandler.prototype.updateContactOnDB = function( contact ) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: ContactsHandler.updateContactOnDB ::: exception trown ");
+	}
+};
+	
 
 ContactsHandler.prototype.keyDelivery = function(contact) {
 	
@@ -3083,6 +3090,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 			contactsHandler.setContactOnList( contact );
 			gui.insertContactInMainPage( contact , true);			
 		}
+		contactsHandler.updateContactOnDB (contact );
 		contactsHandler.requestProfile( contact );
 			
 	});
@@ -3093,7 +3101,7 @@ ContactsHandler.prototype.requestProfile = function( contact ) {
 	var profileRetrievalObject = {	
 		publicClientIDofRequester : user.publicClientID, 
 		publicClientID2getImg : contact.publicClientID,
-		lastProfileUpdate : contact.lastProfileUpdate 
+		lastProfileUpdate : parseInt(contact.lastProfileUpdate)
 	};	
 	postman.send("ProfileRetrieval", profileRetrievalObject );
 };
