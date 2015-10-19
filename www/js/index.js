@@ -106,7 +106,7 @@ Message.prototype.assignmd5sum = function(){
 */
 Message.prototype.calculateSize = function(){
 	
- 	if (messageBody.messageType == "text"){
+ 	if (this.messageBody.messageType == "text"){
 		return this.messageBody.text.length;
 	}else{
 		return this.messageBody.src.length;
@@ -1571,27 +1571,29 @@ GUI.prototype.bindDOMevents = function(){
 };
 
 GUI.prototype.showLoadingSpinner = function(text2show){
-/*	if (text2show){
-		$.mobile.loader.prototype.options.text = text2show;
-		$.mobile.loader.prototype.options.textVisible = true;
-	}else{
-		$.mobile.loader.prototype.options.text = "";
-		$.mobile.loader.prototype.options.textVisible = false;
-	}
 
-	$.mobile.loading( 'show', {
-		text: $.mobile.loader.prototype.options.text,
-		textVisible: $.mobile.loader.prototype.options.textVisible,
-		theme: $.mobile.loader.prototype.options.theme,
-		textonly: false,
-		html: ""
-	});
-	*/
 	$('.mask-color').fadeIn('fast');
 };
 
+GUI.prototype.showWelcomeMessage = function(text2show){
+
+	if (text2show){
+		$.mobile.loading( 'show', {
+			text: text2show,
+			textVisible: true,
+			theme: $.mobile.loader.prototype.options.theme,
+			textonly: true,
+			html: ""
+		});
+	}
+	
+};
+
+
 GUI.prototype.hideLoadingSpinner = function(){
-	$('.mask-color').fadeOut('slow');
+		
+	$('.mask-color').fadeOut('fast');
+
 };
 
 GUI.prototype.testUrlForMedia = function(url) {
@@ -2206,6 +2208,8 @@ function Application() {
 	this.initialized = false;
 	this.tokenSigned = null;
 	this.devicePlatform = "";
+	this.indexedDBHandler = null;
+	this.deviceVersion = "";
 };
 
 Application.prototype.init = function() {
@@ -2272,7 +2276,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 23);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 25);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2282,7 +2286,7 @@ Application.prototype.openDB = function() {
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
 			objectStore.createIndex("timestamp","timestamp",{unique:false});
-			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
+//TODO			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
@@ -2337,20 +2341,19 @@ Application.prototype.loadUserSettings = function(){
 		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
 			
 			var cursor = e.target.result;
-	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {	     		
+	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {     		
 	     		user = new UserSettings(cursor.value);	
 				userSettingsLoaded.resolve(); 
 	     		return;
-	     	}else{	     	
+	     	}else{
 	     		app.register();
 	     	   	return;	     		
 	     	}
 		};
 		
 	}catch(e){
-		
-		   console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
-		   app.register();
+		console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
+		app.register();
 	}
 
 };
@@ -2361,7 +2364,6 @@ Application.prototype.login2server = function(){
 		console.log("DEBUG ::: login2server ::: " + JSON.stringify([app.connecting,app.initialized,socket.connected]) );
 		return;
 	} 
-	
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
@@ -2436,6 +2438,8 @@ Application.prototype.connect2server = function(result){
 		console.log("DEBUG ::: socket.on.reconnect ::: ");
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	empty : "" } );
+  		var newerDate = new Date().getTime();	
+		var olderDate = new Date(newerDate - config.oneMonth).getTime();
   		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 	});
 
@@ -2608,65 +2612,82 @@ Application.prototype.connect2server = function(result){
 	
 };//END of connect2server
 
+Application.prototype.keyPairGeneration = function (err, keypair ){
+
+	if (err) {
+		console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
+		app.register();
+		return;
+	}
+
+	var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
+	
+ 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient ).done(function (answer) {
+ 			
+ 		if (typeof answer == "undefined" || answer == null || 
+ 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
+ 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
+ 			
+	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
+	 		app.register();
+	 		
+	 	}else{
+		
+	 		console.log("DEBUG ::: register ::: saving onto DB....." );
+	 			
+	 		var privateKey = {
+				n: keypair.privateKey.n.toString(32),
+			    e: keypair.privateKey.e.toString(32),
+			    d: keypair.privateKey.d.toString(32),
+			    p: keypair.privateKey.p.toString(32),
+			    q: keypair.privateKey.q.toString(32),
+			    dP: keypair.privateKey.dP.toString(32),
+			    dQ: keypair.privateKey.dQ.toString(32),
+			    qInv: keypair.privateKey.qInv.toString(32)
+			};
+					 		
+	 		user = new UserSettings(answer);			
+	 		user.myCurrentNick = user.publicClientID;
+	 		user.lastProfileUpdate = new Date().getTime();			
+			user.privateKey = privateKey;
+	 		//update internal DB
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );
+
+			$.mobile.loading('hide');
+			userSettingsLoaded.resolve(); 		
+	 	}
+ 		
+ 	})
+ 	.fail(function() {
+		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+ 	});// END HTTP POST
+};// END PKI generation
 
 Application.prototype.register = function(){
 	
-	gui.showLoadingSpinner();
-	// generate an RSA key pair 
-	forge.pki.rsa.generateKeyPair( { bits: 2048, e: 0x10001, workerScript : "js/prime.worker.js" }, function (err, keypair ){
-		
-		if (err) {
-			console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
-			app.register();
-		}
-		
-		var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
-		
-	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient )
-	 		.done(function (answer) {
-	 			
-		 		if (typeof answer == "undefined" || answer == null || 
-		 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
-		 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
-		 			
-			 		console.log("DEBUG ::: register ::: another attemp....." );	 		
-			 		app.register();
-			 		
-			 	}else{
-				
-			 		console.log("DEBUG ::: register ::: saving onto DB....." );
-			 			
-			 		var privateKey = {
-						n: keypair.privateKey.n.toString(32),
-					    e: keypair.privateKey.e.toString(32),
-					    d: keypair.privateKey.d.toString(32),
-					    p: keypair.privateKey.p.toString(32),
-					    q: keypair.privateKey.q.toString(32),
-					    dP: keypair.privateKey.dP.toString(32),
-					    dQ: keypair.privateKey.dQ.toString(32),
-					    qInv: keypair.privateKey.qInv.toString(32)
-					};
-							 		
-			 		user = new UserSettings(answer);			
-			 		user.myCurrentNick = user.publicClientID;
-			 		user.lastProfileUpdate = new Date().getTime();			
-					user.privateKey = privateKey;
-			 		//update internal DB
-					var transaction = db.transaction(["usersettings"],"readwrite");	
-					var store = transaction.objectStore("usersettings");
-					var request = store.add( user );
+	gui.hideLoadingSpinner();
 	
-					//trigger userSettingsLoaded as already loaded
-					userSettingsLoaded.resolve(); 		
-			 	}
-		 		
-		 	})
-		 	.fail(function() {
-				setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
-		 	});// END HTTP POST
-	 	
-	});// END PKI generation
+	var workerEnabled = true;
+	if ( app.devicePlatform  == "iOS" && parseInt( app.deviceVersion.split('.')[0]) < 7 ){
+		workerEnabled = false;		
+	}
 	
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	
+	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
+		
+	if( typeof Worker !== "undefined" && workerEnabled == true) {
+		options.workerScript = "js/prime.worker.js";
+		forge.pki.rsa.generateKeyPair( options , app.keyPairGeneration );
+	}else{
+		var keyPair = forge.pki.rsa.generateKeyPair( options );
+		var err;
+		app.keyPairGeneration( err, keyPair);
+	}
 };	
 /*
 Application.prototype.handshake = function(handshakeRequest){	
@@ -2925,6 +2946,7 @@ Application.prototype.receivedEvent = function() {
 	
 	try{
 		app.devicePlatform  = device.platform;
+		app.deviceVersion = device.version;
 		deviceReady.resolve();		
 
 	}catch(err){
@@ -3142,7 +3164,8 @@ function Dictionary(){
 		label_31 : "Donation for associated NGOs",
 		label_32 : "Donation for our Open Source Initiative",
 		label_33 : "Total: ",
-		label_34 : "Buy"
+		label_34 : "Buy",
+		label_35 : "Welcome ! we're generating your security protocol now, this process could take a few minutes, please be patience"
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3176,7 +3199,8 @@ function Dictionary(){
 		label_31: "Spende f&uuml;r assoziierten NGOs",
 		label_32: "Spende f&uuml;r unsere Open Source Initiative",
 		label_33: "Gesamtsumme: ",
-		label_34: "Kaufen"
+		label_34: "Kaufen",
+		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld"
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3210,7 +3234,8 @@ function Dictionary(){
 		label_31: "Donazione per le ONG associate",
 		label_32: "Donazione per la nostra iniziativa Open Source",
 		label_33: "Totale: ",
-		label_34: "Acquistare"
+		label_34: "Acquistare",
+		label_35 : "Benvenuto! generando il vostro protocollo di sicurezza, questo processo potrebbe richiedere alcuni minuti, si prega di essere pazienti"
 		
 	}; 
 	this.Literals_Es = {
@@ -3245,7 +3270,8 @@ function Dictionary(){
 		label_31: "Donaci&oacute;n para las ONG asociadas",
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
 		label_33: "Total: ",
-		label_34: "Comprar"			
+		label_34: "Comprar"	,
+		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente"		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3279,7 +3305,8 @@ function Dictionary(){
 		label_31: "Don pour les ONG associ&eacute;es",
 		label_32: "Don pour notre Open Source Initiative",
 		label_33: "Total: ",
-		label_34: "Acheter"
+		label_34: "Acheter",
+		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3313,7 +3340,8 @@ function Dictionary(){
 		label_31: "Doa&ccedil;&atilde;o para as ONGs associadas",
 		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
 		label_33: "Total: ",
-		label_34: "Comprar"
+		label_34: "Comprar",
+		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente"
 	};
 	
 	this.AvailableLiterals = {
@@ -3371,5 +3399,7 @@ $(document).ready(function() {
 	app.init();	
 	app.initializeDevice();
 	FastClick.attach(document.body);	
-	window.shimIndexedDB.__debug(false);
+	
 });
+
+window.shimIndexedDB.__debug(false);

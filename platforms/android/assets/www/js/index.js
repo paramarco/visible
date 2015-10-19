@@ -2,8 +2,6 @@
 
 //TODO pay with paypal, GUI & backend
 //TODO translations in stores & images
-//TODO analysis SMS from a non contact
-
 
 //non MVP
 
@@ -24,11 +22,12 @@ function UserSettings (myUser){
 	this.myCommentary = (typeof myUser.myCommentary == "undefined" ) ? "" : myUser.myCommentary;	     		
 	this.myPhotoPath = (typeof myUser.myPhotoPath == "undefined" ) ? "" : myUser.myPhotoPath; 
 	this.myArrayOfKeys = (typeof myUser.myArrayOfKeys == "undefined" ) ? null : myUser.myArrayOfKeys; 
-	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null :myUser.lastProfileUpdate;
+	this.lastProfileUpdate = (typeof myUser.lastProfileUpdate == "undefined" ) ? null : parseInt(myUser.lastProfileUpdate);
 	this.handshakeToken = (typeof myUser.handshakeToken == "undefined" ) ? null : myUser.handshakeToken;
 	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
 	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
 	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
+	this.privateKey = (typeof myUser.privateKey == "undefined" ) ? {} : myUser.privateKey;
 };
 
 UserSettings.prototype.updateUserSettings = function() {
@@ -37,43 +36,51 @@ UserSettings.prototype.updateUserSettings = function() {
 	var request = store.put(user);	
 };
 
-function ContactOfVisible(contact2create) {
-	this.publicClientID = contact2create.publicClientID;
-	this.path2photo = contact2create.path2photo;
-	this.nickName = contact2create.nickName;
-	this.location = contact2create.location;
-	this.commentary = contact2create.commentary;
-	this.lastProfileUpdate = config.beginingOf2015;
-	this.counterOfUnreadSMS = 0;
-	this.timeLastSMS = 0;
-	this.telephone = "";
-	this.email = "";
+function ContactOfVisible( c ) {
+	this.publicClientID = c.publicClientID;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
+	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
+	this.location = (c.location) ? c.location : { lat : "", lon : "" };
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.beginingOf2015;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
+	this.telephone = (c.telephone) ? c.telephone : "";
+	this.email = (c.email) ? c.email : "";
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
 };
 
+ContactOfVisible.prototype.set = function( c ) {
+	this.publicClientID = (c.publicClientID) ? c.publicClientID : this.publicClientID;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? this.imgsrc : c.imgsrc ;
+	this.nickName = (c.nickName) ? c.nickName : this.nickName;
+	this.location = (c.location) ? c.location : this.location;
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? this.commentary : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : this.lastProfileUpdate;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : this.counterOfUnreadSMS;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : this.timeLastSMS ;
+	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
+	this.email = (c.email) ? c.email : this.email;
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
+};
 
 
 function Message(input) {
 	this.to = input.to;
 	this.from = input.from;
+	this.msgID = (input.msgID) ? input.msgID : this.assignMsgID();
 	this.messageBody = input.messageBody;
-	this.msgID = "" ;
-	this.size = 0 ;
-	this.timestamp = new Date().getTime();
-	this.markedAsRead = false; 
-	this.chatWith = null;
-	this.ACKfromServer = false;
-	this.ACKfromAddressee = false;
+	this.size = (input.size) ? input.size : this.calculateSize();
+	this.timestamp = (input.timestamp) ? parseInt(input.timestamp) : new Date().getTime();
+	this.markedAsRead = (typeof input.markedAsRead != 'undefined') ? input.markedAsRead : false; 
+	this.chatWith = (input.chatWith) ? input.chatWith : null;
+	this.ACKfromServer = (typeof input.ACKfromServer != 'undefined') ? input.ACKfromServer : false; 
+	this.ACKfromAddressee = (typeof input.ACKfromAddressee != 'undefined') ? input.ACKfromAddressee : false; 
 
-	switch (Object.keys(input).length )	{
-		case 3 :
-			this.assignMsgID();
-			this.calculateSize();
-			break;
-		default:	
-			this.msgID = input.msgID;
-			this.size = input.size;
-			break;			
-	}
 };
 // http://www.ietf.org/rfc/rfc4122.txt
 Message.prototype.assignMsgID = function () {
@@ -86,7 +93,7 @@ Message.prototype.assignMsgID = function () {
     s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
     s[8] = s[13] = s[18] = s[23] = "-";
 
-    this.msgID = s.join("");
+    return s.join("");
 };
 
 Message.prototype.getMsgID = function(){
@@ -97,18 +104,17 @@ Message.prototype.assignmd5sum = function(){
 	this.md5sum = window.md5(this.from + this.to + this.messageBody);
 };
 */
-//this.size = unescape(encodeURIComponent(this.messageBody)).length*2;
-
 Message.prototype.calculateSize = function(){
 	
-	if (typeof this.messageBody == 'string' )
-		this.size = this.messageBody.length;
-	else
-		this.size = this.messageBody.src.length;	
+ 	if (this.messageBody.messageType == "text"){
+		return this.messageBody.text.length;
+	}else{
+		return this.messageBody.src.length;
+	}
 };
 
 Message.prototype.convertToUTF = function(){
-	this.messageBody = encodeURI(this.messageBody);
+	this.messageBody.text = encodeURI(this.messageBody.text);
 };
 
 
@@ -125,8 +131,6 @@ Message.prototype.setACKfromAddressee = function(bool){
 };
 
 //END Class Message
-
-
 
 function Postman() {
 };
@@ -149,33 +153,19 @@ Postman.prototype.send = function(event2trigger, data  ) {
 		console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
 	}		
 		
-};	
-
-
-Postman.prototype.getMessageFromServer = function(encrypted) {
-
-	try {
-		var inputMessage = Postman.prototype.decrypt(encrypted);
-		
-		if (inputMessage == null ||
-			typeof inputMessage.to !== 'string' ||
-			typeof inputMessage.from !== 'string' ||
-			typeof inputMessage.msgID !== 'string' ){
-				
-			console.log("DEBUG ::: getMessageFromServer  :::  " + inputMessage);
-			return null;
-		}
-		
-		var message = new Message(inputMessage);	
-		message.setACKfromServer(true);
-		message.setACKfromAddressee(true);		
-		
-		return message; 	
-	} 
-	catch (ex) {	
-		console.log("DEBUG ::: getMessageFromServer :::  " + ex);
-		return null;
-	}
+};
+// TODO what if socket is closed?  it should save the message
+Postman.prototype.sendMsg = function( msg ) {
+	
+	try{		
+		msg.messageBody = postman.encryptMsgBody( msg );	
+	
+		if (typeof socket != "undefined" && socket.connected == true){
+			socket.emit("message2client", msg );
+		}					
+	}catch(e){
+		console.log("DEBUG ::: Postman.prototype.sendMsg ::: exception: "  + JSON.stringify(e));
+	}	
 	
 };
 
@@ -214,7 +204,8 @@ Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {
 				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
 				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
 				typeof listOfNewContacts[i].location !== 'object'||
-				Object.keys(listOfNewContacts[i]).length != 4  ) {	
+				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
+				Object.keys(listOfNewContacts[i]).length != 5  ) {	
 				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
 				return null;
 			}
@@ -280,7 +271,7 @@ Postman.prototype.getParametersOfProfileFromServer = function(input) {
 			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
 			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
 			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
-			typeof parameters.img !== 'string' || parameters.img == null ||
+			typeof parameters.imgsrc !== 'string' || parameters.imgsrc == null ||
 			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
 			typeof parameters.email !== 'string' || parameters.email == null) {
 			
@@ -318,6 +309,73 @@ Postman.prototype.getParametersOfLocationFromServer = function(input) {
 	}	
 };
 
+Postman.prototype.getKeysDelivery = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype.isUUID(input.to) == false  ||
+			Postman.prototype.isUUID(input.from) == false  ||
+			typeof input.setOfKeys != 'object' ||
+			Object.keys(input).length != 3 ) {	
+			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
+			return null;
+		}
+		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
+Postman.prototype.getKeysRequest = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype.isUUID(input.to) == false  ||
+			Postman.prototype.isUUID(input.from) == false  ||
+			Object.keys(input).length != 2 ) {	
+			console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check 1 :" + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		return null;
+	}	
+};
+
+Postman.prototype.getMessageFromClient = function( input ) {	
+	try {
+		
+		input.messageBody = Postman.prototype.decryptMsgBody( input );
+		
+		if ( input.messageBody == null ||
+			Postman.prototype.isUUID( input.to ) == false  ||
+			Postman.prototype.isUUID( input.from ) == false  ||
+			Postman.prototype.isUUID( input.msgID ) == false ){
+				
+			console.log("DEBUG ::: Postman.prototype.getMessageFromClient  :::  input: " + JSON.stringify(input) );
+			return null;
+		}
+		
+		var message = new Message( input );	
+		message.setACKfromServer(true);
+		message.setACKfromAddressee(true);		
+		
+		return message; 	
+	} 
+	catch (ex) {	
+		console.log("DEBUG ::: Postman.prototype.getMessageFromClient :::  " + ex);
+		return null;
+	}
+};
+
+
 
 
 Postman.prototype.signToken = function(message) {	
@@ -330,28 +388,6 @@ Postman.prototype.signToken = function(message) {
 		return stringJWS; 
 	}
 	catch (ex) {	return null;	}	
-};
-
-
-Postman.prototype.encryptHandshake = function(message) {
-	try {    
-		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
-
-		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
-
-		cipher.start({iv: app.symetricKey2use });
-		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
-		cipher.finish();		
-		
-		var envelope =  cipher.output.data  ;
-					
-		return envelope ;
-
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
-		return null;
-	}	
 };
 
 
@@ -401,6 +437,28 @@ Postman.prototype.decrypt = function(encrypted) {
 	}	
 };
 
+
+Postman.prototype.encryptHandshake = function(message) {
+	try {    
+		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
+
+		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
+
+		cipher.start({iv: app.symetricKey2use });
+		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
+		cipher.finish();		
+		
+		var envelope =  cipher.output.data  ;
+					
+		return envelope ;
+
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		return null;
+	}	
+};
+
 Postman.prototype.decryptHandshake = function(encrypted) {	
 	try {    
 
@@ -421,6 +479,70 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 	}	
 };
 
+Postman.prototype.encryptMsgBody = function( message ) {
+	try {
+		var toContact = contactsHandler.getContactById( message.to );
+				
+		if ( toContact.encryptionKeys == null){
+			contactsHandler.setEncryptionKeys(toContact);		
+		}
+
+		var index4Key = Math.floor((Math.random() * 7) + 0);
+		var index4iv = Math.floor((Math.random() * 7) + 0);		
+		
+		var symetricKey2use = toContact.encryptionKeys[index4Key];
+		var iv2use = toContact.encryptionKeys[index4iv];
+		
+		var cipher = forge.cipher.createCipher( 'AES-CBC', symetricKey2use );
+		cipher.start( { iv: iv2use } );
+		cipher.update( forge.util.createBuffer( JSON.stringify( message.messageBody ) ) );
+		cipher.finish();		
+		
+		var messageBody =  { 
+			index4Key : index4Key , 
+			index4iv : index4iv , 
+			encryptedMsg : cipher.output.data 
+		};		
+		return messageBody;
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: Postman.prototype.encryptMsgBody  :::  " + ex);
+		return null;
+	}	
+};
+
+/**
+ * Postman.prototype.decryptMsgBody
+ *
+ * @param message the "Message" Object.
+ * 
+ * @return the decrypted "Message.messageBody" Object.
+ */
+Postman.prototype.decryptMsgBody = function( message ) {	
+	try {		
+		var fromContact = contactsHandler.getContactById( message.from );
+		if (typeof fromContact == "undefined" || fromContact.decryptionKeys == null){
+			postman.send("KeysRequest", { from : user.publicClientID , to : fromContact.publicClientID } );
+			mailBox.storeMessage( message );
+			return null;			
+		}
+		
+		var iv = fromContact.decryptionKeys[parseInt(message.messageBody.index4iv)];
+		var symetricKey2use = fromContact.decryptionKeys[parseInt(message.messageBody.index4Key)];
+		
+		var decipher = forge.cipher.createDecipher('AES-CBC', symetricKey2use);
+		decipher.start({ iv: iv });
+		decipher.update(forge.util.createBuffer( message.messageBody.encryptedMsg ) );
+		decipher.finish();
+		
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+	}
+	catch (ex) {	
+		console.log("DEBUG ::: Postman.prototype.decryptMsgBody  :::  " + ex);
+		return null;
+	}	
+};
+
 Postman.prototype.getParameterByName = function ( name, href ){
   name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
   var regexS = "[\\?&]"+name+"=([^&#]*)";
@@ -432,8 +554,15 @@ Postman.prototype.getParameterByName = function ( name, href ){
     return decodeURIComponent(results[1].replace(/\+/g, " "));
 };
 
+Postman.prototype.isUUID = function(uuid) {	
 
-//END Class UnWrapper
+	if (typeof uuid == 'string')
+		return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+	else
+		return	false;
+
+};
+//END Class Postman
 
 function GUI() {
 	this.localNotificationText = "";
@@ -534,11 +663,10 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 	}else {		
 		
 		var contact = contactsHandler.getContactById(message.from); 		
-		if (contact) {	
-			authorOfMessage = contact.nickName;
-		}else{
+		if (typeof contact == 'undefined' || contact == null) 
 			return;
-		}
+			
+		authorOfMessage = contact.nickName;
 				
 		if (message.markedAsRead == false) {		  	
 			var messageACK = {	
@@ -549,13 +677,13 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		  	};					
 			postman.send("MessageDeliveryACK", messageACK );
 			message.markedAsRead = true;
-			mailBox.updateMessage(message);						
+			mailBox.storeMessage(message);						
 		}		
 	}
 	var htmlOfContent = "";
 	var htmlOfVideoPreview ="";
-	if ( typeof message.messageBody == "string")	{
-		htmlOfContent = this.sanitize(message.messageBody);
+	if ( message.messageBody.messageType == "text")	{
+		htmlOfContent = this.sanitize(message.messageBody.text);
 		htmlOfContent = decodeURI(htmlOfContent);
 		var parsedLinks = this.parseLinks(htmlOfContent);
 		htmlOfContent = parsedLinks.htmlOfContent;
@@ -578,22 +706,21 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 			}
 		});
 		
-	}else if (typeof message.messageBody == "object"){
-		if (message.messageBody.messageType == "multimedia"){		
+	}else if (message.messageBody.messageType == "multimedia"){
+					
+		htmlOfContent = 
+			'<div class="image-preview"> ' + 
+			' <a>' +   
+			'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+			' </a>' + 
+			' <div class="name"></div>' + 
+			'</div>' ;
+		
+		gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
+		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 			
-			htmlOfContent = 
-				'<div class="image-preview"> ' + 
-				' <a>' +   
-				'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-				' </a>' + 
-				' <div class="name"></div>' + 
-				'</div>' ;
-			
-			gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
-			gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
-			
-		}		
-	}
+	}		
+	
 	
 	var timeStampOfMessage = new Date(message.timestamp);
 	
@@ -630,8 +757,9 @@ GUI.prototype.loadContacts = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
-     	if (cursor) { 
-     		contactsHandler.addNewContact(cursor.value);      	
+     	if (cursor) {
+     		var contact = new ContactOfVisible(cursor.value);
+     		contactsHandler.setContactOnList(contact);      	
         	gui.insertContactInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
@@ -645,7 +773,6 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) { 
-     		contactsHandler.addNewContact(cursor.value);      	
         	gui.insertContactOnMapPage(cursor.value);
          	cursor.continue(); 
      	}
@@ -654,21 +781,12 @@ GUI.prototype.loadContactsOnMapPage = function() {
 
 GUI.prototype.insertContactOnMapPage = function(contact) {
 	
-	var attributesOfLink = "" ; 	
-
-	if (contact.commentary == ""){
-		contact.commentary = dictionary.Literals.label_13 ;
-	}
-	
-	if (contact.path2photo == ""){
-		contact.path2photo = "./img/profile_black_195x195.png" ;
-	}
-	
-	
+	var attributesOfLink = "" ; 
+		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '-inMap">'+
 		' <a>  '+
-		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
 		'  <h2>'+ contact.nickName   + '</h2> '+
 		'  <p>' + contact.commentary + '</p></a>'+
 		' <a></a>'+
@@ -686,19 +804,13 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 	
 };
 
-GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
+GUI.prototype.insertContactInMainPage = function( contact, isNewContact) {
 	
 	var attributesOfLink = "" ; 
 		
 	if (isNewContact){
 		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
-	if (contact.commentary == ""){
-		contact.commentary = dictionary.Literals.label_13 ;
-	}
-	if (contact.path2photo == ""){
-		contact.path2photo = "./img/profile_black_195x195.png" ;
-	}
 	var htmlOfCounter = "";
 	if ( contact.counterOfUnreadSMS > 0 ){
 		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class="ui-li-count">'+ contact.counterOfUnreadSMS + '</span>';
@@ -709,7 +821,7 @@ GUI.prototype.insertContactInMainPage = function(contact,isNewContact) {
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
 		'	<a id="link2go2ChatWith_'+ contact.publicClientID  + '">'+ 
-		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.path2photo + '" class="imgInMainPage"/>'+
+		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
 		'		<h2>'+ contact.nickName   + '</h2> '+
 		'		<p>' + contact.commentary + '</p>'+
 				htmlOfCounter	+   
@@ -757,14 +869,12 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 							
 			newList.map(function(message){			
 				gui.insertMessageInConversation(message, false, true);
-			});
-			
+			});			
 			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
 			
 		}else {	
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
-			
 			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
 		}
 	});
@@ -782,50 +892,39 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 		if ( olderDate > config.beginingOf2015 ){
 			olderDate = olderDate - config.oneMonth;
 			newerDate = newerDate - config.oneMonth;
-
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
 		}else {
 			gui.hideLoadingSpinner();
 			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-			//setTimeout(	$.mobile.silentScroll($(document).height()) , config.TIME_SILENT_SCROLL ); 
 		}
 	});	
 };
 
 
 GUI.prototype.go2ChatWith = function(publicClientID) {
-	//$('#link2go2ChatWith_' + app.currentChatWith).unbind('click');
+
 	app.currentChatWith = publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
 
 	var contact = contactsHandler.getContactById(publicClientID); 		
-	if (typeof contact == "undefined") return;
+	if (typeof contact == "undefined" || contact == null) return;
 	
-	$("#imgOfChat-page-header").attr("src",contact.path2photo );
+	$("#imgOfChat-page-header").attr("src",contact.imgsrc );
 	
 	var newerDate = new Date().getTime();	
 	var olderDate = new Date(newerDate - config.oneMonth).getTime();
 	
 	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
 	
-	//request an update of the last photo of this Contact
-	var profileRetrievalObject = {	
-		publicClientIDofRequester : user.publicClientID, 
-		publicClientID2getImg : contact.publicClientID,
-		lastProfileUpdate : contact.lastProfileUpdate
-	};
-	postman.send("ProfileRetrieval", profileRetrievalObject );
-	
 	if (contact.counterOfUnreadSMS > 0){
-		contact.counterOfUnreadSMS = 0;
-		gui.showCounterOfContact(contact);
-		//only if it is a persistent contact
-		contactsHandler.modifyContactOnDB(contact);
+		contact.counterOfUnreadSMS = 0;		
+		contactsHandler.setContactOnList( contact );
+		contactsHandler.setContactOnDB( contact );
+		gui.showCounterOfContact( contact );
 	}
-	
-	
-	
+	contactsHandler.requestProfile( contact );
+		
 };
 
 GUI.prototype.loadGalleryInDOM = function() {
@@ -903,7 +1002,7 @@ GUI.prototype.showImagePic = function() {
 	});
 		
 	$('#picPopupDivMultimedia').picEdit({
-		maxWidth : (config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
+		maxWidth : ( config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
 		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
 		displayWidth: $(window).width() * 0.70 ,
 		displayHeight: $(window).height() * 0.60 , 
@@ -920,26 +1019,20 @@ GUI.prototype.showImagePic = function() {
 				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
-			message2send.setACKfromServer(false);
-			message2send.setACKfromServer(false);
-			message2send.setChatWith(app.currentChatWith);
-			
-			//print message on the GUI
-			gui.insertMessageInConversation(message2send,false,true);					
-			$.mobile.silentScroll($(document).height());
-			//stores to DB
-			mailBox.storeMessage(message2send); 
-			
-			//sends message	
-			postman.send("messagetoserver", message2send );
+			message2send.setChatWith( app.currentChatWith );
 
+			var msg2store = new Message( message2send );
+			mailBox.storeMessage( msg2store );
+			
+			gui.insertMessageInConversation( msg2store, false, true);					
+			$.mobile.silentScroll($(document).height());
+			
+			postman.sendMsg( message2send );
 					
  		}// END imageUpdated
- 	});// END picEdit construct
-	
+ 	});// END picEdit construct	
 		
 	$("#popupDivMultimedia").popup("open");
-	
 	
 };
 
@@ -1250,37 +1343,28 @@ GUI.prototype.chatInputHandler = function() {
 	var textMessage = $("#chat-input").val();	
 	textMessage = textMessage.replace(/\n/g, "");
 
-	if ( textMessage == '' ){
-		document.getElementById('chat-input').value='';
-		return;
-	}
+	document.getElementById('chat-input').value='';
+
+	if ( textMessage == '' ){ 	return;	}
 	
 	var message2send = new Message(	{ 	
 		to : app.currentChatWith, 
 		from : user.publicClientID , 
-		messageBody : gui.sanitize(textMessage) 
+		messageBody : { messageType : "text", text : gui.sanitize( textMessage ) }
 	});
-	message2send.setACKfromServer(false);
-	message2send.setACKfromServer(false);
-	message2send.setChatWith(app.currentChatWith); 
+	message2send.setChatWith( app.currentChatWith ); 
 	message2send.convertToUTF();	
 
-	//stores to DB
-	mailBox.storeMessage(message2send); 
+	var msg2store = new Message( message2send );
+	mailBox.storeMessage( msg2store ); 
 	
-	//print message on the GUI
-	gui.insertMessageInConversation(message2send,false,true);
+	gui.insertMessageInConversation( msg2store, false, true);
 
-	// clear chat-input	
-	document.getElementById('chat-input').value='';
-	
-	//sends message				 
-	postman.send("messagetoserver", message2send );
+	postman.sendMsg( message2send );	
 	
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
-
 };
 
 
@@ -1788,7 +1872,7 @@ GUI.prototype.showProfileOfContact = function() {
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
 	strVar += "									<div class=\"text-center\">";
-	strVar += "										<img src=\"" + contact.path2photo + "\" class=\"img-circle\">";
+	strVar += "										<img src=\"" + contact.imgsrc + "\" class=\"img-circle\">";
 	strVar += "									<\/div>";
 	strVar += "									<div class=\"user-head\">";
 	strVar += "										<h1>" + contact.nickName  + "<\/h1>";
@@ -1954,22 +2038,26 @@ GUI.prototype.inAppBrowserExitHandler = function (event)	{
 function MailBox() {
 };
 
-MailBox.prototype.storeMessage = function(message2Store) {
+MailBox.prototype.storeMessage = function( msg2Store ) {
 
-	var transaction = db.transaction(["messages"],"readwrite");	
-	var store = transaction.objectStore("messages");
-	var request = store.add(message2Store);
+	try {
+		var singleKeyRange = IDBKeyRange.only( msg2Store.msgID ); 			
+		var transaction = db.transaction(["messages"],"readwrite");	
+		var store = transaction.objectStore("messages");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( msg2Store );     		
+	     	}else{
+	     		store.add( msg2Store );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: MailBox.storeMessage ::: exception trown ");
+	}
  		
 };
-
-MailBox.prototype.updateMessage = function(message2update) {
-
-	var transaction = db.transaction(["messages"],"readwrite");	
-	var store = transaction.objectStore("messages");
-	var request = store.put(message2update);
- 		
-};
-
 
 MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
 
@@ -2038,7 +2126,7 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 			olderDate < config.beginingOf2015 ){
 							
 			listOfMessages.map(function(message){
-				postman.send("messagetoserver", message );											
+				postman.sendMsg( message );											
 			});
 			
 		}else {			
@@ -2050,6 +2138,62 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 	
 };
 
+MailBox.prototype.unwrapMessagesOf = function( contact ) {
+
+	try {
+		var singleKeyRange = IDBKeyRange.only( contact.publicClientID ); 			
+		var transaction = db.transaction(["messages"],"readonly");	
+		var store = transaction.objectStore("messages");
+		store.index("publicclientid").openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		if ( cursor.value.messageBody.hasOwnProperty('index4Key') ){
+					mailBox.messageFromClientHandler(cursor.value); 
+					console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: recovering msg ");			
+	     		}
+			}    	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: exception trown ");
+	}
+
+};
+
+MailBox.prototype.messageFromClientHandler = function ( input ){
+	
+	var msg = postman.getMessageFromClient( input ); 
+	if (msg == null) { return;	}		
+		
+	var messageACK = {	
+		to : msg.to, 
+		from : msg.from,
+		msgID : msg.msgID, 
+		typeOfACK : "ACKfromAddressee"
+	};
+	postman.send("MessageDeliveryACK", messageACK );
+	
+	msg.setChatWith( msg.from );  					
+	mailBox.storeMessage( msg ); 
+	
+	var contact = contactsHandler.getContactById( msg.from ); 
+	if (typeof contact == "undefined") return;
+	 		 		
+	if ( app.currentChatWith == msg.from ){
+		gui.insertMessageInConversation( msg, false, true);
+	}else{
+		contact.counterOfUnreadSMS++ ;
+		gui.showCounterOfContact( contact );  		  			
+	}  		  		
+	contact.timeLastSMS = msg.timestamp;
+	contactsHandler.setContactOnList( contact );
+	contactsHandler.setContactOnDB( contact );
+	
+	gui.setTimeLastSMS( contact );  				
+	gui.sortContacts();				
+	gui.showLocalNotification( msg );	
+
+};
 
 function Application() {
 	this.currentChatWith = null;
@@ -2071,8 +2215,7 @@ Application.prototype.init = function() {
 	gui.loadAsideMenuMainPage();
 	app.locateMyPosition();
 	app.getLanguage();
-	app.loadPersistentData();
-	
+	app.loadPersistentData();	
 	
 };
 
@@ -2129,7 +2272,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 22);
+	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 23);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2139,6 +2282,7 @@ Application.prototype.openDB = function() {
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
 			objectStore.createIndex("timestamp","timestamp",{unique:false});
+			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
@@ -2207,9 +2351,7 @@ Application.prototype.loadUserSettings = function(){
 		
 		   console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
 		   app.register();
-		   //gui.loadVisibleFirstTimeOnMainPage(); 
 	}
-	
 
 };
 
@@ -2294,6 +2436,9 @@ Application.prototype.connect2server = function(result){
 		console.log("DEBUG ::: socket.on.reconnect ::: ");
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	empty : "" } );
+  		var newerDate = new Date().getTime();	
+		var olderDate = new Date(newerDate - config.oneMonth).getTime();
+  		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 	});
 
 	socket.on("MessageDeliveryReceipt", function(inputDeliveryReceipt) {
@@ -2301,91 +2446,37 @@ Application.prototype.connect2server = function(result){
   		var deliveryReceipt = postman.getDeliveryReceipt(inputDeliveryReceipt);
   		if ( deliveryReceipt == null) { return; }	
   		
-  		// delay introduced just to avoid receiving a ACKfromServer before the message 
-  		// was written in the local DB, weird but it could happen
   		setTimeout(function (){
-  			var getAsyncMessageFromDB = mailBox.getMessageByID(deliveryReceipt.msgID);
-  	  		getAsyncMessageFromDB.done(function (message){
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
-  	  				message.ACKfromServer = true;
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
-  	  			}
-  	  			if (deliveryReceipt.typeOfACK == "ACKfromAddressee" && message.ACKfromAddressee == false) {
-  	  				message.ACKfromServer = true;
-  	  				message.ACKfromAddressee = true;	
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
-  	  			}
-  	  			if (deliveryReceipt.typeOfACK == "ReadfromAddressee") {
-  	  				message.ACKfromServer = true;
-  	  				message.ACKfromAddressee = true;	
-  	  				message.markedAsRead = true;
-  	  				$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
-  	  				$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);
-
-  	  			}
-  	  			mailBox.updateMessage(message);	  			
-  	  		});  			
+	  	  	mailBox.getMessageByID(deliveryReceipt.msgID).done(function (message){
+	  	  		if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
+	  	  			message.ACKfromServer = true;
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
+	  	  		}
+	  	  		if (deliveryReceipt.typeOfACK == "ACKfromAddressee" && message.ACKfromAddressee == false) {
+	  	  			message.ACKfromServer = true;
+	  	  			message.ACKfromAddressee = true;	
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "green-rx-by-end" );
+	  	  		}
+	  	  		if (deliveryReceipt.typeOfACK == "ReadfromAddressee") {
+	  	  			message.ACKfromServer = true;
+	  	  			message.ACKfromAddressee = true;	
+	  	  			message.markedAsRead = true;
+	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "blue-r-by-end" );
+	  	  			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);
+	  			}
+	  			mailBox.storeMessage(message);	  			
+	  		});  			
   		}, config.TIME_WAIT_DB);   		
-	});
-  
-  socket.on("messageFromServer", function(inputMsg) {
-  	
-  	  	var messageFromServer = postman.getMessageFromServer(inputMsg);
-  		if (messageFromServer == null) { return; }
-  		
-  		var messageACK = {	
-  			to : messageFromServer.to, 
-  			from : messageFromServer.from,
-  			msgID : messageFromServer.msgID, 
-  			typeOfACK : "ACKfromAddressee"
-  		};
+	});  
 
-  		postman.send("MessageDeliveryACK", messageACK );
-  		
-  		//double check to avoid saving messages twice...(which should never be received...)
-  		var getAsyncMessageFromDB = mailBox.getMessageByID(messageFromServer.msgID);
-  		
-  		getAsyncMessageFromDB.done(function (message){
-  			if (typeof message == 'undefined' ){ 
-
-  				messageFromServer.setChatWith(messageFromServer.from); 	
-  				//stores in IndexDB			
-  				mailBox.storeMessage(messageFromServer); 
-  				
-  				var contact = contactsHandler.getContactById(messageFromServer.from); 
-  				if (typeof contact == "undefined") return;
-  				 		 		
-  				if (app.currentChatWith == messageFromServer.from ){
-  		 			gui.insertMessageInConversation(messageFromServer,false,true);
-  		  		}else{
-					contact.counterOfUnreadSMS++ ;
-					gui.showCounterOfContact(contact);  		  			
-  		  		}
-  		  		
-  		  		contact.timeLastSMS = messageFromServer.timestamp;
-  		  		
-  		  		gui.setTimeLastSMS(contact);
-  		  		//only if it is a persistent contact
-				contactsHandler.modifyContactOnDB(contact);
-  				
-				gui.sortContacts();
-				
-  				gui.showLocalNotification(messageFromServer);
-	
-  			}  		
-  		}); 
-		
-  });//END messageFromServer
-	 
-	// start a loop requesting a message one by one 
-  socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
+	//XEP-0013: Flexible Off-line Message Retrieval :: 2.4 Retrieving Specific Messages
+	socket.on("ServerReplytoDiscoveryHeaders", function(inputListOfHeaders) {
 
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
 		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
 
-		//XEP-0013: Flexible Off-line Message Retrieval :: 2.4 Retrieving Specific Messages
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
 				var message2request = listOfHeaders.pop();				
@@ -2415,36 +2506,26 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("ProfileFromServer", function(input) {
 		
-		var data = postman.getParametersOfProfileFromServer(input); 
-		if (data == null) { return;	}
+		var contactUpdate = postman.getParametersOfProfileFromServer(input); 
+		if (contactUpdate == null) { return;	}
 		
-		var contact = contactsHandler.getContactById(data.publicClientID); 
-  		if (typeof contact == "undefined") return;
-  		
-  		if (data.img == ""){
-  			contact.path2photo = "./img/profile_black_195x195.png" ;
-  		}else{
-  			contact.path2photo = data.img;	
-  		}  		
-		contact.nickName = data.nickName ;
-		contact.commentary = data.commentary ;
-		contact.telephone = data.telephone ;
-		contact.email = data.email ;		
+		var contact = contactsHandler.getContactById(contactUpdate.publicClientID); 
+  		if (typeof contact == "undefined" || contact == null) return;  		
 		contact.lastProfileUpdate = new Date().getTime();
 		
+		contactsHandler.setContactOnList( contactUpdate );
+		contactsHandler.updateContactOnDB (contact );
+		
 
-		$("#profilePhoto" + data.publicClientID ).attr("src", contact.path2photo);		
-		if (app.currentChatWith == data.publicClientID) $("#imgOfChat-page-header").attr("src", contact.path2photo);
+		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
+		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
-		if ( contact.path2photo != "" ) kids.find("img").attr("src", contact.path2photo);		
+		if ( contact.imgsrc != "" ) kids.find("img").attr("src", contact.imgsrc);		
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 		
-		//only if it is a persistent contact
-		contactsHandler.modifyContactOnDB(contact);
-
 	});//END ProfileFromServer
 	
 	
@@ -2454,60 +2535,181 @@ Application.prototype.connect2server = function(result){
 
 	});//END locationFromServer	
 	  
-	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact	
+	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact
+	
+	socket.on("KeysDelivery", function (input){
+		
+		var data = postman.getKeysDelivery(input); 
+		if (data == null) { return;	}
+		
+		if ( data.from == user.publicClientID ){
+			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );			
+		}else{			
+			try {				
+				var contact = contactsHandler.getContactById( data.from );
+				
+				if ( typeof contact == 'undefined' || contact == null ){
+					contact = new ContactOfVisible({ publicClientID : data.from });
+					contactsHandler.setContactOnList( contact );
+					gui.insertContactInMainPage ( contact, false );
+				}
+				if ( contact.decryptionKeys == null ){					
+					var privateKey = forge.pki.rsa.setPrivateKey(
+						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
+						new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
+						new forge.jsbn.BigInteger(user.privateKey.d, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.p, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.q, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.dP, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.dQ, 32) ,
+						new forge.jsbn.BigInteger(user.privateKey.qInv, 32) 
+					); 
+		 			var masterKeydecrypted = privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
+		 				
+					var decipher = forge.cipher.createDecipher('AES-CBC', masterKeydecrypted);
+					decipher.start({ iv: data.setOfKeys.symKeysEncrypted.iv2use });
+					decipher.update(forge.util.createBuffer( data.setOfKeys.symKeysEncrypted.keysEncrypted ) );
+					decipher.finish();
+										
+					contact.decryptionKeys = KJUR.jws.JWS.readSafeJSONString(decipher.output.data).setOfSymKeys;
+					contactsHandler.setContactOnList( contact );
+					contactsHandler.setContactOnDB( contact );
+					contactsHandler.requestProfile( contact );
+
+					mailBox.unwrapMessagesOf( contact );
+				} 
+			}catch (ex) {	
+				console.log("DEBUG ::: KeysDelivery event :::  contact : " + JSON.stringify(contact) + "data : " + JSON.stringify(data) );
+				return null;
+			}	
+	 	} // END else			
+	});//END KeysDelivery event
+	
+	socket.on("KeysRequest", function (input){
+		
+		var data = postman.getKeysRequest(input); 
+		if (data == null) { return;	}
+		
+		if ( data.from == user.publicClientID ){
+			console.log("DEBUG ::: KeysRequest ::: discard my own Request ..." );
+		}else{			
+			try {				
+				var contact = contactsHandler.getContactById( data.from );
+				contactsHandler.keyDelivery(contact);		
+
+			}catch (ex) {	
+				console.log("DEBUG ::: KeysRequest event :::  " + ex);
+				return null;
+			}	
+	 	}		
+	});//END KeysRequest event
+	
+	socket.on("MessageFromClient", function (input){
+		mailBox.messageFromClientHandler( input );	
+	});//END MessageFromClient event
 	
 };//END of connect2server
+
+Application.prototype.keyPairGeneration = function (err, keypair ){
+	
+	if (err) {
+		console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
+			navigator.notification.alert(
+	    'You are the winner! 4',  // message
+	    function(){},         // callback
+	    'Game Over',            // title
+	    'Done'                  // buttonName
+	);
+		app.register();
+	}
+				navigator.notification.alert(
+	    'You are the winner! 5',  // message
+	    function(){},         // callback
+	    'Game Over',            // title
+	    'Done'                  // buttonName
+	);
+
+	
+	var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
+	
+ 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient ).done(function (answer) {
+ 			
+ 		if (typeof answer == "undefined" || answer == null || 
+ 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
+ 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
+ 			
+	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
+	 		app.register();
+	 		
+	 	}else{
+		
+	 		console.log("DEBUG ::: register ::: saving onto DB....." );
+	 			
+	 		var privateKey = {
+				n: keypair.privateKey.n.toString(32),
+			    e: keypair.privateKey.e.toString(32),
+			    d: keypair.privateKey.d.toString(32),
+			    p: keypair.privateKey.p.toString(32),
+			    q: keypair.privateKey.q.toString(32),
+			    dP: keypair.privateKey.dP.toString(32),
+			    dQ: keypair.privateKey.dQ.toString(32),
+			    qInv: keypair.privateKey.qInv.toString(32)
+			};
+					 		
+	 		user = new UserSettings(answer);			
+	 		user.myCurrentNick = user.publicClientID;
+	 		user.lastProfileUpdate = new Date().getTime();			
+			user.privateKey = privateKey;
+	 		//update internal DB
+			var transaction = db.transaction(["usersettings"],"readwrite");	
+			var store = transaction.objectStore("usersettings");
+			var request = store.add( user );
+
+			//trigger userSettingsLoaded as already loaded
+			userSettingsLoaded.resolve(); 		
+	 	}
+ 		
+ 	})
+ 	.fail(function() {
+		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+ 	});// END HTTP POST
+};// END PKI generation
 
 Application.prototype.register = function(){
 	
 	gui.showLoadingSpinner();
-	// generate an RSA key pair 
-	forge.pki.rsa.generateKeyPair( { bits: 2048, e: 0x10001, workerScript : "js/prime.worker.js" }, function (err, keypair ){
-		
-		if (err) {
-			console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
-			app.register();
-		}
-		
-		var publicKeyClient = { n : keypair.publicKey.n.toString(32) };
-		
-	 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient )
-	 		.done(function (answer) {
-	 			
-		 		if (typeof answer == "undefined" || answer == null || 
-		 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
-		 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
-		 			
-			 		console.log("DEBUG ::: register ::: another attemp....." );	 		
-			 		app.register();
-			 		
-			 	}else{
-				
-			 		console.log("DEBUG ::: register ::: saving onto DB....." );	
-					//update app object
-			 		
-			 		user = new UserSettings(answer);			
-			 		user.myCurrentNick = user.publicClientID;
-			 		user.lastProfileUpdate = new Date().getTime();			
-					
-			 		//update internal DB
-					var transaction = db.transaction(["usersettings"],"readwrite");	
-					var store = transaction.objectStore("usersettings");
-					var request = store.add( user );
-	
-					//trigger userSettingsLoaded as already loaded
-					userSettingsLoaded.resolve(); 		
-			 	}
-		 		
-		 	})
-		 	.fail(function() {
-				setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
-		 	});// END HTTP POST
-	 	
-	});// END PKI generation
-	
-};	
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	navigator.notification.alert(
+	    'You are the winner! 1',  // message
+	    function(){},         // callback
+	    'Game Over',            // title
+	    'Done'                  // buttonName
+	);	
+	if( typeof(Worker) !== "undefined" ) {
+	navigator.notification.alert(
+	    'You are the winner! 2',  // message
+	    function(){},         // callback
+	    'Game Over',            // title
+	    'Done'                  // buttonName
+	);		options.workerScript = "js/prime.worker.js";
+		forge.pki.rsa.generateKeyPair( options , app.keyPairGeneration );
+	}else{
+			navigator.notification.alert(
+	    'You are the winner! 3',  // message
+	    function(){},         // callback
+	    'Game Over',            // title
+	    'Done'                  // buttonName
+	);
 
+		var keyPair = forge.pki.rsa.generateKeyPair( options );
+		var err;
+		app.keyPairGeneration( err, keyPair);
+	}
+
+};	
+/*
 Application.prototype.handshake = function(handshakeRequest){	
 	
  	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
@@ -2544,6 +2746,7 @@ Application.prototype.handshake = function(handshakeRequest){
 	});	
 	
 };
+*/
 /*
 Application.prototype.firstLogin = function(){
 	
@@ -2776,15 +2979,119 @@ function ContactsHandler() {
 	this.listOfContacts = [];
 };
 
-ContactsHandler.prototype.addNewContact = function(contact) {
-	this.listOfContacts.push(contact);
+ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
+	contactsHandler.generateKeys(toContact);
+	contactsHandler.setContactOnDB(toContact);
+	contactsHandler.keyDelivery(toContact);	
 };
+
+ContactsHandler.prototype.generateKeys = function(toContact) {
+	toContact.encryptionKeys = [
+		forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32),
+        forge.random.getBytesSync(32)
+	];	
+};
+
+ContactsHandler.prototype.setContactOnList = function(contact) {
+	var found = false;
+	this.listOfContacts.map(function(c){
+		if ( c.publicClientID == contact.publicClientID ){
+	  		c.set( contact );
+	  		found = true; 
+	  		return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.listOfContacts.push(contact);
+	}
+			
+};
+
+ContactsHandler.prototype.setContactOnDB = function(contact) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}else{
+	     		store.add( contact );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: ContactsHandler.setContactOnDB ::: exception trown ");
+	}
+};
+
+ContactsHandler.prototype.updateContactOnDB = function( contact ) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: ContactsHandler.updateContactOnDB ::: exception trown ");
+	}
+};
+	
+
+ContactsHandler.prototype.keyDelivery = function(contact) {
+	
+	var setOfSymKeys = { setOfSymKeys : contact.encryptionKeys };
+	
+	var masterKey = forge.random.getBytesSync(32);
+	
+	var publicKeyClient = forge.pki.rsa.setPublicKey( 
+		new forge.jsbn.BigInteger(contact.rsamodulus , 32) , 
+		new forge.jsbn.BigInteger("2001" , 32) 
+	);
+	
+	var masterKeyEncrypted = publicKeyClient.encrypt( masterKey , 'RSA-OAEP');
+
+	var iv2use = forge.random.getBytesSync(32);
+
+	var cipher = forge.cipher.createCipher('AES-CBC', masterKey );
+	cipher.start( { iv: iv2use  });
+	cipher.update(forge.util.createBuffer( JSON.stringify(setOfSymKeys) ) );
+	cipher.finish();		
+		
+	var data = {
+		from :  user.publicClientID,
+		to : contact.publicClientID,
+		setOfKeys : {
+			masterKeyEncrypted : masterKeyEncrypted,
+			symKeysEncrypted : { 
+				iv2use : iv2use , 
+				keysEncrypted : cipher.output.data 
+			}
+		}
+	};	
+	postman.send("KeysDelivery", data );
+	console.log("DEBUG ::: ContactsHandler.prototype.keyDelivery ::: setOfSymKeys : " + JSON.stringify(setOfSymKeys) );
+};
+
 
 ContactsHandler.prototype.getContactById = function(id) {
 	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
 };
+	
 
-//this method assumes that the contact is already inserted on the Array listOfContacts
 ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$('#linkAddNewContact' + publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
@@ -2806,89 +3113,38 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	$("#popupDiv").popup("open");
 	
 	var contact = this.getContactById(publicClientID);
-	
-	if (contact){		
-		try {
-			var transaction = db.transaction(["contacts"],"readwrite");	
-			var store = transaction.objectStore("contacts");		
-			var request = store.add(contact);
-		}
-		catch(e){
-			console.log("DEBUG ::: addNewContactOnDB ::: exception trown ");
-		}	
-	}	
-};
-
-//this function assumes that the contact is already inserted on the DB
-ContactsHandler.prototype.modifyContactOnDB = function(contact) {
-	
-	this.listOfContacts.forEach(function(part, index, theArray) {
-	  if (theArray[index].publicClientID == contact.publicClientID){
-	  	theArray[index] = contact;	
-	  }	  	
-	});
-	
-	
-	var singleKeyRange = IDBKeyRange.only(contact.publicClientID);  	
-	
-	try {			
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		message = cursor.value;
-	     		store.put(contact);	     		
-	     	}     	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: modifyContact ::: exception trown ");
-	}		
+	contactsHandler.setContactOnDB (contact);
 };
 
 ContactsHandler.prototype.setNewContacts = function(input) {
 	gui.hideLoadingSpinner();
-	var data = postman.getParametersOfSetNewContacts(input);
-	if (data == null ) { return;}
+	var list = postman.getParametersOfSetNewContacts(input);
+	if (list == null ) { return;}
 
-	data.map(function(c){
+	list.map(function(c){
 
-		//request an update of the last photo of this Contact
-		var profileRetrievalObject = {	
-			publicClientIDofRequester : user.publicClientID, 
-			publicClientID2getImg : c.publicClientID,
-			lastProfileUpdate : config.beginingOf2015
-		};
-		
 		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
-			
-			contact.nickName = c.nickName ;
-			contact.commentary = c.commentary ;
-			contact.location.lat = parseFloat( c.location.lat );
-			contact.location.lon = parseFloat( c.location.lon );			
-			//PRE: only if it is a persistent contact
-			contactsHandler.modifyContactOnDB(contact);
-			
-			if (contact.lastProfileUpdate > config.beginingOf2015  ){
-				profileRetrievalObject.lastProfileUpdate = contact.lastProfileUpdate;				
-			}
-			
+			contactsHandler.setContactOnList( c );			
 		}else{			
-			var newContact = new ContactOfVisible({	
-				publicClientID : c.publicClientID  ,
-				location :  c.location,
-				path2photo : "./img/profile_black_195x195.png", 
-				nickName : c.nickName,
-				commentary : (c.commentary == "") ? dictionary.Literals.label_12 : c.commentary							
-			});
+			contact = new ContactOfVisible( c );
+			contactsHandler.setContactOnList( contact );
+			gui.insertContactInMainPage( contact , true);			
+		}
+		contactsHandler.updateContactOnDB (contact );
+		contactsHandler.requestProfile( contact );
 			
-			contactsHandler.addNewContact(newContact);
-			gui.insertContactInMainPage(newContact,true);			
-		}	
-		postman.send("ProfileRetrieval", profileRetrievalObject );
 	});
+};
+
+ContactsHandler.prototype.requestProfile = function( contact ) {
+
+	var profileRetrievalObject = {	
+		publicClientIDofRequester : user.publicClientID, 
+		publicClientID2getImg : contact.publicClientID,
+		lastProfileUpdate : parseInt(contact.lastProfileUpdate)
+	};	
+	postman.send("ProfileRetrieval", profileRetrievalObject );
 };
 
 function Dictionary(){
