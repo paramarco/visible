@@ -1,6 +1,6 @@
 //MVP
 
-//TODO pay with paypal, GUI & backend
+//TODO pay with paypal without sandbox
 //TODO translations in stores & images
 
 //non MVP
@@ -36,43 +36,10 @@ UserSettings.prototype.updateUserSettings = function() {
 	var request = store.put(user);	
 };
 
-function ContactOfVisible( c ) {
-	this.publicClientID = c.publicClientID;
-	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
-	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
-	this.location = (c.location) ? c.location : { lat : "", lon : "" };
-	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
-	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.beginingOf2015;
-	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
-	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
-	this.telephone = (c.telephone) ? c.telephone : "";
-	this.email = (c.email) ? c.email : "";
-	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
-	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
-	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
-};
-
-ContactOfVisible.prototype.set = function( c ) {
-	this.publicClientID = (c.publicClientID) ? c.publicClientID : this.publicClientID;
-	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? this.imgsrc : c.imgsrc ;
-	this.nickName = (c.nickName) ? c.nickName : this.nickName;
-	this.location = (c.location) ? c.location : this.location;
-	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? this.commentary : c.commentary;
-	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : this.lastProfileUpdate;
-	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : this.counterOfUnreadSMS;
-	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : this.timeLastSMS ;
-	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
-	this.email = (c.email) ? c.email : this.email;
-	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
-	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
-	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
-};
-
-
 function Message(input) {
 	this.to = input.to;
 	this.from = input.from;
-	this.msgID = (input.msgID) ? input.msgID : this.assignMsgID();
+	this.msgID = (input.msgID) ? input.msgID : this.assignId();
 	this.messageBody = input.messageBody;
 	this.size = (input.size) ? input.size : this.calculateSize();
 	this.timestamp = (input.timestamp) ? parseInt(input.timestamp) : new Date().getTime();
@@ -83,7 +50,7 @@ function Message(input) {
 
 };
 // http://www.ietf.org/rfc/rfc4122.txt
-Message.prototype.assignMsgID = function () {
+Message.prototype.assignId = function () {
     var s = [];
     var hexDigits = "0123456789abcdef";
     for (var i = 0; i < 36; i++) {
@@ -154,7 +121,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 	}		
 		
 };
-// TODO what if socket is closed?  it should save the message
+
 Postman.prototype.sendMsg = function( msg ) {
 	
 	try{		
@@ -751,21 +718,6 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
 		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
 	}
-};
-
-GUI.prototype.loadContacts = function() {
-	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
-		var cursor = e.target.result;
-     	if (cursor) {
-     		var contact = new ContactOfVisible(cursor.value);
-     		contactsHandler.setContactOnList(contact);      	
-        	gui.insertContactInMainPage(cursor.value,false);
-         	cursor.continue(); 
-     	}else{
-     	    mainPageReady.resolve();
-     	}
-	};	
 };
 
 GUI.prototype.loadContactsOnMapPage = function() {
@@ -2276,7 +2228,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("instaltic.visible", 25);
+	this.indexedDBHandler = window.indexedDB.open("com.instaltic.knet", 1);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2286,10 +2238,13 @@ Application.prototype.openDB = function() {
 		if(!thisDB.objectStoreNames.contains("messages")){
 			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
 			objectStore.createIndex("timestamp","timestamp",{unique:false});
-//TODO			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
+			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
 		}
 		if(!thisDB.objectStoreNames.contains("contacts")){
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
+		}
+		if(!thisDB.objectStoreNames.contains("groups")){
+			var objectStore = thisDB.createObjectStore("groups", { keyPath: "groupid" });
 		}			
 	};
 		
@@ -2297,23 +2252,22 @@ Application.prototype.openDB = function() {
 		
 		db = event.target.result;	
 				
-		setTimeout(
-			function (){
+//		setTimeout(
+//			function (){
 				app.loadUserSettings();				
-				gui.loadContacts();
-			},
-			config.TIME_WAIT_DB
-		);		
+				app.loadContacts();
+				app.loadGroups();
+//			},
+//			config.TIME_WAIT_DB
+//		);		
 	};
 	
-	this.indexedDBHandler.onerror = function(){
-		
-		console.log("DEBUG ::: Database error ::: app.init  ");
- 		app.register();
-		
+	this.indexedDBHandler.onerror = function(){		
+		console.log("DEBUG ::: indexedDBHandler.onerror ");
+ 		app.register();		
 	};
 	this.indexedDBHandler.onblocked = function(){
-		console.log("DEBUG ::: Database error ::: we are blocked!!!!  ");
+		console.log("DEBUG ::: indexedDBHandler.onblocked ");
 	};
 };
 
@@ -2357,6 +2311,35 @@ Application.prototype.loadUserSettings = function(){
 	}
 
 };
+
+Application.prototype.loadContacts = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		var contact = new ContactOnKnet(cursor.value);
+     		contactsHandler.setContactOnList(contact);      	
+        	gui.insertContactInMainPage(cursor.value,false);
+         	cursor.continue(); 
+     	}else{
+     	    contactsLoaded.resolve();
+     	}
+	};	
+};
+
+Application.prototype.loadGroups = function() {
+	var singleKeyRange = IDBKeyRange.only("groupid"); 
+	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		var group = new Group( cursor.value );
+     		groupsHandler.list.push( cursor.value );      	
+        	gui.insertContactInMainPage(cursor.value,false);
+         	cursor.continue(); 
+     	}
+	};	
+};
+
 
 Application.prototype.login2server = function(){
 		
@@ -2551,7 +2534,7 @@ Application.prototype.connect2server = function(result){
 				var contact = contactsHandler.getContactById( data.from );
 				
 				if ( typeof contact == 'undefined' || contact == null ){
-					contact = new ContactOfVisible({ publicClientID : data.from });
+					contact = new ContactOnKnet({ publicClientID : data.from });
 					contactsHandler.setContactOnList( contact );
 					gui.insertContactInMainPage ( contact, false );
 				}
@@ -2669,18 +2652,13 @@ Application.prototype.register = function(){
 	
 	gui.hideLoadingSpinner();
 	
-	var workerEnabled = true;
-	if ( app.devicePlatform  == "iOS" && parseInt( app.deviceVersion.split('.')[0]) < 7 ){
-		workerEnabled = false;		
-	}
-	
 	var options = {};
 	options.bits = 2048;
 	options.e = 0x10001;
 	
 	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
 		
-	if( typeof Worker !== "undefined" && workerEnabled == true) {
+	if( typeof Worker !== "undefined" ) {
 		options.workerScript = "js/prime.worker.js";
 		forge.pki.rsa.generateKeyPair( options , app.keyPairGeneration );
 	}else{
@@ -2898,7 +2876,7 @@ Application.prototype.setMultimediaAsOpen = function() {
 
 Application.prototype.onOnlineCustom =  function() {
 	
-	$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){	
+	$.when( documentReady, contactsLoaded, userSettingsLoaded , deviceReady).done(function(){	
 		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 
 	});
 	
@@ -2954,6 +2932,38 @@ Application.prototype.receivedEvent = function() {
     }	
 };
 //END Class Application
+
+function ContactOnKnet( c ) {
+	this.publicClientID = c.publicClientID;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
+	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
+	this.location = (c.location) ? c.location : { lat : "", lon : "" };
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.beginingOf2015;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
+	this.telephone = (c.telephone) ? c.telephone : "";
+	this.email = (c.email) ? c.email : "";
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
+};
+
+ContactOnKnet.prototype.set = function( c ) {
+	this.publicClientID = (c.publicClientID) ? c.publicClientID : this.publicClientID;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? this.imgsrc : c.imgsrc ;
+	this.nickName = (c.nickName) ? c.nickName : this.nickName;
+	this.location = (c.location) ? c.location : this.location;
+	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? this.commentary : c.commentary;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : this.lastProfileUpdate;
+	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : this.counterOfUnreadSMS;
+	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : this.timeLastSMS ;
+	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
+	this.email = (c.email) ? c.email : this.email;
+	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
+	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
+	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
+};
 
 
 function ContactsHandler() {
@@ -3108,7 +3118,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 		if (contact){
 			contactsHandler.setContactOnList( c );			
 		}else{			
-			contact = new ContactOfVisible( c );
+			contact = new ContactOnKnet( c );
 			contactsHandler.setContactOnList( contact );
 			gui.insertContactInMainPage( contact , true);			
 		}
@@ -3127,6 +3137,96 @@ ContactsHandler.prototype.requestProfile = function( contact ) {
 	};	
 	postman.send("ProfileRetrieval", profileRetrievalObject );
 };
+
+function Group( g ) {
+	this.groupId = (g.groupId) ? g.groupId : this.assignId();
+	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? "./img/group_black_195x195.png" : g.imgsrc ;
+	this.name = (g.name) ? g.name : dictionary.Literals.label_23;
+	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? dictionary.Literals.label_12 : g.commentary;
+	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : config.beginingOf2015;
+	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : 0;
+	this.timeLastSMS = (g.timeLastSMS) ? parseInt(g.timeLastSMS) : 0 ;
+	this.telephone = (g.telephone) ? g.telephone : "";
+	this.email = (g.email) ? g.email : "";
+	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : [] ;
+};
+
+Group.prototype.set = function( g ) {
+	this.groupId = (g.groupId) ? g.groupId : this.groupId;
+	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? this.imgsrc : g.imgsrc ;
+	this.name = (g.name) ? g.name : this.name;
+	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? this.commentary : g.commentary;
+	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : this.lastProfileUpdate;
+	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : this.counterOfUnreadSMS;
+	this.timeLastSMS = (g.timeLastSMS) ? parseInt(g.timeLastSMS) : this.timeLastSMS ;
+	this.telephone = (g.telephone) ? g.telephone : this.telephone;
+	this.email = (g.email) ? g.email : this.email;
+	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : this.listOfMembers;
+};
+
+Group.prototype.assignId = function () {
+    var s = [];
+    var hexDigits = "0123456789abcdef";
+    for (var i = 0; i < 36; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-";
+
+    return s.join("");
+};
+
+Group.prototype.addMember = function( publicClientID ) {
+	var found = false;
+	this.listOfMembers.map(function( m ){
+		if ( m == publicClientID ){
+	  		found = true; 	return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.listOfMembers.push( publicClientID );
+	}			
+};
+
+function GroupsHandler() {
+	this.list = [];
+};
+
+GroupsHandler.prototype.setGroupOnList = function( group ) {
+	var found = false;
+	this.list.map(function( g ){
+		if ( g.groupId == group.groupId ){
+	  		g.set( group );
+	  		found = true; 
+	  		return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.list.push( group );
+	}			
+};
+
+GroupsHandler.prototype.setGroupOnDB = function( group ) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only( group.groupId ); 			
+		var transaction = db.transaction(["groups"],"readwrite");	
+		var store = transaction.objectStore("groups");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( group );     		
+	     	}else{
+	     		store.add( group );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		console.log("DEBUG ::: GroupsHandler.setGroupOnDB ::: exception trown ");
+	}
+};
+
+
 
 function Dictionary(){
 	
@@ -3370,6 +3470,7 @@ var gui = new GUI();
 var postman = new Postman();
 var mailBox = new MailBox();
 var contactsHandler = new ContactsHandler();
+var groupsHandler = new GroupsHandler();
 var dictionary = new Dictionary();
 var user;
 var app = new Application();
@@ -3381,12 +3482,12 @@ var app = new Application();
  * *********************************************************************************************
  * *********************************************************************************************/
 var documentReady = new $.Deferred();
-var mainPageReady = new $.Deferred();
+var contactsLoaded = new $.Deferred();
 var userSettingsLoaded  = new $.Deferred();
 var positionLoaded  = new $.Deferred();
 var deviceReady  = new $.Deferred();
 
-$.when( documentReady, mainPageReady, userSettingsLoaded , deviceReady).done(function(){
+$.when( documentReady, contactsLoaded, userSettingsLoaded , deviceReady).done(function(){
 
 	app.initialized = true;
 	gui.loadProfile(); 
