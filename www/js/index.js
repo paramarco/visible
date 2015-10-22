@@ -611,12 +611,12 @@ GUI.prototype.showGallery = function(index) {
 
 
 
-GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX) {
+GUI.prototype.insertMessageInConversation = function( message, isReverse , withFX ) {
 
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
 		
-	if (message.from == user.publicClientID){
+	if ( message.from == user.publicClientID ){
 		authorOfMessage = " ";
 
 		classOfmessageStateColor = "red-no-rx-by-srv";		
@@ -629,7 +629,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		}
 	}else {		
 		
-		var contact = contactsHandler.getContactById(message.from); 		
+		var contact = contactsHandler.getContactById( message.from ); 		
 		if (typeof contact == 'undefined' || contact == null) 
 			return;
 			
@@ -686,8 +686,7 @@ GUI.prototype.insertMessageInConversation = function(message, isReverse , withFX
 		gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
 		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 			
-	}		
-	
+	}	
 	
 	var timeStampOfMessage = new Date(message.timestamp);
 	
@@ -755,8 +754,11 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(app.map);
 	
 };
-
-GUI.prototype.insertContactInMainPage = function( contact, isNewContact) {
+/** 
+ * @param obj := ContactOnKnet | Group
+ * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
+ */
+GUI.prototype.insertChatInMainPage = function( obj, isNewContact) {
 	
 	var attributesOfLink = "" ; 
 		
@@ -764,45 +766,47 @@ GUI.prototype.insertContactInMainPage = function( contact, isNewContact) {
 		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
 	var htmlOfCounter = "";
-	if ( contact.counterOfUnreadSMS > 0 ){
-		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class="ui-li-count">'+ contact.counterOfUnreadSMS + '</span>';
+	if ( obj.counterOfUnreadSMS > 0 ){
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="ui-li-count">'+ obj.counterOfUnreadSMS + '</span>';
 	}else{
-		htmlOfCounter = '<span id="counterOf_'+ contact.publicClientID + '" class=""></span>';
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class=""></span>';
 	}
 		
 	var html2insert = 	
-		'<li id="' + contact.publicClientID + '" data-sortby=' + contact.timeLastSMS + ' >'+
-		'	<a id="link2go2ChatWith_'+ contact.publicClientID  + '">'+ 
-		'		<img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
-		'		<h2>'+ contact.nickName   + '</h2> '+
-		'		<p>' + contact.commentary + '</p>'+
+		'<li id="' + obj.publicClientID + '" data-sortby=' + obj.timeLastSMS + ' >'+
+		'	<a id="link2go2ChatWith_'+ obj.publicClientID  + '">'+ 
+		'		<img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
+		'		<h2>'+ obj.nickName   + '</h2> '+
+		'		<p>' + obj.commentary + '</p>'+
 				htmlOfCounter	+   
 		' 	</a>'+
-		'	<a id="linkAddNewContact' + contact.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
+		'	<a id="linkAddNewContact' + obj.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
 		'</li>';
 				
 	$("#listOfContactsInMainPage")
 		.append(html2insert)
-		.find("#link2go2ChatWith_"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
+		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
 	
 	if (isNewContact){
-		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB(contact.publicClientID); } );
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj.publicClientID); } );
 	}else{
-		$("#linkAddNewContact"+ contact.publicClientID).on("click", function(){ gui.go2ChatWith(contact.publicClientID); } );
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
 	}
 	
 	gui.sortContacts();		
 
 };
-
-GUI.prototype.showCounterOfContact = function(contact) {
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.updateCounterOfChat = function( obj ) {
 	
-	if ( contact.counterOfUnreadSMS > 0 ){
-		$("#counterOf_" + contact.publicClientID ).text(contact.counterOfUnreadSMS);		
-		$("#counterOf_" + contact.publicClientID ).attr("class", "ui-li-count");
+	if ( obj.counterOfUnreadSMS > 0 ){
+		$("#counterOf_" + obj.publicClientID ).text( obj.counterOfUnreadSMS );		
+		$("#counterOf_" + obj.publicClientID ).attr("class", "ui-li-count");
 	} else{
-		$("#counterOf_" + contact.publicClientID ).text("");
-		$("#counterOf_" + contact.publicClientID ).attr("class", "");
+		$("#counterOf_" + obj.publicClientID ).text("");
+		$("#counterOf_" + obj.publicClientID ).attr("class", "");
 	}
 	
 	$('#listOfContactsInMainPage').listview().listview('refresh');	
@@ -820,7 +824,7 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 			olderDate < config.beginingOf2015 ){
 							
 			newList.map(function(message){			
-				gui.insertMessageInConversation(message, false, true);
+				gui.insertMessageInConversation( message, false, true);
 			});			
 			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
 			
@@ -852,30 +856,32 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	});	
 };
 
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.go2ChatWith = function( obj ) {
 
-GUI.prototype.go2ChatWith = function(publicClientID) {
-
-	app.currentChatWith = publicClientID;
+	app.currentChatWith = obj.publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
 
-	var contact = contactsHandler.getContactById(publicClientID); 		
-	if (typeof contact == "undefined" || contact == null) return;
-	
-	$("#imgOfChat-page-header").attr("src",contact.imgsrc );
+	$("#imgOfChat-page-header").attr("src", obj.imgsrc );
 	
 	var newerDate = new Date().getTime();	
 	var olderDate = new Date(newerDate - config.oneMonth).getTime();
+
+	gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
 	
-	gui.printMessagesOf(contact.publicClientID, olderDate, newerDate,[]);
-	
-	if (contact.counterOfUnreadSMS > 0){
-		contact.counterOfUnreadSMS = 0;		
-		contactsHandler.setContactOnList( contact );
-		contactsHandler.setContactOnDB( contact );
-		gui.showCounterOfContact( contact );
+	if ( obj.counterOfUnreadSMS > 0 ){
+		obj.counterOfUnreadSMS = 0;
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );	
+		gui.updateCounterOfChat( obj );
 	}
-	contactsHandler.requestProfile( contact );
+
+	if ( obj instanceof ContactOnKnet ){
+		contactsHandler.requestProfile( obj );	
+	}	
 		
 };
 
@@ -2013,21 +2019,21 @@ MailBox.prototype.storeMessage = function( msg2Store ) {
  		
 };
 
-MailBox.prototype.getAllMessagesOf = function(from , olderDate, newerDate) {
+MailBox.prototype.getAllMessagesOf = function( id , olderDate, newerDate) {
 
-	var range = IDBKeyRange.bound(olderDate,newerDate);		
+	var range = IDBKeyRange.bound( olderDate, newerDate );		
 	var deferred = $.Deferred();
 	var listOfMessages = [];
 	
 	db.transaction(["messages"], "readonly").objectStore("messages").index("timestamp").openCursor(range).onsuccess = function(e) {		
 		var cursor = e.target.result;
      	if (cursor) {
-     		if (cursor.value.chatWith == from ){
-     			listOfMessages.push(cursor.value);	
+     		if ( cursor.value.chatWith == id ){
+     			listOfMessages.push( cursor.value );	
      		}        	
          	cursor.continue(); 
      	}else{			
-     		deferred.resolve(listOfMessages);     			
+     		deferred.resolve( listOfMessages );     			
      	}
 	};
 	
@@ -2137,7 +2143,7 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 		gui.insertMessageInConversation( msg, false, true);
 	}else{
 		contact.counterOfUnreadSMS++ ;
-		gui.showCounterOfContact( contact );  		  			
+		gui.updateCounterOfChat( contact );  		  			
 	}  		  		
 	contact.timeLastSMS = msg.timestamp;
 	contactsHandler.setContactOnList( contact );
@@ -2319,7 +2325,7 @@ Application.prototype.loadContacts = function() {
      	if (cursor) {
      		var contact = new ContactOnKnet(cursor.value);
      		contactsHandler.setContactOnList(contact);      	
-        	gui.insertContactInMainPage(cursor.value,false);
+        	gui.insertChatInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}else{
      	    contactsLoaded.resolve();
@@ -2334,7 +2340,7 @@ Application.prototype.loadGroups = function() {
      	if (cursor) {
      		var group = new Group( cursor.value );
      		groupsHandler.list.push( cursor.value );      	
-        	gui.insertContactInMainPage(cursor.value,false);
+        	gui.insertChatInMainPage(cursor.value,false);
          	cursor.continue(); 
      	}
 	};	
@@ -2536,7 +2542,7 @@ Application.prototype.connect2server = function(result){
 				if ( typeof contact == 'undefined' || contact == null ){
 					contact = new ContactOnKnet({ publicClientID : data.from });
 					contactsHandler.setContactOnList( contact );
-					gui.insertContactInMainPage ( contact, false );
+					gui.insertChatInMainPage ( contact, false );
 				}
 				if ( contact.decryptionKeys == null ){					
 					var privateKey = forge.pki.rsa.setPrivateKey(
@@ -2933,6 +2939,29 @@ Application.prototype.receivedEvent = function() {
 };
 //END Class Application
 
+function AbstractHandler() {};
+/**
+ * @param obj := ContactOnKnet | Group 
+ */
+AbstractHandler.prototype.setOnList = function( obj ) {
+	if ( obj instanceof ContactOnKnet ){
+		contactsHandler.setContactOnList( obj );	
+	}else{
+		groupsHandler.setGroupOnList( obj );
+	}
+};
+/**
+ * @param obj := ContactOnKnet | Group 
+ */
+AbstractHandler.prototype.setOnDB = function( obj ) {
+	if ( obj instanceof ContactOnKnet ){
+		contactsHandler.setContactOnDB( obj );	
+	}else{
+		groupsHandler.se( obj );
+	}
+};
+
+
 function ContactOnKnet( c ) {
 	this.publicClientID = c.publicClientID;
 	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
@@ -3120,7 +3149,7 @@ ContactsHandler.prototype.setNewContacts = function(input) {
 		}else{			
 			contact = new ContactOnKnet( c );
 			contactsHandler.setContactOnList( contact );
-			gui.insertContactInMainPage( contact , true);			
+			gui.insertChatInMainPage( contact , true);			
 		}
 		contactsHandler.updateContactOnDB (contact );
 		contactsHandler.requestProfile( contact );
@@ -3139,9 +3168,9 @@ ContactsHandler.prototype.requestProfile = function( contact ) {
 };
 
 function Group( g ) {
-	this.groupId = (g.groupId) ? g.groupId : this.assignId();
+	this.publicClientID = (g.publicClientID) ? g.publicClientID : this.assignId();
 	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? "./img/group_black_195x195.png" : g.imgsrc ;
-	this.name = (g.name) ? g.name : dictionary.Literals.label_23;
+	this.nickName = (g.nickName) ? g.nickName : dictionary.Literals.label_23;
 	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? dictionary.Literals.label_12 : g.commentary;
 	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : config.beginingOf2015;
 	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : 0;
@@ -3152,9 +3181,9 @@ function Group( g ) {
 };
 
 Group.prototype.set = function( g ) {
-	this.groupId = (g.groupId) ? g.groupId : this.groupId;
+	this.publicClientID = (g.publicClientID) ? g.publicClientID : this.publicClientID;
 	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? this.imgsrc : g.imgsrc ;
-	this.name = (g.name) ? g.name : this.name;
+	this.nickName = (g.nickName) ? g.nickName : this.nickName;
 	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? this.commentary : g.commentary;
 	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : this.lastProfileUpdate;
 	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : this.counterOfUnreadSMS;
@@ -3469,6 +3498,7 @@ var config = new Config();
 var gui = new GUI();
 var postman = new Postman();
 var mailBox = new MailBox();
+var abstractHandler = new AbstractHandler();
 var contactsHandler = new ContactsHandler();
 var groupsHandler = new GroupsHandler();
 var dictionary = new Dictionary();
