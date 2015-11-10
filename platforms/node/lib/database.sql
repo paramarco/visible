@@ -148,7 +148,8 @@ CREATE TABLE public.message
   receiver uuid,
   sender uuid,
   "timestamp" bigint,
-  messagebody json
+  messagebody json,
+  chatwith uuid,
 )
 WITH (
   OIDS=FALSE

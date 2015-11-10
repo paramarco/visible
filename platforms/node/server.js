@@ -539,8 +539,12 @@ app.locals.message2clientHandler = function( msg , socket){
 	
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){			
-			postMan.sendMsg( msg , clientReceiver ); 					
+			postMan.sendMsg( msg , clientReceiver ); 
+			console.log('DEBUG ::: message2clientHandler ::: client is online' + JSON.stringify( msg ) );
+					
  		}else {
+ 			console.log('DEBUG ::: message2clientHandler ::: client is offline' + JSON.stringify( msg ) );
+
  			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
  			postMan.archiveMessage( msg );
  		}		

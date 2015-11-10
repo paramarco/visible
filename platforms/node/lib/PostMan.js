@@ -143,7 +143,9 @@ function PostMan(_io) {
 			    message.from = entry.sender;
 			    message.messageBody = entry.messagebody ;
 			    message.messageBody.encryptedMsg = message.messageBody.encryptedMsg.replace(/##\&#39##/g, "'");
-			    message.timestamp = entry.timestamp ;			    			   		    
+			    message.timestamp = entry.timestamp ;
+			    message.chatWith = entry.chatwith ;
+			    			   		    
 			    
 			    return  d.resolve(message);
 			    
@@ -167,7 +169,8 @@ function PostMan(_io) {
 						    .set("receiver", msg.to)
 						    .set("sender", msg.from)
 						    .set("messagebody", JSON.stringify(msg.messageBody) )
-						    .set("timestamp", msg.timestamp)							    
+						    .set("timestamp", msg.timestamp)
+						    .set("chatwith", msg.chatWith)							    
 						    .toString() ;
 				    
 		clientOfDB.query(query2send, function(err, result) {		     

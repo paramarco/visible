@@ -122,18 +122,31 @@ Postman.prototype.send = function(event2trigger, data  ) {
 		
 };
 
-Postman.prototype.sendMsg = function( msg ) {
-	
-	try{		
-		msg.messageBody = postman.encryptMsgBody( msg );	
-	
-		if (typeof socket != "undefined" && socket.connected == true){
-			socket.emit("message2client", msg );
-		}					
+Postman.prototype.sendMsg = function( msg ) {	
+	try{
+		var listOfMsg2send = [];		
+		
+		if ( msg.to != msg.chatWith ){
+			var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
+		    membersOfGroup.map(function( memberPublicId ){
+		    	var copyOfMsg = new Message( msg );
+		    	copyOfMsg.to = memberPublicId; 
+		    	listOfMsg2send.push( copyOfMsg );		    	
+		    });
+		}else{
+			listOfMsg2send.push( msg );
+		}
+			
+		listOfMsg2send.map(function (m){
+			m.messageBody = postman.encryptMsgBody( m );	
+			if (typeof socket != "undefined" && socket.connected == true){
+				socket.emit("message2client", m );
+			}			
+		});		
+				
 	}catch(e){
 		console.log("DEBUG ::: Postman.prototype.sendMsg ::: exception: "  + JSON.stringify(e));
 	}	
-	
 };
 
 Postman.prototype.getListOfHeaders = function(encryptedList) {	
@@ -360,7 +373,6 @@ Postman.prototype.signToken = function(message) {
 
 Postman.prototype.encrypt = function(message) {
 	try {    
-		//console.log("DEBUG ::: Postman.prototype.encrypt ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
 		var iv = Math.floor((Math.random() * 7) + 0);
@@ -2133,7 +2145,7 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 	};
 	postman.send("MessageDeliveryACK", messageACK );
 	
-	msg.setChatWith( msg.from );  					
+//	msg.setChatWith( msg.from );  					
 	mailBox.storeMessage( msg ); 
 	
 	var contact = contactsHandler.getContactById( msg.from ); 
@@ -2957,7 +2969,7 @@ AbstractHandler.prototype.setOnDB = function( obj ) {
 	if ( obj instanceof ContactOnKnet ){
 		contactsHandler.setContactOnDB( obj );	
 	}else{
-		groupsHandler.se( obj );
+		groupsHandler.setGroupOnDB( obj );
 	}
 };
 
@@ -3103,7 +3115,6 @@ ContactsHandler.prototype.keyDelivery = function(contact) {
 		}
 	};	
 	postman.send("KeysDelivery", data );
-	console.log("DEBUG ::: ContactsHandler.prototype.keyDelivery ::: setOfSymKeys : " + JSON.stringify(setOfSymKeys) );
 };
 
 
@@ -3220,6 +3231,17 @@ Group.prototype.addMember = function( publicClientID ) {
 
 function GroupsHandler() {
 	this.list = [];
+};
+
+GroupsHandler.prototype.getMembersOfGroup = function( groupId ) {
+	var listOfMembers = [];
+	this.list.map(function( g ){
+		if ( g.groupId == groupId ){
+	  		listOfMembers = g.listOfMembers ; 
+	  		return;	
+	  	}			
+	});
+	return listOfMembers;		
 };
 
 GroupsHandler.prototype.setGroupOnList = function( group ) {
