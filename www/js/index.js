@@ -550,8 +550,50 @@ function GUI() {
 	this.inAppBrowser = null;
 	this.photoGallery = null;
 	this.photoGalleryClosed = true;
+	this.groupOnMenu = null;
 };
 
+
+
+GUI.prototype.showAddContact2Group = function( contact ) {
+
+	$('#buttonAddContact2Group' + contact.publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-check' })
+	
+	$("#contacts4Group")
+		.find("#divAddContact2Group"+ contact.publicClientID)
+		.unbind("click")
+		.on("click", function(){ gui.removeContactFromGroup( contact );  } );
+	
+	$('#contacts4Group').listview().listview('refresh');			
+};
+
+GUI.prototype.showRemoveContactFromGroup = function( contact ) {
+
+	$('#buttonAddContact2Group' + contact.publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' })
+	
+	$("#contacts4Group")
+		.find("#divAddContact2Group"+ contact.publicClientID)
+		.unbind("click")
+		.on("click", function(){ gui.AddContact2Group( contact );  } );
+	
+	$('#contacts4Group').listview().listview('refresh');			
+};
+
+GUI.prototype.AddContact2Group = function( contact ) {
+	
+	gui.showAddContact2Group( contact );	
+	gui.groupOnMenu.addMember( contact );
+
+};
+
+GUI.prototype.removeContactFromGroup = function( contact ) {
+
+	gui.showRemoveContactFromGroup( contact );
+	gui.groupOnMenu.removeMember( contact );
+	
+};
 
 GUI.prototype.sanitize = function(html) {
 	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
@@ -662,9 +704,9 @@ GUI.prototype.insertMessageInConversation = function( message, isReverse , withF
 	var htmlOfContent = "";
 	var htmlOfVideoPreview ="";
 	if ( message.messageBody.messageType == "text")	{
-		htmlOfContent = this.sanitize(message.messageBody.text);
-		htmlOfContent = decodeURI(htmlOfContent);
-		var parsedLinks = this.parseLinks(htmlOfContent);
+		htmlOfContent = this.sanitize( message.messageBody.text );
+		htmlOfContent = decodeURI( htmlOfContent );
+		var parsedLinks = this.parseLinks( htmlOfContent );
 		htmlOfContent = parsedLinks.htmlOfContent;
 		htmlOfContent = twemoji.parse( htmlOfContent,function(icon, options, variant) {
 			return './js/' + options.size + '/' + icon + '.png';
@@ -679,9 +721,9 @@ GUI.prototype.insertMessageInConversation = function( message, isReverse , withF
 			}
 			if (srcPath != null){
 				htmlOfVideoPreview += 
-					'<div class="youtube-preview">'+
-				     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""> </iframe>'+
-			  		'</div>';				
+				'<div class="youtube-preview">'+
+			     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""></iframe>'+
+		  		'</div>';				
 			}
 		});
 		
@@ -690,7 +732,8 @@ GUI.prototype.insertMessageInConversation = function( message, isReverse , withF
 		htmlOfContent = 
 			'<div class="image-preview"> ' + 
 			' <a>' +   
-			'  <img class="image-embed" data-indexInGallery='+gui.indexOfImages4Gallery+' src="'+message.messageBody.src+'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
+			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
 			' </a>' + 
 			' <div class="name"></div>' + 
 			'</div>' ;
@@ -742,7 +785,7 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	};	
 };
 
-GUI.prototype.insertContactOnMapPage = function(contact) {
+GUI.prototype.insertContactOnMapPage = function( contact ) {
 	
 	var attributesOfLink = "" ; 
 		
@@ -759,7 +802,7 @@ GUI.prototype.insertContactOnMapPage = function(contact) {
 		.append(html2insert)
 		.listview().listview('refresh')
 		.find('#' + contact.publicClientID + "-inMap").first().on("click", function(){			 
-			gui.go2ChatWith(contact.publicClientID);
+			gui.go2ChatWith( contact );
 		});
 	 
 	var latlng = L.latLng(contact.location.lat, contact.location.lon);
@@ -800,25 +843,51 @@ GUI.prototype.insertChatInMainPage = function( obj, isNewContact) {
 		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
 	
 	if (isNewContact){
-		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj.publicClientID); } );
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
 	}else{
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
 	}
 	
-	gui.sortContacts();		
+	gui.sortChats();		
 
 };
+
+GUI.prototype.showContactsOnGroupMenu = function() {
+	
+	$('#contacts4Group').empty();
+	
+	contactsHandler.listOfContacts.map( function( obj ){
+		var html2insert = 	
+		'<li id="divAddContact2Group'+obj.publicClientID + '">'+
+		' <a>'+ 
+		'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ obj.nickName   + '</h2> '+
+		' </a>'+
+		' <a id="buttonAddContact2Group'+obj.publicClientID + '" data-role="button" class="icon-list" data-inline="true">'+
+		' </a>' +
+		'</li>';
+					
+		$("#contacts4Group").append( html2insert );
+			
+		if ( gui.groupOnMenu.listOfMembers.indexOf( obj.publicClientID ) != -1){
+			gui.showAddContact2Group( obj );
+		}else{
+			gui.showRemoveContactFromGroup( obj );
+		}		
+	});	
+};
+
 /**
  * @param obj := ContactOnKnet | Group
  */
 GUI.prototype.updateCounterOfChat = function( obj ) {
 	
 	if ( obj.counterOfUnreadSMS > 0 ){
-		$("#counterOf_" + obj.publicClientID ).text( obj.counterOfUnreadSMS );		
-		$("#counterOf_" + obj.publicClientID ).attr("class", "ui-li-count");
+		$("#counterOf_"+obj.publicClientID).text( obj.counterOfUnreadSMS );		
+		$("#counterOf_"+obj.publicClientID).attr("class", "ui-li-count");
 	} else{
-		$("#counterOf_" + obj.publicClientID ).text("");
-		$("#counterOf_" + obj.publicClientID ).attr("class", "");
+		$("#counterOf_"+obj.publicClientID).text("");
+		$("#counterOf_"+obj.publicClientID).attr("class", "");
 	}
 	
 	$('#listOfContactsInMainPage').listview().listview('refresh');	
@@ -1103,34 +1172,62 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
 	strVar += "		    		<\/a>";
-	strVar += "		    	<\/div>";
+	strVar += "		    	<\/div>";	
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
 	strVar += "			    <div class=\"ui-block-d\"><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
-	strVar += "			<div data-role=\"content\" data-theme=\"a\">							";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
 	strVar += "				<div class=\"container\" id=\"main\">";
 	strVar += "					<div class=\"row\">";
 	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\" data-role=\"none\" >";
+	strVar += "										<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1  id=\"nickNameGroup\" ><\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5 id=\"commentaryGroup\" ><\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";
 	strVar += "						<\/div>";
 	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
 	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\">						";
+	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<h1 id=\"label_21\">Not implemented yet<\/h1>";
+	strVar += "										<h1 id=\"label_21\">New Group<\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "										<p><\/p>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"nickNameGroupField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"commentaryGroupField\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "													<\/div>";
+	strVar += "													<button id=\"groupsButton\">create<\/button>";
+	strVar += "												<\/div>";
+	strVar += "											<\/div>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<ul id=\"contacts4Group\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
+	strVar += "													<h1 id=\"label_37\">My Groups<\/h1>";
+	strVar += "													<ul id=\"listOfGroups\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";	
+	strVar += "												<\/div>";	
+	strVar += "											<\/div>";	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
-	strVar += "							<\/div>";
+	strVar += "							<\/div>";	
 	strVar += "						<\/div>";
 	strVar += "					<\/div>";
-	strVar += "				<\/div>";	
+	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page createGroup-->";
 	
@@ -1411,7 +1508,14 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#chat-page"){		
 			gui.loadGalleryInDOM();					 
-	    }	        
+	    }	    
+	    if (ui.options.target == "#profile"){		
+			gui.loadProfile(); 					 
+	    }	
+	    if (ui.options.target == "#createGroup"){		
+			gui.loadGroupMenu(); 					 
+	    }
+        
 	    gui.hideLoadingSpinner();
 	});	
 	$(document).on("pageshow","#emoticons",function(event){
@@ -1495,6 +1599,16 @@ GUI.prototype.bindDOMevents = function(){
 		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
+	
+	$("#nickNameGroupField").on("input", function() {
+		gui.groupOnMenu.nickName = $("#nickNameGroupField").val();
+		$("#nickNameGroup").text( gui.groupOnMenu.nickName );	
+	});
+	$("#commentaryGroupField").on("input", function() {
+		gui.groupOnMenu.commentary = $("#commentaryGroupField").val();
+		$("#commentaryGroup").text( gui.groupOnMenu.commentary );	
+	});		
+	
 	$("#profileTelephone").on("input", function() {
 		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
@@ -1683,7 +1797,7 @@ GUI.prototype.setLocalLabels = function() {
 	dictionary.Literals.label_19, // exit
 	dictionary.Literals.label_20 //'Yes, No
 	*/
-	document.getElementById("label_21").innerHTML = dictionary.Literals.label_6;
+	document.getElementById("label_21").innerHTML = dictionary.Literals.label_36;
 	document.getElementById("label_22").innerHTML = dictionary.Literals.label_1;
 	document.getElementById("profileNameField").placeholder = dictionary.Literals.label_23;
 	document.getElementById("profileCommentary").placeholder = dictionary.Literals.label_24;
@@ -1897,12 +2011,14 @@ GUI.prototype.showProfileOfContact = function() {
 
 
 };
-
-GUI.prototype.setTimeLastSMS = function(contact) {	
-	$("#"+contact.publicClientID).data('sortby', contact.timeLastSMS) ;
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.setTimeLastSMS = function( obj ) {	
+	$("#"+obj.publicClientID).data('sortby', obj.timeLastSMS) ;
 };
 
-GUI.prototype.sortContacts = function() {	
+GUI.prototype.sortChats = function() {	
 	var ul = $('ul#listOfContactsInMainPage'),
 	    li = ul.children('li');
 	    
@@ -1972,6 +2088,39 @@ GUI.prototype.loadProfile = function() {
 	});
 
 };
+
+GUI.prototype.loadGroupMenu = function( group ) {
+	
+	if ( group ){
+		gui.groupOnMenu = group ;
+	}else{
+		gui.groupOnMenu = new Group({});	
+	}
+	
+
+	$('#imageGroup').picEdit({
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		navToolsEnabled : true,
+		defaultImage: "./img/group_black_195x195.png",
+		imageUpdated: function(img){			
+			gui.groupOnMenu.imgsrc = img.src;
+		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
+		}
+	});
+	
+	
+		
+	gui.showContactsOnGroupMenu();
+
+};
+
+
+
 
 GUI.prototype.inAppBrowserLoadHandler = function(event) {
 	
@@ -2145,24 +2294,30 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 	};
 	postman.send("MessageDeliveryACK", messageACK );
 	
-//	msg.setChatWith( msg.from );  					
-	mailBox.storeMessage( msg ); 
+	mailBox.storeMessage( msg );
 	
-	var contact = contactsHandler.getContactById( msg.from ); 
-	if (typeof contact == "undefined") return;
+	var publicClientID;
+	if ( msg.to != msg.chatWith ){
+		publicClientID = msg.chatWith;
+	}else{
+		publicClientID = msg.from;
+	}
+	
+	var obj = abstractHandler.getObjById( publicClientID ); 
+	if (typeof obj == "undefined") return;
 	 		 		
-	if ( app.currentChatWith == msg.from ){
+	if ( app.currentChatWith == publicClientID ){
 		gui.insertMessageInConversation( msg, false, true);
 	}else{
-		contact.counterOfUnreadSMS++ ;
-		gui.updateCounterOfChat( contact );  		  			
+		obj.counterOfUnreadSMS++ ;
+		gui.updateCounterOfChat( obj );  		  			
 	}  		  		
-	contact.timeLastSMS = msg.timestamp;
-	contactsHandler.setContactOnList( contact );
-	contactsHandler.setContactOnDB( contact );
+	obj.timeLastSMS = msg.timestamp;
+	abstractHandler.setOnList( obj );
+	abstractHandler.setOnDB( obj );
 	
-	gui.setTimeLastSMS( contact );  				
-	gui.sortContacts();				
+	gui.setTimeLastSMS( obj );  				
+	gui.sortChats();				
 	gui.showLocalNotification( msg );	
 
 };
@@ -2308,8 +2463,7 @@ Application.prototype.loadUserSettings = function(){
 	
 	var singleKeyRange = IDBKeyRange.only(0);
 
-	try{
-	
+	try{	
 		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
 			
 			var cursor = e.target.result;
@@ -2321,13 +2475,11 @@ Application.prototype.loadUserSettings = function(){
 	     		app.register();
 	     	   	return;	     		
 	     	}
-		};
-		
+		};		
 	}catch(e){
 		console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
 		app.register();
 	}
-
 };
 
 Application.prototype.loadContacts = function() {
@@ -2335,9 +2487,9 @@ Application.prototype.loadContacts = function() {
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) {
-     		var contact = new ContactOnKnet(cursor.value);
-     		contactsHandler.setContactOnList(contact);      	
-        	gui.insertChatInMainPage(cursor.value,false);
+     		var contact = new ContactOnKnet( cursor.value );
+     		contactsHandler.setContactOnList( contact );      	
+        	gui.insertChatInMainPage( contact , false);
          	cursor.continue(); 
      	}else{
      	    contactsLoaded.resolve();
@@ -2351,13 +2503,12 @@ Application.prototype.loadGroups = function() {
 		var cursor = e.target.result;
      	if (cursor) {
      		var group = new Group( cursor.value );
-     		groupsHandler.list.push( cursor.value );      	
-        	gui.insertChatInMainPage(cursor.value,false);
+     		groupsHandler.list.push( group );      	
+        	gui.insertChatInMainPage( group ,false);
          	cursor.continue(); 
      	}
 	};	
 };
-
 
 Application.prototype.login2server = function(){
 		
@@ -2973,6 +3124,15 @@ AbstractHandler.prototype.setOnDB = function( obj ) {
 	}
 };
 
+AbstractHandler.prototype.getObjById = function( publicClientID ){
+
+	var obj = contactsHandler.getContactById( publicClientID ); 
+	if ( !obj ){
+		obj = groupsHandler.getGroupById( publicClientID );
+	}
+	return obj;
+};
+
 
 function ContactOnKnet( c ) {
 	this.publicClientID = c.publicClientID;
@@ -3123,11 +3283,12 @@ ContactsHandler.prototype.getContactById = function(id) {
 };
 	
 
-ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
+ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
+
 	$('#linkAddNewContact' + publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
 		.unbind("click")
-		.on("click", function(){ gui.go2ChatWith(publicClientID); });
+		.on("click", function(){ gui.go2ChatWith( obj ); });
 	
 	$("#popupDiv").remove();
 	var prompt2show = 	
@@ -3143,11 +3304,11 @@ ContactsHandler.prototype.addNewContactOnDB = function(publicClientID) {
 	});	
 	$("#popupDiv").popup("open");
 	
-	var contact = this.getContactById(publicClientID);
-	contactsHandler.setContactOnDB (contact);
+	contactsHandler.setContactOnDB( contact );
+	
 };
 
-ContactsHandler.prototype.setNewContacts = function(input) {
+ContactsHandler.prototype.setNewContacts = function( input ) {
 	gui.hideLoadingSpinner();
 	var list = postman.getParametersOfSetNewContacts(input);
 	if (list == null ) { return;}
@@ -3217,16 +3378,22 @@ Group.prototype.assignId = function () {
     return s.join("");
 };
 
-Group.prototype.addMember = function( publicClientID ) {
+Group.prototype.addMember = function( contact  ) {
 	var found = false;
 	this.listOfMembers.map(function( m ){
-		if ( m == publicClientID ){
+		if ( m == contact.publicClientID ){
 	  		found = true; 	return;	
 	  	}			
 	});
 	if ( found == false ){
-		this.listOfMembers.push( publicClientID );
+		this.listOfMembers.push( contact.publicClientID );
 	}			
+};
+
+Group.prototype.removeMember = function( contact  ) {	
+	this.listOfMembers = this.listOfMembers.filter(function(id) { 
+		return id !== contact.publicClientID; 
+	});
 };
 
 function GroupsHandler() {
@@ -3277,6 +3444,9 @@ GroupsHandler.prototype.setGroupOnDB = function( group ) {
 	}
 };
 
+GroupsHandler.prototype.getGroupById = function(id) {
+	return this.list.filter(function(g){ return (g.publicClientID == id);	})[0];	
+};
 
 
 function Dictionary(){
@@ -3316,7 +3486,8 @@ function Dictionary(){
 		label_32 : "Donation for our Open Source Initiative",
 		label_33 : "Total: ",
 		label_34 : "Buy",
-		label_35 : "Welcome ! we're generating your security protocol now, this process could take a few minutes, please be patience"
+		label_35 : "Welcome ! we're generating your security protocol now, this process could take a few minutes, please be patience",
+		label_36 : "new Group"
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3351,7 +3522,8 @@ function Dictionary(){
 		label_32: "Spende f&uuml;r unsere Open Source Initiative",
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
-		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld"
+		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld",
+		label_36 : "new Group"
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3386,7 +3558,8 @@ function Dictionary(){
 		label_32: "Donazione per la nostra iniziativa Open Source",
 		label_33: "Totale: ",
 		label_34: "Acquistare",
-		label_35 : "Benvenuto! generando il vostro protocollo di sicurezza, questo processo potrebbe richiedere alcuni minuti, si prega di essere pazienti"
+		label_35 : "Benvenuto! generando il vostro protocollo di sicurezza, questo processo potrebbe richiedere alcuni minuti, si prega di essere pazienti",
+		label_36 : "new Group"
 		
 	}; 
 	this.Literals_Es = {
@@ -3422,7 +3595,8 @@ function Dictionary(){
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar"	,
-		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente"		
+		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente",
+		label_36 : "new Group"		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3457,7 +3631,8 @@ function Dictionary(){
 		label_32: "Don pour notre Open Source Initiative",
 		label_33: "Total: ",
 		label_34: "Acheter",
-		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp"
+		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp",
+		label_36 : "new Group"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3492,7 +3667,8 @@ function Dictionary(){
 		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar",
-		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente"
+		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente",
+		label_36 : "new Group"
 	};
 	
 	this.AvailableLiterals = {
@@ -3541,17 +3717,16 @@ var deviceReady  = new $.Deferred();
 
 $.when( documentReady, contactsLoaded, userSettingsLoaded , deviceReady).done(function(){
 
-	app.initialized = true;
-	gui.loadProfile(); 
+	app.initialized = true;	
 	app.login2server();	
 	
 });
 
 $(document).ready(function() {
-		
+
+	FastClick.attach(document.body);		
 	app.init();	
-	app.initializeDevice();
-	FastClick.attach(document.body);	
+	app.initializeDevice();		
 	
 });
 
