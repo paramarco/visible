@@ -877,6 +877,35 @@ GUI.prototype.showContactsOnGroupMenu = function() {
 	});	
 };
 
+GUI.prototype.showGroupsOnGroupMenu = function() {
+	
+	$('#listOfGroups').empty();
+	
+	groupsHandler.list.map( function( group ){
+		var html2insert = 	
+		'<li id="divGroupOnMenu'+group.publicClientID + '">'+
+		' <a>'+ 
+		'  <img src="' + group.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ group.nickName   + '</h2> '+
+		' </a>'+
+		'</li>';
+					
+		$("#listOfGroups")
+		 .append( html2insert)
+		 .listview().listview('refresh')
+		 .find("#divGroupOnMenu"+group.publicClientID)		 
+		 .unbind("click")		 
+		 .on("click", function(){ 
+		 	gui.loadGroupMenu( group ); 
+		 	$("#groupsButton")
+		 	 .text( dictionary.Literals.label_38 )
+		 	 .data( 'action', 'modify' );		 	
+		 });
+	});
+};
+
+
+
 /**
  * @param obj := ContactOnKnet | Group
  */
@@ -1434,6 +1463,27 @@ GUI.prototype.chatInputHandler = function() {
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
 };
 
+GUI.prototype.groupsButtonHandler = function() {
+
+	var action = $("#groupsButton").data( 'action' );	
+	if ( action == "create" ){
+		$("#groupsButton")
+		 .data( 'action', 'modify' )
+		 .text( dictionary.Literals.label_39 );
+		
+		 
+		groupsHandler.setGroupOnList( gui.groupOnMenu );
+				
+	}else{
+		$("#groupsButton")
+		 .data( 'action', 'create' )
+		 .text( dictionary.Literals.label_38 );
+		 
+		groupsHandler.setGroupOnList( gui.groupOnMenu );		
+	}
+};
+
+
 
 GUI.prototype.loadMaps = function(){
 	
@@ -1639,6 +1689,12 @@ GUI.prototype.bindDOMevents = function(){
 	$("#FSIdonation").on("change", gui.updatePurchasePrice );
 	$("#Backup").on("change", gui.updatePurchasePrice );
 	
+	
+	$("#groupsButton")
+	 .on("click", gui.groupsButtonHandler )
+	 .text( dictionary.Literals.label_38 )
+	 .data( 'action', 'create' );
+	 
 	//$(document).on("click","#firstLoginInputButton", gui.firstLogin );
 	
 	$(window).on("debouncedresize", function( event ) {
@@ -1811,7 +1867,8 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
 	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
 	document.getElementById("buyButton").innerHTML = dictionary.Literals.label_34;
-
+	document.getElementById("label_37").innerHTML = dictionary.Literals.label_37;
+	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
 
 };
 
@@ -2094,9 +2151,18 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	if ( group ){
 		gui.groupOnMenu = group ;
 	}else{
-		gui.groupOnMenu = new Group({});	
-	}
+		gui.groupOnMenu = new Group({});			
+	}	
 	
+	if ( gui.groupOnMenu.commentary ){
+		$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
+		$("#commentaryGroup").text( gui.groupOnMenu.commentary );
+	}
+	if ( gui.groupOnMenu.nickName ){
+		$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
+		$("#nickNameGroup").text( gui.groupOnMenu.nickName );
+	}
+		
 
 	$('#imageGroup').picEdit({
  		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
@@ -2112,11 +2178,11 @@ GUI.prototype.loadGroupMenu = function( group ) {
 			app.setMultimediaAsOpen();						
 		}
 	});
-	
-	
-		
-	gui.showContactsOnGroupMenu();
-
+			
+	gui.showContactsOnGroupMenu();		
+	if ( ! group ){
+		gui.showGroupsOnGroupMenu();
+	}
 };
 
 
@@ -3487,7 +3553,10 @@ function Dictionary(){
 		label_33 : "Total: ",
 		label_34 : "Buy",
 		label_35 : "Welcome ! we're generating your security protocol now, this process could take a few minutes, please be patience",
-		label_36 : "new Group"
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3523,7 +3592,10 @@ function Dictionary(){
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
 		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld",
-		label_36 : "new Group"
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3559,7 +3631,10 @@ function Dictionary(){
 		label_33: "Totale: ",
 		label_34: "Acquistare",
 		label_35 : "Benvenuto! generando il vostro protocollo di sicurezza, questo processo potrebbe richiedere alcuni minuti, si prega di essere pazienti",
-		label_36 : "new Group"
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"
 		
 	}; 
 	this.Literals_Es = {
@@ -3596,7 +3671,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Comprar"	,
 		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente",
-		label_36 : "new Group"		
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3632,7 +3710,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Acheter",
 		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp",
-		label_36 : "new Group"
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3668,7 +3749,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Comprar",
 		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente",
-		label_36 : "new Group"
+		label_36 : "new Group",
+		label_37 : "My Groups",
+		label_38 : "create",
+		label_39 : "modify"
 	};
 	
 	this.AvailableLiterals = {
