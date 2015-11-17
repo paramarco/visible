@@ -896,10 +896,7 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 		 .find("#divGroupOnMenu"+group.publicClientID)		 
 		 .unbind("click")		 
 		 .on("click", function(){ 
-		 	gui.loadGroupMenu( group ); 
-		 	$("#groupsButton")
-		 	 .text( dictionary.Literals.label_38 )
-		 	 .data( 'action', 'modify' );		 	
+		 	gui.loadGroupMenu( group );		 		 	
 		 });
 	});
 };
@@ -1470,8 +1467,7 @@ GUI.prototype.groupsButtonHandler = function() {
 		$("#groupsButton")
 		 .data( 'action', 'modify' )
 		 .text( dictionary.Literals.label_39 );
-		
-		 
+		 		 
 		groupsHandler.setGroupOnList( gui.groupOnMenu );
 				
 	}else{
@@ -1563,7 +1559,8 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadProfile(); 					 
 	    }	
 	    if (ui.options.target == "#createGroup"){		
-			gui.loadGroupMenu(); 					 
+			gui.loadGroupMenu();
+			console.log("DEBUG ::: createGroup ::: transition"); 					 
 	    }
         
 	    gui.hideLoadingSpinner();
@@ -2150,9 +2147,19 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	
 	if ( group ){
 		gui.groupOnMenu = group ;
+		$("#groupsButton")
+		 .text( dictionary.Literals.label_39 )
+		 .data( 'action', 'modify' );
 	}else{
-		gui.groupOnMenu = new Group({});			
-	}	
+		gui.groupOnMenu = new Group({});
+
+		$("#groupsButton")
+		 .text( dictionary.Literals.label_38 )
+		 .data( 'action', 'create' );
+		gui.showGroupsOnGroupMenu();				
+	}
+	
+	gui.showContactsOnGroupMenu();		
 	
 	if ( gui.groupOnMenu.commentary ){
 		$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
@@ -2162,15 +2169,15 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
 		$("#nickNameGroup").text( gui.groupOnMenu.nickName );
 	}
-		
 
+	//$('.picedit_box').remove(); --> remove imageGroup
 	$('#imageGroup').picEdit({
  		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
-		defaultImage: "./img/group_black_195x195.png",
+		defaultImage: gui.groupOnMenu.imgsrc,
 		imageUpdated: function(img){			
 			gui.groupOnMenu.imgsrc = img.src;
 		},
@@ -2178,15 +2185,7 @@ GUI.prototype.loadGroupMenu = function( group ) {
 			app.setMultimediaAsOpen();						
 		}
 	});
-			
-	gui.showContactsOnGroupMenu();		
-	if ( ! group ){
-		gui.showGroupsOnGroupMenu();
-	}
 };
-
-
-
 
 GUI.prototype.inAppBrowserLoadHandler = function(event) {
 	
@@ -2427,27 +2426,31 @@ Application.prototype.processPayment = function() {
 
 Application.prototype.go2paypal = function(myPurchase) {
 	
-	var jqxhr = $.post( 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment', 
-		{	
+	$.ajax({
+		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment',
+		method : "POST",
+		data: {	
 			handshakeToken: user.handshakeToken  , 
 			purchase : myPurchase
 		},
-		function() { }	,
-		"text"
-	);
-	jqxhr.done(function(result) {
-		var response = JSON.parse(result);		
+		dataType: "json",
+		crossDomain: true,
+		xhrFields: {
+			withCredentials: false
+		}
+	})
+	.done(function(response) {
 		if ( response.OK == true){
 			gui.inAppBrowser = window.open( response.URL, '_blank', 'location=yes');
 			gui.inAppBrowser.addEventListener('loadstop', gui.inAppBrowserLoadHandler);
 			gui.inAppBrowser.addEventListener('exit', gui.inAppBrowserExitHandler);			
 		}
-	});
-	jqxhr.fail(function() {
+	})
+	.fail(function() {
 		console.log("DEBUG ::: go2paypal ::: failed: ");
 		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
-	});
-	jqxhr.always(function() { gui.hideLoadingSpinner(); });		
+	})
+	.always(function() { gui.hideLoadingSpinner(); });		
 };		
 
 
@@ -2585,18 +2588,6 @@ Application.prototype.login2server = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
-	
-	//$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: user.handshakeToken  })
-	
-	/*	$.ajax({
-	url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
-	data: { handshakeToken: user.handshakeToken  },
-	dataType: "json",
-	crossDomain: true,
-	xhrFields: {
-		withCredentials: false
-	}
-})*/	
 	$.ajax({
 		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
 		method : "POST",
@@ -2606,7 +2597,8 @@ Application.prototype.login2server = function(){
 		xhrFields: {
 			withCredentials: false
 		}
-	}).done(function (result) { 
+	})
+	 .done(function (result) { 
 		app.connect2server(result);
 	 })
 	 .fail(function() {
@@ -2852,7 +2844,6 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.keyPairGeneration = function (err, keypair ){
 
-	console.log("DEBUG ::: keyPairGeneration  ::: entro..." );
 	if (err) {
 		console.log("DEBUG ::: keyPairGeneration ::: something went wrong generating the KeyPair....." );
 		app.register();
@@ -2861,7 +2852,6 @@ Application.prototype.keyPairGeneration = function (err, keypair ){
 
 	var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
 	
- //	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient ).done(function (answer) {
 	$.ajax({
 		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register',
 		method : "POST",
@@ -2883,8 +2873,6 @@ Application.prototype.keyPairGeneration = function (err, keypair ){
 	 		
 	 	}else{
 		
-	 		console.log("DEBUG ::: register ::: saving onto DB....." );
-	 			
 	 		var privateKey = {
 				n: keypair.privateKey.n.toString(32),
 			    e: keypair.privateKey.e.toString(32),
@@ -3498,10 +3486,10 @@ function GroupsHandler() {
 	this.list = [];
 };
 
-GroupsHandler.prototype.getMembersOfGroup = function( groupId ) {
+GroupsHandler.prototype.getMembersOfGroup = function( publicClientID ) {
 	var listOfMembers = [];
 	this.list.map(function( g ){
-		if ( g.groupId == groupId ){
+		if ( g.publicClientID == publicClientID ){
 	  		listOfMembers = g.listOfMembers ; 
 	  		return;	
 	  	}			
@@ -3512,7 +3500,7 @@ GroupsHandler.prototype.getMembersOfGroup = function( groupId ) {
 GroupsHandler.prototype.setGroupOnList = function( group ) {
 	var found = false;
 	this.list.map(function( g ){
-		if ( g.groupId == group.groupId ){
+		if ( g.publicClientID == group.publicClientID ){
 	  		g.set( group );
 	  		found = true; 
 	  		return;	
