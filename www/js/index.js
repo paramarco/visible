@@ -2585,18 +2585,38 @@ Application.prototype.login2server = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();	
 	
-	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: user.handshakeToken  })
-		.done(function (result) { 
-			app.connect2server(result);
-		})
-		.fail(function() {
-			app.connecting = false; 
-			console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-			setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST );
-		})
-		.always(function() {
-			gui.hideLoadingSpinner();
-		});	
+	
+	//$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login', { handshakeToken: user.handshakeToken  })
+	
+	/*	$.ajax({
+	url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
+	data: { handshakeToken: user.handshakeToken  },
+	dataType: "json",
+	crossDomain: true,
+	xhrFields: {
+		withCredentials: false
+	}
+})*/	
+	$.ajax({
+		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
+		method : "POST",
+		data: { handshakeToken: user.handshakeToken  },
+		dataType: "json",
+		crossDomain: true,
+		xhrFields: {
+			withCredentials: false
+		}
+	}).done(function (result) { 
+		app.connect2server(result);
+	 })
+	 .fail(function() {
+		app.connecting = false; 
+		console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
+		setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST );
+	 })
+	 .always(function() {
+		gui.hideLoadingSpinner();
+	 });	
 };
 
 Application.prototype.connect2server = function(result){
@@ -2832,16 +2852,28 @@ Application.prototype.connect2server = function(result){
 
 Application.prototype.keyPairGeneration = function (err, keypair ){
 
+	console.log("DEBUG ::: keyPairGeneration  ::: entro..." );
 	if (err) {
-		console.log("DEBUG ::: register ::: something went wrong generating the KeyPair....." );
+		console.log("DEBUG ::: keyPairGeneration ::: something went wrong generating the KeyPair....." );
 		app.register();
 		return;
 	}
 
 	var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
 	
- 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient ).done(function (answer) {
- 			
+ //	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register' , publicKeyClient ).done(function (answer) {
+	$.ajax({
+		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register',
+		method : "POST",
+		data: publicKeyClient,
+		dataType: "json",
+		crossDomain: true,
+		xhrFields: {
+			withCredentials: false
+		}
+	})
+ 	.done(function (answer) {
+ 		
  		if (typeof answer == "undefined" || answer == null || 
  			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
  			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
@@ -3810,8 +3842,8 @@ $(document).ready(function() {
 
 	FastClick.attach(document.body);		
 	app.init();	
-	app.initializeDevice();		
-	
+	app.initializeDevice();
+	//TODO only for new version of the library indexeddbshim:
+	//window.shimIndexedDB.__debug(false);
 });
 
-window.shimIndexedDB.__debug(false);

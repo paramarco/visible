@@ -23,7 +23,12 @@
 		<script src='js/fastClick.js'></script>   
         <script src="js/IndexedDBShim.old.js"></script> 
 		<script src="js/twemoji.min.js"></script>
-				
+		<!-- WARNING BEGIN: there are some ad-hoc modifications on forge.bundle.js due to web Worker compatibilities -->
+		<script src="js/forge.bundle.js"></script>
+		<script id="worker_1" type="text/js-worker">		    
+            importScripts(base_url + '/js/prime.worker.js');
+        </script>
+        <!-- WARNING END-->				
         <title>Visible</title>
     </head>
 	<body>
@@ -61,7 +66,7 @@
 		<script src="js/json-sans-eval-min.js"></script>
 		<script src="js/jws-3.0.min.js"></script>	
 		
-		<script src="js/forge.min.js"></script>
+		<script src="js/forge.bundle.js"></script>
 		
 		<script src="js/jquery-1.10.2.min.js"></script>
 	 	<script src="js/jquery-mobile-mobileinit.js"></script> 
