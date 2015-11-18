@@ -44,7 +44,7 @@ function Message(input) {
 	this.size = (input.size) ? input.size : this.calculateSize();
 	this.timestamp = (input.timestamp) ? parseInt(input.timestamp) : new Date().getTime();
 	this.markedAsRead = (typeof input.markedAsRead != 'undefined') ? input.markedAsRead : false; 
-	this.chatWith = (input.chatWith) ? input.chatWith : null;
+	this.chatWith = (input.chatWith) ? input.chatWith : this.to;
 	this.ACKfromServer = (typeof input.ACKfromServer != 'undefined') ? input.ACKfromServer : false; 
 	this.ACKfromAddressee = (typeof input.ACKfromAddressee != 'undefined') ? input.ACKfromAddressee : false; 
 
@@ -72,12 +72,13 @@ Message.prototype.assignmd5sum = function(){
 };
 */
 Message.prototype.calculateSize = function(){
-	
- 	if (this.messageBody.messageType == "text"){
-		return this.messageBody.text.length;
-	}else{
-		return this.messageBody.src.length;
+	var size = 0;
+ 	if ( this.messageBody.messageType == "text" ){
+		size = this.messageBody.text.length;
+	}else if ( this.messageBody.messageType == "multimedia" ){
+		size = this.messageBody.src.length;
 	}
+	return size;
 };
 
 Message.prototype.convertToUTF = function(){
@@ -127,7 +128,7 @@ Postman.prototype.sendMsg = function( msg ) {
 		var listOfMsg2send = [];		
 		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
 		
-		if ( membersOfGroup != [] ){			
+		if ( membersOfGroup.length > 0 ){			
 		    membersOfGroup.map(function( memberPublicId ){
 		    	var copyOfMsg = new Message( msg );
 		    	copyOfMsg.to = memberPublicId; 
@@ -1084,7 +1085,7 @@ GUI.prototype.showImagePic = function() {
 				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
-			message2send.setChatWith( app.currentChatWith );
+			//message2send.setChatWith( app.currentChatWith );
 
 			var msg2store = new Message( message2send );
 			mailBox.storeMessage( msg2store );
@@ -1445,7 +1446,7 @@ GUI.prototype.chatInputHandler = function() {
 		from : user.publicClientID , 
 		messageBody : { messageType : "text", text : gui.sanitize( textMessage ) }
 	});
-	message2send.setChatWith( app.currentChatWith ); 
+	//message2send.setChatWith( app.currentChatWith ); 
 	message2send.convertToUTF();	
 
 	var msg2store = new Message( message2send );
@@ -1469,11 +1470,14 @@ GUI.prototype.groupsButtonHandler = function() {
 		 .text( dictionary.Literals.label_39 );
 		 		 
 		groupsHandler.setGroupOnList( gui.groupOnMenu );
-		groupsHandler.setGroupOnDB ( gui.groupOnMenu );
+		groupsHandler.setGroupOnDB( gui.groupOnMenu );
+		groupsHandler.sendGroupUpdate( gui.groupOnMenu );
 		
 	}else{		 
 		groupsHandler.setGroupOnList( gui.groupOnMenu );
 		groupsHandler.setGroupOnDB ( gui.groupOnMenu );
+		groupsHandler.sendGroupUpdate( gui.groupOnMenu );
+
 	}
 };
 
@@ -2358,34 +2362,41 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 		msgID : msg.msgID, 
 		typeOfACK : "ACKfromAddressee"
 	};
-	postman.send("MessageDeliveryACK", messageACK );
+	postman.send("MessageDeliveryACK", messageACK );	
 	
-	mailBox.storeMessage( msg );
+	if (msg.messageBody.messageType == "multimedia" || 
+		msg.messageBody.messageType == "text"){
+			
+		mailBox.storeMessage( msg );
 	
-	var publicClientID;
-	if ( msg.to != msg.chatWith ){
-		publicClientID = msg.chatWith;
+		var publicClientID;
+		if ( msg.to != msg.chatWith ){
+			publicClientID = msg.chatWith;
+		}else{
+			publicClientID = msg.from;
+		}
+		
+		var obj = abstractHandler.getObjById( publicClientID ); 
+		if (typeof obj == "undefined") return;
+		 		 		
+		if ( app.currentChatWith == publicClientID ){
+			gui.insertMessageInConversation( msg, false, true);
+		}else{
+			obj.counterOfUnreadSMS++ ;
+			gui.updateCounterOfChat( obj );  		  			
+		}  		  		
+		obj.timeLastSMS = msg.timestamp;
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );
+		
+		gui.setTimeLastSMS( obj );  				
+		gui.sortChats();				
+		gui.showLocalNotification( msg );		
 	}else{
-		publicClientID = msg.from;
+	  //messageType == "groupUpdate"
+		console.log("DEBUG ::: messageFromClientHandler ::: groupUpdate received : " + JSON.stringify(msg.messageBody) );
+		
 	}
-	
-	var obj = abstractHandler.getObjById( publicClientID ); 
-	if (typeof obj == "undefined") return;
-	 		 		
-	if ( app.currentChatWith == publicClientID ){
-		gui.insertMessageInConversation( msg, false, true);
-	}else{
-		obj.counterOfUnreadSMS++ ;
-		gui.updateCounterOfChat( obj );  		  			
-	}  		  		
-	obj.timeLastSMS = msg.timestamp;
-	abstractHandler.setOnList( obj );
-	abstractHandler.setOnDB( obj );
-	
-	gui.setTimeLastSMS( obj );  				
-	gui.sortChats();				
-	gui.showLocalNotification( msg );	
-
 };
 
 function Application() {
@@ -3497,6 +3508,17 @@ GroupsHandler.prototype.getMembersOfGroup = function( publicClientID ) {
 	});
 	return listOfMembers;		
 };
+
+GroupsHandler.prototype.sendGroupUpdate = function( group ) {
+	var updateMsg = new Message({ 	
+		chatWith : group.publicClientID,
+		to : group.publicClientID, 
+		from : user.publicClientID , 
+		messageBody : { messageType : "groupUpdate", group : group }
+	});
+	postman.sendMsg( updateMsg );
+};
+
 
 GroupsHandler.prototype.setGroupOnList = function( group ) {
 	var found = false;
