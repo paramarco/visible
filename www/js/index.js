@@ -125,9 +125,9 @@ Postman.prototype.send = function(event2trigger, data  ) {
 Postman.prototype.sendMsg = function( msg ) {	
 	try{
 		var listOfMsg2send = [];		
+		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
 		
-		if ( msg.to != msg.chatWith ){
-			var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
+		if ( membersOfGroup != [] ){			
 		    membersOfGroup.map(function( memberPublicId ){
 		    	var copyOfMsg = new Message( msg );
 		    	copyOfMsg.to = memberPublicId; 
@@ -1211,7 +1211,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
-	strVar += "									<div class=\"text-center\" data-role=\"none\" >";
+	strVar += "									<div id=\"imageGroupContainer\" class=\"text-center\" data-role=\"none\" >";
 	strVar += "										<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
 	strVar += "									<\/div>";
 	strVar += "									<div class=\"user-head\">";
@@ -1469,13 +1469,11 @@ GUI.prototype.groupsButtonHandler = function() {
 		 .text( dictionary.Literals.label_39 );
 		 		 
 		groupsHandler.setGroupOnList( gui.groupOnMenu );
-				
-	}else{
-		$("#groupsButton")
-		 .data( 'action', 'create' )
-		 .text( dictionary.Literals.label_38 );
-		 
-		groupsHandler.setGroupOnList( gui.groupOnMenu );		
+		groupsHandler.setGroupOnDB ( gui.groupOnMenu );
+		
+	}else{		 
+		groupsHandler.setGroupOnList( gui.groupOnMenu );
+		groupsHandler.setGroupOnDB ( gui.groupOnMenu );
 	}
 };
 
@@ -2170,7 +2168,10 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		$("#nickNameGroup").text( gui.groupOnMenu.nickName );
 	}
 
-	//$('.picedit_box').remove(); --> remove imageGroup
+	var html = 
+		"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
+	$('#imageGroupContainer').empty().append(html);
+	
 	$('#imageGroup').picEdit({
  		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
@@ -2470,7 +2471,7 @@ Application.prototype.loadPersistentData = function() {
 
 Application.prototype.openDB = function() {
 		
-	this.indexedDBHandler = window.indexedDB.open("com.instaltic.knet", 1);
+	this.indexedDBHandler = window.indexedDB.open("com.instaltic.knet", 2);
 		
 	this.indexedDBHandler.onupgradeneeded= function (event) {
 		var thisDB = event.target.result;
@@ -2486,7 +2487,7 @@ Application.prototype.openDB = function() {
 			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
 		}
 		if(!thisDB.objectStoreNames.contains("groups")){
-			var objectStore = thisDB.createObjectStore("groups", { keyPath: "groupid" });
+			var objectStore = thisDB.createObjectStore("groups", { keyPath: "publicClientID" });
 		}			
 	};
 		
@@ -2567,7 +2568,7 @@ Application.prototype.loadContacts = function() {
 };
 
 Application.prototype.loadGroups = function() {
-	var singleKeyRange = IDBKeyRange.only("groupid"); 
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
 	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
 		var cursor = e.target.result;
      	if (cursor) {
@@ -3513,7 +3514,7 @@ GroupsHandler.prototype.setGroupOnList = function( group ) {
 
 GroupsHandler.prototype.setGroupOnDB = function( group ) {	
 	try {
-		var singleKeyRange = IDBKeyRange.only( group.groupId ); 			
+		var singleKeyRange = IDBKeyRange.only( group.publicClientID ); 			
 		var transaction = db.transaction(["groups"],"readwrite");	
 		var store = transaction.objectStore("groups");
 		store.openCursor(singleKeyRange).onsuccess = function(e) {
