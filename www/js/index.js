@@ -15,7 +15,7 @@
 //TODO viralization via email, SMS from the user's contacts
 
 	
-function UserSettings (myUser){
+function UserSettings( myUser ){
 	this.index = (typeof myUser.index == "undefined" ) ? 0 : myUser.index;
 	this.publicClientID = (typeof myUser.publicClientID == "undefined" ) ? null :myUser.publicClientID;
 	this.myCurrentNick = (typeof myUser.myCurrentNick == "undefined" ) ? "" : myUser.myCurrentNick;
@@ -29,14 +29,13 @@ function UserSettings (myUser){
 	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
 	this.privateKey = (typeof myUser.privateKey == "undefined" ) ? {} : myUser.privateKey;
 };
-
 UserSettings.prototype.updateUserSettings = function() {
 	var transaction = db.transaction(["usersettings"],"readwrite");	
 	var store = transaction.objectStore("usersettings");	
 	var request = store.put(user);	
 };
 
-function Message(input) {
+function Message( input ){
 	this.to = input.to;
 	this.from = input.from;
 	this.msgID = (input.msgID) ? input.msgID : this.assignId();
@@ -62,15 +61,9 @@ Message.prototype.assignId = function () {
 
     return s.join("");
 };
-
 Message.prototype.getMsgID = function(){
 	return this.msgID;
 };
-/*
-Message.prototype.assignmd5sum = function(){
-	this.md5sum = window.md5(this.from + this.to + this.messageBody);
-};
-*/
 Message.prototype.calculateSize = function(){
 	var size = 0;
  	if ( this.messageBody.messageType == "text" ){
@@ -80,21 +73,16 @@ Message.prototype.calculateSize = function(){
 	}
 	return size;
 };
-
 Message.prototype.convertToUTF = function(){
 	this.messageBody.text = encodeURI(this.messageBody.text);
 };
-
-
-Message.prototype.setChatWith = function(publicClientID){
+Message.prototype.setChatWith = function( publicClientID ){
 	this.chatWith = publicClientID;
 };
-
-Message.prototype.setACKfromServer = function(bool){
+Message.prototype.setACKfromServer = function( bool ){
 	this.ACKfromServer = bool;
 };
-
-Message.prototype.setACKfromAddressee = function(bool){
+Message.prototype.setACKfromAddressee = function ( bool ){
 	this.ACKfromAddressee = bool;
 };
 
@@ -130,6 +118,7 @@ Postman.prototype.sendMsg = function( msg ) {
 		
 		if ( membersOfGroup.length > 0 ){			
 		    membersOfGroup.map(function( memberPublicId ){
+		    	if ( user.publicClientID == memberPublicId ) return;
 		    	var copyOfMsg = new Message( msg );
 		    	copyOfMsg.to = memberPublicId; 
 		    	listOfMsg2send.push( copyOfMsg );		    	
@@ -2154,14 +2143,15 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		 .data( 'action', 'modify' );
 	}else{
 		gui.groupOnMenu = new Group({});
-
+		gui.groupOnMenu.addMember( user );
+		
 		$("#groupsButton")
 		 .text( dictionary.Literals.label_38 )
-		 .data( 'action', 'create' );
-		gui.showGroupsOnGroupMenu();				
+		 .data( 'action', 'create' );						
 	}
 	
 	gui.showContactsOnGroupMenu();		
+	gui.showGroupsOnGroupMenu();
 	
 	if ( gui.groupOnMenu.commentary ){
 		$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
@@ -2391,10 +2381,23 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 		
 		gui.setTimeLastSMS( obj );  				
 		gui.sortChats();				
-		gui.showLocalNotification( msg );		
-	}else{
-	  //messageType == "groupUpdate"
-		console.log("DEBUG ::: messageFromClientHandler ::: groupUpdate received : " + JSON.stringify(msg.messageBody) );
+		gui.showLocalNotification( msg );
+	
+	}else if( msg.messageBody.messageType == "groupUpdate" ) {
+	  //TODO
+		var group = new Group( msg.messageBody.group );
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB( group );
+				
+		group.listOfMembers.map( function( publicClientID ){
+			var contact = contactsHandler.getContactById( publicClientID ); 
+	  		if (typeof contact == "undefined" || contact == null){
+				contact = new ContactOnKnet({ publicClientID : publicClientID });
+				contactsHandler.setContactOnList( contact );												
+				contactsHandler.setContactOnDB( contact );
+				contactsHandler.requestProfile( contact );
+	  		} 
+		});
 		
 	}
 };
