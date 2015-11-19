@@ -113,6 +113,11 @@ Postman.prototype.send = function(event2trigger, data  ) {
 
 Postman.prototype.sendMsg = function( msg ) {	
 	try{
+		if (msg.messageBody == null){
+			console.log("DEBUG ::: Postman.prototype.sendMsg ::: something went wrong: "  + JSON.stringify(msg));
+			return;
+		}
+		
 		var listOfMsg2send = [];		
 		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
 		
@@ -1551,7 +1556,6 @@ GUI.prototype.bindDOMevents = function(){
 	    }	
 	    if (ui.options.target == "#createGroup"){		
 			gui.loadGroupMenu();
-			console.log("DEBUG ::: createGroup ::: transition"); 					 
 	    }
         
 	    gui.hideLoadingSpinner();
@@ -2390,8 +2394,9 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 		groupsHandler.setGroupOnDB( group );
 				
 		group.listOfMembers.map( function( publicClientID ){
+			if ( user.publicClientID == publicClientID ) return;
 			var contact = contactsHandler.getContactById( publicClientID ); 
-	  		if (typeof contact == "undefined" || contact == null){
+	  		if (!contact){
 				contact = new ContactOnKnet({ publicClientID : publicClientID });
 				contactsHandler.setContactOnList( contact );												
 				contactsHandler.setContactOnDB( contact );
@@ -2695,6 +2700,10 @@ Application.prototype.connect2server = function(result){
   		
   		setTimeout(function (){
 	  	  	mailBox.getMessageByID(deliveryReceipt.msgID).done(function (message){
+	  	  		if (!message){
+	  	  			//it could perfectly be a Message.messageBody.type == groupUpdate	  	  			
+	  	  			return;
+	  	  		}
 	  	  		if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
 	  	  			message.ACKfromServer = true;
 	  	  			$('#messageStateColor_' + deliveryReceipt.msgID ).toggleClass( "amber-rx-by-srv" ); 
