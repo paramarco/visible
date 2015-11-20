@@ -5,6 +5,7 @@
 
 //non MVP
 
+//TODO optimization: lazy rendering of images
 //TODO develop web
 //TODO push notifications (plugin configuration on client side)
 //TODO have our own emoticons
@@ -61,9 +62,6 @@ Message.prototype.assignId = function () {
 
     return s.join("");
 };
-Message.prototype.getMsgID = function(){
-	return this.msgID;
-};
 Message.prototype.calculateSize = function(){
 	var size = 0;
  	if ( this.messageBody.messageType == "text" ){
@@ -76,6 +74,10 @@ Message.prototype.calculateSize = function(){
 Message.prototype.convertToUTF = function(){
 	this.messageBody.text = encodeURI(this.messageBody.text);
 };
+Message.prototype.getMsgID = function(){
+	return this.msgID;
+};
+
 Message.prototype.setChatWith = function( publicClientID ){
 	this.chatWith = publicClientID;
 };
@@ -91,288 +93,20 @@ Message.prototype.setACKfromAddressee = function ( bool ){
 function Postman() {
 };
 
-Postman.prototype.send = function(event2trigger, data  ) {
-	
-	if (typeof event2trigger !== 'string' ||
-		typeof data !== 'object' || data == null ) 	{	
-		
-		console.log("DEBUG ::: postman ::: send ::: didn't pass the format" );			
-		return null;
-	}	
-	
-	try{
-		if (typeof socket != "undefined" && socket.connected == true){
-			socket.emit(event2trigger, Postman.prototype.encrypt( data ) );
-		}	
-					
-	}catch(e){
-		console.log("DEBUG ::: postman ::: send ::: exception"  + JSON.stringify(e));
-	}		
-		
+Postman.prototype._isUUID = function(uuid) {	
+
+	if (typeof uuid == 'string')
+		return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
+	else
+		return	false;
+
 };
-
-Postman.prototype.sendMsg = function( msg ) {	
-	try{
-		if (msg.messageBody == null){
-			console.log("DEBUG ::: Postman.prototype.sendMsg ::: something went wrong: "  + JSON.stringify(msg));
-			return;
-		}
-		
-		var listOfMsg2send = [];		
-		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
-		
-		if ( membersOfGroup.length > 0 ){			
-		    membersOfGroup.map(function( memberPublicId ){
-		    	if ( user.publicClientID == memberPublicId ) return;
-		    	var copyOfMsg = new Message( msg );
-		    	copyOfMsg.to = memberPublicId; 
-		    	listOfMsg2send.push( copyOfMsg );		    	
-		    });
-		}else{
-			listOfMsg2send.push( msg );
-		}
-			
-		listOfMsg2send.map(function (m){
-			m.messageBody = postman.encryptMsgBody( m );	
-			if (typeof socket != "undefined" && socket.connected == true){
-				socket.emit("message2client", m );
-			}			
-		});		
-				
-	}catch(e){
-		console.log("DEBUG ::: Postman.prototype.sendMsg ::: exception: "  + JSON.stringify(e));
-	}	
-};
-
-Postman.prototype.getListOfHeaders = function(encryptedList) {	
-	try {    
-		
-		var listOfHeaders =	Postman.prototype.decrypt(encryptedList).list;
-		if (Array.isArray(listOfHeaders) == false) { return null;}
-
-		for (var i = 0; i < listOfHeaders.length; i++){
-			if (typeof listOfHeaders[i].msgID !== 'string' || 
-				typeof listOfHeaders[i].size !== 'number'||
-				Object.keys(listOfHeaders[i]).length != 2  ) {	
-				return null;
-			}
-		}
-		
-		return listOfHeaders; 
-	}
-	catch (ex) {	
-		return null;
-	}	
-};
-
-Postman.prototype.getParametersOfSetNewContacts = function(encryptedList) {	
-	try {    
-		
-		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
-		if (Array.isArray(listOfNewContacts) == false) { 
-			console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 1" + JSON.stringify(listOfNewContacts)); 
-			return null;
-		}
-
-		for (var i = 0; i < listOfNewContacts.length; i++){
-			if (typeof listOfNewContacts[i].publicClientID !== 'string' || 
-				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
-				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
-				typeof listOfNewContacts[i].location !== 'object'||
-				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
-				Object.keys(listOfNewContacts[i]).length != 5  ) {	
-				console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check 2" + JSON.stringify(listOfNewContacts)); 
-				return null;
-			}
-		}		
-			
-		return listOfNewContacts; 
-	}
-	catch (ex) {
-		console.log("DEBUG ::: getParametersOfSetNewContacts  ::: didn't pass the type check exception" + JSON.stringify(listOfNewContacts)); 
-		return null;
-	}	
-};
-
-Postman.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
-	try {    
-
-		var deliveryReceipt = Postman.prototype.decrypt(inputDeliveryReceipt);
-		
-		if (deliveryReceipt == null ||
-			typeof deliveryReceipt.msgID !== 'string' 	|| 
-			typeof deliveryReceipt.typeOfACK !== 'string'||
-			typeof deliveryReceipt.to !== 'string'		||
-			Object.keys(deliveryReceipt).length != 3  ) {	
-			return null;
-		}
-		
-		return deliveryReceipt; 
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: getDeliveryReceipt  :::  " + ex);
-		return null;
-	}	
-};
-
-Postman.prototype.getParametersOfProfileRequest = function(input) {	
-	try {    
-
-		var parameters = Postman.prototype.decrypt(input);
-		
-		if (parameters == null ||
-			typeof parameters.lastProfileUpdate !== 'number' 	|| 
-			Object.keys(parameters).length != 1  ) {
-			
-			console.log("DEBUG ::: getParametersOfProfileRequest  ::: didn't pass the type check " + JSON.stringify(parameters)); 
-			return null;
-		}
-		
-		return parameters; 
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: getParametersOfProfileRequest  :::  " + ex);
-		return null;
-	}	
-};
-
-
-Postman.prototype.getParametersOfProfileFromServer = function(input) {	
-	try {    
-
-		var parameters = Postman.prototype.decrypt(input);
-		
-		if (parameters == null ||
-			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
-			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
-			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
-			typeof parameters.imgsrc !== 'string' || parameters.imgsrc == null ||
-			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
-			typeof parameters.email !== 'string' || parameters.email == null) {
-			
-			console.log("DEBUG ::: getParametersOfProfileFromServer  ::: didn't pass the type check " + JSON.stringify(parameters) ); 
-			return null;
-		}
-		
-		return parameters; 
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: getParametersOfProfileFromServer  :::  " + ex);
-		return null;
-	}	
-};
-
-
-Postman.prototype.getParametersOfLocationFromServer = function(input) {	
-	try {    
-
-		var position = Postman.prototype.decrypt(input);
-		
-		if (position == null ||
-			typeof position !== 'object' 	|| 
-			typeof position.coords !== 'object'  ) {
-							
-			console.log("DEBUG ::: getParametersOfLocationFromServer  ::: didn't pass the type check "); 
-			return null;
-		}
-		
-		return position; 
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: getParametersOfLocationFromServer  :::  " + ex);
-		return null;
-	}	
-};
-
-Postman.prototype.getKeysDelivery = function(encrypted) {	
-	try {    
-		var input = Postman.prototype.decrypt(encrypted);
-		
-		if (input == null ||
-			Postman.prototype.isUUID(input.to) == false  ||
-			Postman.prototype.isUUID(input.from) == false  ||
-			typeof input.setOfKeys != 'object' ||
-			Object.keys(input).length != 3 ) {	
-			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
-			return null;
-		}
-		
-		return input; 
-	}
-	catch (ex) {
-		console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
-		return null;
-	}	
-};
-
-Postman.prototype.getKeysRequest = function(encrypted) {	
-	try {    
-		var input = Postman.prototype.decrypt(encrypted);
-		
-		if (input == null ||
-			Postman.prototype.isUUID(input.to) == false  ||
-			Postman.prototype.isUUID(input.from) == false  ||
-			Object.keys(input).length != 2 ) {	
-			console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check 1 :" + input );
-			return null;
-		}		
-		return input; 
-	}
-	catch (ex) {
-		console.log("DEBUG ::: Postman.prototype.getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
-		return null;
-	}	
-};
-
-Postman.prototype.getMessageFromClient = function( input ) {	
-	try {
-		
-		input.messageBody = Postman.prototype.decryptMsgBody( input );
-		
-		if ( input.messageBody == null ||
-			Postman.prototype.isUUID( input.to ) == false  ||
-			Postman.prototype.isUUID( input.from ) == false  ||
-			Postman.prototype.isUUID( input.msgID ) == false ){
-				
-			console.log("DEBUG ::: Postman.prototype.getMessageFromClient  :::  input: " + JSON.stringify(input) );
-			return null;
-		}
-		
-		var message = new Message( input );	
-		message.setACKfromServer(true);
-		message.setACKfromAddressee(true);		
-		
-		return message; 	
-	} 
-	catch (ex) {	
-		console.log("DEBUG ::: Postman.prototype.getMessageFromClient :::  " + ex);
-		return null;
-	}
-};
-
-
-
-
-Postman.prototype.signToken = function(message) {	
-	try {    
-		var stringMessage = JSON.stringify(message);
-		var pHeader = {'alg': 'HS512', 'typ': 'JWT'};
-		var sHeader = JSON.stringify(pHeader);		
-		var stringJWS = '';
-		stringJWS  = KJUR.jws.JWS.sign('HS512', sHeader, stringMessage, app.symetricKey2use);		
-		return stringJWS; 
-	}
-	catch (ex) {	return null;	}	
-};
-
 
 Postman.prototype.encrypt = function(message) {
 	try {    
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );
-		var iv = Math.floor((Math.random() * 7) + 0);
-		
-		//console.log("DEBUG ::: encrypt ::: iv " +  iv  );
+		var iv = Math.floor((Math.random() * 7) + 0);		
 		
 		cipher.start({iv: user.myArrayOfKeys[iv] });
 		cipher.update(forge.util.createBuffer( JSON.stringify(message) ) );
@@ -384,37 +118,12 @@ Postman.prototype.encrypt = function(message) {
 
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: encrypt  :::  " + ex);
+		log.debug("Postman.prototype.encrypt", ex);
 		return null;
 	}	
 };
-
-Postman.prototype.decrypt = function(encrypted) {	
-	try {    
-
-		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
-
-		var iv = parseInt(encrypted.substring(0,1));
-
-		decipher.start({iv: user.myArrayOfKeys[iv] });
-		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
-		decipher.finish();
-		
-		//console.log("DEBUG ::: Postman.prototype.decrypt ::: " + JSON.stringify(KJUR.jws.JWS.readSafeJSONString(decipher.output.data)) );
-		
-		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
-
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: decrypt  :::  " + ex);
-		return null;
-	}	
-};
-
-
 Postman.prototype.encryptHandshake = function(message) {
 	try {    
-		console.log("DEBUG ::: encryptHandshake ::: " + JSON.stringify(message) );
 
 		var cipher = forge.cipher.createCipher('AES-CBC', app.symetricKey2use );		
 
@@ -428,31 +137,10 @@ Postman.prototype.encryptHandshake = function(message) {
 
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		log.debug("Postman.prototype.encryptHandshake", ex);
 		return null;
 	}	
 };
-
-Postman.prototype.decryptHandshake = function(encrypted) {	
-	try {    
-
-		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
-
-		var iv = app.symetricKey2use
-
-		decipher.start({iv: iv });
-		decipher.update(forge.util.createBuffer( encrypted ) );
-		decipher.finish();		
-		
-		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
-
-	}
-	catch (ex) {	
-		console.log("DEBUG ::: decryptHandshake  :::  " + ex);
-		return null;
-	}	
-};
-
 Postman.prototype.encryptMsgBody = function( message ) {
 	try {
 		var toContact = contactsHandler.getContactById( message.to );
@@ -480,10 +168,55 @@ Postman.prototype.encryptMsgBody = function( message ) {
 		return messageBody;
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: Postman.prototype.encryptMsgBody  :::  " + ex);
+		log.debug("Postman.prototype.encryptMsgBody",ex);
 		return null;
 	}	
 };
+
+
+Postman.prototype.decrypt = function(encrypted) {	
+	try {    
+
+		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
+
+		var iv = parseInt(encrypted.substring(0,1));
+
+		decipher.start({iv: user.myArrayOfKeys[iv] });
+		decipher.update(forge.util.createBuffer( encrypted.substring( 1 ) ) );
+		decipher.finish();
+
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.decrypt", ex);
+		return null;
+	}	
+};
+
+
+
+
+Postman.prototype.decryptHandshake = function(encrypted) {	
+	try {    
+
+		var decipher = forge.cipher.createDecipher('AES-CBC', app.symetricKey2use);
+
+		var iv = app.symetricKey2use
+
+		decipher.start({iv: iv });
+		decipher.update(forge.util.createBuffer( encrypted ) );
+		decipher.finish();		
+		
+		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
+
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.decryptHandshake", ex);
+		return null;
+	}	
+};
+
 
 /**
  * Postman.prototype.decryptMsgBody
@@ -512,7 +245,7 @@ Postman.prototype.decryptMsgBody = function( message ) {
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: Postman.prototype.decryptMsgBody  :::  " + ex);
+		log.debug("Postman.prototype.decryptMsgBody", ex);
 		return null;
 	}	
 };
@@ -528,13 +261,339 @@ Postman.prototype.getParameterByName = function ( name, href ){
     return decodeURIComponent(results[1].replace(/\+/g, " "));
 };
 
-Postman.prototype.isUUID = function(uuid) {	
+Postman.prototype.getListOfHeaders = function(encryptedList) {	
+	try {    
+		
+		var listOfHeaders =	Postman.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfHeaders) == false) { return null;}
 
-	if (typeof uuid == 'string')
-		return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(uuid);
-	else
-		return	false;
+		for (var i = 0; i < listOfHeaders.length; i++){
+			if (typeof listOfHeaders[i].msgID !== 'string' || 
+				typeof listOfHeaders[i].size !== 'number'||
+				Object.keys(listOfHeaders[i]).length != 2  ) {	
+				return null;
+			}
+		}
+		
+		return listOfHeaders; 
+	}
+	catch (ex) {	
+		return null;
+	}	
+};
 
+Postman.prototype.getProcessNewContacts = function(encryptedList) {	
+	try {    
+		
+		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfNewContacts) == false) { 
+			log.debug("Postman.prototype.getProcessNewContacts - type check 1", listOfNewContacts); 
+			return null;
+		}
+
+		for (var i = 0; i < listOfNewContacts.length; i++){
+			if (typeof listOfNewContacts[i].publicClientID !== 'string' || 
+				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
+				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
+				typeof listOfNewContacts[i].location !== 'object'||
+				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
+				Object.keys(listOfNewContacts[i]).length != 5  ) {	
+				log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
+				return null;
+			}
+		}		
+			
+		return listOfNewContacts; 
+	}
+	catch (ex) {
+		log.debug("Postman.prototype.getProcessNewContacts - type check 3", listOfNewContacts); 
+		return null;
+	}	
+};
+
+Postman.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {	
+	try {    
+
+		var deliveryReceipt = Postman.prototype.decrypt(inputDeliveryReceipt);
+		
+		if (deliveryReceipt == null ||
+			typeof deliveryReceipt.msgID !== 'string' 	|| 
+			typeof deliveryReceipt.typeOfACK !== 'string'||
+			typeof deliveryReceipt.to !== 'string'		||
+			Object.keys(deliveryReceipt).length != 3  ) {	
+			return null;
+		}
+		
+		return deliveryReceipt; 
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.getDeliveryReceipt", ex); 
+		return null;
+	}	
+};
+
+Postman.prototype.getProfileRequest = function(input) {	
+	try {    
+
+		var parameters = Postman.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			typeof parameters.lastProfileUpdate !== 'number' 	|| 
+			Object.keys(parameters).length != 1  ) {
+			log.debug("Postman.prototype.getProfileRequest - type check", parameters); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.getProfileRequest - type check", ex); 
+		return null;
+	}	
+};
+
+
+Postman.prototype.getProfileFromServer = function(input) {	
+	try {    
+
+		var parameters = Postman.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			typeof parameters.publicClientID !== 'string' || parameters.publicClientID == null ||
+			typeof parameters.nickName !== 'string' || parameters.nickName == null ||
+			typeof parameters.commentary !== 'string' || parameters.commentary == null ||	
+			typeof parameters.imgsrc !== 'string' || parameters.imgsrc == null ||
+			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
+			typeof parameters.email !== 'string' || parameters.email == null) {
+			
+			log.debug("Postman.prototype.getProfileFromServer - type check", parameters); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.getProfileFromServer - type check", ex); 
+		return null;
+	}	
+};
+
+
+Postman.prototype.getLocationFromServer = function(input) {	
+	try {    
+
+		var position = Postman.prototype.decrypt(input);
+		
+		if (position == null ||
+			typeof position !== 'object' 	|| 
+			typeof position.coords !== 'object'  ) {
+							
+			log.debug("Postman.prototype.getLocationFromServer - type check", position); 
+			return null;
+		}
+		
+		return position; 
+	}
+	catch (ex) {	
+		log.debug("Postman.prototype.getLocationFromServer - type check", ex); 
+		return null;
+	}	
+};
+
+Postman.prototype.getKeysDelivery = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype._isUUID(input.to) == false  ||
+			Postman.prototype._isUUID(input.from) == false  ||
+			typeof input.setOfKeys != 'object' ||
+			Object.keys(input).length != 3 ) {	
+			log.debug("Postman.prototype.getKeysDelivery - type check", input); 
+			return null;
+		}
+		
+		return input; 
+	}
+	catch (ex) {
+		log.debug("Postman.prototype.getKeysDelivery - type check", ex); 
+		return null;
+	}	
+};
+
+Postman.prototype.getKeysRequest = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype._isUUID(input.to) == false  ||
+			Postman.prototype._isUUID(input.from) == false  ||
+			Object.keys(input).length != 2 ) {	
+			log.debug("Postman.prototype.getKeysRequest - type check", input); 
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		log.debug("Postman.prototype.getKeysRequest - type check", ex); 
+		return null;
+	}	
+};
+
+Postman.prototype.getMessageFromClient = function( input ) {	
+	try {
+		
+		input.messageBody = Postman.prototype.decryptMsgBody( input );
+		
+		if ( input.messageBody == null ||
+			Postman.prototype._isUUID( input.to ) == false  ||
+			Postman.prototype._isUUID( input.from ) == false  ||
+			Postman.prototype._isUUID( input.msgID ) == false ){
+				
+		log.debug("Postman.prototype.getMessageFromClient - type check", input); 
+			return null;
+		}
+		
+		var message = new Message( input );	
+		message.setACKfromServer(true);
+		message.setACKfromAddressee(true);		
+		
+		return message; 	
+	} 
+	catch (ex) {	
+		log.debug("Postman.prototype.getMessageFromClient - type check", ex);
+		return null;
+	}
+};
+
+Postman.prototype.onMsgFromClient = function ( input ){
+	
+	var msg = postman.getMessageFromClient( input ); 
+	if (msg == null) { return;	}		
+		
+	var messageACK = {	
+		to : msg.to, 
+		from : msg.from,
+		msgID : msg.msgID, 
+		typeOfACK : "ACKfromAddressee"
+	};
+	postman.send("MessageDeliveryACK", messageACK );	
+	
+	if (msg.messageBody.messageType == "multimedia" || 
+		msg.messageBody.messageType == "text"){
+			
+		mailBox.storeMessage( msg );
+	
+		var publicClientID;
+		if ( msg.to != msg.chatWith ){
+			publicClientID = msg.chatWith;
+		}else{
+			publicClientID = msg.from;
+		}
+		
+		var obj = abstractHandler.getObjById( publicClientID ); 
+		if (typeof obj == "undefined") return;
+		 		 		
+		if ( app.currentChatWith == publicClientID ){
+			gui.showMsgInConversation( msg, false, true);
+		}else{
+			obj.counterOfUnreadSMS++ ;
+			gui.refreshCounterOfChat( obj );  		  			
+		}  		  		
+		obj.timeLastSMS = msg.timestamp;
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );
+		
+		gui.setTimeLastSMS( obj );  				
+		gui._sortChats();				
+		gui.showLocalNotification( msg );
+	
+	}else if( msg.messageBody.messageType == "groupUpdate" ) {
+	  
+		var group = new Group( msg.messageBody.group );
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB( group );
+		
+		gui.showGroupsOnGroupMenu();
+		gui.showEntryOnMainPage( group ,false);
+				
+		group.listOfMembers.map( function( publicClientID ){
+			if ( user.publicClientID == publicClientID ) return;
+			var contact = contactsHandler.getContactById( publicClientID ); 
+	  		if (!contact){
+				contact = new ContactOnKnet({ publicClientID : publicClientID });
+				contactsHandler.setContactOnList( contact );												
+				contactsHandler.setContactOnDB( contact );
+				contactsHandler.sendProfileRequest( contact );
+	  		} 
+		});
+		
+	}
+};
+
+Postman.prototype.send = function(event2trigger, data  ) {
+	
+	if (typeof event2trigger !== 'string' ||
+		typeof data !== 'object' || data == null ) 	{	
+		
+		log.debug("Postman.prototype.send - type check", data);
+		return null;
+	}	
+	
+	try{
+		if (typeof socket != "undefined" && socket.connected == true){
+			socket.emit(event2trigger, Postman.prototype.encrypt( data ) );
+		}	
+					
+	}catch(e){
+		log.debug("Postman.prototype.send - type check", e);
+	}		
+		
+};
+
+Postman.prototype.sendMsg = function( msg ) {	
+	try{
+		if (msg.messageBody == null){
+		log.debug("Postman.prototype.sendMsg - type check", msg);
+			return;
+		}
+		
+		var listOfMsg2send = [];		
+		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
+		
+		if ( membersOfGroup.length > 0 ){			
+		    membersOfGroup.map(function( memberPublicId ){
+		    	if ( user.publicClientID == memberPublicId ) return;
+		    	var copyOfMsg = new Message( msg );
+		    	copyOfMsg.to = memberPublicId; 
+		    	listOfMsg2send.push( copyOfMsg );		    	
+		    });
+		}else{
+			listOfMsg2send.push( msg );
+		}
+			
+		listOfMsg2send.map(function (m){
+			m.messageBody = postman.encryptMsgBody( m );	
+			if (typeof socket != "undefined" && socket.connected == true){
+				socket.emit("message2client", m );
+			}			
+		});		
+				
+	}catch(e){
+		log.debug("Postman.prototype.sendMsg", e);
+	}	
+};
+
+Postman.prototype.signToken = function(message) {	
+	try {    
+		var stringMessage = JSON.stringify(message);
+		var pHeader = {'alg': 'HS512', 'typ': 'JWT'};
+		var sHeader = JSON.stringify(pHeader);		
+		var stringJWS = '';
+		stringJWS  = KJUR.jws.JWS.sign('HS512', sHeader, stringMessage, app.symetricKey2use);		
+		return stringJWS; 
+	}
+	catch (ex) {	return null;	}	
 };
 //END Class Postman
 
@@ -548,49 +607,25 @@ function GUI() {
 	this.groupOnMenu = null;
 };
 
-
-
-GUI.prototype.showAddContact2Group = function( contact ) {
-
-	$('#buttonAddContact2Group' + contact.publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-check' })
+GUI.prototype._parseLinks = function(htmlOfContent) {
+	var result = {};
+	result.mediaLinks = [];
+	var urlRegEx = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-]*)?\??(?:[\-\+=&;%@\.\w]*)#?(?:[\.\!\/\\\w]*))?)/g;
 	
-	$("#contacts4Group")
-		.find("#divAddContact2Group"+ contact.publicClientID)
-		.unbind("click")
-		.on("click", function(){ gui.removeContactFromGroup( contact );  } );
+	result.htmlOfContent = htmlOfContent.replace(urlRegEx, function (match){
+		var link2media = gui._testUrlForMedia(match);		
+		if (link2media){
+			result.mediaLinks.push(link2media);
+		}else { 
+			if ( match.substring(1,4) != "http") match = "http://" + match;
+		}		
+	    return "<a href='" + match + "'>" + match + "</a>";
+	});
 	
-	$('#contacts4Group').listview().listview('refresh');			
+	return result;
 };
 
-GUI.prototype.showRemoveContactFromGroup = function( contact ) {
-
-	$('#buttonAddContact2Group' + contact.publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' })
-	
-	$("#contacts4Group")
-		.find("#divAddContact2Group"+ contact.publicClientID)
-		.unbind("click")
-		.on("click", function(){ gui.AddContact2Group( contact );  } );
-	
-	$('#contacts4Group').listview().listview('refresh');			
-};
-
-GUI.prototype.AddContact2Group = function( contact ) {
-	
-	gui.showAddContact2Group( contact );	
-	gui.groupOnMenu.addMember( contact );
-
-};
-
-GUI.prototype.removeContactFromGroup = function( contact ) {
-
-	gui.showRemoveContactFromGroup( contact );
-	gui.groupOnMenu.removeMember( contact );
-	
-};
-
-GUI.prototype.sanitize = function(html) {
+GUI.prototype._sanitize = function(html) {
 	var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
 	
 	var tagOrComment = new RegExp(
@@ -614,487 +649,240 @@ GUI.prototype.sanitize = function(html) {
 	return html.replace(/</g, '&lt;');
 };
 
-GUI.prototype.insertImgInGallery = function(index, src) {
+GUI.prototype._sortChats = function() {	
+	var ul = $('ul#listOfContactsInMainPage'),
+	    li = ul.children('li');
+	    
+	    li.detach().sort(function(a,b) {
+	        return ( parseInt($(a).data('sortby')) < parseInt($(b).data('sortby')) ) ;  
+	    });
+	    ul.empty();	    
+	    ul.append(li);
+	    $('#listOfContactsInMainPage').listview().listview('refresh');
+};
 
-	var img = new Image();
-	img.src = src;
-	img.onload = function() {
-	    var height = img.height; 
-		var width =  img.width; 
-		gui.listOfImages4Gallery[index] = {
-			src: src,
-		    w: width,
-		    h: height
-		};
-	}
+
+GUI.prototype._testUrlForMedia = function(url) {
+	var success = false;
+	var media   = {};
+	var youtube_Reg = /https?:\/\/(?:www\.)?(?:(?:youtu\.be\/)|(?:(?:(?:youtube-nocookie\.com\/|youtube\.com\/|youtu\.be\/).*)(?:(?:v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))))([^#\&\?]*).*/;
+	var match = url.match(youtube_Reg);
+	if (match){
+		media.type  = "youtube";
+	    media.id    = match[1].split(" ")[0];
+	    media.url 	= url;
+	    success = true;
+	}else{
+		var vimeo_Reg = /https?:\/\/(?:www\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/;
+		var match = url.match(vimeo_Reg);
+		if (match) {
+		    media.type  = "vimeo";
+		    media.id    = match[3];
+		    media.url 	= url;
+		    success = true;
+		}			
+	} 
+	if (success) return media; else return false;
 	
 };
 
 
-GUI.prototype.showGallery = function(index) {	
-	
-    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
-        return;
-    }
+/* $( "body" ).on( "pagecontainershow", function( event, ui ) { does not work on Android ... */
+/* $(document).on("click","#chat-input-button", gui.onChatInput );  (removed) */
 
-	var pswpElement = document.querySelectorAll('.pswp')[0];
+GUI.prototype.bindDOMevents = function(){
 	
-	var options = {};
-	options.index = parseInt(index);
-	options.mainClass = 'pswp--minimal--dark';
-	options.barsSize = {top:0,bottom:0};
-	options.captionEl = false;
-	options.fullscreenEl = false;
-	options.shareEl = false;
-	options.bgOpacity = 0.85;
-	options.tapToClose = false;
-	options.tapToToggleControls = false;
-
-	gui.photoGalleryClosed = false;
-	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
-	gui.photoGallery.init();
-	gui.photoGallery.listen('destroy', function() { 
-		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
+	$("body").on('pagecontainertransition', function( event, ui ) {
+	    if (ui.options.target == "#MainPage"){	    	
+	    	$("#chat-page-content").empty();
+	    	$("#ProfileOfContact-page").empty();
+			app.currentChatWith = null;
+			gui.listOfImages4Gallery = null;
+			gui.listOfImages4Gallery = [];
+			gui.indexOfImages4Gallery = 0;			
+			gui.onProfileUpdate();
+	    }    
+	    if (ui.options.target == "#map-page"){		
+			gui.loadMaps();				 
+	    }
+	    if (ui.options.target == "#ProfileOfContact-page"){		
+			gui.loadMapOnProfileOfContact();				 
+	    }
+	    if (ui.options.target == "#chat-page"){		
+			gui.loadGalleryInDOM();					 
+	    }	    
+	    if (ui.options.target == "#profile"){		
+			gui.loadProfile(); 					 
+	    }	
+	    if (ui.options.target == "#createGroup"){		
+			gui.loadGroupMenu();
+	    }
+        
+	    gui.hideLoadingSpinner();
+	});	
+	$(document).on("pageshow","#emoticons",function(event){
+		$('#chat-input').emojiPicker("toggle");
 	});
-};
-
-
-
-GUI.prototype.insertMessageInConversation = function( message, isReverse , withFX ) {
-
-	var authorOfMessage;
-	var classOfmessageStateColor = "";
-		
-	if ( message.from == user.publicClientID ){
-		authorOfMessage = " ";
-
-		classOfmessageStateColor = "red-no-rx-by-srv";		
-		if (message.markedAsRead == true){
-			classOfmessageStateColor = "blue-r-by-end";
-		} else if (message.ACKfromAddressee == true){
-			classOfmessageStateColor = 	"green-rx-by-end";
-		} else if (message.ACKfromServer == true){
-			classOfmessageStateColor = "amber-rx-by-srv";
+	$(document).on("pageshow","#chat-page",function(event, ui){				
+		$.mobile.silentScroll($(document).height());	
+		$('#chat-input').emojiPicker("hide");
+		if ( ui.prevPage.attr('id') == "emoticons"){ 
+			$('#chat-input').focus();
 		}
-	}else {		
-		
-		var contact = contactsHandler.getContactById( message.from ); 		
-		if (typeof contact == 'undefined' || contact == null) 
-			return;
-			
-		authorOfMessage = contact.nickName;
-				
-		if (message.markedAsRead == false) {		  	
-			var messageACK = {	
-	  			to : message.to, 
-	  			from : message.from,
-	  			msgID : message.msgID, 
-	  			typeOfACK : "ReadfromAddressee"
-		  	};					
-			postman.send("MessageDeliveryACK", messageACK );
-			message.markedAsRead = true;
-			mailBox.storeMessage(message);						
+	});	
+	$(document).on("pageshow","#profile",function(event){		
+		if(user.myCurrentNick == ""){
+			$("#nickNameInProfile").html(user.publicClientID);
+		} else{
+			$("#nickNameInProfile").html(user.myCurrentNick);
 		}		
-	}
-	var htmlOfContent = "";
-	var htmlOfVideoPreview ="";
-	if ( message.messageBody.messageType == "text")	{
-		htmlOfContent = this.sanitize( message.messageBody.text );
-		htmlOfContent = decodeURI( htmlOfContent );
-		var parsedLinks = this.parseLinks( htmlOfContent );
-		htmlOfContent = parsedLinks.htmlOfContent;
-		htmlOfContent = twemoji.parse( htmlOfContent,function(icon, options, variant) {
-			return './js/' + options.size + '/' + icon + '.png';
-		});
+		$("#profileNameField").val(user.myCurrentNick);
+		$("#commentaryInProfile").html(user.myCommentary);
+		$("#profileCommentary").val(user.myCommentary);
+		$("#profileTelephone").val(user.myTelephone);
+		$("#profileEmail").val(user.myEmail);
+		$("#flip-visible").val(user.visibility).slider("refresh");
+	});
 
-		parsedLinks.mediaLinks.map(function(link){			
-			var srcPath = null;
-			if (link.type == "youtube"){
-				srcPath = "http://www.youtube.com/embed/" + link.id ;		
+	$("#chat-input")
+	    .css( { "width": $(window).width() * 0.70 , "height" : 54 } )
+	    .emojiPicker({
+		    width: $(window).width(),
+		    height: $(window).height(),
+		    button: false
+		})
+		.on("input", function() {
+			var textMessage = $("#chat-input").val();
+			if (textMessage == '') {
+				$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
 			}else{
-				srcPath = "https://player.vimeo.com/video/" + link.id ;
+				$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+				$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
 			}
-			if (srcPath != null){
-				htmlOfVideoPreview += 
-				'<div class="youtube-preview">'+
-			     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""></iframe>'+
-		  		'</div>';				
-			}
-		});
-		
-	}else if (message.messageBody.messageType == "multimedia"){
-					
-		htmlOfContent = 
-			'<div class="image-preview"> ' + 
-			' <a>' +   
-			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
-			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-			' </a>' + 
-			' <div class="name"></div>' + 
-			'</div>' ;
-		
-		gui.insertImgInGallery(gui.indexOfImages4Gallery , message.messageBody.src);
-		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
-			
-	}	
+		})
+		.keyup(function( event ) {
+			if (event.keyCode == 13){
+				gui.onChatInput();
+			}	
+		})
+		.focus(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		})
+		.click(function() {
+			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
+			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
+		});	
 	
-	var timeStampOfMessage = new Date(message.timestamp);
-	
-	var html2insert = 	
-		'<div class="activity">'+
-		'	<span class="posted_at">'+
-		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
-			timeStampOfMessage.toLocaleString() +
-		' </span>'+
-		'	<div class="readable">'+
-		'		<span class="user">'+ authorOfMessage   +'</span>'+
-		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
-		'	</div>' +
-		'</div>		' ;
-	
-	var $newMsg = $(html2insert);
-	
-	if (message.from != user.publicClientID){
-		$newMsg.css("background", "#FFFFE0"); 
-	}
-	if (isReverse){
-		$("#chat-page-content").prepend($newMsg);
-	}else{
-		$("#chat-page-content").append($newMsg);
-		$("#chat-page-content").trigger("create");
-	}
-	if (withFX){
-		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
-	}
-};
+	$("#chat-multimedia-button").bind("click", gui.showImagePic );	
 
-GUI.prototype.loadContactsOnMapPage = function() {
-	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
-		var cursor = e.target.result;
-     	if (cursor) { 
-        	gui.insertContactOnMapPage(cursor.value);
-         	cursor.continue(); 
-     	}
-	};	
-};
-
-GUI.prototype.insertContactOnMapPage = function( contact ) {
+	$(".backButton").on("click",function() {
+		gui.onBackButton();
+	});
+	$(".button2mainPage").on("click",function() {
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+	});	
 	
-	var attributesOfLink = "" ; 
-		
-	var html2insert = 	
-		'<li id="' + contact.publicClientID + '-inMap">'+
-		' <a>  '+
-		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
-		'  <h2>'+ contact.nickName   + '</h2> '+
-		'  <p>' + contact.commentary + '</p></a>'+
-		' <a></a>'+
-		'</li>';
-		
-	$("#listOfContactsInMapPage")
-		.append(html2insert)
-		.listview().listview('refresh')
-		.find('#' + contact.publicClientID + "-inMap").first().on("click", function(){			 
-			gui.go2ChatWith( contact );
-		});
+	$("#profileNameField")
+		.on("input", function() {
+			user.myCurrentNick = $("#profileNameField").val();	
+			$("#nickNameInProfile").text(user.myCurrentNick);
+			app.profileIsChanged = true;
+		})
+		.on("focus", function() {
+			if (user.myCurrentNick == user.publicClientID){
+				$("#nickNameInProfile").html("");
+				$("#profileNameField").val("");
+			}		
+		});	
+	$("#profileCommentary").on("input", function() {
+		user.myCommentary = $("#profileCommentary").val();
+		$("#commentaryInProfile").text(user.myCommentary);	
+		app.profileIsChanged = true;
+	});
+	
+	$("#nickNameGroupField").on("input", function() {
+		gui.groupOnMenu.nickName = $("#nickNameGroupField").val();
+		$("#nickNameGroup").text( gui.groupOnMenu.nickName );	
+	});
+	$("#commentaryGroupField").on("input", function() {
+		gui.groupOnMenu.commentary = $("#commentaryGroupField").val();
+		$("#commentaryGroup").text( gui.groupOnMenu.commentary );	
+	});		
+	
+	$("#profileTelephone").on("input", function() {
+		user.myTelephone = $("#profileTelephone").val();	
+		app.profileIsChanged = true;
+	});
+	$("#profileEmail").on("input", function() {
+		user.myEmail = $("#profileEmail").val();
+		app.profileIsChanged = true;
+	});
+	$("#flip-visible").on("change", function() {
+		user.visibility = $("#flip-visible").val();
+		app.profileIsChanged = true;
+	});
+	
+	$("#mapButtonInMainPage").on("click",function() {
+		if ( app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
+		}
+	});	
+	$("#mapButtonInChatPage").on("click" ,function() {
+		if ( app.myPosition.coords.latitude != "" && gui.photoGalleryClosed ){
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
+		}
+	});
+	
+	$("#buyButton").on("click", app.onProcessPayment );	
+	$("input[name='license-choice']").on("change", gui.refreshPurchasePrice );
+	$("#NGOdonation").on("change", gui.refreshPurchasePrice );
+	$("#FSIdonation").on("change", gui.refreshPurchasePrice );
+	$("#Backup").on("change", gui.refreshPurchasePrice );
+	
+	
+	$("#groupsButton")
+	 .on("click", gui.onGroupsButton )
+	 .text( dictionary.Literals.label_38 )
+	 .data( 'action', 'create' );
 	 
-	var latlng = L.latLng(contact.location.lat, contact.location.lon);
-	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(app.map);
+	//$(document).on("click","#firstLoginInputButton", gui.firstLogin );
 	
-};
-/** 
- * @param obj := ContactOnKnet | Group
- * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
- */
-GUI.prototype.insertChatInMainPage = function( obj, isNewContact) {
-//TODO update instead of just return;	
-	if ( $('#'+obj.publicClientID).length ) return;
-	
-	var attributesOfLink = "" ;		
-	if (isNewContact){
-		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
-	}	
-	var htmlOfCounter = "";
-	if ( obj.counterOfUnreadSMS > 0 ){
-		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="ui-li-count">'+ obj.counterOfUnreadSMS + '</span>';
-	}else{
-		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class=""></span>';
-	}
-		
-	var html2insert = 	
-		'<li id="' + obj.publicClientID + '" data-sortby=' + obj.timeLastSMS + ' >'+
-		'	<a id="link2go2ChatWith_'+ obj.publicClientID  + '">'+ 
-		'		<img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
-		'		<h2>'+ obj.nickName   + '</h2> '+
-		'		<p>' + obj.commentary + '</p>'+
-				htmlOfCounter	+   
-		' 	</a>'+
-		'	<a id="linkAddNewContact' + obj.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
-		'</li>';
-				
-	$("#listOfContactsInMainPage")
-		.append(html2insert)
-		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
-	
-	if (isNewContact){
-		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
-	}else{
-		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
-	}	
-	gui.sortChats();
-};
-
-GUI.prototype.showContactsOnGroupMenu = function() {
-	
-	$('#contacts4Group').empty();
-	
-	contactsHandler.listOfContacts.map( function( obj ){
-		var html2insert = 	
-		'<li id="divAddContact2Group'+obj.publicClientID + '">'+
-		' <a>'+ 
-		'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
-		'  <h2>'+ obj.nickName   + '</h2> '+
-		' </a>'+
-		' <a id="buttonAddContact2Group'+obj.publicClientID + '" data-role="button" class="icon-list" data-inline="true">'+
-		' </a>' +
-		'</li>';
-					
-		$("#contacts4Group").append( html2insert );
-			
-		if ( gui.groupOnMenu.listOfMembers.indexOf( obj.publicClientID ) != -1){
-			gui.showAddContact2Group( obj );
-		}else{
-			gui.showRemoveContactFromGroup( obj );
-		}		
+	$(window).on("debouncedresize", function( event ) {
+		$('#chat-input')
+			.css( { "width": $(window).width() * 0.70 , "height" : 54 } ) 
+			.emojiPicker("reset"); 
 	});	
-};
-
-GUI.prototype.showGroupsOnGroupMenu = function() {
-	
-	$('#listOfGroups').empty();
-	
-	groupsHandler.list.map( function( group ){
-		var html2insert = 	
-		'<li id="divGroupOnMenu'+group.publicClientID + '">'+
-		' <a>'+ 
-		'  <img src="' + group.imgsrc + '" class="imgInMainPage"/>'+
-		'  <h2>'+ group.nickName   + '</h2> '+
-		' </a>'+
-		'</li>';
-					
-		$("#listOfGroups")
-		 .append( html2insert)
-		 .listview().listview('refresh')
-		 .find("#divGroupOnMenu"+group.publicClientID)		 
-		 .unbind("click")		 
-		 .on("click", function(){ 
-		 	gui.loadGroupMenu( group );		 		 	
-		 });
+	$("#link2profileOfContact").bind("click", gui.showProfile );	
+	$("#link2panel").on("click",function() {
+		$( "#mypanel" ).panel( "open" );
 	});
-};
-
-
-
-/**
- * @param obj := ContactOnKnet | Group
- */
-GUI.prototype.updateCounterOfChat = function( obj ) {
-	
-	if ( obj.counterOfUnreadSMS > 0 ){
-		$("#counterOf_"+obj.publicClientID).text( obj.counterOfUnreadSMS );		
-		$("#counterOf_"+obj.publicClientID).attr("class", "ui-li-count");
-	} else{
-		$("#counterOf_"+obj.publicClientID).text("");
-		$("#counterOf_"+obj.publicClientID).attr("class", "");
-	}
-	
-	$('#listOfContactsInMainPage').listview().listview('refresh');	
-};
-
-
-//stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
-GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
-
-	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
-		
-		var newList = listOfMessages.concat(list);
-		
-		if (newList.length > config.limitBackwardMessages || 
-			olderDate < config.beginingOf2015 ){
-							
-			newList.map(function(message){			
-				gui.insertMessageInConversation( message, false, true);
-			});			
-			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
-			
-		}else {	
-			olderDate = olderDate - config.oneMonth;
-			newerDate = newerDate - config.oneMonth;
-			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
-		}
-	});
-	
-};
-
-GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate ) {
-	
-	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
-
-		list.reverse().map(function(message){	
-			gui.insertMessageInConversation(message, true, false);			
-		});
-		
-		if ( olderDate > config.beginingOf2015 ){
-			olderDate = olderDate - config.oneMonth;
-			newerDate = newerDate - config.oneMonth;
-			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
-		}else {
-			gui.hideLoadingSpinner();
-			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		}
-	});	
-};
-
-/**
- * @param obj := ContactOnKnet | Group
- */
-GUI.prototype.go2ChatWith = function( obj ) {
-
-	app.currentChatWith = obj.publicClientID;
-    $("body").pagecontainer("change", "#chat-page");
-    gui.showLoadingSpinner();			
-
-	$("#imgOfChat-page-header").attr("src", obj.imgsrc );
-	
-	var newerDate = new Date().getTime();	
-	var olderDate = new Date(newerDate - config.oneMonth).getTime();
-
-	gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
-	
-	if ( obj.counterOfUnreadSMS > 0 ){
-		obj.counterOfUnreadSMS = 0;
-		abstractHandler.setOnList( obj );
-		abstractHandler.setOnDB( obj );	
-		gui.updateCounterOfChat( obj );
-	}
-
-	if ( obj instanceof ContactOnKnet ){
-		contactsHandler.requestProfile( obj );	
-	}	
+	app.events.documentReady.resolve();
 		
 };
 
-GUI.prototype.loadGalleryInDOM = function() {
 
-    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
-        return;
-    }
-    var strVar = "";
+GUI.prototype.getPurchaseDetails = function() {
+	var purchase = {};
+	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
+	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
+	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
+	purchase.isBackupChecked = $("#Backup").is(':checked');
 	
-	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
-	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
-	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
-	strVar += "			<div data-role=\"none\" class=\"pswp__container\">";
-	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
-	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
-	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
-	strVar += "          <\/div>";
-	strVar += "          <div data-role=\"none\" class=\"pswp__ui pswp__ui--hidden\">";
-	strVar += "				<div data-role=\"none\" class=\"pswp__top-bar\">";
-	strVar += "					<div data-role=\"none\" class=\"pswp__counter\"><\/div>";
-	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
-	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
-	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
-	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--zoom\" title=\"Zoom in\/out\"><\/button>";
-	strVar += "				<div class=\"pswp__preloader\">";
-	strVar += "					<div class=\"pswp__preloader__icn\">";
-	strVar += "					  <div class=\"pswp__preloader__cut\">";
-	strVar += "					    <div class=\"pswp__preloader__donut\"><\/div>";
-	strVar += "					  <\/div>";
-	strVar += "					<\/div>";
-	strVar += "				<\/div>";
-	strVar += "            <\/div>	<!-- <div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> -->";
-	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
-	strVar += "	            <div class=\"pswp__share-tooltip\">";
-	strVar += "					<!-- <a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
-	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
-	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
-	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
-	strVar += "	            <\/div>";
-	strVar += "	        <\/div>";
-	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\"><\/button>";
-	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\"><\/button>";
-	strVar += "            <div class=\"pswp__caption\">";
-	strVar += "              <div class=\"pswp__caption__center\">";
-	strVar += "              <\/div>";
-	strVar += "            <\/div>";
-	strVar += "          <\/div>";
-	strVar += "        <\/div>";
-	strVar += "    <\/div>";
-	
-	$("#chat-page-content").append(strVar);
-
+	return purchase;
 };
 
-GUI.prototype.showEmojis = function() {	
-    $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
+GUI.prototype.hideLoadingSpinner = function(){		
+	$('.mask-color').fadeOut('fast');
 };
 
-GUI.prototype.showImagePic = function() {	
-	
-	var prompt2show = 	
-		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
-		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
-		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
-		'</div>';
-	$("#multimedia-content").append(prompt2show);
-	$("#multimedia-content").trigger("create");
-	$(".backButton").unbind( "click" ).bind("click", function(){			 
-		gui.backButtonHandler();
-	});	
-	$( "#popupDivMultimedia" ).bind({
-	  popupafterclose: function(event, ui) {
-		  $("#popupDivMultimedia").remove();
-	  }
-	});
-		
-	$('#picPopupDivMultimedia').picEdit({
-		maxWidth : ( config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
-		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
-		displayWidth: $(window).width() * 0.70 ,
-		displayHeight: $(window).height() * 0.60 , 
-		navToolsEnabled : false,
-		callmeAtImageCreation : function(){
-			$("#popupDivMultimedia").popup( "close" );						
-		},
-		callmeAtNativeInvocation : function(){
-			app.setMultimediaAsOpen();						
-		},		
- 		imageUpdated: function(img){  			
-			var message2send = new Message(	{ 	
-				to : app.currentChatWith, 
-				from : user.publicClientID , 
-				messageBody : { messageType : "multimedia", src : img.src }
-			});
-			//message2send.setChatWith( app.currentChatWith );
-
-			var msg2store = new Message( message2send );
-			mailBox.storeMessage( msg2store );
-			
-			gui.insertMessageInConversation( msg2store, false, true);					
-			$.mobile.silentScroll($(document).height());
-			
-			postman.sendMsg( message2send );
-					
- 		}// END imageUpdated
- 	});// END picEdit construct	
-		
-	$("#popupDivMultimedia").popup("open");
-	
+GUI.prototype.hideLocalNotifications = function() {
+	cordova.plugins.notification.local.clearAll(function() {
+		log.info("GUI.prototype.hideLocalNotifications - notification cleared");
+		gui.localNotificationText = "";
+	}, this);
 };
-
 GUI.prototype.loadAsideMenuMainPage = function() {
 
 	var strVar="";
@@ -1144,6 +932,7 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 
 	$('#MainPage').trigger('create'); 
 };
+
 
 GUI.prototype.loadBody = function() { 		
 	var strVar="";
@@ -1425,697 +1214,67 @@ GUI.prototype.loadBody = function() {
 	
 };
 
-GUI.prototype.chatInputHandler = function() {
 
-	var textMessage = $("#chat-input").val();	
-	textMessage = textMessage.replace(/\n/g, "");
-
-	document.getElementById('chat-input').value='';
-
-	if ( textMessage == '' ){ 	return;	}
-	
-	var message2send = new Message(	{ 	
-		to : app.currentChatWith, 
-		from : user.publicClientID , 
-		messageBody : { messageType : "text", text : gui.sanitize( textMessage ) }
-	});
-	//message2send.setChatWith( app.currentChatWith ); 
-	message2send.convertToUTF();	
-
-	var msg2store = new Message( message2send );
-	mailBox.storeMessage( msg2store ); 
-	
-	gui.insertMessageInConversation( msg2store, false, true);
-
-	postman.sendMsg( message2send );	
-	
-	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
-	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
+GUI.prototype.loadContactsOnMapPage = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) { 
+        	gui.showContactOnMapPage(cursor.value);
+         	cursor.continue(); 
+     	}
+	};	
 };
+GUI.prototype.loadGalleryInDOM = function() {
 
-GUI.prototype.groupsButtonHandler = function() {
-
-	var group = gui.groupOnMenu;
-	var action = $("#groupsButton").data( 'action' );	
-	if ( action == "create" ){
-		
-		$("#groupsButton")
-		 .data( 'action', 'modify' )
-		 .text( dictionary.Literals.label_39 );
-			
-		groupsHandler.setGroupOnList( group );
-		groupsHandler.setGroupOnDB( group );
-		groupsHandler.sendGroupUpdate( group );
-		
-		gui.showGroupsOnGroupMenu();
-		gui.insertChatInMainPage( group ,false);
-		
-	}else{		 
-		groupsHandler.setGroupOnList( group );
-		groupsHandler.setGroupOnDB ( group );
-		groupsHandler.sendGroupUpdate( group);
-	}
-};
-
-
-
-GUI.prototype.loadMaps = function(){
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+    var strVar = "";
 	
-	if ( app.map != null )  return;	
-	
-	app.map = L.map('map-canvas');
-	
-	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-		maxZoom: 18,
-		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
-						' &copy; <a href="http://mapbox.com">Mapbox</a>',
-		id: 'instaltic.lbgoad0c',
-		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
-		trackResize : true
-	}).addTo(app.map);
-	
-	app.map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
-	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
-	L.marker(latlng).addTo(app.map).bindPopup(dictionary.Literals.label_11).openPopup();
-	L.circle(latlng, 200).addTo(app.map); 
-	app.map.addEventListener("load",gui.loadContactsOnMapPage());	
-		
-};
-
-
-GUI.prototype.loadMapOnProfileOfContact = function(){
-
-	var contact = contactsHandler.getContactById(app.currentChatWith); 
-	if (typeof contact == "undefined") return;
-	
-	gui.mapOfContact = null ;
-	gui.mapOfContact = L.map('mapProfile');
-	
-	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-		maxZoom: 18,
-		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
-						' &copy; <a href="http://mapbox.com">Mapbox</a>',
-		id: 'instaltic.lbgoad0c',
-		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
-		trackResize : true
-	}).addTo(gui.mapOfContact);
-	
-	gui.mapOfContact.setView([contact.location.lat, contact.location.lon], 14);  
-	var latlng = L.latLng(contact.location.lat, contact.location.lon);
-	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(contact.nickName);	
-	L.circle(latlng, 200).addTo(gui.mapOfContact); 	
-		
-};
-
-
-
-/* $( "body" ).on( "pagecontainershow", function( event, ui ) { does not work on Android ... */
-/* $(document).on("click","#chat-input-button", gui.chatInputHandler );  (removed) */
-
-GUI.prototype.bindDOMevents = function(){
-	
-	$("body").on('pagecontainertransition', function( event, ui ) {
-	    if (ui.options.target == "#MainPage"){	    	
-	    	$("#chat-page-content").empty();
-	    	$("#ProfileOfContact-page").empty();
-			app.currentChatWith = null;
-			gui.listOfImages4Gallery = null;
-			gui.listOfImages4Gallery = [];
-			gui.indexOfImages4Gallery = 0;			
-			gui.profileUpdateHandler();
-	    }    
-	    if (ui.options.target == "#map-page"){		
-			gui.loadMaps();				 
-	    }
-	    if (ui.options.target == "#ProfileOfContact-page"){		
-			gui.loadMapOnProfileOfContact();				 
-	    }
-	    if (ui.options.target == "#chat-page"){		
-			gui.loadGalleryInDOM();					 
-	    }	    
-	    if (ui.options.target == "#profile"){		
-			gui.loadProfile(); 					 
-	    }	
-	    if (ui.options.target == "#createGroup"){		
-			gui.loadGroupMenu();
-	    }
-        
-	    gui.hideLoadingSpinner();
-	});	
-	$(document).on("pageshow","#emoticons",function(event){
-		$('#chat-input').emojiPicker("toggle");
-	});
-	$(document).on("pageshow","#chat-page",function(event, ui){				
-		$.mobile.silentScroll($(document).height());	
-		$('#chat-input').emojiPicker("hide");
-		if ( ui.prevPage.attr('id') == "emoticons"){ 
-			$('#chat-input').focus();
-		}
-	});	
-	$(document).on("pageshow","#profile",function(event){		
-		if(user.myCurrentNick == ""){
-			$("#nickNameInProfile").html(user.publicClientID);
-		} else{
-			$("#nickNameInProfile").html(user.myCurrentNick);
-		}		
-		$("#profileNameField").val(user.myCurrentNick);
-		$("#commentaryInProfile").html(user.myCommentary);
-		$("#profileCommentary").val(user.myCommentary);
-		$("#profileTelephone").val(user.myTelephone);
-		$("#profileEmail").val(user.myEmail);
-		$("#flip-visible").val(user.visibility).slider("refresh");
-	});
-
-	$("#chat-input")
-	    .css( { "width": $(window).width() * 0.70 , "height" : 54 } )
-	    .emojiPicker({
-		    width: $(window).width(),
-		    height: $(window).height(),
-		    button: false
-		})
-		.on("input", function() {
-			var textMessage = $("#chat-input").val();
-			if (textMessage == '') {
-				$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
-				$("#chat-multimedia-button").unbind().bind( "click", gui.showImagePic );		
-			}else{
-				$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-				$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-			}
-		})
-		.keyup(function( event ) {
-			if (event.keyCode == 13){
-				gui.chatInputHandler();
-			}	
-		})
-		.focus(function() {
-			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-		})
-		.click(function() {
-			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
-			$("#chat-multimedia-button").unbind().bind( "click", gui.showEmojis );
-		});	
-	
-	$("#chat-multimedia-button").bind("click", gui.showImagePic );	
-
-	$(".backButton").on("click",function() {
-		gui.backButtonHandler();
-	});
-	$(".button2mainPage").on("click",function() {
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	});	
-	
-	$("#profileNameField")
-		.on("input", function() {
-			user.myCurrentNick = $("#profileNameField").val();	
-			$("#nickNameInProfile").text(user.myCurrentNick);
-			app.profileIsChanged = true;
-		})
-		.on("focus", function() {
-			if (user.myCurrentNick == user.publicClientID){
-				$("#nickNameInProfile").html("");
-				$("#profileNameField").val("");
-			}		
-		});	
-	$("#profileCommentary").on("input", function() {
-		user.myCommentary = $("#profileCommentary").val();
-		$("#commentaryInProfile").text(user.myCommentary);	
-		app.profileIsChanged = true;
-	});
-	
-	$("#nickNameGroupField").on("input", function() {
-		gui.groupOnMenu.nickName = $("#nickNameGroupField").val();
-		$("#nickNameGroup").text( gui.groupOnMenu.nickName );	
-	});
-	$("#commentaryGroupField").on("input", function() {
-		gui.groupOnMenu.commentary = $("#commentaryGroupField").val();
-		$("#commentaryGroup").text( gui.groupOnMenu.commentary );	
-	});		
-	
-	$("#profileTelephone").on("input", function() {
-		user.myTelephone = $("#profileTelephone").val();	
-		app.profileIsChanged = true;
-	});
-	$("#profileEmail").on("input", function() {
-		user.myEmail = $("#profileEmail").val();
-		app.profileIsChanged = true;
-	});
-	$("#flip-visible").on("change", function() {
-		user.visibility = $("#flip-visible").val();
-		app.profileIsChanged = true;
-	});
-	
-	$("#mapButtonInMainPage").on("click",function() {
-		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page', { transition : "none" });
-		}
-	});	
-	$("#mapButtonInChatPage").on("click" ,function() {
-		if ( app.myPosition.coords.latitude != "" && gui.photoGalleryClosed ){
-			$('body').pagecontainer('change', '#map-page', { transition : "none" });
-		}
-	});
-	
-	$("#buyButton").on("click", app.processPayment );	
-	$("input[name='license-choice']").on("change", gui.updatePurchasePrice );
-	$("#NGOdonation").on("change", gui.updatePurchasePrice );
-	$("#FSIdonation").on("change", gui.updatePurchasePrice );
-	$("#Backup").on("change", gui.updatePurchasePrice );
-	
-	
-	$("#groupsButton")
-	 .on("click", gui.groupsButtonHandler )
-	 .text( dictionary.Literals.label_38 )
-	 .data( 'action', 'create' );
-	 
-	//$(document).on("click","#firstLoginInputButton", gui.firstLogin );
-	
-	$(window).on("debouncedresize", function( event ) {
-		$('#chat-input')
-			.css( { "width": $(window).width() * 0.70 , "height" : 54 } ) 
-			.emojiPicker("reset"); 
-	});	
-	$("#link2profileOfContact").bind("click", gui.showProfileOfContact );	
-	$("#link2panel").on("click",function() {
-		$( "#mypanel" ).panel( "open" );
-	});
-	documentReady.resolve();
-		
-};
-
-GUI.prototype.showLoadingSpinner = function(text2show){
-
-	$('.mask-color').fadeIn('fast');
-};
-
-GUI.prototype.showWelcomeMessage = function(text2show){
-
-	if (text2show){
-		$.mobile.loading( 'show', {
-			text: text2show,
-			textVisible: true,
-			theme: $.mobile.loader.prototype.options.theme,
-			textonly: true,
-			html: ""
-		});
-	}
-	
-};
-
-
-GUI.prototype.hideLoadingSpinner = function(){
-		
-	$('.mask-color').fadeOut('fast');
-
-};
-
-GUI.prototype.testUrlForMedia = function(url) {
-	var success = false;
-	var media   = {};
-	var youtube_Reg = /https?:\/\/(?:www\.)?(?:(?:youtu\.be\/)|(?:(?:(?:youtube-nocookie\.com\/|youtube\.com\/|youtu\.be\/).*)(?:(?:v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))))([^#\&\?]*).*/;
-	var match = url.match(youtube_Reg);
-	if (match){
-		media.type  = "youtube";
-	    media.id    = match[1].split(" ")[0];
-	    media.url 	= url;
-	    success = true;
-	}else{
-		var vimeo_Reg = /https?:\/\/(?:www\.)?vimeo.com\/(?:channels\/(?:\w+\/)?|groups\/([^\/]*)\/videos\/|album\/(\d+)\/video\/|)(\d+)(?:$|\/|\?)/;
-		var match = url.match(vimeo_Reg);
-		if (match) {
-		    media.type  = "vimeo";
-		    media.id    = match[3];
-		    media.url 	= url;
-		    success = true;
-		}			
-	} 
-	if (success) return media; else return false;
-	
-};
-
-GUI.prototype.parseLinks = function(htmlOfContent) {
-	var result = {};
-	result.mediaLinks = [];
-	var urlRegEx = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[\-;:&=\+\$,\w]+@)?[A-Za-z0-9\.\-]+|(?:www\.|[\-;:&=\+\$,\w]+@)[A-Za-z0-9\.\-]+)((?:\/[\+~%\/\.\w\-]*)?\??(?:[\-\+=&;%@\.\w]*)#?(?:[\.\!\/\\\w]*))?)/g;
-	
-	result.htmlOfContent = htmlOfContent.replace(urlRegEx, function (match){
-		var link2media = gui.testUrlForMedia(match);		
-		if (link2media){
-			result.mediaLinks.push(link2media);
-		}else { 
-			if ( match.substring(1,4) != "http") match = "http://" + match;
-		}		
-	    return "<a href='" + match + "'>" + match + "</a>";
-	});
-	
-	return result;
-};
-/*
-GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
-	
-	$('#listOfContactsInMainPage').hide();	
-	var strVar="";
-	strVar += "		<div hidden id=\"formInFirstLogin\">";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
-	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\"> ";
-	strVar += "	    	<\/ul>";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
-	strVar += "				<div data-role=\"fieldcontain\">";
-	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label>";
-	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
-	strVar += "				<\/div>";
-	strVar += "			<\/ul>";
-	strVar += "		<\/div>";
-	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
-	strVar += "			<li id=\"firstLoginInputButton\">";
-	strVar += "				<a>";
-	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
-	strVar += "				<\/a>";
-	strVar += "			<\/li>";
-	strVar += "		<\/ul>	";
-	
-	$("#contentOfMainPage").append(strVar);	
-	$("#contentOfMainPage").trigger("create");
-	
- 	$('#imageOnVisibleFirstTime').picEdit({
- 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
-		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
-		displayWidth: $(window).width() * 0.90 ,
-		displayHeight: $(window).height() * 0.80 , 
-		navToolsEnabled : true,
- 		imageUpdated: function(img){
- 			user.myPhotoPath = img.src;	     			
- 		}
- 	});  	
-	         	    
-	//$("#link2profileFromMyPanel").remove();
-	$.mobile.loading( "hide" );
-	
-	$("#formInFirstLogin").show();
-	$("#listInFirstLogin").show();
-
-};
-*/
-
-GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
-	$("#formInFirstLogin").remove();
-	$("#listInFirstLogin").remove();
-	$('#listOfContactsInMainPage').show();
-};
-
-GUI.prototype.setLocalLabels = function() {
-	document.getElementById("label_1").innerHTML = dictionary.Literals.label_1;
-	document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
-	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
-	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
-	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
-	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
-	//document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
-	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
-	document.getElementById("label_9").innerHTML = dictionary.Literals.label_9;
-	document.getElementById("label_10").innerHTML = dictionary.Literals.label_10;
-	/*dictionary.Literals.label_11; ( dinamically inserted into the DOM , the maps...)
-	dictionary.Literals.label_12; ( dinamically inserted into the DOM , the commentary...)
-	dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
-	dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
-	label_15 saved contact, label_16 notification title
-	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;	
-	dictionary.Literals.label_18,// 'Do you want to quit'
-	dictionary.Literals.label_19, // exit
-	dictionary.Literals.label_20 //'Yes, No
-	*/
-	document.getElementById("label_21").innerHTML = dictionary.Literals.label_36;
-	document.getElementById("label_22").innerHTML = dictionary.Literals.label_1;
-	document.getElementById("profileNameField").placeholder = dictionary.Literals.label_23;
-	document.getElementById("profileCommentary").placeholder = dictionary.Literals.label_24;
-	document.getElementById("profileTelephone").placeholder = dictionary.Literals.label_25;
-	document.getElementById("profileEmail").placeholder = dictionary.Literals.label_26;
-	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
-	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
-	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
-	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
-	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
-	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
-	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
-	document.getElementById("buyButton").innerHTML = dictionary.Literals.label_34;
-	document.getElementById("label_37").innerHTML = dictionary.Literals.label_37;
-	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
-
-};
-
-GUI.prototype.firstLogin = function() {	
-	
-	user.myCurrentNick = $("#firstLoginNameField").val();
-	
-	if ( user.myCurrentNick == null || user.myCurrentNick == "" ||  user.myPhotoPath == null) {
-		
-		$("#popupDiv").remove();
-		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-							'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
-							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
-							'</div>';
-		$("#contentOfvisibleFirstTime").append(prompt2show);
-		$("#contentOfvisibleFirstTime").trigger("create");
-		$(".backButton").unbind( "click" ).bind("click", function(){			 
-			gui.backButtonHandler();
-		});	
-		$("#popupDiv").popup("open");		
-		return;
-	}
-	
-	gui.showLoadingSpinner("generating your encryption keys ...");
-	gui.removeVisibleFirstTimeOnMainPage();
-	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
-	
-};
-
-GUI.prototype.showLocalNotification = function(msg) {
-	
-	var contact = contactsHandler.getContactById(msg.from); 		
-	
-	if (app.inBackground && contact && typeof cordova != "undefined" ){			
-		
-		cordova.plugins.notification.local.isPresent( 1 , function (present) {
-			
-			if (gui.localNotificationText != "" && gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "" 	) {					
-				gui.localNotificationText +=  ", " + contact.nickName ;
-			}
-			if (gui.localNotificationText == "" ){
-				gui.localNotificationText += contact.nickName ;
-			}
-			var text2show = gui.localNotificationText;
-			
-			if (present){				
-				
-		    	cordova.plugins.notification.local.update({
-		    	    id: 1,
-		    	    title: dictionary.Literals.label_16,
-		    	    text: text2show  
-		    	});
-		    	
-		    }else{
-		    	
-				cordova.plugins.notification.local.schedule({
-				    id: 1,
-				    title: dictionary.Literals.label_16,
-				    text: text2show		    
-				});	
-		    }		    
-		});
-				
-	}	
-};
-
-GUI.prototype.hideLocalNotifications = function() {
-	cordova.plugins.notification.local.clearAll(function() {
-		console.log("DEBUG ::: hideLocalNotifications ::: notifications cleared ");
-		gui.localNotificationText = "";
-	}, this);
-};
-
-GUI.prototype.backButtonHandler = function() {
-	
-	var page = $.mobile.activePage.attr( "id" );
-	switch (true){
-		case /MainPage/.test(page):
-			if ( $(".ui-popup-active").length > 0){
-		     	$("#popupDiv").popup( "close" );
-			}else{
-				if (typeof cordova != "undefined" && cordova != null ){	
-					$.when( deviceReady , documentReady).done(function(){
-						function onConfirmQuit(button){
-					       if(button == 2){	navigator.app.exitApp(); }
-						}
-						navigator.notification.confirm(
-							dictionary.Literals.label_18,// 'Do you want to quit?'
-							onConfirmQuit,
-							dictionary.Literals.label_19, // exit
-							dictionary.Literals.label_20 //'Yes, No' 
-						);
-					});		
-				}					
-			}
-			break;
-		case /chat-page/.test(page):
-			if ( $(".ui-popup-active").length > 0){
-		     	$("#popupDivMultimedia").popup( "close" );
-			}else if( gui.photoGalleryClosed == false ){
-				gui.photoGallery.close();
-			}else{				
-				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-			}
-			break;
-		case /emoticons/.test(page):
-			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-			break;
-		case /ProfileOfContact/.test(page):
-			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-			break;			
-		default:
-			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-			break;	
-	}
-		
-};
-
-GUI.prototype.showProfileOfContact = function() {	
-	
-	var contact = contactsHandler.getContactById(app.currentChatWith); 
-	if (typeof contact == "undefined") return;	
-		
-	$("#ProfileOfContact-page").remove();
-	
-	var strVar = "";
-	strVar += "		<div data-role=\"page\" data-cache=\"false\" id=\"ProfileOfContact-page\" >";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
-	strVar += "			  <div class=\"ui-grid-d\" >";
-	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a>";
-	strVar += "	    		<\/div>";
-	strVar += "			    <div class=\"ui-block-b\"><\/div>";
-	strVar += "			    <div class=\"ui-block-c\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><\/div>";
-	strVar += "			  <\/div>";
-	strVar += "			<\/div><!-- \/header -->";
-	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
-
-	strVar += "				<div class=\"container\" id=\"main\">";
-	strVar += "					<div class=\"row\">";
-	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
-	strVar += "							<div id=\"sidebar\">";
-	strVar += "								<div class=\"user\">";
-	strVar += "									<div class=\"text-center\">";
-	strVar += "										<img src=\"" + contact.imgsrc + "\" class=\"img-circle\">";
-	strVar += "									<\/div>";
-	strVar += "									<div class=\"user-head\">";
-	strVar += "										<h1>" + contact.nickName  + "<\/h1>";
-	strVar += "										<div class=\"hr-center\"><\/div>";
-	strVar += "										<h5>" + contact.commentary  + "<\/h5>";
-	strVar += "										<div class=\"hr-center\"><\/div>";
-	strVar += "									<\/div>";
-	strVar += "								<\/div>";
-	strVar += "							<\/div>";
-	strVar += "						<\/div>";
-	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
-	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\"> ";
-	
-	strVar += "					          		<div class=\"timeline-panel\">";
-	strVar += "					          			<h1>Contact Info<\/h1>";
-	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
-	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
-	strVar += "					          				<div class=\"col-md-6\">";
-	strVar += "					          					<address>";
-	strVar += "												  	<strong>" + contact.nickName  + "<\/strong><br>";
-	strVar += "											  		<abbr title=\"Phone\"> &#9742 <\/abbr>" + contact.telephone;
-	strVar += "												<\/address>";
-	strVar += "												<email>";
-	strVar += "												  	<abbr title=\"email\"> &#9993 <\/abbr>" + contact.email;
-	strVar += "												<\/email>";
-	strVar += "						          			<\/div>";
-	strVar += "						          			<div class=\"col-md-6\">";
-	strVar += "					    	      				<p><\/p>";
-	strVar += "					        	  			<\/div>";
-	strVar += "					          			<\/div>";
-	strVar += "					          			<div class=\"col-md-12\">";
-	strVar += "					          				<div id=\"mapProfile\">";
-	strVar += "					          				<\/div>";
-	strVar += "					          			<\/div>";
-	strVar += "					    	      	<\/div>";	
-	strVar += "								<\/div>";
-	strVar += "							<\/div>";
-	strVar += "						<\/div>";
+	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
+	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
+	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
+	strVar += "			<div data-role=\"none\" class=\"pswp__container\">";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
+	strVar += "				<div data-role=\"none\" class=\"pswp__item\"><\/div>";
+	strVar += "          <\/div>";
+	strVar += "          <div data-role=\"none\" class=\"pswp__ui pswp__ui--hidden\">";
+	strVar += "				<div data-role=\"none\" class=\"pswp__top-bar\">";
+	strVar += "					<div data-role=\"none\" class=\"pswp__counter\"><\/div>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
+	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--zoom\" title=\"Zoom in\/out\"><\/button>";
+	strVar += "				<div class=\"pswp__preloader\">";
+	strVar += "					<div class=\"pswp__preloader__icn\">";
+	strVar += "					  <div class=\"pswp__preloader__cut\">";
+	strVar += "					    <div class=\"pswp__preloader__donut\"><\/div>";
+	strVar += "					  <\/div>";
 	strVar += "					<\/div>";
-	strVar += "				<\/div>";	
-	strVar += "			<\/div><!-- \/content -->";
-	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
+	strVar += "				<\/div>";
+	strVar += "            <\/div>	<!-- <div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> -->";
+	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
+	strVar += "	            <div class=\"pswp__share-tooltip\">";
+	strVar += "					<!-- <a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
+	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
+	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
+	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
+	strVar += "	            <\/div>";
+	strVar += "	        <\/div>";
+	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\"><\/button>";
+	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\"><\/button>";
+	strVar += "            <div class=\"pswp__caption\">";
+	strVar += "              <div class=\"pswp__caption__center\">";
+	strVar += "              <\/div>";
+	strVar += "            <\/div>";
+	strVar += "          <\/div>";
+	strVar += "        <\/div>";
+	strVar += "    <\/div>";
 	
-	$("body").append(strVar);
-	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
-	$(".backButton").unbind("click").bind("click",function() {
-		gui.backButtonHandler();
-	});	
+	$("#chat-page-content").append(strVar);
 
-
-};
-/**
- * @param obj := ContactOnKnet | Group
- */
-GUI.prototype.setTimeLastSMS = function( obj ) {	
-	$("#"+obj.publicClientID).data('sortby', obj.timeLastSMS) ;
-};
-
-GUI.prototype.sortChats = function() {	
-	var ul = $('ul#listOfContactsInMainPage'),
-	    li = ul.children('li');
-	    
-	    li.detach().sort(function(a,b) {
-	        return ( parseInt($(a).data('sortby')) < parseInt($(b).data('sortby')) ) ;  
-	    });
-	    ul.empty();	    
-	    ul.append(li);
-	    $('#listOfContactsInMainPage').listview().listview('refresh');
-};
-
-GUI.prototype.profileUpdateHandler = function() {
-	
-	if (app.profileIsChanged){
-		user.lastProfileUpdate = new Date().getTime();
-		app.profileIsChanged = false;			
-		app.sendProfileUpdate();
-		user.updateUserSettings();					
-	}
-};
-
-
-GUI.prototype.getPurchaseDetails = function() {
-	var purchase = {};
-	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
-	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
-	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
-	purchase.isBackupChecked = $("#Backup").is(':checked');
-	
-	return purchase;
-};
-
-GUI.prototype.updatePurchasePrice = function() {
-	var purchase = gui.getPurchaseDetails();
-	var price = 0;
-	
-	if(purchase.licenseDurationChoosen == "fourYears") price = price + 3;
-	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
-	if(purchase.isNGOdonationChecked) price = price + 1;
-	if(purchase.isFSIdonationChecked) price = price + 1;
-	if(purchase.isBackupChecked) price = price + 1;
-
-	
-	$("#price").html(price + "\u20AC");
-	
 };
 
 GUI.prototype.loadProfile = function() {
@@ -2171,7 +1330,7 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	}
 
 	var html = 
-		"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
+	"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
 	$('#imageGroupContainer').empty().append(html);
 	
 	$('#imageGroup').picEdit({
@@ -2190,13 +1349,71 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	});
 };
 
-GUI.prototype.inAppBrowserLoadHandler = function(event) {
+GUI.prototype.loadMaps = function(){
 	
-	console.log("DEBUG ::: inAppBrowserLoadHandler ::: event " );
+	if ( app.map != null )  return;	
+	
+	app.map = L.map('map-canvas');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		maxZoom: 18,
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
+		trackResize : true
+	}).addTo(app.map);
+	
+	app.map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
+	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
+	L.marker(latlng).addTo(app.map).bindPopup(dictionary.Literals.label_11).openPopup();
+	L.circle(latlng, 200).addTo(app.map); 
+	app.map.addEventListener("load",gui.loadContactsOnMapPage());	
+		
+};
+
+
+GUI.prototype.loadMapOnProfileOfContact = function(){
+
+	var contact = contactsHandler.getContactById(app.currentChatWith); 
+	if (typeof contact == "undefined") return;
+	
+	gui.mapOfContact = null ;
+	gui.mapOfContact = L.map('mapProfile');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		maxZoom: 18,
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
+		trackResize : true
+	}).addTo(gui.mapOfContact);
+	
+	gui.mapOfContact.setView([contact.location.lat, contact.location.lon], 14);  
+	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(contact.nickName);	
+	L.circle(latlng, 200).addTo(gui.mapOfContact); 	
+		
+};
+
+
+
+GUI.prototype.onAddContact2Group = function( contact ) {
+	
+	gui.showAddContact2Group( contact );	
+	gui.groupOnMenu.addMember( contact );
+
+};
+
+
+GUI.prototype.onAppBrowserLoad = function(event) {
+	
+	log.info("GUI.prototype.onAppBrowserLoad - begin");
 	
     if (event.url.match("successPayment") !== null) {
-    	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandler);
-    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+    	gui.inAppBrowser.removeEventListener('exit', gui.onAppBrowserExit );
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad );
 		
 		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
 		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
@@ -2208,53 +1425,879 @@ GUI.prototype.inAppBrowserLoadHandler = function(event) {
     }    
     if (event.url.match("cancelPayment") !== null) {
     	
-    	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.inAppBrowserExitHandler);
-    	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);
+    	gui.inAppBrowser.removeEventListener('navigator.notification.alert("Are', gui.onAppBrowserExit );
+    	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad);
     	
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
 
-    }
-        
+    }        
 };
 
-GUI.prototype.inAppBrowserExitHandler = function (event)	{
-	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
-	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
+GUI.prototype.onAppBrowserExit = function (event)	{
+	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad );																		         
+	gui.inAppBrowser.removeEventListener('exit', gui.onAppBrowserExit );	
 };
+
+GUI.prototype.onBackButton = function() {
+	
+	var page = $.mobile.activePage.attr( "id" );
+	switch (true){
+		case /MainPage/.test(page):
+			if ( $(".ui-popup-active").length > 0){
+		     	$("#popupDiv").popup( "close" );
+			}else{
+				if (typeof cordova != "undefined" && cordova != null ){	
+					$.when( app.events.deviceReady , app.events.documentReady).done(function(){
+						function onConfirmQuit(button){
+					       if(button == 2){	navigator.app.exitApp(); }
+						}
+						navigator.notification.confirm(
+							dictionary.Literals.label_18,// 'Do you want to quit?'
+							onConfirmQuit,
+							dictionary.Literals.label_19, // exit
+							dictionary.Literals.label_20 //'Yes, No' 
+						);
+					});		
+				}					
+			}
+			break;
+		case /chat-page/.test(page):
+			if ( $(".ui-popup-active").length > 0){
+		     	$("#popupDivMultimedia").popup( "close" );
+			}else if( gui.photoGalleryClosed == false ){
+				gui.photoGallery.close();
+			}else{				
+				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			}
+			break;
+		case /emoticons/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;
+		case /ProfileOfContact/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;			
+		default:
+			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+			break;	
+	}
+		
+};
+
+GUI.prototype.onChatInput = function() {
+
+	var textMessage = $("#chat-input").val();	
+	textMessage = textMessage.replace(/\n/g, "");
+
+	document.getElementById('chat-input').value='';
+
+	if ( textMessage == '' ){ 	return;	}
+	
+	var message2send = new Message(	{ 	
+		to : app.currentChatWith, 
+		from : user.publicClientID , 
+		messageBody : { messageType : "text", text : gui._sanitize( textMessage ) }
+	});
+	message2send.convertToUTF();	
+
+	var msg2store = new Message( message2send );
+	mailBox.storeMessage( msg2store ); 
+	
+	gui.showMsgInConversation( msg2store, false, true);
+
+	postman.sendMsg( message2send );	
+	
+	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
+	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
+	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
+};
+
+GUI.prototype.onGroupsButton = function() {
+
+	var group = gui.groupOnMenu;
+	var action = $("#groupsButton").data( 'action' );	
+	if ( action == "create" ){
+		
+		$("#groupsButton")
+		 .data( 'action', 'modify' )
+		 .text( dictionary.Literals.label_39 );
+			
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB( group );
+		groupsHandler.sendGroupUpdate( group );
+		
+		gui.showGroupsOnGroupMenu();
+		gui.showEntryOnMainPage( group ,false);
+		
+	}else{		 
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB ( group );
+		groupsHandler.sendGroupUpdate( group);
+	}
+};
+
+GUI.prototype.onProfileUpdate = function() {
+	
+	if (app.profileIsChanged){
+		user.lastProfileUpdate = new Date().getTime();
+		app.profileIsChanged = false;			
+		app.sendProfileUpdate();
+		user.updateUserSettings();					
+	}
+};
+
+GUI.prototype.onRemoveContactFromGroup = function( contact ) {
+
+	gui.showRemoveContactFromGroup( contact );
+	gui.groupOnMenu.removeMember( contact );
+	
+};
+
+//stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
+GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
+
+	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
+		
+		var newList = listOfMessages.concat(list);
+		
+		if (newList.length > config.limitBackwardMessages || 
+			olderDate < config.beginingOf2015 ){
+							
+			newList.map(function(message){			
+				gui.showMsgInConversation( message, false, true);
+			});			
+			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
+			
+		}else {	
+			olderDate = olderDate - config.oneMonth;
+			newerDate = newerDate - config.oneMonth;
+			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
+		}
+	});
+	
+};
+
+GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate ) {
+	
+	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
+
+		list.reverse().map(function(message){	
+			gui.setMsgInConversation(message, true, false);			
+		});
+		
+		if ( olderDate > config.beginingOf2015 ){
+			olderDate = olderDate - config.oneMonth;
+			newerDate = newerDate - config.oneMonth;
+			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
+		}else {
+			gui.hideLoadingSpinner();
+			$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
+		}
+	});	
+};
+
+GUI.prototype.setImgIntoGallery = function(index, src) {
+
+	var img = new Image();
+	img.src = src;
+	img.onload = function() {
+	    var height = img.height; 
+		var width =  img.width; 
+		gui.listOfImages4Gallery[index] = {
+			src: src,
+		    w: width,
+		    h: height
+		};
+	}
+	
+};
+
+GUI.prototype.setLocalLabels = function() {
+	document.getElementById("label_1").innerHTML = dictionary.Literals.label_1;
+	document.getElementById("label_2").innerHTML = dictionary.Literals.label_2;
+	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
+	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
+	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
+	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
+	//document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
+	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
+	document.getElementById("label_9").innerHTML = dictionary.Literals.label_9;
+	document.getElementById("label_10").innerHTML = dictionary.Literals.label_10;
+	/*dictionary.Literals.label_11; ( dinamically inserted into the DOM , the maps...)
+	dictionary.Literals.label_12; ( dinamically inserted into the DOM , the commentary...)
+	dictionary.Literals.label_13; ( dinamically inserted into the DOM , the commentary bis...),
+	dictionary.Literals.label_14; ( dinamically inserted into the DOM , "drag & drop" in picEdit...),
+	label_15 saved contact, label_16 notification title
+	document.getElementById("label_17").innerHTML = dictionary.Literals.label_17;	
+	dictionary.Literals.label_18,// 'Do you want to quit'
+	dictionary.Literals.label_19, // exit
+	dictionary.Literals.label_20 //'Yes, No
+	*/
+	document.getElementById("label_21").innerHTML = dictionary.Literals.label_36;
+	document.getElementById("label_22").innerHTML = dictionary.Literals.label_1;
+	document.getElementById("profileNameField").placeholder = dictionary.Literals.label_23;
+	document.getElementById("profileCommentary").placeholder = dictionary.Literals.label_24;
+	document.getElementById("profileTelephone").placeholder = dictionary.Literals.label_25;
+	document.getElementById("profileEmail").placeholder = dictionary.Literals.label_26;
+	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
+	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
+	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
+	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
+	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
+	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
+	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
+	document.getElementById("buyButton").innerHTML = dictionary.Literals.label_34;
+	document.getElementById("label_37").innerHTML = dictionary.Literals.label_37;
+	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
+
+};
+
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.setTimeLastSMS = function( obj ) {	
+	$("#"+obj.publicClientID).data('sortby', obj.timeLastSMS) ;
+};
+
+
+GUI.prototype.showAddContact2Group = function( contact ) {
+
+	$('#buttonAddContact2Group' + contact.publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-check' })
+	
+	$("#contacts4Group")
+		.find("#divAddContact2Group"+ contact.publicClientID)
+		.unbind("click")
+		.on("click", function(){ gui.onRemoveContactFromGroup( contact );  } );
+	
+	$('#contacts4Group').listview().listview('refresh');			
+};
+
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.showConversation = function( obj ) {
+
+	app.currentChatWith = obj.publicClientID;
+    $("body").pagecontainer("change", "#chat-page");
+    gui.showLoadingSpinner();			
+
+	$("#imgOfChat-page-header").attr("src", obj.imgsrc );
+	
+	var newerDate = new Date().getTime();	
+	var olderDate = new Date(newerDate - config.oneMonth).getTime();
+
+	gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
+	
+	if ( obj.counterOfUnreadSMS > 0 ){
+		obj.counterOfUnreadSMS = 0;
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );	
+		gui.refreshCounterOfChat( obj );
+	}
+
+	if ( obj instanceof ContactOnKnet ){
+		contactsHandler.sendProfileRequest( obj );	
+	}	
+		
+};
+
+GUI.prototype.showContactsOnGroupMenu = function() {
+	
+	$('#contacts4Group').empty();
+	
+	contactsHandler.listOfContacts.map( function( obj ){
+		var html2insert = 	
+		'<li id="divAddContact2Group'+obj.publicClientID + '">'+
+		' <a>'+ 
+		'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ obj.nickName   + '</h2> '+
+		' </a>'+
+		' <a id="buttonAddContact2Group'+obj.publicClientID + '" data-role="button" class="icon-list" data-inline="true">'+
+		' </a>' +
+		'</li>';
+					
+		$("#contacts4Group").append( html2insert );
+			
+		if ( gui.groupOnMenu.listOfMembers.indexOf( obj.publicClientID ) != -1){
+			gui.showAddContact2Group( obj );
+		}else{
+			gui.showRemoveContactFromGroup( obj );
+		}		
+	});	
+};
+
+GUI.prototype.showContactOnMapPage = function( contact ) {
+	
+	var attributesOfLink = "" ; 
+		
+	var html2insert = 	
+		'<li id="' + contact.publicClientID + '-inMap">'+
+		' <a>  '+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ contact.nickName   + '</h2> '+
+		'  <p>' + contact.commentary + '</p></a>'+
+		' <a></a>'+
+		'</li>';
+		
+	$("#listOfContactsInMapPage")
+		.append(html2insert)
+		.listview().listview('refresh')
+		.find('#' + contact.publicClientID + "-inMap").first().on("click", function(){			 
+			gui.showConversation( contact );
+		});
+	 
+	var latlng = L.latLng(contact.location.lat, contact.location.lon);
+	marker = new L.marker(latlng).bindPopup(contact.nickName).addTo(app.map);
+	
+};
+
+GUI.prototype.showEmojis = function() {	
+    $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
+};
+
+
+
+/** 
+ * @param obj := ContactOnKnet | Group
+ * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
+ */
+GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
+
+	if ( $('#'+obj.publicClientID).length ){
+		gui.refreshProfileInfo(obj);
+		return;
+	} 
+	
+	var attributesOfLink = "" ;		
+	if (isNewContact){
+		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+	}	
+	var htmlOfCounter = "";
+	if ( obj.counterOfUnreadSMS > 0 ){
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="ui-li-count">'+ obj.counterOfUnreadSMS + '</span>';
+	}else{
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class=""></span>';
+	}
+		
+	var html2insert = 	
+		'<li id="' + obj.publicClientID + '" data-sortby=' + obj.timeLastSMS + ' >'+
+		'	<a id="link2go2ChatWith_'+ obj.publicClientID  + '">'+ 
+		'		<img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
+		'		<h2>'+ obj.nickName   + '</h2> '+
+		'		<p>' + obj.commentary + '</p>'+
+				htmlOfCounter	+   
+		' 	</a>'+
+		'	<a id="linkAddNewContact' + obj.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
+		'</li>';
+				
+	$("#listOfContactsInMainPage")
+		.append(html2insert)
+		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
+	
+	if (isNewContact){
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
+	}else{
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
+	}	
+	gui._sortChats();
+};
+
+GUI.prototype.showGallery = function(index) {	
+	
+    if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+        return;
+    }
+
+	var pswpElement = document.querySelectorAll('.pswp')[0];
+	
+	var options = {};
+	options.index = parseInt(index);
+	options.mainClass = 'pswp--minimal--dark';
+	options.barsSize = {top:0,bottom:0};
+	options.captionEl = false;
+	options.fullscreenEl = false;
+	options.shareEl = false;
+	options.bgOpacity = 0.85;
+	options.tapToClose = false;
+	options.tapToToggleControls = false;
+
+	gui.photoGalleryClosed = false;
+	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
+	gui.photoGallery.init();
+	gui.photoGallery.listen('destroy', function() { 
+		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
+	});
+};
+
+GUI.prototype.showGroupsOnGroupMenu = function() {
+	
+	$('#listOfGroups').empty();
+	
+	groupsHandler.list.map( function( group ){
+		var html2insert = 	
+		'<li id="divGroupOnMenu'+group.publicClientID + '">'+
+		' <a>'+ 
+		'  <img src="' + group.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ group.nickName   + '</h2> '+
+		' </a>'+
+		'</li>';
+					
+		$("#listOfGroups")
+		 .append( html2insert)
+		 .listview().listview('refresh')
+		 .find("#divGroupOnMenu"+group.publicClientID)		 
+		 .unbind("click")		 
+		 .on("click", function(){ 
+		 	gui.loadGroupMenu( group );		 		 	
+		 });
+	});
+};
+
+GUI.prototype.showImagePic = function() {	
+	
+	var prompt2show = 	
+		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
+		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
+		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+		'</div>';
+	$("#multimedia-content").append(prompt2show);
+	$("#multimedia-content").trigger("create");
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
+		gui.onBackButton();
+	});	
+	$( "#popupDivMultimedia" ).bind({
+	  popupafterclose: function(event, ui) {
+		  $("#popupDivMultimedia").remove();
+	  }
+	});
+		
+	$('#picPopupDivMultimedia').picEdit({
+		maxWidth : ( config.MAX_WIDTH_IMG > $(window).width() * 0.70  ) ? $(window).width() * 0.70 : config.MAX_WIDTH_IMG ,
+		maxHeight : ( config.MAX_HEIGHT_IMG > $(window).height() * 0.60 ) ? $(window).height() * 0.60 :  config.MAX_HEIGHT_IMG  ,
+		displayWidth: $(window).width() * 0.70 ,
+		displayHeight: $(window).height() * 0.60 , 
+		navToolsEnabled : false,
+		callmeAtImageCreation : function(){
+			$("#popupDivMultimedia").popup( "close" );						
+		},
+		callmeAtNativeInvocation : function(){
+			app.setMultimediaAsOpen();						
+		},		
+ 		imageUpdated: function(img){  			
+			var message2send = new Message(	{ 	
+				to : app.currentChatWith, 
+				from : user.publicClientID , 
+				messageBody : { messageType : "multimedia", src : img.src }
+			});
+			//message2send.setChatWith( app.currentChatWith );
+
+			var msg2store = new Message( message2send );
+			mailBox.storeMessage( msg2store );
+			
+			gui.setMsgInConversation( msg2store, false, true);					
+			$.mobile.silentScroll($(document).height());
+			
+			postman.sendMsg( message2send );
+					
+ 		}// END imageUpdated
+ 	});// END picEdit construct	
+		
+	$("#popupDivMultimedia").popup("open");
+	
+};
+
+GUI.prototype.showLoadingSpinner = function(text2show){
+
+	$('.mask-color').fadeIn('fast');
+};
+
+GUI.prototype.showLocalNotification = function(msg) {
+	
+	var contact = contactsHandler.getContactById(msg.from); 		
+	
+	if (app.inBackground && contact && typeof cordova != "undefined" ){			
+		
+		cordova.plugins.notification.local.isPresent( 1 , function (present) {
+			
+			if (gui.localNotificationText != "" && gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "" 	) {					
+				gui.localNotificationText +=  ", " + contact.nickName ;
+			}
+			if (gui.localNotificationText == "" ){
+				gui.localNotificationText += contact.nickName ;
+			}
+			var text2show = gui.localNotificationText;
+			
+			if (present){				
+				
+		    	cordova.plugins.notification.local.update({
+		    	    id: 1,
+		    	    title: dictionary.Literals.label_16,
+		    	    text: text2show  
+		    	});
+		    	
+		    }else{
+		    	
+				cordova.plugins.notification.local.schedule({
+				    id: 1,
+				    title: dictionary.Literals.label_16,
+				    text: text2show		    
+				});	
+		    }		    
+		});
+				
+	}	
+};
+
+
+
+GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
+
+	var authorOfMessage;
+	var classOfmessageStateColor = "";
+		
+	if ( message.from == user.publicClientID ){
+		authorOfMessage = " ";
+
+		classOfmessageStateColor = "red-no-rx-by-srv";		
+		if (message.markedAsRead == true){
+			classOfmessageStateColor = "blue-r-by-end";
+		} else if (message.ACKfromAddressee == true){
+			classOfmessageStateColor = 	"green-rx-by-end";
+		} else if (message.ACKfromServer == true){
+			classOfmessageStateColor = "amber-rx-by-srv";
+		}
+	}else {		
+		
+		var contact = contactsHandler.getContactById( message.from ); 		
+		if (typeof contact == 'undefined' || contact == null) 
+			return;
+			
+		authorOfMessage = contact.nickName;
+				
+		if (message.markedAsRead == false) {		  	
+			var messageACK = {	
+	  			to : message.to, 
+	  			from : message.from,
+	  			msgID : message.msgID, 
+	  			typeOfACK : "ReadfromAddressee"
+		  	};					
+			postman.send("MessageDeliveryACK", messageACK );
+			message.markedAsRead = true;
+			mailBox.storeMessage(message);						
+		}		
+	}
+	var htmlOfContent = "";
+	var htmlOfVideoPreview ="";
+	if ( message.messageBody.messageType == "text")	{
+		htmlOfContent = this._sanitize( message.messageBody.text );
+		htmlOfContent = decodeURI( htmlOfContent );
+		var parsedLinks = this._parseLinks( htmlOfContent );
+		htmlOfContent = parsedLinks.htmlOfContent;
+		htmlOfContent = twemoji.parse( htmlOfContent,function(icon, options, variant) {
+			return './js/' + options.size + '/' + icon + '.png';
+		});
+
+		parsedLinks.mediaLinks.map(function(link){			
+			var srcPath = null;
+			if (link.type == "youtube"){
+				srcPath = "http://www.youtube.com/embed/" + link.id ;		
+			}else{
+				srcPath = "https://player.vimeo.com/video/" + link.id ;
+			}
+			if (srcPath != null){
+				htmlOfVideoPreview += 
+				'<div class="youtube-preview">'+
+			     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""></iframe>'+
+		  		'</div>';				
+			}
+		});
+		
+	}else if (message.messageBody.messageType == "multimedia"){
+					
+		htmlOfContent = 
+			'<div class="image-preview"> ' + 
+			' <a>' +   
+			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
+			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+			' </a>' + 
+			' <div class="name"></div>' + 
+			'</div>' ;
+		
+		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src);
+		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
+			
+	}	
+	
+	var timeStampOfMessage = new Date(message.timestamp);
+	
+	var html2insert = 	
+		'<div class="activity">'+
+		'	<span class="posted_at">'+
+		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
+			timeStampOfMessage.toLocaleString() +
+		' </span>'+
+		'	<div class="readable">'+
+		'		<span class="user">'+ authorOfMessage   +'</span>'+
+		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
+		'	</div>' +
+		'</div>		' ;
+	
+	var $newMsg = $(html2insert);
+	
+	if (message.from != user.publicClientID){
+		$newMsg.css("background", "#FFFFE0"); 
+	}
+	if (isReverse){
+		$("#chat-page-content").prepend($newMsg);
+	}else{
+		$("#chat-page-content").append($newMsg);
+		$("#chat-page-content").trigger("create");
+	}
+	if (withFX){
+		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
+		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
+	}
+};
+
+
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.showProfile = function() {	
+	
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+	if (typeof obj == "undefined") return;	
+		
+	$("#ProfileOfContact-page").remove();
+	
+	var strVar = "";
+	strVar += "		<div data-role=\"page\" data-cache=\"false\" id=\"ProfileOfContact-page\" >";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a>";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
+
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div class=\"text-center\">";
+	strVar += "										<img src=\"" + obj.imgsrc + "\" class=\"img-circle\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1>" + obj.nickName  + "<\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5>" + obj.commentary  + "<\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\"> ";
+	
+	strVar += "					          		<div class=\"timeline-panel\">";
+	strVar += "					          			<h1>Contact Info<\/h1>";
+	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
+	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
+	strVar += "					          				<div class=\"col-md-6\">";
+	strVar += "					          					<address>";
+	strVar += "												  	<strong>" + obj.nickName  + "<\/strong><br>";
+	strVar += "											  		<abbr title=\"Phone\"> &#9742 <\/abbr>" + obj.telephone;
+	strVar += "												<\/address>";
+	strVar += "												<email>";
+	strVar += "												  	<abbr title=\"email\"> &#9993 <\/abbr>" + obj.email;
+	strVar += "												<\/email>";
+	strVar += "						          			<\/div>";
+	strVar += "						          			<div class=\"col-md-6\">";
+	strVar += "					    	      				<p><\/p>";
+	strVar += "					        	  			<\/div>";
+	strVar += "					          			<\/div>";
+	strVar += "					          			<div class=\"col-md-12\">";
+	strVar += "					          				<div id=\"mapProfile\">";
+	strVar += "					          				<\/div>";
+	strVar += "					          			<\/div>";
+	strVar += "					    	      	<\/div>";	
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";	
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
+	
+	$("body").append(strVar);
+	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
+	$(".backButton").unbind("click").bind("click",function() {
+		gui.onBackButton();
+	});	
+
+};
+
+GUI.prototype.showRemoveContactFromGroup = function( contact ) {
+
+	$('#buttonAddContact2Group' + contact.publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' })
+	
+	$("#contacts4Group")
+		.find("#divAddContact2Group"+ contact.publicClientID)
+		.unbind("click")
+		.on("click", function(){ gui.onAddContact2Group( contact );  } );
+	
+	$('#contacts4Group').listview().listview('refresh');			
+};
+
+
+GUI.prototype.showWelcomeMessage = function(text2show){
+
+	if (text2show){
+		$.mobile.loading( 'show', {
+			text: text2show,
+			textVisible: true,
+			theme: $.mobile.loader.prototype.options.theme,
+			textonly: true,
+			html: ""
+		});
+	}
+	
+};
+
+
+
+
+
+
+
+/*
+GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
+	
+	$('#listOfContactsInMainPage').hide();	
+	var strVar="";
+	strVar += "		<div hidden id=\"formInFirstLogin\">";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
+	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\"> ";
+	strVar += "	    	<\/ul>";
+	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
+	strVar += "				<div data-role=\"fieldcontain\">";
+	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label>";
+	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
+	strVar += "				<\/div>";
+	strVar += "			<\/ul>";
+	strVar += "		<\/div>";
+	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
+	strVar += "			<li id=\"firstLoginInputButton\">";
+	strVar += "				<a>";
+	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
+	strVar += "				<\/a>";
+	strVar += "			<\/li>";
+	strVar += "		<\/ul>	";
+	
+	$("#contentOfMainPage").append(strVar);	
+	$("#contentOfMainPage").trigger("create");
+	
+ 	$('#imageOnVisibleFirstTime').picEdit({
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		displayWidth: $(window).width() * 0.90 ,
+		displayHeight: $(window).height() * 0.80 , 
+		navToolsEnabled : true,
+ 		imageUpdated: function(img){
+ 			user.myPhotoPath = img.src;	     			
+ 		}
+ 	});  	
+	         	    
+	//$("#link2profileFromMyPanel").remove();
+	$.mobile.loading( "hide" );
+	
+	$("#formInFirstLogin").show();
+	$("#listInFirstLogin").show();
+
+};
+
+
+GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
+	$("#formInFirstLogin").remove();
+	$("#listInFirstLogin").remove();
+	$('#listOfContactsInMainPage').show();
+};
+*/
+
+
+
+
+/*
+GUI.prototype.firstLogin = function() {	
+	
+	user.myCurrentNick = $("#firstLoginNameField").val();
+	
+	if ( user.myCurrentNick == null || user.myCurrentNick == "" ||  user.myPhotoPath == null) {
+		
+		$("#popupDiv").remove();
+		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
+							'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
+							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
+							'</div>';
+		$("#contentOfvisibleFirstTime").append(prompt2show);
+		$("#contentOfvisibleFirstTime").trigger("create");
+		$(".backButton").unbind( "click" ).bind("click", function(){			 
+			gui.onBackButton();
+		});	
+		$("#popupDiv").popup("open");		
+		return;
+	}
+	
+	gui.showLoadingSpinner("generating your encryption keys ...");
+	gui.removeVisibleFirstTimeOnMainPage();
+	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
+	
+};
+*/
+
+
+
+
+
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.refreshCounterOfChat = function( obj ) {
+	
+	if ( obj.counterOfUnreadSMS > 0 ){
+		$("#counterOf_"+obj.publicClientID).text( obj.counterOfUnreadSMS );		
+		$("#counterOf_"+obj.publicClientID).attr("class", "ui-li-count");
+	} else{
+		$("#counterOf_"+obj.publicClientID).text("");
+		$("#counterOf_"+obj.publicClientID).attr("class", "");
+	}
+	
+	$('#listOfContactsInMainPage').listview().listview('refresh');	
+};
+
 /**
  * @param obj := ContactOnKnet | Group 
  */
-GUI.prototype.refreshProfileInfo = function ( contactUpdate )	{
+GUI.prototype.refreshProfileInfo = function ( profileUpdate )	{
 
-	var contact = contactsHandler.getContactById( contactUpdate.publicClientID); 
-	if (typeof contact == "undefined" || contact == null) return;  		
-	contact.lastProfileUpdate = new Date().getTime();
-	
-	contactsHandler.setContactOnList( contactUpdate );
-	contactsHandler.updateContactOnDB (contact );
-	
-
-	$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
-	if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
-	
-	var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
-
-	if ( contact.imgsrc != "" ) kids.find("img").attr("src", contact.imgsrc);		
-	if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
-	if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
-	
-	/*	
 	var obj = abstractHandler.getObjById( profileUpdate.publicClientID ); 
 	if (typeof obj == "undefined" || obj == null) return;  		
 	obj.lastProfileUpdate = new Date().getTime();
 
 	abstractHandler.setOnList( obj );
 	abstractHandler.setOnDB( obj );
-//TODO must be only update!!!
-//	abstractHandler.setContactOnList( obj );
-//	abstractHandler.updateContactOnDB ( obj );		
 
 	$("#profilePhoto"+obj.publicClientID ).attr("src", obj.imgsrc);		
 	if (app.currentChatWith == obj.publicClientID) $("#imgOfChat-page-header").attr("src", obj.imgsrc);
@@ -2264,35 +2307,28 @@ GUI.prototype.refreshProfileInfo = function ( contactUpdate )	{
 	if ( obj.imgsrc != "" ) kids.find("img").attr("src", obj.imgsrc );		
 	if ( obj.nickName != "" ) kids.closest("h2").html( obj.nickName );		
 	if ( obj.commentary != "" ) kids.closest("p").html( obj.commentary );
-*/	
+	
 };
 
+GUI.prototype.refreshPurchasePrice = function() {
+	var purchase = gui.getPurchaseDetails();
+	var price = 0;
+	
+	if(purchase.licenseDurationChoosen == "fourYears") price = price + 3;
+	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
+	if(purchase.isNGOdonationChecked) price = price + 1;
+	if(purchase.isFSIdonationChecked) price = price + 1;
+	if(purchase.isBackupChecked) price = price + 1;
+
+	
+	$("#price").html(price + "\u20AC");
+	
+};
 
 
 
 
 function MailBox() {
-};
-
-MailBox.prototype.storeMessage = function( msg2Store ) {
-
-	try {
-		var singleKeyRange = IDBKeyRange.only( msg2Store.msgID ); 			
-		var transaction = db.transaction(["messages"],"readwrite");	
-		var store = transaction.objectStore("messages");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		cursor.update( msg2Store );     		
-	     	}else{
-	     		store.add( msg2Store );
-	     	}     	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: MailBox.storeMessage ::: exception trown ");
-	}
- 		
 };
 
 MailBox.prototype.getAllMessagesOf = function( id , olderDate, newerDate) {
@@ -2374,6 +2410,27 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 	
 };
 
+MailBox.prototype.storeMessage = function( msg2Store ) {
+
+	try {
+		var singleKeyRange = IDBKeyRange.only( msg2Store.msgID ); 			
+		var transaction = db.transaction(["messages"],"readwrite");	
+		var store = transaction.objectStore("messages");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( msg2Store );     		
+	     	}else{
+	     		store.add( msg2Store );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		log.debug("MailBox.prototype.storeMessage", e);
+	}
+ 		
+};
+
 MailBox.prototype.unwrapMessagesOf = function( contact ) {
 
 	try {
@@ -2384,81 +2441,16 @@ MailBox.prototype.unwrapMessagesOf = function( contact ) {
 			var cursor = e.target.result;
 			if (cursor) {
 	     		if ( cursor.value.messageBody.hasOwnProperty('index4Key') ){
-					mailBox.messageFromClientHandler(cursor.value); 
-					console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: recovering msg ");			
+					postman.onMsgFromClient(cursor.value); 
+					log.info("MailBox.prototype.unwrapMessagesOf");			
 	     		}
 			}    	 
 		};	
 	}
 	catch(e){
-		console.log("DEBUG ::: MailBox.unwrapMessagesOf ::: exception trown ");
+		log.debug("MailBox.prototype.unwrapMessagesOf",e);	
 	}
 
-};
-
-MailBox.prototype.messageFromClientHandler = function ( input ){
-	
-	var msg = postman.getMessageFromClient( input ); 
-	if (msg == null) { return;	}		
-		
-	var messageACK = {	
-		to : msg.to, 
-		from : msg.from,
-		msgID : msg.msgID, 
-		typeOfACK : "ACKfromAddressee"
-	};
-	postman.send("MessageDeliveryACK", messageACK );	
-	
-	if (msg.messageBody.messageType == "multimedia" || 
-		msg.messageBody.messageType == "text"){
-			
-		mailBox.storeMessage( msg );
-	
-		var publicClientID;
-		if ( msg.to != msg.chatWith ){
-			publicClientID = msg.chatWith;
-		}else{
-			publicClientID = msg.from;
-		}
-		
-		var obj = abstractHandler.getObjById( publicClientID ); 
-		if (typeof obj == "undefined") return;
-		 		 		
-		if ( app.currentChatWith == publicClientID ){
-			gui.insertMessageInConversation( msg, false, true);
-		}else{
-			obj.counterOfUnreadSMS++ ;
-			gui.updateCounterOfChat( obj );  		  			
-		}  		  		
-		obj.timeLastSMS = msg.timestamp;
-		abstractHandler.setOnList( obj );
-		abstractHandler.setOnDB( obj );
-		
-		gui.setTimeLastSMS( obj );  				
-		gui.sortChats();				
-		gui.showLocalNotification( msg );
-	
-	}else if( msg.messageBody.messageType == "groupUpdate" ) {
-	  
-		var group = new Group( msg.messageBody.group );
-		groupsHandler.setGroupOnList( group );
-		groupsHandler.setGroupOnDB( group );
-		
-		gui.showGroupsOnGroupMenu();
-		gui.insertChatInMainPage( group ,false);
-				
-		group.listOfMembers.map( function( publicClientID ){
-			if ( user.publicClientID == publicClientID ) return;
-			var contact = contactsHandler.getContactById( publicClientID ); 
-	  		if (!contact){
-				contact = new ContactOnKnet({ publicClientID : publicClientID });
-				contactsHandler.setContactOnList( contact );												
-				contactsHandler.setContactOnDB( contact );
-				contactsHandler.requestProfile( contact );
-	  		} 
-		});
-		
-	}
 };
 
 function Application() {
@@ -2474,31 +2466,28 @@ function Application() {
 	this.devicePlatform = "";
 	this.indexedDBHandler = null;
 	this.deviceVersion = "";
+	this.events = {};
+	this.events.documentReady = new $.Deferred();
+	this.events.contactsLoaded = new $.Deferred();
+	this.events.userSettingsLoaded = new $.Deferred();
+	this.events.positionLoaded = new $.Deferred();
+	this.events.deviceReady  = new $.Deferred();
 };
 
-Application.prototype.init = function() {
-	
-	gui.loadBody();
-	gui.bindDOMevents();
-	gui.loadAsideMenuMainPage();
-	app.locateMyPosition();
-	app.getLanguage();
-	app.loadPersistentData();	
-	
+// Bind Event Listeners
+Application.prototype.bindEvents = function() {
+    document.addEventListener('deviceready', this.onDeviceReady, false);
+    document.addEventListener('backbutton',  gui.onBackButton , false);
+    document.addEventListener('menubutton', function(){}, false);
+    document.addEventListener('searchbutton', function(){}, false);
+    document.addEventListener('startcallbutton', function(){}, false);
+    document.addEventListener('endcallbutton', function(){}, false);
+    document.addEventListener("pause", function(){ app.inBackground = true; }, false);
+    document.addEventListener("resume", this.onResumeCustom  , false);   
+    document.addEventListener("online", this.onOnlineCustom, false);    
 };
 
-Application.prototype.processPayment = function() {
-	
-	gui.showLoadingSpinner();
-
-	$.when( deviceReady ).done(function(){
-		var purchase = gui.getPurchaseDetails();		
-		app.go2paypal(purchase);
-	});					
-	
-};
-
-Application.prototype.go2paypal = function(myPurchase) {
+Application.prototype.connect2paypal = function(myPurchase) {
 	
 	$.ajax({
 		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/payment',
@@ -2516,174 +2505,16 @@ Application.prototype.go2paypal = function(myPurchase) {
 	.done(function(response) {
 		if ( response.OK == true){
 			gui.inAppBrowser = window.open( response.URL, '_blank', 'location=yes');
-			gui.inAppBrowser.addEventListener('loadstop', gui.inAppBrowserLoadHandler);
-			gui.inAppBrowser.addEventListener('exit', gui.inAppBrowserExitHandler);			
+			gui.inAppBrowser.addEventListener('loadstop', gui.onAppBrowserLoad );
+			gui.inAppBrowser.addEventListener('exit', gui.onAppBrowserExit );			
 		}
 	})
 	.fail(function() {
-		console.log("DEBUG ::: go2paypal ::: failed: ");
-		//navigator.notification.alert("Are you connected to Internet?, the system does not detect connectivity", null, 'Uh oh!');
+		log.info("Application.prototype.connect2paypal - failed");
+		//navigator.notification.alert("Are you connected to Internet?", null, 'Uh oh!');
 	})
 	.always(function() { gui.hideLoadingSpinner(); });		
-};		
-
-
-
-
-Application.prototype.loadPersistentData = function() {
-	if (typeof cordova == "undefined" || cordova == null ){
-		$.when( documentReady ).done(function(){
-			app.openDB();			
-		});		
-	}else{
-		$.when( deviceReady , documentReady).done(function(){
-			app.openDB();			
-		});		
-	}	
-};
-
-Application.prototype.openDB = function() {
-		
-	this.indexedDBHandler = window.indexedDB.open("com.instaltic.knet", 2);
-		
-	this.indexedDBHandler.onupgradeneeded= function (event) {
-		var thisDB = event.target.result;
-		if(!thisDB.objectStoreNames.contains("usersettings")){
-			var objectStore = thisDB.createObjectStore("usersettings", { keyPath: "index" });
-		}
-		if(!thisDB.objectStoreNames.contains("messages")){
-			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
-			objectStore.createIndex("timestamp","timestamp",{unique:false});
-			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
-		}
-		if(!thisDB.objectStoreNames.contains("contacts")){
-			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
-		}
-		if(!thisDB.objectStoreNames.contains("groups")){
-			var objectStore = thisDB.createObjectStore("groups", { keyPath: "publicClientID" });
-		}			
-	};
-		
-	this.indexedDBHandler.onsuccess = function (event,caca) {
-		
-		db = event.target.result;	
-				
-//		setTimeout(
-//			function (){
-				app.loadUserSettings();				
-				app.loadContacts();
-				app.loadGroups();
-//			},
-//			config.TIME_WAIT_DB
-//		);		
-	};
-	
-	this.indexedDBHandler.onerror = function(){		
-		console.log("DEBUG ::: indexedDBHandler.onerror ");
- 		app.register();		
-	};
-	this.indexedDBHandler.onblocked = function(){
-		console.log("DEBUG ::: indexedDBHandler.onblocked ");
-	};
-};
-
-
-Application.prototype.sendProfileUpdate = function() {
-	
-	var profileResponseObject = {	
-		publicClientIDofSender : user.publicClientID, 
-		img : user.myPhotoPath,
-		commentary : user.myCommentary,
-		nickName: user.myCurrentNick,
-		telephone: user.myTelephone,
-		email : user.myEmail,
-		visibility : user.visibility		
-	};			
-	postman.send("profileUpdate", profileResponseObject );	
-};
-
-Application.prototype.loadUserSettings = function(){
-	
-	var singleKeyRange = IDBKeyRange.only(0);
-
-	try{	
-		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
-			
-			var cursor = e.target.result;
-	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {     		
-	     		user = new UserSettings(cursor.value);	
-				userSettingsLoaded.resolve(); 
-	     		return;
-	     	}else{
-	     		app.register();
-	     	   	return;	     		
-	     	}
-		};		
-	}catch(e){
-		console.log("DEBUG ::: Database error ::: loadUserSettings  ");		   
-		app.register();
-	}
-};
-
-Application.prototype.loadContacts = function() {
-	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
-		var cursor = e.target.result;
-     	if (cursor) {
-     		var contact = new ContactOnKnet( cursor.value );
-     		contactsHandler.setContactOnList( contact );      	
-        	gui.insertChatInMainPage( contact , false);
-         	cursor.continue(); 
-     	}else{
-     	    contactsLoaded.resolve();
-     	}
-	};	
-};
-
-Application.prototype.loadGroups = function() {
-	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
-		var cursor = e.target.result;
-     	if (cursor) {
-     		var group = new Group( cursor.value );
-     		groupsHandler.list.push( group );      	
-        	gui.insertChatInMainPage( group ,false);
-         	cursor.continue(); 
-     	}
-	};	
-};
-
-Application.prototype.login2server = function(){
-		
-	if (app.connecting == true || app.initialized == false || ( typeof socket != "undefined" && socket.connected == true)){
-		console.log("DEBUG ::: login2server ::: " + JSON.stringify([app.connecting,app.initialized,socket.connected]) );
-		return;
-	} 
-	app.connecting = true;
-	gui.showLoadingSpinner();	
-	
-	$.ajax({
-		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
-		method : "POST",
-		data: { handshakeToken: user.handshakeToken  },
-		dataType: "json",
-		crossDomain: true,
-		xhrFields: {
-			withCredentials: false
-		}
-	})
-	 .done(function (result) { 
-		app.connect2server(result);
-	 })
-	 .fail(function() {
-		app.connecting = false; 
-		console.log ("DEBUG ::: http POST /login :: trying to reconnect to : " + JSON.stringify(config));
-		setTimeout( app.login2server , config.TIME_WAIT_HTTP_POST );
-	 })
-	 .always(function() {
-		gui.hideLoadingSpinner();
-	 });	
-};
+};	
 
 Application.prototype.connect2server = function(result){
 	
@@ -2723,23 +2554,23 @@ Application.prototype.connect2server = function(result){
 	});
 	
 	socket.on('disconnect', function () {
-		console.log("DEBUG ::: socket.on.disconnect ::: ");
+		log.info("socket.on.disconnect"); 
 		app.connecting = false;					
 	});
 	
 	socket.on('reconnect_attempt', function () {
-		console.log("DEBUG ::: socket.on.reconnect_attempt ::: ");
+		log.info("socket.on.reconnect_attempt"); 
 		app.connecting = true;					
 	});
 	
 	socket.on('reconnect_failed', function () {
-		console.log("DEBUG ::: socket.on.reconnect_failed ::: ");
+		log.info("socket.on.reconnect_failed"); 
 		app.connecting = false;
-		app.login2server();					
+		app.sendLogin();					
 	});
 	
 	socket.on('reconnect', function () {
-		console.log("DEBUG ::: socket.on.reconnect ::: ");
+		log.info("socket.on.reconnect"); 
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	empty : "" } );
   		var newerDate = new Date().getTime();	
@@ -2785,7 +2616,7 @@ Application.prototype.connect2server = function(result){
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
-		console.log("DEBUG ::: ServerReplytoDiscoveryHeaders ::: " + JSON.stringify(listOfHeaders) );
+		log.info("socket.on.ServerReplytoDiscoveryHeaders", listOfHeaders); 
 
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
@@ -2804,10 +2635,10 @@ Application.prototype.connect2server = function(result){
 
 	socket.on("RequestForProfile", function(input) {
 		
-		var requestParameters = postman.getParametersOfProfileRequest(input);
+		var request = postman.getProfileRequest(input);
 	
-		if ( requestParameters != null && 
-			 requestParameters.lastProfileUpdate <  user.lastProfileUpdate  ){
+		if ( request != null && 
+			 request.lastProfileUpdate < user.lastProfileUpdate  ){
 	
 			app.sendProfileUpdate();			 			
 		}	
@@ -2816,7 +2647,7 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("ProfileFromServer", function(input) {
 				
-		var contactUpdate = postman.getParametersOfProfileFromServer(input); 
+		var contactUpdate = postman.getProfileFromServer(input); 
 		if (contactUpdate == null) { return;	}
 		
 		var contact = contactsHandler.getContactById( contactUpdate.publicClientID); 
@@ -2826,7 +2657,6 @@ Application.prototype.connect2server = function(result){
 		contactsHandler.setContactOnList( contactUpdate );
 		contactsHandler.updateContactOnDB (contact );
 		
-
 		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
 		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
 		
@@ -2843,11 +2673,12 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("locationFromServer", function(input) {
 		
-		app.askServerWhoisAround( postman.getParametersOfLocationFromServer(input) );
+		app.sendRequest4Neighbours( postman.getLocationFromServer(input) );
 
 	});//END locationFromServer	
 	  
-	socket.on("notificationOfNewContact", contactsHandler.setNewContacts);//END notificationOfNewContact
+	socket.on("notificationOfNewContact", contactsHandler.processNewContacts);
+	//END notificationOfNewContact
 	
 	socket.on("KeysDelivery", function (input){
 		
@@ -2855,7 +2686,7 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			console.log("DEBUG ::: KeysDelivery ::: discard my own delivery ..." );			
+			log.info("socket.on.KeysDelivery - discard my own delivery");		
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
@@ -2863,7 +2694,7 @@ Application.prototype.connect2server = function(result){
 				if ( typeof contact == 'undefined' || contact == null ){
 					contact = new ContactOnKnet({ publicClientID : data.from });
 					contactsHandler.setContactOnList( contact );
-					gui.insertChatInMainPage ( contact, false );
+					gui.showEntryOnMainPage ( contact, false );
 				}
 				if ( contact.decryptionKeys == null ){					
 					var privateKey = forge.pki.rsa.setPrivateKey(
@@ -2886,12 +2717,12 @@ Application.prototype.connect2server = function(result){
 					contact.decryptionKeys = KJUR.jws.JWS.readSafeJSONString(decipher.output.data).setOfSymKeys;
 					contactsHandler.setContactOnList( contact );
 					contactsHandler.setContactOnDB( contact );
-					contactsHandler.requestProfile( contact );
+					contactsHandler.sendProfileRequest( contact );
 
 					mailBox.unwrapMessagesOf( contact );
 				} 
 			}catch (ex) {	
-				console.log("DEBUG ::: KeysDelivery event :::  contact : " + JSON.stringify(contact) + "data : " + JSON.stringify(data) );
+				log.debug("socket.on.KeysDelivery", contact);	
 				return null;
 			}	
 	 	} // END else			
@@ -2903,30 +2734,302 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			console.log("DEBUG ::: KeysRequest ::: discard my own Request ..." );
+			log.info("socket.on.KeysRequest - discard my own Request");
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
-				contactsHandler.keyDelivery(contact);		
+				contactsHandler.sendKeys(contact);		
 
 			}catch (ex) {	
-				console.log("DEBUG ::: KeysRequest event :::  " + ex);
+				log.debug("socket.on.KeysRequest", ex);
 				return null;
 			}	
 	 	}		
 	});//END KeysRequest event
 	
 	socket.on("MessageFromClient", function (input){
-		mailBox.messageFromClientHandler( input );	
+		postman.onMsgFromClient( input );	
 	});//END MessageFromClient event
 	
 };//END of connect2server
 
-Application.prototype.keyPairGeneration = function (err, keypair ){
+Application.prototype.detectLanguage = function() {
+	var language = {};
+	language.detected = null;
+	language.value = null;
+	
+	if (typeof cordova == "undefined" || cordova == null ){
+		
+		language.detected = navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
+		app.setLanguage(language);
+		
+	}else{
+		
+		$.when( app.events.documentReady, app.events.deviceReady).done(function(){						
+			navigator.globalization.getPreferredLanguage(
+			    function (detectedLanguage) {
+			    	language.detected = detectedLanguage.value;
+			    	app.setLanguage(language);
+				},
+			    function () {
+			    	language.detected = "English";
+			    	app.setLanguage(language);
+			    }
+			);
+		});	
+			
+	}
+};
+
+Application.prototype.detectPosition = function(){
+	if (typeof cordova == "undefined" || cordova == null ){
+		
+		if ( navigator.geolocation ) {
+	        function success(pos) {
+	            app.myPosition = pos;
+	            app.sendRequest4Neighbours();
+	        }
+	        function fail(error) {
+	        	app.events.positionLoaded.resolve();
+	        }
+	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
+	    } 
+	    
+    }else{
+    	
+    	$.when( app.events.deviceReady ).done(function(){
+		    function success(pos) {
+	            app.myPosition = pos;
+	            app.sendRequest4Neighbours();
+	            navigator.geolocation.watchPosition(function(){}, function(){});
+	        }
+	        function fail(error) {
+	        }	
+    		navigator.geolocation.getCurrentPosition( app.sendRequest4Neighbours , fail );
+    	});
+    }
+};
+
+Application.prototype.generateAsymetricKeys = function(){
+	
+	gui.hideLoadingSpinner();
+	
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	
+	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
+		
+	if( typeof Worker !== "undefined" ) {
+		options.workerScript = "js/prime.worker.js";
+		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
+	}else{
+		var keyPair = forge.pki.rsa.generateKeyPair( options );
+		var err;
+		app.sendKeyPair( err, keyPair);
+	}
+};	
+
+
+
+Application.prototype.init = function() {
+	
+	gui.loadBody();
+	gui.bindDOMevents();
+	gui.loadAsideMenuMainPage();
+	app.detectPosition();
+	app.detectLanguage();
+	app.loadPersistentData();	
+	
+};
+
+Application.prototype.initializeDevice = function() {
+	
+	Application.prototype.bindEvents();	
+	
+	if (typeof cordova == "undefined" || cordova == null ){
+		app.events.deviceReady.resolve();
+	}
+	
+};
+
+Application.prototype.loadContacts = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		var contact = new ContactOnKnet( cursor.value );
+     		contactsHandler.setContactOnList( contact );      	
+        	gui.showEntryOnMainPage( contact , false);
+         	cursor.continue(); 
+     	}else{
+     	    app.events.contactsLoaded.resolve();
+     	}
+	};	
+};
+
+Application.prototype.loadGroups = function() {
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		var group = new Group( cursor.value );
+     		groupsHandler.list.push( group );      	
+        	gui.showEntryOnMainPage( group ,false);
+         	cursor.continue(); 
+     	}
+	};	
+};
+
+Application.prototype.loadPersistentData = function() {
+	if (typeof cordova == "undefined" || cordova == null ){
+		$.when( app.events.documentReady ).done(function(){
+			app.loadStoredData();			
+		});		
+	}else{
+		$.when( app.events.deviceReady , app.events.documentReady).done(function(){
+			app.loadStoredData();			
+		});		
+	}	
+};
+
+
+
+
+Application.prototype.loadStoredData = function() {
+		
+	this.indexedDBHandler = window.indexedDB.open("com.instaltic.knet", 2);
+		
+	this.indexedDBHandler.onupgradeneeded= function (event) {
+		var thisDB = event.target.result;
+		if(!thisDB.objectStoreNames.contains("usersettings")){
+			var objectStore = thisDB.createObjectStore("usersettings", { keyPath: "index" });
+		}
+		if(!thisDB.objectStoreNames.contains("messages")){
+			var objectStore = thisDB.createObjectStore("messages", { keyPath: "msgID" });
+			objectStore.createIndex("timestamp","timestamp",{unique:false});
+			objectStore.createIndex("publicclientid","publicclientid",{unique:false});			
+		}
+		if(!thisDB.objectStoreNames.contains("contacts")){
+			var objectStore = thisDB.createObjectStore("contacts", { keyPath: "publicClientID" });
+		}
+		if(!thisDB.objectStoreNames.contains("groups")){
+			var objectStore = thisDB.createObjectStore("groups", { keyPath: "publicClientID" });
+		}			
+	};
+		
+	this.indexedDBHandler.onsuccess = function (event,caca) {
+		
+		db = event.target.result;	
+				
+//		setTimeout(
+//			function (){
+				app.loadUserSettings();				
+				app.loadContacts();
+				app.loadGroups();
+//			},
+//			config.TIME_WAIT_DB
+//		);		
+	};
+	
+	this.indexedDBHandler.onerror = function(e){		
+		log.debug("indexedDBHandler.onerror", e);
+ 		app.generateAsymetricKeys();		
+	};
+	this.indexedDBHandler.onblocked = function(){
+		log.debug("indexedDBHandler.onblocked");
+	};
+};
+
+
+Application.prototype.loadUserSettings = function(){
+	
+	var singleKeyRange = IDBKeyRange.only(0);
+
+	try{	
+		db.transaction(["usersettings"], "readonly").objectStore("usersettings").openCursor(singleKeyRange).onsuccess = function(e) {
+			
+			var cursor = e.target.result;
+	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {     		
+	     		user = new UserSettings(cursor.value);	
+				app.events.userSettingsLoaded.resolve(); 
+	     		return;
+	     	}else{
+	     		app.generateAsymetricKeys();
+	     	   	return;	     		
+	     	}
+		};		
+	}catch(e){
+		log.debug("Application.prototype.loadUserSettings", e);	   
+		app.generateAsymetricKeys();
+	}
+};
+
+
+
+
+// deviceready Event Handler 
+Application.prototype.onDeviceReady = function() {
+//    app.receivedEvent();
+//};
+// Update DOM on a Received Event
+//Application.prototype.receivedEvent = function() {
+	
+	try{
+		app.devicePlatform  = device.platform;
+		app.deviceVersion = device.version;
+		app.events.deviceReady.resolve();		
+
+	}catch(e){
+    	log.debug("Application.prototype.onDeviceReady", e);
+    }	
+};
+
+Application.prototype.onOnlineCustom =  function() {
+	
+	$.when( app.events.documentReady , 
+			app.events.contactsLoaded , 
+			app.events.userSettingsLoaded , 
+			app.events.deviceReady	).done(function(){	
+		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 
+	});
+	
+};
+
+Application.prototype.onProcessPayment = function() {
+	
+	gui.showLoadingSpinner();
+
+	$.when( app.events.deviceReady ).done(function(){
+		var purchase = gui.getPurchaseDetails();		
+		app.connect2paypal(purchase);
+	});					
+	
+};
+
+Application.prototype.onResumeCustom =  function() {
+	
+   	if	( app.multimediaWasOpened == false ){
+   		gui.hideLocalNotifications();
+		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 		
+	}
+	
+	app.inBackground = false; 
+	app.multimediaWasOpened = false;
+   	
+};
+
+
+
+
+
+
+
+Application.prototype.sendKeyPair = function (err, keypair ){
 
 	if (err) {
-		console.log("DEBUG ::: keyPairGeneration ::: something went wrong generating the KeyPair....." );
-		app.register();
+		log.debug("Application.prototype.sendKeyPair", err);
+		app.generateAsymetricKeys();
 		return;
 	}
 
@@ -2948,8 +3051,8 @@ Application.prototype.keyPairGeneration = function (err, keypair ){
  			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
  			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
  			
-	 		console.log("DEBUG ::: register ::: another attemp....." );	 		
-	 		app.register();
+	 		log.info("Application.prototype.sendKeyPair - another attempt");  		
+	 		app.generateAsymetricKeys();
 	 		
 	 	}else{
 		
@@ -2974,38 +3077,89 @@ Application.prototype.keyPairGeneration = function (err, keypair ){
 			var request = store.add( user );
 
 			$.mobile.loading('hide');
-			userSettingsLoaded.resolve(); 		
+			app.events.userSettingsLoaded.resolve(); 		
 	 	}
  		
  	})
  	.fail(function() {
-		setTimeout( app.register , config.TIME_WAIT_HTTP_POST );
+		setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
  	});// END HTTP POST
 };// END PKI generation
 
-Application.prototype.register = function(){
-	
-	gui.hideLoadingSpinner();
-	
-	var options = {};
-	options.bits = 2048;
-	options.e = 0x10001;
-	
-	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
+Application.prototype.sendLogin = function(){
 		
-	if( typeof Worker !== "undefined" ) {
-		options.workerScript = "js/prime.worker.js";
-		forge.pki.rsa.generateKeyPair( options , app.keyPairGeneration );
-	}else{
-		var keyPair = forge.pki.rsa.generateKeyPair( options );
-		var err;
-		app.keyPairGeneration( err, keyPair);
+	if (app.connecting == true || 
+		app.initialized == false || 
+		( typeof socket != "undefined" && socket.connected == true)){
+		log.debug("Application.prototype.sendLogin", app );  
+		return;
+	} 
+	app.connecting = true;
+	gui.showLoadingSpinner();	
+	
+	$.ajax({
+		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
+		method : "POST",
+		data: { handshakeToken: user.handshakeToken  },
+		dataType: "json",
+		crossDomain: true,
+		xhrFields: {
+			withCredentials: false
+		}
+	})
+	 .done(function (result) { 
+		app.connect2server(result);
+	 })
+	 .fail(function() {
+		app.connecting = false; 
+		log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
+		setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
+	 })
+	 .always(function() {
+		gui.hideLoadingSpinner();
+	 });	
+};
+
+
+Application.prototype.sendProfileUpdate = function() {
+	
+	var profileResponseObject = {	
+		publicClientIDofSender : user.publicClientID, 
+		img : user.myPhotoPath,
+		commentary : user.myCommentary,
+		nickName: user.myCurrentNick,
+		telephone: user.myTelephone,
+		email : user.myEmail,
+		visibility : user.visibility		
+	};			
+	postman.send("profileUpdate", profileResponseObject );	
+};
+
+Application.prototype.sendRequest4Neighbours = function(position){	
+	
+	if (position && position != null){			
+		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
+		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
+	}	
+	
+	if(app.myPosition.coords.latitude != ""){
+		var whoIsAround = { 
+			location : { 
+	  			lat : app.myPosition.coords.latitude.toString() , 
+				lon : app.myPosition.coords.longitude.toString()
+		  	}
+		};
+		
+		gui.showLoadingSpinner();
+		postman.send("RequestOfListOfPeopleAround", whoIsAround );
 	}
-};	
+		
+};
 /*
 Application.prototype.handshake = function(handshakeRequest){	
 	
- 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
+ 	$.post('http://' + config.ipServerAuth +  ":" + 
+ 		config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
  		
  		gui.showLoadingSpinner("exchanging the encryption keys ...");
 	 		
@@ -3013,11 +3167,9 @@ Application.prototype.handshake = function(handshakeRequest){
  		
 	 	//type checking before going to the next step
 	 	if (typeof result == "undefined" || result == null ){
-	 		console.log("DEBUG ::: handshake ::: result wrong.... another attemp....." );	 		
 	 		app.firstLogin();
 	 	}else{
-	 		console.log("DEBUG ::: handshake ::: done we go to the next step ....." );
-			
+
 			//update app object	
 	 		user = new userSettings(result);			
 	 		user.handshakeToken = handshakeRequest.handshakeToken;
@@ -3029,7 +3181,7 @@ Application.prototype.handshake = function(handshakeRequest){
 			var request = store.add( user );			
 
 			//trigger configuration as already loaded
-			userSettingsLoaded.resolve();			
+			app.events.userSettingsLoaded.resolve();			
 			gui.removeVisibleFirstTimeOnMainPage();	
  		
 	 	}
@@ -3051,8 +3203,6 @@ Application.prototype.firstLogin = function(){
  
 	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/signin', publicKeyClient ).done(function (response) { 
 	 	
-		console.log("DEBUG ::: signin ::: response : " + JSON.stringify(response) );
-
 		 // decrypt data with a private key using RSAES-OAEP		 
 	 	var decrypted = keypair.privateKey.decrypt( response , 'RSA-OAEP' );
 	 		 	
@@ -3073,10 +3223,8 @@ Application.prototype.firstLogin = function(){
 	 		typeof handshakeToken == "undefined" || handshakeToken == null ||
 	 		typeof challenge == "undefined" || challenge == null ||
 	 		typeof encryptedChallenge4handshake == "undefined" || encryptedChallenge4handshake == null ){
-			console.log("DEBUG ::: signin ::: another attemp....." );
 	 		app.firstLogin();	 		
 	 	}else{
-	 		console.log("DEBUG ::: signin ::: done we go to the next step ....." );
 	 		app.handshake(handshakeRequest);
 	 	}
 
@@ -3089,83 +3237,9 @@ Application.prototype.firstLogin = function(){
 };
 */
 
-Application.prototype.askServerWhoisAround = function(position){	
-	
-	if (position && position != null){			
-		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
-		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
-	}	
-	
-	if(app.myPosition.coords.latitude != ""){
-		var whoIsAround = { 
-			location : { 
-	  			lat : app.myPosition.coords.latitude.toString() , 
-				lon : app.myPosition.coords.longitude.toString()
-		  	}
-		};
-		
-		gui.showLoadingSpinner();
-		postman.send("RequestOfListOfPeopleAround", whoIsAround );
-	}
-		
-};
 
-Application.prototype.locateMyPosition = function(){
-	if (typeof cordova == "undefined" || cordova == null ){
-		
-		if ( navigator.geolocation ) {
-	        function success(pos) {
-	            app.myPosition = pos;
-	            app.askServerWhoisAround();
-	        }
-	        function fail(error) {
-	        	positionLoaded.resolve();
-	        }
-	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
-	    } 
-	    
-    }else{
-    	
-    	$.when( deviceReady ).done(function(){
-		    function success(pos) {
-	            app.myPosition = pos;
-	            app.askServerWhoisAround();
-	            navigator.geolocation.watchPosition(function(){}, function(){});
-	        }
-	        function fail(error) {
-	        }	
-    		navigator.geolocation.getCurrentPosition( app.askServerWhoisAround , fail );
-    	});
-    }
-};
 
-Application.prototype.getLanguage = function() {
-	var language = {};
-	language.detected = null;
-	language.value = null;
-	
-	if (typeof cordova == "undefined" || cordova == null ){
-		
-		language.detected = navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
-		app.setLanguage(language);
-		
-	}else{
-		
-		$.when( documentReady, deviceReady).done(function(){						
-			navigator.globalization.getPreferredLanguage(
-			    function (detectedLanguage) {
-			    	language.detected = detectedLanguage.value;
-			    	app.setLanguage(language);
-				},
-			    function () {
-			    	language.detected = "English";
-			    	app.setLanguage(language);
-			    }
-			);
-		});	
-			
-	}
-};
+
 
 Application.prototype.setLanguage = function(language) {
 
@@ -3196,9 +3270,9 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		//console.log('DEBUG ::: setLanguage ::: setting language: ' + language.value + '\n');
+		log.info("Application.prototype.setLanguage ", language);
 	}else{
-		//console.log('DEBUG ::: setLanguage ::: LANGUAGE NOT FOUND IN DICTIONARY:  ' + language.value +' \n');		
+		log.info("Application.prototype.setLanguage - NOT FOUND", language);	
 		language.value = "English" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
@@ -3209,76 +3283,20 @@ Application.prototype.setMultimediaAsOpen = function() {
 	app.multimediaWasOpened = true;
 };
 
-Application.prototype.onOnlineCustom =  function() {
-	
-	$.when( documentReady, contactsLoaded, userSettingsLoaded , deviceReady).done(function(){	
-		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 
-	});
-	
-};
 
-Application.prototype.onResumeCustom =  function() {
-	
-   	if	( app.multimediaWasOpened == false ){
-   		gui.hideLocalNotifications();
-		setTimeout( app.login2server , config.TIME_WAIT_WAKEUP ); 		
-	}
-	
-	app.inBackground = false; 
-	app.multimediaWasOpened = false;
-   	
-};
-
-Application.prototype.initializeDevice = function() {
-	
-	Application.prototype.bindEvents();	
-	
-	if (typeof cordova == "undefined" || cordova == null ){
-		deviceReady.resolve();
-	}
-	
-};
-// Bind Event Listeners
-Application.prototype.bindEvents = function() {
-    document.addEventListener('deviceready', this.onDeviceReady, false);
-    document.addEventListener('backbutton',  gui.backButtonHandler , false);
-    document.addEventListener('menubutton', function(){}, false);
-    document.addEventListener('searchbutton', function(){}, false);
-    document.addEventListener('startcallbutton', function(){}, false);
-    document.addEventListener('endcallbutton', function(){}, false);
-    document.addEventListener("pause", function(){ app.inBackground = true; }, false);
-    document.addEventListener("resume", this.onResumeCustom  , false);   
-    document.addEventListener("online", this.onOnlineCustom, false);    
-};
-// deviceready Event Handler 
-Application.prototype.onDeviceReady = function() {
-    app.receivedEvent();
-};
-// Update DOM on a Received Event
-Application.prototype.receivedEvent = function() {
-	
-	try{
-		app.devicePlatform  = device.platform;
-		app.deviceVersion = device.version;
-		deviceReady.resolve();		
-
-	}catch(err){
-    	console.log("DEBUG ::: Application.prototype.receivedEvent ::: exception " + err.message );
-    }	
-};
 //END Class Application
 
 function AbstractHandler() {};
-/**
- * @param obj := ContactOnKnet | Group 
- */
-AbstractHandler.prototype.setOnList = function( obj ) {
-	if ( obj instanceof ContactOnKnet ){
-		contactsHandler.setContactOnList( obj );	
-	}else{
-		groupsHandler.setGroupOnList( obj );
+
+AbstractHandler.prototype.getObjById = function( publicClientID ){
+
+	var obj = contactsHandler.getContactById( publicClientID ); 
+	if ( !obj ){
+		obj = groupsHandler.getGroupById( publicClientID );
 	}
+	return obj;
 };
+
 /**
  * @param obj := ContactOnKnet | Group 
  */
@@ -3290,13 +3308,15 @@ AbstractHandler.prototype.setOnDB = function( obj ) {
 	}
 };
 
-AbstractHandler.prototype.getObjById = function( publicClientID ){
-
-	var obj = contactsHandler.getContactById( publicClientID ); 
-	if ( !obj ){
-		obj = groupsHandler.getGroupById( publicClientID );
+/**
+ * @param obj := ContactOnKnet | Group 
+ */
+AbstractHandler.prototype.setOnList = function( obj ) {
+	if ( obj instanceof ContactOnKnet ){
+		contactsHandler.setContactOnList( obj );	
+	}else{
+		groupsHandler.setGroupOnList( obj );
 	}
-	return obj;
 };
 
 
@@ -3337,10 +3357,29 @@ function ContactsHandler() {
 	this.listOfContacts = [];
 };
 
-ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
-	contactsHandler.generateKeys(toContact);
-	contactsHandler.setContactOnDB(toContact);
-	contactsHandler.keyDelivery(toContact);	
+ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
+
+	$('#linkAddNewContact' + publicClientID)
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
+		.unbind("click")
+		.on("click", function(){ gui.showConversation( obj ); });
+	
+	$("#popupDiv").remove();
+	var prompt2show = 	
+		'<div id="popupDiv" data-role="popup"> '+
+		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
+		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
+		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
+		'</div>';
+	$("#listOfContactsInMainPage").append(prompt2show);
+	$("#listOfContactsInMainPage").trigger("create");
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
+		gui.onBackButton();
+	});	
+	$("#popupDiv").popup("open");
+	
+	contactsHandler.setContactOnDB( contact );
+	
 };
 
 ContactsHandler.prototype.generateKeys = function(toContact) {
@@ -3357,59 +3396,32 @@ ContactsHandler.prototype.generateKeys = function(toContact) {
 	];	
 };
 
-ContactsHandler.prototype.setContactOnList = function(contact) {
-	var found = false;
-	this.listOfContacts.map(function(c){
-		if ( c.publicClientID == contact.publicClientID ){
-	  		c.set( contact );
-	  		found = true; 
-	  		return;	
-	  	}			
-	});
-	if ( found == false ){
-		this.listOfContacts.push(contact);
-	}
-			
-};
-
-ContactsHandler.prototype.setContactOnDB = function(contact) {	
-	try {
-		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		cursor.update( contact );     		
-	     	}else{
-	     		store.add( contact );
-	     	}     	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: ContactsHandler.setContactOnDB ::: exception trown ");
-	}
-};
-
-ContactsHandler.prototype.updateContactOnDB = function( contact ) {	
-	try {
-		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
-		var transaction = db.transaction(["contacts"],"readwrite");	
-		var store = transaction.objectStore("contacts");
-		store.openCursor(singleKeyRange).onsuccess = function(e) {
-			var cursor = e.target.result;
-			if (cursor) {
-	     		cursor.update( contact );     		
-	     	}	 
-		};	
-	}
-	catch(e){
-		console.log("DEBUG ::: ContactsHandler.updateContactOnDB ::: exception trown ");
-	}
+ContactsHandler.prototype.getContactById = function(id) {
+	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
 };
 	
+ContactsHandler.prototype.processNewContacts = function( input ) {
+	gui.hideLoadingSpinner();
+	var list = postman.getProcessNewContacts(input);
+	if (list == null ) { return;}
 
-ContactsHandler.prototype.keyDelivery = function(contact) {
+	list.map(function(c){
+
+		var contact = contactsHandler.getContactById(c.publicClientID); 
+		if (contact){
+			contactsHandler.setContactOnList( c );			
+		}else{			
+			contact = new ContactOnKnet( c );
+			contactsHandler.setContactOnList( contact );
+			gui.showEntryOnMainPage( contact , true);			
+		}
+		contactsHandler.updateContactOnDB (contact );
+		contactsHandler.sendProfileRequest( contact );
+			
+	});
+};
+
+ContactsHandler.prototype.sendKeys = function(contact) {
 	
 	var setOfSymKeys = { setOfSymKeys : contact.encryptionKeys };
 	
@@ -3444,58 +3456,49 @@ ContactsHandler.prototype.keyDelivery = function(contact) {
 };
 
 
-ContactsHandler.prototype.getContactById = function(id) {
-	return this.listOfContacts.filter(function(c){ return (c.publicClientID == id);	})[0];	
-};
-	
-
-ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
-
-	$('#linkAddNewContact' + publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
-		.unbind("click")
-		.on("click", function(){ gui.go2ChatWith( obj ); });
-	
-	$("#popupDiv").remove();
-	var prompt2show = 	
-		'<div id="popupDiv" data-role="popup"> '+
-		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
-		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
-		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
-		'</div>';
-	$("#listOfContactsInMainPage").append(prompt2show);
-	$("#listOfContactsInMainPage").trigger("create");
-	$(".backButton").unbind( "click" ).bind("click", function(){			 
-		gui.backButtonHandler();
-	});	
-	$("#popupDiv").popup("open");
-	
-	contactsHandler.setContactOnDB( contact );
-	
-};
-
-ContactsHandler.prototype.setNewContacts = function( input ) {
-	gui.hideLoadingSpinner();
-	var list = postman.getParametersOfSetNewContacts(input);
-	if (list == null ) { return;}
-
-	list.map(function(c){
-
-		var contact = contactsHandler.getContactById(c.publicClientID); 
-		if (contact){
-			contactsHandler.setContactOnList( c );			
-		}else{			
-			contact = new ContactOnKnet( c );
-			contactsHandler.setContactOnList( contact );
-			gui.insertChatInMainPage( contact , true);			
-		}
-		contactsHandler.updateContactOnDB (contact );
-		contactsHandler.requestProfile( contact );
-			
+ContactsHandler.prototype.setContactOnList = function(contact) {
+	var found = false;
+	this.listOfContacts.map(function(c){
+		if ( c.publicClientID == contact.publicClientID ){
+	  		c.set( contact );
+	  		found = true; 
+	  		return;	
+	  	}			
 	});
+	if ( found == false ){
+		this.listOfContacts.push(contact);
+	}
+			
 };
 
-ContactsHandler.prototype.requestProfile = function( contact ) {
+ContactsHandler.prototype.setContactOnDB = function(contact) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}else{
+	     		store.add( contact );
+	     	}     	 
+		};	
+	}
+	catch(e){
+		log.debug("ContactsHandler.prototype.setContactOnDB", e); 
+	}
+};
+
+ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
+	contactsHandler.generateKeys(toContact);
+	contactsHandler.setContactOnDB(toContact);
+	contactsHandler.sendKeys(toContact);	
+};
+
+
+
+ContactsHandler.prototype.sendProfileRequest = function( contact ) {
 
 	var profileRetrievalObject = {	
 		publicClientIDofRequester : user.publicClientID, 
@@ -3504,6 +3507,25 @@ ContactsHandler.prototype.requestProfile = function( contact ) {
 	};	
 	postman.send("ProfileRetrieval", profileRetrievalObject );
 };
+
+ContactsHandler.prototype.updateContactOnDB = function( contact ) {	
+	try {
+		var singleKeyRange = IDBKeyRange.only(contact.publicClientID); 			
+		var transaction = db.transaction(["contacts"],"readwrite");	
+		var store = transaction.objectStore("contacts");
+		store.openCursor(singleKeyRange).onsuccess = function(e) {
+			var cursor = e.target.result;
+			if (cursor) {
+	     		cursor.update( contact );     		
+	     	}	 
+		};	
+	}
+	catch(e){
+		log.debug("ContactsHandler.prototype.updateContactOnDB", e);
+	}
+};
+	
+
 
 function Group( g ) {
 	this.publicClientID = (g.publicClientID) ? g.publicClientID : this.assignId();
@@ -3516,6 +3538,39 @@ function Group( g ) {
 	this.telephone = (g.telephone) ? g.telephone : "";
 	this.email = (g.email) ? g.email : "";
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : [] ;
+};
+
+Group.prototype.addMember = function( contact  ) {
+	var found = false;
+	this.listOfMembers.map(function( m ){
+		if ( m == contact.publicClientID ){
+	  		found = true; 	return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.listOfMembers.push( contact.publicClientID );
+	}			
+};
+
+
+
+Group.prototype.assignId = function () {
+    var s = [];
+    var hexDigits = "0123456789abcdef";
+    for (var i = 0; i < 36; i++) {
+        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+    }
+    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
+    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
+    s[8] = s[13] = s[18] = s[23] = "-";
+
+    return s.join("");
+};
+
+Group.prototype.removeMember = function( contact  ) {	
+	this.listOfMembers = this.listOfMembers.filter(function(id) { 
+		return id !== contact.publicClientID; 
+	});
 };
 
 Group.prototype.set = function( g ) {
@@ -3531,41 +3586,14 @@ Group.prototype.set = function( g ) {
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : this.listOfMembers;
 };
 
-Group.prototype.assignId = function () {
-    var s = [];
-    var hexDigits = "0123456789abcdef";
-    for (var i = 0; i < 36; i++) {
-        s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-    }
-    s[14] = "4";  // bits 12-15 of the time_hi_and_version field to 0010
-    s[19] = hexDigits.substr((s[19] & 0x3) | 0x8, 1);  // bits 6-7 of the clock_seq_hi_and_reserved to 01
-    s[8] = s[13] = s[18] = s[23] = "-";
-
-    return s.join("");
-};
-
-Group.prototype.addMember = function( contact  ) {
-	var found = false;
-	this.listOfMembers.map(function( m ){
-		if ( m == contact.publicClientID ){
-	  		found = true; 	return;	
-	  	}			
-	});
-	if ( found == false ){
-		this.listOfMembers.push( contact.publicClientID );
-	}			
-};
-
-Group.prototype.removeMember = function( contact  ) {	
-	this.listOfMembers = this.listOfMembers.filter(function(id) { 
-		return id !== contact.publicClientID; 
-	});
-};
-
 function GroupsHandler() {
 	this.list = [];
 };
 
+
+GroupsHandler.prototype.getGroupById = function(id) {
+	return this.list.filter(function(g){ return (g.publicClientID == id);	})[0];	
+};
 GroupsHandler.prototype.getMembersOfGroup = function( publicClientID ) {
 	var listOfMembers = [];
 	this.list.map(function( g ){
@@ -3587,21 +3615,6 @@ GroupsHandler.prototype.sendGroupUpdate = function( group ) {
 	postman.sendMsg( updateMsg );
 };
 
-
-GroupsHandler.prototype.setGroupOnList = function( group ) {
-	var found = false;
-	this.list.map(function( g ){
-		if ( g.publicClientID == group.publicClientID ){
-	  		g.set( group );
-	  		found = true; 
-	  		return;	
-	  	}			
-	});
-	if ( found == false ){
-		this.list.push( group );
-	}			
-};
-
 GroupsHandler.prototype.setGroupOnDB = function( group ) {	
 	try {
 		var singleKeyRange = IDBKeyRange.only( group.publicClientID ); 			
@@ -3617,12 +3630,22 @@ GroupsHandler.prototype.setGroupOnDB = function( group ) {
 		};	
 	}
 	catch(e){
-		console.log("DEBUG ::: GroupsHandler.setGroupOnDB ::: exception trown ");
+		log.debug("ContactsHandler.prototype.setGroupOnDB", e);
 	}
 };
 
-GroupsHandler.prototype.getGroupById = function(id) {
-	return this.list.filter(function(g){ return (g.publicClientID == id);	})[0];	
+GroupsHandler.prototype.setGroupOnList = function( group ) {
+	var found = false;
+	this.list.map(function( g ){
+		if ( g.publicClientID == group.publicClientID ){
+	  		g.set( group );
+	  		found = true; 
+	  		return;	
+	  	}			
+	});
+	if ( found == false ){
+		this.list.push( group );
+	}			
 };
 
 
@@ -3878,6 +3901,14 @@ function Dictionary(){
 	this.Literals = this.AvailableLiterals["English"].value;
 };
 
+/***********************************************************************************************
+ * *********************************************************************************************
+ * **************				DEBUG MODE	 						****************************
+ * *********************************************************************************************
+ * *********************************************************************************************/
+
+//window.shimIndexedDB.__debug(false);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************
@@ -3887,6 +3918,7 @@ function Dictionary(){
 
 var db;
 var socket;
+var user;
 var config = new Config();
 var gui = new GUI();
 var postman = new Postman();
@@ -3895,34 +3927,26 @@ var abstractHandler = new AbstractHandler();
 var contactsHandler = new ContactsHandler();
 var groupsHandler = new GroupsHandler();
 var dictionary = new Dictionary();
-var user;
+var log = log4javascript.getDefaultLogger();
 var app = new Application();
-
 
 /***********************************************************************************************
  * *********************************************************************************************
  * **************				BINDING EVENTS 						****************************
  * *********************************************************************************************
  * *********************************************************************************************/
-var documentReady = new $.Deferred();
-var contactsLoaded = new $.Deferred();
-var userSettingsLoaded  = new $.Deferred();
-var positionLoaded  = new $.Deferred();
-var deviceReady  = new $.Deferred();
 
-$.when( documentReady, contactsLoaded, userSettingsLoaded , deviceReady).done(function(){
+$.when( app.events.documentReady, 
+		app.events.contactsLoaded, 
+		app.events.userSettingsLoaded, 
+		app.events.deviceReady ).done(function(){
 
 	app.initialized = true;	
-	app.login2server();	
-	
+	app.sendLogin();	
 });
 
 $(document).ready(function() {
-
 	FastClick.attach(document.body);		
 	app.init();	
-	app.initializeDevice();
-	//TODO only for new version of the library indexeddbshim:
-	//window.shimIndexedDB.__debug(false);
+	app.initializeDevice();	
 });
-
