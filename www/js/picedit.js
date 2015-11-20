@@ -32,7 +32,7 @@
 			displayWidth: 'auto',
 			displayHeight: 'auto',
 			aspectRatio: true,				// Preserve aspect ratio
-            defaultImage: false,            // Default image to be used with the plugin
+            defaultImage: function(){},            // Default image to be used with the plugin
             navToolsEnabled: true,
             porup2remove : false,
             callmeAtImageCreation : function(){},

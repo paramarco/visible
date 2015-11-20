@@ -809,9 +809,10 @@ GUI.prototype.insertContactOnMapPage = function( contact ) {
  * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
  */
 GUI.prototype.insertChatInMainPage = function( obj, isNewContact) {
+//TODO update instead of just return;	
+	if ( $('#'+obj.publicClientID).length ) return;
 	
-	var attributesOfLink = "" ; 
-		
+	var attributesOfLink = "" ;		
 	if (isNewContact){
 		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 	}	
@@ -841,10 +842,8 @@ GUI.prototype.insertChatInMainPage = function( obj, isNewContact) {
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
 	}else{
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.go2ChatWith( obj ); } );
-	}
-	
-	gui.sortChats();		
-
+	}	
+	gui.sortChats();
 };
 
 GUI.prototype.showContactsOnGroupMenu = function() {
@@ -1457,21 +1456,25 @@ GUI.prototype.chatInputHandler = function() {
 
 GUI.prototype.groupsButtonHandler = function() {
 
+	var group = gui.groupOnMenu;
 	var action = $("#groupsButton").data( 'action' );	
 	if ( action == "create" ){
+		
 		$("#groupsButton")
 		 .data( 'action', 'modify' )
 		 .text( dictionary.Literals.label_39 );
-		 		 
-		groupsHandler.setGroupOnList( gui.groupOnMenu );
-		groupsHandler.setGroupOnDB( gui.groupOnMenu );
-		groupsHandler.sendGroupUpdate( gui.groupOnMenu );
+			
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB( group );
+		groupsHandler.sendGroupUpdate( group );
+		
+		gui.showGroupsOnGroupMenu();
+		gui.insertChatInMainPage( group ,false);
 		
 	}else{		 
-		groupsHandler.setGroupOnList( gui.groupOnMenu );
-		groupsHandler.setGroupOnDB ( gui.groupOnMenu );
-		groupsHandler.sendGroupUpdate( gui.groupOnMenu );
-
+		groupsHandler.setGroupOnList( group );
+		groupsHandler.setGroupOnDB ( group );
+		groupsHandler.sendGroupUpdate( group);
 	}
 };
 
@@ -2117,13 +2120,14 @@ GUI.prototype.updatePurchasePrice = function() {
 
 GUI.prototype.loadProfile = function() {
 
+	var defaultImage = user.myPhotoPath;
 	$('#imageProfile').picEdit({
  		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
 		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
-		defaultImage: user.myPhotoPath,
+		defaultImage: defaultImage ,
 		imageUpdated: function(img){
 			
 			user.myPhotoPath = img.src;
@@ -2219,6 +2223,53 @@ GUI.prototype.inAppBrowserExitHandler = function (event)	{
 	gui.inAppBrowser.removeEventListener('loadstop', gui.inAppBrowserLoadHandler);																		         
 	gui.inAppBrowser.removeEventListener('exit', gui.inAppBrowserExitHandlerClose);	
 };
+/**
+ * @param obj := ContactOnKnet | Group 
+ */
+GUI.prototype.refreshProfileInfo = function ( contactUpdate )	{
+
+	var contact = contactsHandler.getContactById( contactUpdate.publicClientID); 
+	if (typeof contact == "undefined" || contact == null) return;  		
+	contact.lastProfileUpdate = new Date().getTime();
+	
+	contactsHandler.setContactOnList( contactUpdate );
+	contactsHandler.updateContactOnDB (contact );
+	
+
+	$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
+	if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
+	
+	var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
+
+	if ( contact.imgsrc != "" ) kids.find("img").attr("src", contact.imgsrc);		
+	if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
+	if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
+	
+	/*	
+	var obj = abstractHandler.getObjById( profileUpdate.publicClientID ); 
+	if (typeof obj == "undefined" || obj == null) return;  		
+	obj.lastProfileUpdate = new Date().getTime();
+
+	abstractHandler.setOnList( obj );
+	abstractHandler.setOnDB( obj );
+//TODO must be only update!!!
+//	abstractHandler.setContactOnList( obj );
+//	abstractHandler.updateContactOnDB ( obj );		
+
+	$("#profilePhoto"+obj.publicClientID ).attr("src", obj.imgsrc);		
+	if (app.currentChatWith == obj.publicClientID) $("#imgOfChat-page-header").attr("src", obj.imgsrc);
+	
+	var kids = $( "#link2go2ChatWith_" + obj.publicClientID).children(); 		
+	
+	if ( obj.imgsrc != "" ) kids.find("img").attr("src", obj.imgsrc );		
+	if ( obj.nickName != "" ) kids.closest("h2").html( obj.nickName );		
+	if ( obj.commentary != "" ) kids.closest("p").html( obj.commentary );
+*/	
+};
+
+
+
+
 
 function MailBox() {
 };
@@ -2388,10 +2439,13 @@ MailBox.prototype.messageFromClientHandler = function ( input ){
 		gui.showLocalNotification( msg );
 	
 	}else if( msg.messageBody.messageType == "groupUpdate" ) {
-	  //TODO
+	  
 		var group = new Group( msg.messageBody.group );
 		groupsHandler.setGroupOnList( group );
 		groupsHandler.setGroupOnDB( group );
+		
+		gui.showGroupsOnGroupMenu();
+		gui.insertChatInMainPage( group ,false);
 				
 		group.listOfMembers.map( function( publicClientID ){
 			if ( user.publicClientID == publicClientID ) return;
@@ -2761,12 +2815,12 @@ Application.prototype.connect2server = function(result){
 	});//END RequestForProfile	
 	
 	socket.on("ProfileFromServer", function(input) {
-		
+				
 		var contactUpdate = postman.getParametersOfProfileFromServer(input); 
 		if (contactUpdate == null) { return;	}
 		
-		var contact = contactsHandler.getContactById(contactUpdate.publicClientID); 
-  		if (typeof contact == "undefined" || contact == null) return;  		
+		var contact = contactsHandler.getContactById( contactUpdate.publicClientID); 
+		if (typeof contact == "undefined" || contact == null) return;  		
 		contact.lastProfileUpdate = new Date().getTime();
 		
 		contactsHandler.setContactOnList( contactUpdate );
@@ -2781,7 +2835,9 @@ Application.prototype.connect2server = function(result){
 		if ( contact.imgsrc != "" ) kids.find("img").attr("src", contact.imgsrc);		
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
-		
+			
+		//gui.refreshProfileInfo( contactUpdate );
+				
 	});//END ProfileFromServer
 	
 	
