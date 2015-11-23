@@ -784,6 +784,10 @@ GUI.prototype.bindDOMevents = function(){
 		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 	});	
 	
+	$("#nickNameInProfile").on("click",function() {
+		$("#profileNameField").focus();
+	});	
+	
 	$("#profileNameField")
 		.on("input", function() {
 			user.myCurrentNick = $("#profileNameField").val();	
@@ -795,21 +799,46 @@ GUI.prototype.bindDOMevents = function(){
 				$("#nickNameInProfile").html("");
 				$("#profileNameField").val("");
 			}		
-		});	
+		});
+	$("#commentaryInProfile").on("click",function() {
+		$("#profileCommentary").focus();
+	});	
+	
 	$("#profileCommentary").on("input", function() {
 		user.myCommentary = $("#profileCommentary").val();
 		$("#commentaryInProfile").text(user.myCommentary);	
 		app.profileIsChanged = true;
 	});
 	
-	$("#nickNameGroupField").on("input", function() {
-		gui.groupOnMenu.nickName = $("#nickNameGroupField").val();
-		$("#nickNameGroup").text( gui.groupOnMenu.nickName );	
-	});
-	$("#commentaryGroupField").on("input", function() {
+	
+	$("#nickNameGroup").on("click",function() {
+		$("#nickNameGroupField").focus();
+	});	
+	$("#nickNameGroupField")
+		.on("input", function() {
+			gui.groupOnMenu.nickName = $("#nickNameGroupField").val();
+			$("#nickNameGroup").text( gui.groupOnMenu.nickName );	
+		})
+		.on("focus", function() {
+			if (dictionary.Literals.label_23 == $("#nickNameGroupField").val() ){
+				$("#nickNameGroup").html("");
+				$("#nickNameGroupField").val("");
+			}		
+		});
+	$("#commentaryGroup").on("click",function() {
+		$("#commentaryGroupField").focus();
+	});	
+	$("#commentaryGroupField")
+		.on("input", function() {
 		gui.groupOnMenu.commentary = $("#commentaryGroupField").val();
 		$("#commentaryGroup").text( gui.groupOnMenu.commentary );	
-	});		
+		})
+		.on("focus", function() {
+			if (dictionary.Literals.label_12 == $("#commentaryGroupField").val() ){
+				$("#commentaryGroup").html("");
+				$("#commentaryGroupField").val("");
+			}		
+		});	
 	
 	$("#profileTelephone").on("input", function() {
 		user.myTelephone = $("#profileTelephone").val();	
@@ -1214,7 +1243,6 @@ GUI.prototype.loadBody = function() {
 	
 };
 
-
 GUI.prototype.loadContactsOnMapPage = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
 	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
@@ -1516,7 +1544,16 @@ GUI.prototype.onChatInput = function() {
 GUI.prototype.onGroupsButton = function() {
 
 	var group = gui.groupOnMenu;
-	var action = $("#groupsButton").data( 'action' );	
+	var action = $("#groupsButton").data( 'action' );
+	var inputNickName = $("#nickNameGroupField").val();
+	if ( inputNickName == "" || inputNickName == dictionary.Literals.label_23 ){
+		var html = '<div data-role="header" data-theme="a"><h1>oops!</h1></div>';
+		html += '<div role="main" class="ui-content">';
+		html += '	<h3 class="ui-title"> remember to set a name for the Group</h3>';
+		html += '</div>';
+		gui.showDialog( html );		
+		return;
+	} 
 	if ( action == "create" ){
 		
 		$("#groupsButton")
@@ -1753,6 +1790,20 @@ GUI.prototype.showContactOnMapPage = function( contact ) {
 	
 };
 
+GUI.prototype.showDialog = function( html ) {	
+	$("#popupDiv").remove();
+	var prompt2show = '<div id="popupDiv" data-role="popup"> '+ html + '</div>';
+	
+	var activePage = $.mobile.activePage.attr("id");
+	$("#"+activePage).append( prompt2show );
+	$("#"+activePage).trigger("create");
+	
+	$(".backButton").unbind( "click" ).bind("click", function(){			 
+		gui.onBackButton();
+	});
+	$("#popupDiv").popup("open");
+};
+
 GUI.prototype.showEmojis = function() {	
     $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
@@ -1858,10 +1909,10 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 GUI.prototype.showImagePic = function() {	
 	
 	var prompt2show = 	
-		'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
-		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
-		'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
-		'</div>';
+	'<div id="popupDivMultimedia" data-role="popup" data-overlay-theme="a"> '+
+	'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext" ></a>'+
+	'	<input data-role="none" hidden type="file" name="image" id="picPopupDivMultimedia" class="picedit_box">		 '+
+	'</div>';
 	$("#multimedia-content").append(prompt2show);
 	$("#multimedia-content").trigger("create");
 	$(".backButton").unbind( "click" ).bind("click", function(){			 
@@ -3726,10 +3777,10 @@ function Dictionary(){
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
 		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld",
-		label_36 : "new Group",
-		label_37 : "My Groups",
-		label_38 : "create",
-		label_39 : "modify"
+		label_36 : "neue Gruppe",
+		label_37 : "meine Gruppen",
+		label_38 : "kreieren",
+		label_39 : "modifizieren"
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3765,10 +3816,10 @@ function Dictionary(){
 		label_33: "Totale: ",
 		label_34: "Acquistare",
 		label_35 : "Benvenuto! generando il vostro protocollo di sicurezza, questo processo potrebbe richiedere alcuni minuti, si prega di essere pazienti",
-		label_36 : "new Group",
-		label_37 : "My Groups",
-		label_38 : "create",
-		label_39 : "modify"
+		label_36 : "nuovo gruppo",
+		label_37 : "I miei gruppi",
+		label_38 : "creare",
+		label_39 : "modificare"
 		
 	}; 
 	this.Literals_Es = {
@@ -3805,10 +3856,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Comprar"	,
 		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente",
-		label_36 : "new Group",
-		label_37 : "My Groups",
-		label_38 : "create",
-		label_39 : "modify"		
+		label_36 : "nuevo grupo",
+		label_37 : "mis Grupos",
+		label_38 : "crear",
+		label_39 : "modificar"		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3844,10 +3895,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Acheter",
 		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp",
-		label_36 : "new Group",
-		label_37 : "My Groups",
-		label_38 : "create",
-		label_39 : "modify"
+		label_36 : "nouveau groupe",
+		label_37 : "mes Groupes",
+		label_38 : "cr&eacute;er",
+		label_39 : "modifier"
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3883,10 +3934,10 @@ function Dictionary(){
 		label_33: "Total: ",
 		label_34: "Comprar",
 		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente",
-		label_36 : "new Group",
-		label_37 : "My Groups",
-		label_38 : "create",
-		label_39 : "modify"
+		label_36 : "novo grupo",
+		label_37 : "meus Grupos",
+		label_38 : "criar",
+		label_39 : "modificar"
 	};
 	
 	this.AvailableLiterals = {
