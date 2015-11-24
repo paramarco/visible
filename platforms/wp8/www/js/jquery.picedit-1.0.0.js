@@ -32,9 +32,11 @@
 			displayWidth: 'auto',
 			displayHeight: 'auto',
 			aspectRatio: true,				// Preserve aspect ratio
-            defaultImage: false,            // Default image to be used with the plugin
+            defaultImage: function(){},            // Default image to be used with the plugin
             navToolsEnabled: true,
-            porup2remove : false
+            porup2remove : false,
+            callmeAtImageCreation : function(){},
+            callmeAtNativeInvocation : function(){}
         };
 
     // The actual plugin constructor
@@ -226,10 +228,8 @@
 						"width": this.options.displayWidth,
 						"height": this.options.displayHeight
 					});
-				}
-                
-//              displayWidth: 'auto',
-//				displayHeight: 'auto',  
+				}              
+ 
 		},
         // Check Browser Capabilities (determine if the picedit should run, or leave the default file-input field)
         check_browser_capabilities: function () {
@@ -255,7 +255,8 @@
 				_this._image = imageAux;				
 				_this._resizeViewport();
 				_this._paintCanvas();
-				_this._mainbuttons.removeClass("active");				
+				//_this._mainbuttons.removeClass("active");	
+				$(_this.element).find(".picedit_nav_box").addClass("active");
 			};           
         },
 		// Remove all notification copy and hide message box
@@ -313,10 +314,14 @@
 				this._fileinput.click();
 			}else{
 				
+				
+				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
+				
 				var cameraOptions = { 
 					destinationType : navigator.camera.DestinationType.FILE_URI,
 					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
 				};
+				
 				navigator.camera.getPicture(	
 					function (datasrc){ 
 						//_this._videobox.addClass("active");
@@ -451,6 +456,9 @@
 					}
 				);
 			}else{
+				
+				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
+				
 				var cameraOptions = { 
 					//quality : 75,
 					destinationType : navigator.camera.DestinationType.FILE_URI,
@@ -460,6 +468,7 @@
 					//targetHeight: 300,
 					//saveToPhotoAlbum: true
 				};
+								
 				navigator.camera.getPicture(	
 					function (datasrc){ 
 						_this._create_image_with_datasrc(datasrc, false, true);
@@ -485,6 +494,7 @@
 				canvas.width = live.clientWidth;
 				canvas.height = live.clientHeight;
 				ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
+				_this._videobox.removeClass("active");
 				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
 					_this._videobox.removeClass("active");
 				});
@@ -511,13 +521,15 @@
 			if(!this._image) return this._hideAllNav(1);
 			this._cropping.cropbox.addClass("active");
 			this._hideAllNav();
+			this._mainbuttons.removeClass("active");
 		},
 		crop_close: function () {
 			this._cropping.cropbox.removeClass("active");
 		},
 		// Create and update image from datasrc
 		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
-			if (this.options.porup2remove)	$(this.options.porup2remove).remove();
+			
+			if(this.options.callmeAtImageCreation) this.options.callmeAtImageCreation();
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
@@ -548,10 +560,15 @@
 				if ( withoutcall2resize ){
 					_this._paintCanvas();
 					_this.options.imageUpdated(_this._image);
-					_this._mainbuttons.removeClass("active");
+					
+					_this._mainbuttons.addClass("active");
+					$(_this.element).find(".picedit_nav_box").addClass("active")
+					
 					if(callback && typeof(callback) == "function") callback();	
 				}else{
-					_this.resize_image();										
+					
+					_this.resize_image();
+					if(callback && typeof(callback) == "function") callback();										
 				}			
 			};
 		},
@@ -838,7 +855,7 @@
 		_template: function(navToolsEnabled) {
 			var template;
 			if (navToolsEnabled)
-				template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div> <\/div><\/div> <div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"> <\/div> <div class="picedit_nav_elements"> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-pencil" title="Pen Tool"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_3"> <label class="picedit_colors"> <span title="Black" class="picedit_control picedit_action picedit_black active" data-action="toggle_button" data-variable="pen_color" data-value="black"></span> <span title="Red" class="picedit_control picedit_action picedit_red" data-action="toggle_button" data-variable="pen_color" data-value="red"></span> <span title="Green" class="picedit_control picedit_action picedit_green" data-action="toggle_button" data-variable="pen_color" data-value="green"></span> </label> <label> <span class="picedit_separator"></span> </label> <label class="picedit_sizes"> <span title="Large" class="picedit_control picedit_action picedit_large" data-action="toggle_button" data-variable="pen_size" data-value="16"></span> <span title="Medium" class="picedit_control picedit_action picedit_medium" data-action="toggle_button" data-variable="pen_size" data-value="8"></span> <span title="Small" class="picedit_control picedit_action picedit_small" data-action="toggle_button" data-variable="pen_size" data-value="3"></span> </label> <\/div><\/div><\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-insertpicture" title="Crop" data-action="crop_open"></span> <\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-redo" title="Rotate"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_1"> <label> <span>90° CW</span> <span class="picedit_control picedit_action ico-picedit-redo" data-action="rotate_cw"></span> </label> <label> <span>90° CCW</span> <span class="picedit_control picedit_action ico-picedit-undo" data-action="rotate_ccw"></span> </label> <\/div><\/div><\/div> </div> </div> <div class="picedit_canvas_box"> <div class="picedit_painter"> <canvas></canvas> </div> <div class="picedit_canvas"> <canvas></canvas> </div> <div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"> <\/div> <div class="picedit_control ico-picedit-camera" data-action="camera_open"> <\/div> <div class="center">' + dictionary.Literals.label_14 + '</div> </div> </div> <div class="picedit_video"> <video autoplay></video> <div class="picedit_video_controls"> <span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div> <div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div> <div class="picedit_drag_resize_box"> <div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div> </div> <div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div> </div>';
+				template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div> <\/div><\/div> <div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"> <\/div> <div class="picedit_nav_elements"> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-pencil" title="Pen Tool"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_3"> <label class="picedit_colors"> <span title="Black" class="picedit_control picedit_action picedit_black active" data-action="toggle_button" data-variable="pen_color" data-value="black"></span> <span title="Red" class="picedit_control picedit_action picedit_red" data-action="toggle_button" data-variable="pen_color" data-value="red"></span> <span title="Green" class="picedit_control picedit_action picedit_green" data-action="toggle_button" data-variable="pen_color" data-value="green"></span> </label> <label> <span class="picedit_separator"></span> </label> <label class="picedit_sizes"> <span title="Large" class="picedit_control picedit_action picedit_large" data-action="toggle_button" data-variable="pen_size" data-value="16"></span> <span title="Medium" class="picedit_control picedit_action picedit_medium" data-action="toggle_button" data-variable="pen_size" data-value="8"></span> <span title="Small" class="picedit_control picedit_action picedit_small" data-action="toggle_button" data-variable="pen_size" data-value="3"></span> </label> <\/div><\/div><\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-insertpicture" title="Crop" data-action="crop_open"></span> <\/div> <div class="picedit_element"> <span class="picedit_control picedit_action ico-picedit-redo" title="Rotate"></span> <div class="picedit_control_menu"> <div class="picedit_control_menu_container picedit_tooltip picedit_elm_1"> <label> <span>90° </span> <span class="picedit_control picedit_action ico-picedit-redo" data-action="rotate_cw"></span> </label>  <\/div><\/div><\/div> </div> </div> <div class="picedit_canvas_box"> <div class="picedit_painter"> <canvas></canvas> </div> <div class="picedit_canvas"> <canvas></canvas> </div> <div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"> <\/div> <div class="picedit_control ico-picedit-camera" data-action="camera_open"> <\/div> <div class="center">' + dictionary.Literals.label_14 + '</div> </div> </div> <div class="picedit_video"> <video autoplay></video> <div class="picedit_video_controls"> <span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div> <div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div> <div class="picedit_drag_resize_box"> <div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div> </div> <div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div> </div>';
 			else
 				template = '<div class="picedit_box"> <div class="picedit_message"> <span class="picedit_control ico-picedit-close" data-action="hide_messagebox"></span> <div> <\/div><\/div> <div class="picedit_nav_box picedit_gray_gradient"> <div class="picedit_pos_elements"> <\/div> <div class="picedit_nav_elements"> <div class="picedit_element"> <\/div> <div class="picedit_element"> <\/div> <div class="picedit_element"> <\/div> </div> </div> <div class="picedit_canvas_box"> <div class="picedit_painter"> <canvas></canvas> </div> <div class="picedit_canvas"> <canvas></canvas> </div> <div class="picedit_action_btns active"> <div class="picedit_control ico-picedit-picture" data-action="load_image"> <\/div> <div class="picedit_control ico-picedit-camera" data-action="camera_open"> <\/div> <div class="center">' + dictionary.Literals.label_14 + '</div> </div> </div> <div class="picedit_video"> <video autoplay></video> <div class="picedit_video_controls"> <span class="picedit_control picedit_action ico-picedit-checkmark" data-action="take_photo"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="camera_close"></span><\/div><\/div> <div class="picedit_drag_resize"> <div class="picedit_drag_resize_canvas"></div> <div class="picedit_drag_resize_box"> <div class="picedit_drag_resize_box_corner_wrap"> <div class="picedit_drag_resize_box_corner"></div> </div> <div class="picedit_drag_resize_box_elements"><span class="picedit_control picedit_action ico-picedit-checkmark" data-action="crop_image"></span><span class="picedit_control picedit_action ico-picedit-close" data-action="crop_close"></span><\/div><\/div></div> </div>';
 			
