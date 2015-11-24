@@ -482,14 +482,14 @@ Postman.prototype.onMsgFromClient = function ( input ){
 	if (msg.messageBody.messageType == "multimedia" || 
 		msg.messageBody.messageType == "text"){
 			
-		mailBox.storeMessage( msg );
-	
 		var publicClientID;
 		if ( msg.to != msg.chatWith ){
 			publicClientID = msg.chatWith;
 		}else{
 			publicClientID = msg.from;
 		}
+		msg.setChatWith( publicClientID );
+		mailBox.storeMessage( msg );
 		
 		var obj = abstractHandler.getObjById( publicClientID ); 
 		if (typeof obj == "undefined") return;
@@ -868,7 +868,7 @@ GUI.prototype.bindDOMevents = function(){
 	$("input[name='license-choice']").on("change", gui.refreshPurchasePrice );
 	$("#NGOdonation").on("change", gui.refreshPurchasePrice );
 	$("#FSIdonation").on("change", gui.refreshPurchasePrice );
-	$("#Backup").on("change", gui.refreshPurchasePrice );
+//	$("#Backup").on("change", gui.refreshPurchasePrice );
 	
 	
 	$("#groupsButton")
@@ -897,7 +897,7 @@ GUI.prototype.getPurchaseDetails = function() {
 	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
 	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
 	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
-	purchase.isBackupChecked = $("#Backup").is(':checked');
+//	purchase.isBackupChecked = $("#Backup").is(':checked');
 	
 	return purchase;
 };
@@ -1215,8 +1215,8 @@ GUI.prototype.loadBody = function() {
 	strVar += "        				<label id=\"label_28\" for=\"radio-choice-v-1a\">License valid for a year<\/label>";
 	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1b\" value=\"fourYears\">";
 	strVar += "        				<label id=\"label_29\" for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
-	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
-	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
+//	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
+//	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"NGOdonation\" id=\"NGOdonation\">";
 	strVar += "        				<label id=\"label_31\" for=\"NGOdonation\">Donation for associated NGOs<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"FSIdonation\" id=\"FSIdonation\">";
@@ -1442,10 +1442,10 @@ GUI.prototype.onAppBrowserLoad = function(event) {
     	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad );
 		
 		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
-		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
-		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("name",event.url));
-		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
-		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
+		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("licenseDurationChoosen",event.url));
+		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("isNGOdonationChecked",event.url));
+		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("isFSIdonationChecked",event.url));
+//		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
@@ -1676,7 +1676,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
 	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
 	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
-	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
+//	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
 	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
 	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
 	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
@@ -2196,7 +2196,7 @@ GUI.prototype.showProfile = function() {
 GUI.prototype.showRemoveContactFromGroup = function( contact ) {
 
 	$('#buttonAddContact2Group' + contact.publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' })
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' });
 	
 	$("#contacts4Group")
 		.find("#divAddContact2Group"+ contact.publicClientID)
@@ -2365,7 +2365,7 @@ GUI.prototype.refreshPurchasePrice = function() {
 	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
 	if(purchase.isNGOdonationChecked) price = price + 1;
 	if(purchase.isFSIdonationChecked) price = price + 1;
-	if(purchase.isBackupChecked) price = price + 1;
+//	if(purchase.isBackupChecked) price = price + 1;
 
 	
 	$("#price").html(price + "\u20AC");
@@ -3406,10 +3406,10 @@ function ContactsHandler() {
 
 ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
 
-	$('#linkAddNewContact' + publicClientID)
+	$('#linkAddNewContact' + contact.publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
 		.unbind("click")
-		.on("click", function(){ gui.showConversation( obj ); });
+		.on("click", function(){ gui.showConversation( contact ); });
 	
 	var prompt2show = 	
 	'<div id="popupDiv" data-role="popup"> '+

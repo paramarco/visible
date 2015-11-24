@@ -3,7 +3,8 @@ $( document ).on( "mobileinit", function() {
 	$.mobile.linkBindingEnabled = false;
 	$.mobile.allowCrossDomainPages = true;
     $.mobile.pushStateEnabled = false;
-    
-    $.mobile.changePage.defaults.changeHash = false;
-    $.mobile.hashListeningEnabled = false;
+
+ // these two options fuck-up the photoswipe   
+   $.mobile.changePage.defaults.changeHash = false;
+   $.mobile.hashListeningEnabled = false;
 });

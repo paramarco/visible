@@ -186,7 +186,7 @@ app.post('/payment', function (req, res) {
 		if(purchase.licenseDurationChoosen == "oneYear") amount = amount + 1;
 		if(purchase.isNGOdonationChecked == "true") amount = amount + 1;
 		if(purchase.isFSIdonationChecked == "true") amount = amount + 1;
-		if(purchase.isBackupChecked == "true") amount = amount + 1;	
+//		if(purchase.isBackupChecked == "true") amount = amount + 1;	
 		
 		var answer = {	
 			OK : true,

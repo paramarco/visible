@@ -13269,11 +13269,11 @@ function primeincFindPrimeWithWorkers(bits, rng, options, callback) {
     // TODO: consider optimizing by starting workers outside getPrime() ...
     // note that in order to clean up they will have to be made internally
     // asynchronous which may actually be slower
-    //TODO
-    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
-    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
-    var blob = new Blob(array, {type: "text/javascript"});
-    var workerScript = window.URL.createObjectURL(blob);
+    //TODO chrome compatibility
+//    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
+//    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
+//    var blob = new Blob(array, {type: "text/javascript"});
+//    var workerScript = window.URL.createObjectURL(blob);
     
     // start workers immediately
     var workers = [];

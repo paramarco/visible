@@ -482,14 +482,14 @@ Postman.prototype.onMsgFromClient = function ( input ){
 	if (msg.messageBody.messageType == "multimedia" || 
 		msg.messageBody.messageType == "text"){
 			
-		mailBox.storeMessage( msg );
-	
 		var publicClientID;
 		if ( msg.to != msg.chatWith ){
 			publicClientID = msg.chatWith;
 		}else{
 			publicClientID = msg.from;
 		}
+		msg.setChatWith( publicClientID );
+		mailBox.storeMessage( msg );
 		
 		var obj = abstractHandler.getObjById( publicClientID ); 
 		if (typeof obj == "undefined") return;
@@ -709,7 +709,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMapOnProfileOfContact();				 
 	    }
 	    if (ui.options.target == "#chat-page"){		
-			gui.loadGalleryInDOM();					 
+								 
 	    }	    
 	    if (ui.options.target == "#profile"){		
 			gui.loadProfile(); 					 
@@ -868,7 +868,7 @@ GUI.prototype.bindDOMevents = function(){
 	$("input[name='license-choice']").on("change", gui.refreshPurchasePrice );
 	$("#NGOdonation").on("change", gui.refreshPurchasePrice );
 	$("#FSIdonation").on("change", gui.refreshPurchasePrice );
-	$("#Backup").on("change", gui.refreshPurchasePrice );
+//	$("#Backup").on("change", gui.refreshPurchasePrice );
 	
 	
 	$("#groupsButton")
@@ -897,7 +897,7 @@ GUI.prototype.getPurchaseDetails = function() {
 	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
 	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
 	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
-	purchase.isBackupChecked = $("#Backup").is(':checked');
+//	purchase.isBackupChecked = $("#Backup").is(':checked');
 	
 	return purchase;
 };
@@ -1215,8 +1215,8 @@ GUI.prototype.loadBody = function() {
 	strVar += "        				<label id=\"label_28\" for=\"radio-choice-v-1a\">License valid for a year<\/label>";
 	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1b\" value=\"fourYears\">";
 	strVar += "        				<label id=\"label_29\" for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
-	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
-	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
+//	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
+//	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"NGOdonation\" id=\"NGOdonation\">";
 	strVar += "        				<label id=\"label_31\" for=\"NGOdonation\">Donation for associated NGOs<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"FSIdonation\" id=\"FSIdonation\">";
@@ -1258,8 +1258,8 @@ GUI.prototype.loadGalleryInDOM = function() {
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
         return;
     }
-    var strVar = "";
-	
+    $("#gallery").remove();
+    var strVar = "";	
 	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
 	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
 	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
@@ -1336,27 +1336,25 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		$("#groupsButton")
 		 .text( dictionary.Literals.label_39 )
 		 .data( 'action', 'modify' );
+		$("#label_21").text( dictionary.Literals.label_40 );
 	}else{
 		gui.groupOnMenu = new Group({});
 		gui.groupOnMenu.addMember( user );
 		
+		$("#label_21").text( dictionary.Literals.label_36 );
 		$("#groupsButton")
 		 .text( dictionary.Literals.label_38 )
 		 .data( 'action', 'create' );						
 	}
 	
+	$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
+	$("#commentaryGroup").text( gui.groupOnMenu.commentary );
+	$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
+	$("#nickNameGroup").text( gui.groupOnMenu.nickName );
+	
 	gui.showContactsOnGroupMenu();		
 	gui.showGroupsOnGroupMenu();
 	
-	if ( gui.groupOnMenu.commentary ){
-		$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
-		$("#commentaryGroup").text( gui.groupOnMenu.commentary );
-	}
-	if ( gui.groupOnMenu.nickName ){
-		$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
-		$("#nickNameGroup").text( gui.groupOnMenu.nickName );
-	}
-
 	var html = 
 	"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
 	$('#imageGroupContainer').empty().append(html);
@@ -1444,10 +1442,10 @@ GUI.prototype.onAppBrowserLoad = function(event) {
     	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad );
 		
 		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
-		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
-		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("name",event.url));
-		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
-		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
+		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("licenseDurationChoosen",event.url));
+		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("isNGOdonationChecked",event.url));
+		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("isFSIdonationChecked",event.url));
+//		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
@@ -1494,9 +1492,7 @@ GUI.prototype.onBackButton = function() {
 		case /chat-page/.test(page):
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
-			}else if( gui.photoGalleryClosed == false ){
-				gui.photoGallery.close();
-			}else{				
+			}else {				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			}
 			break;
@@ -1620,7 +1616,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 
 		list.reverse().map(function(message){	
-			gui.setMsgInConversation(message, true, false);			
+			gui.showMsgInConversation(message, true, false);			
 		});
 		
 		if ( olderDate > config.beginingOf2015 ){
@@ -1680,7 +1676,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
 	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
 	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
-	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
+//	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
 	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
 	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
 	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
@@ -1716,6 +1712,9 @@ GUI.prototype.showAddContact2Group = function( contact ) {
  */
 GUI.prototype.showConversation = function( obj ) {
 
+	gui.listOfImages4Gallery = null;
+	gui.listOfImages4Gallery = [];
+	gui.indexOfImages4Gallery = 0;
 	app.currentChatWith = obj.publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
@@ -1808,8 +1807,6 @@ GUI.prototype.showEmojis = function() {
     $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
 
-
-
 /** 
  * @param obj := ContactOnKnet | Group
  * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
@@ -1860,9 +1857,8 @@ GUI.prototype.showGallery = function(index) {
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
         return;
     }
-
-	var pswpElement = document.querySelectorAll('.pswp')[0];
-	
+	gui.loadGalleryInDOM();
+	var pswpElement = document.querySelectorAll('.pswp')[0];	
 	var options = {};
 	options.index = parseInt(index);
 	options.mainClass = 'pswp--minimal--dark';
@@ -1878,8 +1874,8 @@ GUI.prototype.showGallery = function(index) {
 	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
 	gui.photoGallery.init();
 	gui.photoGallery.listen('destroy', function() { 
-		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
-	});
+		setTimeout( function() { gui.photoGalleryClosed = true; } , config.TIME_SILENT_SCROLL );
+	});	
 };
 
 GUI.prototype.showGroupsOnGroupMenu = function() {
@@ -1947,7 +1943,7 @@ GUI.prototype.showImagePic = function() {
 			var msg2store = new Message( message2send );
 			mailBox.storeMessage( msg2store );
 			
-			gui.setMsgInConversation( msg2store, false, true);					
+			gui.showMsgInConversation( msg2store, false, true);					
 			$.mobile.silentScroll($(document).height());
 			
 			postman.sendMsg( message2send );
@@ -2369,7 +2365,7 @@ GUI.prototype.refreshPurchasePrice = function() {
 	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
 	if(purchase.isNGOdonationChecked) price = price + 1;
 	if(purchase.isFSIdonationChecked) price = price + 1;
-	if(purchase.isBackupChecked) price = price + 1;
+//	if(purchase.isBackupChecked) price = price + 1;
 
 	
 	$("#price").html(price + "\u20AC");
@@ -3415,22 +3411,15 @@ ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
 		.unbind("click")
 		.on("click", function(){ gui.showConversation( obj ); });
 	
-	$("#popupDiv").remove();
 	var prompt2show = 	
-		'<div id="popupDiv" data-role="popup"> '+
-		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
-		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
-		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
-		'</div>';
-	$("#listOfContactsInMainPage").append(prompt2show);
-	$("#listOfContactsInMainPage").trigger("create");
-	$(".backButton").unbind( "click" ).bind("click", function(){			 
-		gui.onBackButton();
-	});	
-	$("#popupDiv").popup("open");
+	'<div id="popupDiv" data-role="popup"> '+
+	' <a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
+	' <img class="darkink" src="./img/new_contact_added_195x195.png">' +
+	' <p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
+	'</div>';
+	gui.showDialog( prompt2show );	
 	
-	contactsHandler.setContactOnDB( contact );
-	
+	contactsHandler.setContactOnDB( contact );	
 };
 
 ContactsHandler.prototype.generateKeys = function(toContact) {
@@ -3741,7 +3730,8 @@ function Dictionary(){
 		label_36 : "new Group",
 		label_37 : "My Groups",
 		label_38 : "create",
-		label_39 : "modify"
+		label_39 : "modify",
+		label_40 : "Group: "
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3780,7 +3770,8 @@ function Dictionary(){
 		label_36 : "neue Gruppe",
 		label_37 : "meine Gruppen",
 		label_38 : "kreieren",
-		label_39 : "modifizieren"
+		label_39 : "modifizieren",
+		label_40 : "Gruppe: "
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3819,7 +3810,8 @@ function Dictionary(){
 		label_36 : "nuovo gruppo",
 		label_37 : "I miei gruppi",
 		label_38 : "creare",
-		label_39 : "modificare"
+		label_39 : "modificare",
+		label_40 : "Gruppi: "
 		
 	}; 
 	this.Literals_Es = {
@@ -3859,7 +3851,8 @@ function Dictionary(){
 		label_36 : "nuevo grupo",
 		label_37 : "mis Grupos",
 		label_38 : "crear",
-		label_39 : "modificar"		
+		label_39 : "modificar",
+		label_40 : "Grupo: "		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3898,7 +3891,8 @@ function Dictionary(){
 		label_36 : "nouveau groupe",
 		label_37 : "mes Groupes",
 		label_38 : "cr&eacute;er",
-		label_39 : "modifier"
+		label_39 : "modifier",
+		label_40 : "Groupe: "	
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3937,7 +3931,8 @@ function Dictionary(){
 		label_36 : "novo grupo",
 		label_37 : "meus Grupos",
 		label_38 : "criar",
-		label_39 : "modificar"
+		label_39 : "modificar",
+		label_40 : "Grupo: "
 	};
 	
 	this.AvailableLiterals = {
@@ -3959,7 +3954,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************

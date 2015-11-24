@@ -54,10 +54,10 @@
 		</div>
 	
 		<script src="js/config.js"></script>
-		<!--<script src="js/log4javascript-1.4.13.js"></script>-->
+		<script src="js/log4javascript-1.4.13.js"></script>
         
-    	<script src="js/photoswipe.min.js"></script>
-		<script src="js/photoswipe-ui-default.min.js"></script>	
+    	<script src="js/photoswipe.min.js?v=4.0.8-1.0.4"></script>
+		<script src="js/photoswipe-ui-default.min.js?v=4.0.8-1.0.4"></script>	
 
 		<script src="js/jsrsasign-4.1.4-all-min.js"></script>	
 		<script src="js/json-sans-eval-min.js"></script>
@@ -66,7 +66,7 @@
 		
 		<script src="js/jquery-1.10.2.min.js"></script>
 	 	<script src="js/jquery.mobile.mobileinit.js"></script> 
-		<script src="js/jquery.mobile-1.4.5.min.js"></script>
+		<script src="js/jquery.mobile-1.4.2.min.js"></script>
         <script src="js/jquery.picedit-1.0.0.js"></script>
         <script src="js/jquery.emojipicker.js"></script>
         <script src="js/jquery.emojipicker.tw.js"></script>
@@ -75,8 +75,8 @@
 		<script src="js/socket.io-1.3.5.js"></script>
 			
 	    <script src="js/leaflet-0.7.5.js"></script> 
-	   <!-- <script src="js/indexeddbshim.min-2.2.1.js"></script>   --> 
-	    <script src="js/IndexedDBShim.old.js"></script>  	    		    
+	    <script src="js/indexeddbshim.min-2.2.1.js"></script> <!--<script src="js/IndexedDBShim.old.js"></script>-->     
+	      	    		    
 		<script src="js/application.js"></script>		      
 
     </body>

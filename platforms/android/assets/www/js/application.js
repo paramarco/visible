@@ -118,7 +118,7 @@ Postman.prototype.encrypt = function(message) {
 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.encrypt", ex);
+		////log.debug("Postman.prototype.encrypt", ex);
 		return null;
 	}	
 };
@@ -137,7 +137,7 @@ Postman.prototype.encryptHandshake = function(message) {
 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.encryptHandshake", ex);
+		////log.debug("Postman.prototype.encryptHandshake", ex);
 		return null;
 	}	
 };
@@ -168,7 +168,7 @@ Postman.prototype.encryptMsgBody = function( message ) {
 		return messageBody;
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.encryptMsgBody",ex);
+		////log.debug("Postman.prototype.encryptMsgBody",ex);
 		return null;
 	}	
 };
@@ -189,7 +189,7 @@ Postman.prototype.decrypt = function(encrypted) {
 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.decrypt", ex);
+		////log.debug("Postman.prototype.decrypt", ex);
 		return null;
 	}	
 };
@@ -212,7 +212,7 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.decryptHandshake", ex);
+		////log.debug("Postman.prototype.decryptHandshake", ex);
 		return null;
 	}	
 };
@@ -245,7 +245,7 @@ Postman.prototype.decryptMsgBody = function( message ) {
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.decryptMsgBody", ex);
+		//log.debug("Postman.prototype.decryptMsgBody", ex);
 		return null;
 	}	
 };
@@ -287,7 +287,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 		
 		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
 		if (Array.isArray(listOfNewContacts) == false) { 
-			log.debug("Postman.prototype.getProcessNewContacts - type check 1", listOfNewContacts); 
+			//log.debug("Postman.prototype.getProcessNewContacts - type check 1", listOfNewContacts); 
 			return null;
 		}
 
@@ -298,7 +298,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 				typeof listOfNewContacts[i].location !== 'object'||
 				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
 				Object.keys(listOfNewContacts[i]).length != 5  ) {	
-				log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
+				//log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
 				return null;
 			}
 		}		
@@ -306,7 +306,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 		return listOfNewContacts; 
 	}
 	catch (ex) {
-		log.debug("Postman.prototype.getProcessNewContacts - type check 3", listOfNewContacts); 
+		//log.debug("Postman.prototype.getProcessNewContacts - type check 3", listOfNewContacts); 
 		return null;
 	}	
 };
@@ -327,7 +327,7 @@ Postman.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 		return deliveryReceipt; 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.getDeliveryReceipt", ex); 
+		//log.debug("Postman.prototype.getDeliveryReceipt", ex); 
 		return null;
 	}	
 };
@@ -340,14 +340,14 @@ Postman.prototype.getProfileRequest = function(input) {
 		if (parameters == null ||
 			typeof parameters.lastProfileUpdate !== 'number' 	|| 
 			Object.keys(parameters).length != 1  ) {
-			log.debug("Postman.prototype.getProfileRequest - type check", parameters); 
+			//log.debug("Postman.prototype.getProfileRequest - type check", parameters); 
 			return null;
 		}
 		
 		return parameters; 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.getProfileRequest - type check", ex); 
+		//log.debug("Postman.prototype.getProfileRequest - type check", ex); 
 		return null;
 	}	
 };
@@ -366,14 +366,14 @@ Postman.prototype.getProfileFromServer = function(input) {
 			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
 			typeof parameters.email !== 'string' || parameters.email == null) {
 			
-			log.debug("Postman.prototype.getProfileFromServer - type check", parameters); 
+			//log.debug("Postman.prototype.getProfileFromServer - type check", parameters); 
 			return null;
 		}
 		
 		return parameters; 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.getProfileFromServer - type check", ex); 
+		//log.debug("Postman.prototype.getProfileFromServer - type check", ex); 
 		return null;
 	}	
 };
@@ -388,14 +388,14 @@ Postman.prototype.getLocationFromServer = function(input) {
 			typeof position !== 'object' 	|| 
 			typeof position.coords !== 'object'  ) {
 							
-			log.debug("Postman.prototype.getLocationFromServer - type check", position); 
+			//log.debug("Postman.prototype.getLocationFromServer - type check", position); 
 			return null;
 		}
 		
 		return position; 
 	}
 	catch (ex) {	
-		log.debug("Postman.prototype.getLocationFromServer - type check", ex); 
+		//log.debug("Postman.prototype.getLocationFromServer - type check", ex); 
 		return null;
 	}	
 };
@@ -409,14 +409,14 @@ Postman.prototype.getKeysDelivery = function(encrypted) {
 			Postman.prototype._isUUID(input.from) == false  ||
 			typeof input.setOfKeys != 'object' ||
 			Object.keys(input).length != 3 ) {	
-			log.debug("Postman.prototype.getKeysDelivery - type check", input); 
+			//log.debug("Postman.prototype.getKeysDelivery - type check", input); 
 			return null;
 		}
 		
 		return input; 
 	}
 	catch (ex) {
-		log.debug("Postman.prototype.getKeysDelivery - type check", ex); 
+		//log.debug("Postman.prototype.getKeysDelivery - type check", ex); 
 		return null;
 	}	
 };
@@ -429,13 +429,13 @@ Postman.prototype.getKeysRequest = function(encrypted) {
 			Postman.prototype._isUUID(input.to) == false  ||
 			Postman.prototype._isUUID(input.from) == false  ||
 			Object.keys(input).length != 2 ) {	
-			log.debug("Postman.prototype.getKeysRequest - type check", input); 
+			//log.debug("Postman.prototype.getKeysRequest - type check", input); 
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		log.debug("Postman.prototype.getKeysRequest - type check", ex); 
+		//log.debug("Postman.prototype.getKeysRequest - type check", ex); 
 		return null;
 	}	
 };
@@ -450,7 +450,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 			Postman.prototype._isUUID( input.from ) == false  ||
 			Postman.prototype._isUUID( input.msgID ) == false ){
 				
-		log.debug("Postman.prototype.getMessageFromClient - type check", input); 
+		//log.debug("Postman.prototype.getMessageFromClient - type check", input); 
 			return null;
 		}
 		
@@ -461,7 +461,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 		return message; 	
 	} 
 	catch (ex) {	
-		log.debug("Postman.prototype.getMessageFromClient - type check", ex);
+		//log.debug("Postman.prototype.getMessageFromClient - type check", ex);
 		return null;
 	}
 };
@@ -482,14 +482,14 @@ Postman.prototype.onMsgFromClient = function ( input ){
 	if (msg.messageBody.messageType == "multimedia" || 
 		msg.messageBody.messageType == "text"){
 			
-		mailBox.storeMessage( msg );
-	
 		var publicClientID;
 		if ( msg.to != msg.chatWith ){
 			publicClientID = msg.chatWith;
 		}else{
 			publicClientID = msg.from;
 		}
+		msg.setChatWith( publicClientID );
+		mailBox.storeMessage( msg );
 		
 		var obj = abstractHandler.getObjById( publicClientID ); 
 		if (typeof obj == "undefined") return;
@@ -536,7 +536,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 	if (typeof event2trigger !== 'string' ||
 		typeof data !== 'object' || data == null ) 	{	
 		
-		log.debug("Postman.prototype.send - type check", data);
+		//log.debug("Postman.prototype.send - type check", data);
 		return null;
 	}	
 	
@@ -546,7 +546,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 		}	
 					
 	}catch(e){
-		log.debug("Postman.prototype.send - type check", e);
+		//log.debug("Postman.prototype.send - type check", e);
 	}		
 		
 };
@@ -554,7 +554,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 Postman.prototype.sendMsg = function( msg ) {	
 	try{
 		if (msg.messageBody == null){
-		log.debug("Postman.prototype.sendMsg - type check", msg);
+		//log.debug("Postman.prototype.sendMsg - type check", msg);
 			return;
 		}
 		
@@ -580,7 +580,7 @@ Postman.prototype.sendMsg = function( msg ) {
 		});		
 				
 	}catch(e){
-		log.debug("Postman.prototype.sendMsg", e);
+		//log.debug("Postman.prototype.sendMsg", e);
 	}	
 };
 
@@ -709,7 +709,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMapOnProfileOfContact();				 
 	    }
 	    if (ui.options.target == "#chat-page"){		
-			gui.loadGalleryInDOM();					 
+								 
 	    }	    
 	    if (ui.options.target == "#profile"){		
 			gui.loadProfile(); 					 
@@ -868,7 +868,7 @@ GUI.prototype.bindDOMevents = function(){
 	$("input[name='license-choice']").on("change", gui.refreshPurchasePrice );
 	$("#NGOdonation").on("change", gui.refreshPurchasePrice );
 	$("#FSIdonation").on("change", gui.refreshPurchasePrice );
-	$("#Backup").on("change", gui.refreshPurchasePrice );
+//	$("#Backup").on("change", gui.refreshPurchasePrice );
 	
 	
 	$("#groupsButton")
@@ -897,7 +897,7 @@ GUI.prototype.getPurchaseDetails = function() {
 	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
 	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
 	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
-	purchase.isBackupChecked = $("#Backup").is(':checked');
+//	purchase.isBackupChecked = $("#Backup").is(':checked');
 	
 	return purchase;
 };
@@ -908,7 +908,7 @@ GUI.prototype.hideLoadingSpinner = function(){
 
 GUI.prototype.hideLocalNotifications = function() {
 	cordova.plugins.notification.local.clearAll(function() {
-		log.info("GUI.prototype.hideLocalNotifications - notification cleared");
+		//log.info("GUI.prototype.hideLocalNotifications - notification cleared");
 		gui.localNotificationText = "";
 	}, this);
 };
@@ -1215,8 +1215,8 @@ GUI.prototype.loadBody = function() {
 	strVar += "        				<label id=\"label_28\" for=\"radio-choice-v-1a\">License valid for a year<\/label>";
 	strVar += "        				<input type=\"radio\" name=\"license-choice\" id=\"radio-choice-v-1b\" value=\"fourYears\">";
 	strVar += "        				<label id=\"label_29\" for=\"radio-choice-v-1b\">License valid for 4 years<\/label>";
-	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
-	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
+//	strVar += "       				<input type=\"checkbox\" name=\"Backup\" id=\"Backup\">";
+//	strVar += "        				<label id=\"label_30\" for=\"Backup\">Back-up functionality<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"NGOdonation\" id=\"NGOdonation\">";
 	strVar += "        				<label id=\"label_31\" for=\"NGOdonation\">Donation for associated NGOs<\/label>";
 	strVar += "        				<input type=\"checkbox\" name=\"FSIdonation\" id=\"FSIdonation\">";
@@ -1258,8 +1258,8 @@ GUI.prototype.loadGalleryInDOM = function() {
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
         return;
     }
-    var strVar = "";
-	
+    $("#gallery").remove();
+    var strVar = "";	
 	strVar += "<div id=\"gallery\" data-role=\"none\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" hidden>";
 	strVar += "		<div  data-role=\"none\" class=\"pswp__bg\"><\/div>";
 	strVar += "		<div data-role=\"none\" class=\"pswp__scroll-wrap\">";
@@ -1336,27 +1336,25 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		$("#groupsButton")
 		 .text( dictionary.Literals.label_39 )
 		 .data( 'action', 'modify' );
+		$("#label_21").text( dictionary.Literals.label_40 );
 	}else{
 		gui.groupOnMenu = new Group({});
 		gui.groupOnMenu.addMember( user );
 		
+		$("#label_21").text( dictionary.Literals.label_36 );
 		$("#groupsButton")
 		 .text( dictionary.Literals.label_38 )
 		 .data( 'action', 'create' );						
 	}
 	
+	$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
+	$("#commentaryGroup").text( gui.groupOnMenu.commentary );
+	$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
+	$("#nickNameGroup").text( gui.groupOnMenu.nickName );
+	
 	gui.showContactsOnGroupMenu();		
 	gui.showGroupsOnGroupMenu();
 	
-	if ( gui.groupOnMenu.commentary ){
-		$("#commentaryGroupField").val( gui.groupOnMenu.commentary );
-		$("#commentaryGroup").text( gui.groupOnMenu.commentary );
-	}
-	if ( gui.groupOnMenu.nickName ){
-		$("#nickNameGroupField").val(gui.groupOnMenu.nickName);
-		$("#nickNameGroup").text( gui.groupOnMenu.nickName );
-	}
-
 	var html = 
 	"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
 	$('#imageGroupContainer').empty().append(html);
@@ -1437,17 +1435,17 @@ GUI.prototype.onAddContact2Group = function( contact ) {
 
 GUI.prototype.onAppBrowserLoad = function(event) {
 	
-	log.info("GUI.prototype.onAppBrowserLoad - begin");
+	//log.info("GUI.prototype.onAppBrowserLoad - begin");
 	
     if (event.url.match("successPayment") !== null) {
     	gui.inAppBrowser.removeEventListener('exit', gui.onAppBrowserExit );
     	gui.inAppBrowser.removeEventListener('loadstop', gui.onAppBrowserLoad );
 		
 		app.transactionID = decodeURI(postman.getParameterByName("transactionID",event.url));
-		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("accountPayPal",event.url));
-		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("name",event.url));
-		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("fotoPath",event.url));
-		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
+		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("licenseDurationChoosen",event.url));
+		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("isNGOdonationChecked",event.url));
+		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("isFSIdonationChecked",event.url));
+//		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
@@ -1494,9 +1492,7 @@ GUI.prototype.onBackButton = function() {
 		case /chat-page/.test(page):
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
-			}else if( gui.photoGalleryClosed == false ){
-				gui.photoGallery.close();
-			}else{				
+			}else {				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			}
 			break;
@@ -1620,7 +1616,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 
 		list.reverse().map(function(message){	
-			gui.setMsgInConversation(message, true, false);			
+			gui.showMsgInConversation(message, true, false);			
 		});
 		
 		if ( olderDate > config.beginingOf2015 ){
@@ -1680,7 +1676,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_27").innerHTML = dictionary.Literals.label_27;
 	document.getElementById("label_28").innerHTML = dictionary.Literals.label_28;
 	document.getElementById("label_29").innerHTML = dictionary.Literals.label_29;
-	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
+//	document.getElementById("label_30").innerHTML = dictionary.Literals.label_30;
 	document.getElementById("label_31").innerHTML = dictionary.Literals.label_31;
 	document.getElementById("label_32").innerHTML = dictionary.Literals.label_32;
 	document.getElementById("label_33").innerHTML = dictionary.Literals.label_33;
@@ -1716,6 +1712,9 @@ GUI.prototype.showAddContact2Group = function( contact ) {
  */
 GUI.prototype.showConversation = function( obj ) {
 
+	gui.listOfImages4Gallery = null;
+	gui.listOfImages4Gallery = [];
+	gui.indexOfImages4Gallery = 0;
 	app.currentChatWith = obj.publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
@@ -1808,8 +1807,6 @@ GUI.prototype.showEmojis = function() {
     $('body').pagecontainer('change', '#emoticons', { transition : "none" } );
 };
 
-
-
 /** 
  * @param obj := ContactOnKnet | Group
  * @param isNewContact := true | false , ( obj == Group) --> isNewContact := false)
@@ -1860,9 +1857,8 @@ GUI.prototype.showGallery = function(index) {
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
         return;
     }
-
-	var pswpElement = document.querySelectorAll('.pswp')[0];
-	
+	gui.loadGalleryInDOM();
+	var pswpElement = document.querySelectorAll('.pswp')[0];	
 	var options = {};
 	options.index = parseInt(index);
 	options.mainClass = 'pswp--minimal--dark';
@@ -1878,8 +1874,8 @@ GUI.prototype.showGallery = function(index) {
 	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
 	gui.photoGallery.init();
 	gui.photoGallery.listen('destroy', function() { 
-		setTimeout( function() { gui.photoGalleryClosed = true;  } , config.TIME_SILENT_SCROLL ); 
-	});
+		setTimeout( function() { gui.photoGalleryClosed = true; } , config.TIME_SILENT_SCROLL );
+	});	
 };
 
 GUI.prototype.showGroupsOnGroupMenu = function() {
@@ -1947,7 +1943,7 @@ GUI.prototype.showImagePic = function() {
 			var msg2store = new Message( message2send );
 			mailBox.storeMessage( msg2store );
 			
-			gui.setMsgInConversation( msg2store, false, true);					
+			gui.showMsgInConversation( msg2store, false, true);					
 			$.mobile.silentScroll($(document).height());
 			
 			postman.sendMsg( message2send );
@@ -2200,7 +2196,7 @@ GUI.prototype.showProfile = function() {
 GUI.prototype.showRemoveContactFromGroup = function( contact ) {
 
 	$('#buttonAddContact2Group' + contact.publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' })
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-plus' });
 	
 	$("#contacts4Group")
 		.find("#divAddContact2Group"+ contact.publicClientID)
@@ -2369,7 +2365,7 @@ GUI.prototype.refreshPurchasePrice = function() {
 	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
 	if(purchase.isNGOdonationChecked) price = price + 1;
 	if(purchase.isFSIdonationChecked) price = price + 1;
-	if(purchase.isBackupChecked) price = price + 1;
+//	if(purchase.isBackupChecked) price = price + 1;
 
 	
 	$("#price").html(price + "\u20AC");
@@ -2477,7 +2473,7 @@ MailBox.prototype.storeMessage = function( msg2Store ) {
 		};	
 	}
 	catch(e){
-		log.debug("MailBox.prototype.storeMessage", e);
+		//log.debug("MailBox.prototype.storeMessage", e);
 	}
  		
 };
@@ -2493,13 +2489,13 @@ MailBox.prototype.unwrapMessagesOf = function( contact ) {
 			if (cursor) {
 	     		if ( cursor.value.messageBody.hasOwnProperty('index4Key') ){
 					postman.onMsgFromClient(cursor.value); 
-					log.info("MailBox.prototype.unwrapMessagesOf");			
+					//log.info("MailBox.prototype.unwrapMessagesOf");			
 	     		}
 			}    	 
 		};	
 	}
 	catch(e){
-		log.debug("MailBox.prototype.unwrapMessagesOf",e);	
+		//log.debug("MailBox.prototype.unwrapMessagesOf",e);	
 	}
 
 };
@@ -2561,7 +2557,7 @@ Application.prototype.connect2paypal = function(myPurchase) {
 		}
 	})
 	.fail(function() {
-		log.info("Application.prototype.connect2paypal - failed");
+		//log.info("Application.prototype.connect2paypal - failed");
 		//navigator.notification.alert("Are you connected to Internet?", null, 'Uh oh!');
 	})
 	.always(function() { gui.hideLoadingSpinner(); });		
@@ -2605,23 +2601,23 @@ Application.prototype.connect2server = function(result){
 	});
 	
 	socket.on('disconnect', function () {
-		log.info("socket.on.disconnect"); 
+		//log.info("socket.on.disconnect"); 
 		app.connecting = false;					
 	});
 	
 	socket.on('reconnect_attempt', function () {
-		log.info("socket.on.reconnect_attempt"); 
+		//log.info("socket.on.reconnect_attempt"); 
 		app.connecting = true;					
 	});
 	
 	socket.on('reconnect_failed', function () {
-		log.info("socket.on.reconnect_failed"); 
+		//log.info("socket.on.reconnect_failed"); 
 		app.connecting = false;
 		app.sendLogin();					
 	});
 	
 	socket.on('reconnect', function () {
-		log.info("socket.on.reconnect"); 
+		//log.info("socket.on.reconnect"); 
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	empty : "" } );
   		var newerDate = new Date().getTime();	
@@ -2667,7 +2663,7 @@ Application.prototype.connect2server = function(result){
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
-		log.info("socket.on.ServerReplytoDiscoveryHeaders", listOfHeaders); 
+		//log.info("socket.on.ServerReplytoDiscoveryHeaders", listOfHeaders); 
 
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
@@ -2737,7 +2733,7 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			log.info("socket.on.KeysDelivery - discard my own delivery");		
+			//log.info("socket.on.KeysDelivery - discard my own delivery");		
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
@@ -2773,7 +2769,7 @@ Application.prototype.connect2server = function(result){
 					mailBox.unwrapMessagesOf( contact );
 				} 
 			}catch (ex) {	
-				log.debug("socket.on.KeysDelivery", contact);	
+				//log.debug("socket.on.KeysDelivery", contact);	
 				return null;
 			}	
 	 	} // END else			
@@ -2785,14 +2781,14 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			log.info("socket.on.KeysRequest - discard my own Request");
+			//log.info("socket.on.KeysRequest - discard my own Request");
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
 				contactsHandler.sendKeys(contact);		
 
 			}catch (ex) {	
-				log.debug("socket.on.KeysRequest", ex);
+				//log.debug("socket.on.KeysRequest", ex);
 				return null;
 			}	
 	 	}		
@@ -2876,8 +2872,7 @@ Application.prototype.generateAsymetricKeys = function(){
 		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
 	}else{
 		var keyPair = forge.pki.rsa.generateKeyPair( options );
-		var err;
-		app.sendKeyPair( err, keyPair);
+		app.sendKeyPair( false, keyPair);
 	}
 };	
 
@@ -2984,11 +2979,11 @@ Application.prototype.loadStoredData = function() {
 	};
 	
 	this.indexedDBHandler.onerror = function(e){		
-		log.debug("indexedDBHandler.onerror", e);
+		//log.debug("indexedDBHandler.onerror", e);
  		app.generateAsymetricKeys();		
 	};
 	this.indexedDBHandler.onblocked = function(){
-		log.debug("indexedDBHandler.onblocked");
+		//log.debug("indexedDBHandler.onblocked");
 	};
 };
 
@@ -3011,7 +3006,7 @@ Application.prototype.loadUserSettings = function(){
 	     	}
 		};		
 	}catch(e){
-		log.debug("Application.prototype.loadUserSettings", e);	   
+		//log.debug("Application.prototype.loadUserSettings", e);	   
 		app.generateAsymetricKeys();
 	}
 };
@@ -3032,7 +3027,7 @@ Application.prototype.onDeviceReady = function() {
 		app.events.deviceReady.resolve();		
 
 	}catch(e){
-    	log.debug("Application.prototype.onDeviceReady", e);
+    	//log.debug("Application.prototype.onDeviceReady", e);
     }	
 };
 
@@ -3079,7 +3074,7 @@ Application.prototype.onResumeCustom =  function() {
 Application.prototype.sendKeyPair = function (err, keypair ){
 
 	if (err) {
-		log.debug("Application.prototype.sendKeyPair", err);
+		//log.debug("Application.prototype.sendKeyPair", err);
 		app.generateAsymetricKeys();
 		return;
 	}
@@ -3102,7 +3097,7 @@ Application.prototype.sendKeyPair = function (err, keypair ){
  			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
  			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
  			
-	 		log.info("Application.prototype.sendKeyPair - another attempt");  		
+	 		//log.info("Application.prototype.sendKeyPair - another attempt");  		
 	 		app.generateAsymetricKeys();
 	 		
 	 	}else{
@@ -3142,7 +3137,7 @@ Application.prototype.sendLogin = function(){
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
-		log.debug("Application.prototype.sendLogin", app );  
+		//log.debug("Application.prototype.sendLogin", app );  
 		return;
 	} 
 	app.connecting = true;
@@ -3163,7 +3158,7 @@ Application.prototype.sendLogin = function(){
 	 })
 	 .fail(function() {
 		app.connecting = false; 
-		log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
+		//log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
 		setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
 	 })
 	 .always(function() {
@@ -3321,9 +3316,9 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		log.info("Application.prototype.setLanguage ", language);
+		//log.info("Application.prototype.setLanguage ", language);
 	}else{
-		log.info("Application.prototype.setLanguage - NOT FOUND", language);	
+		//log.info("Application.prototype.setLanguage - NOT FOUND", language);	
 		language.value = "English" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
@@ -3410,27 +3405,20 @@ function ContactsHandler() {
 
 ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
 
-	$('#linkAddNewContact' + publicClientID)
+	$('#linkAddNewContact'+contact.publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
 		.unbind("click")
-		.on("click", function(){ gui.showConversation( obj ); });
+		.on("click", function(){ gui.showConversation( contact ); });
 	
-	$("#popupDiv").remove();
 	var prompt2show = 	
-		'<div id="popupDiv" data-role="popup"> '+
-		'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
-		'	<img class="darkink" src="./img/new_contact_added_195x195.png">' +
-		'	<p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
-		'</div>';
-	$("#listOfContactsInMainPage").append(prompt2show);
-	$("#listOfContactsInMainPage").trigger("create");
-	$(".backButton").unbind( "click" ).bind("click", function(){			 
-		gui.onBackButton();
-	});	
-	$("#popupDiv").popup("open");
+	'<div id="popupDiv" data-role="popup"> '+
+	' <a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
+	' <img class="darkink" src="./img/new_contact_added_195x195.png">' +
+	' <p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
+	'</div>';
+	gui.showDialog( prompt2show );	
 	
-	contactsHandler.setContactOnDB( contact );
-	
+	contactsHandler.setContactOnDB( contact );	
 };
 
 ContactsHandler.prototype.generateKeys = function(toContact) {
@@ -3537,7 +3525,7 @@ ContactsHandler.prototype.setContactOnDB = function(contact) {
 		};	
 	}
 	catch(e){
-		log.debug("ContactsHandler.prototype.setContactOnDB", e); 
+		//log.debug("ContactsHandler.prototype.setContactOnDB", e); 
 	}
 };
 
@@ -3572,7 +3560,7 @@ ContactsHandler.prototype.updateContactOnDB = function( contact ) {
 		};	
 	}
 	catch(e){
-		log.debug("ContactsHandler.prototype.updateContactOnDB", e);
+		//log.debug("ContactsHandler.prototype.updateContactOnDB", e);
 	}
 };
 	
@@ -3681,7 +3669,7 @@ GroupsHandler.prototype.setGroupOnDB = function( group ) {
 		};	
 	}
 	catch(e){
-		log.debug("ContactsHandler.prototype.setGroupOnDB", e);
+		//log.debug("ContactsHandler.prototype.setGroupOnDB", e);
 	}
 };
 
@@ -3741,7 +3729,8 @@ function Dictionary(){
 		label_36 : "new Group",
 		label_37 : "My Groups",
 		label_38 : "create",
-		label_39 : "modify"
+		label_39 : "modify",
+		label_40 : "Group: "
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3780,7 +3769,8 @@ function Dictionary(){
 		label_36 : "neue Gruppe",
 		label_37 : "meine Gruppen",
 		label_38 : "kreieren",
-		label_39 : "modifizieren"
+		label_39 : "modifizieren",
+		label_40 : "Gruppe: "
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3819,7 +3809,8 @@ function Dictionary(){
 		label_36 : "nuovo gruppo",
 		label_37 : "I miei gruppi",
 		label_38 : "creare",
-		label_39 : "modificare"
+		label_39 : "modificare",
+		label_40 : "Gruppi: "
 		
 	}; 
 	this.Literals_Es = {
@@ -3859,7 +3850,8 @@ function Dictionary(){
 		label_36 : "nuevo grupo",
 		label_37 : "mis Grupos",
 		label_38 : "crear",
-		label_39 : "modificar"		
+		label_39 : "modificar",
+		label_40 : "Grupo: "		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3898,7 +3890,8 @@ function Dictionary(){
 		label_36 : "nouveau groupe",
 		label_37 : "mes Groupes",
 		label_38 : "cr&eacute;er",
-		label_39 : "modifier"
+		label_39 : "modifier",
+		label_40 : "Groupe: "	
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3937,7 +3930,8 @@ function Dictionary(){
 		label_36 : "novo grupo",
 		label_37 : "meus Grupos",
 		label_38 : "criar",
-		label_39 : "modificar"
+		label_39 : "modificar",
+		label_40 : "Grupo: "
 	};
 	
 	this.AvailableLiterals = {
@@ -3958,8 +3952,8 @@ function Dictionary(){
  * *********************************************************************************************
  * *********************************************************************************************/
 
-window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+//window.shimIndexedDB.__debug(false);
+//log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************
@@ -3978,7 +3972,7 @@ var abstractHandler = new AbstractHandler();
 var contactsHandler = new ContactsHandler();
 var groupsHandler = new GroupsHandler();
 var dictionary = new Dictionary();
-var log = log4javascript.getDefaultLogger();
+//var log = log4javascript.getDefaultLogger();
 var app = new Application();
 
 /***********************************************************************************************
