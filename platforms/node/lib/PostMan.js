@@ -68,6 +68,14 @@ function PostMan(_io) {
 			return d.resolve(true);
 		});	
 		return d.promise;	
+	};	
+	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
+	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
+	this.isPostBoxFull= function(message) {
+		//get from the message the sender and receiver
+		//var isPostBoxFull = false;		
+		return false;
+	
 	};
 	
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers :: sends Mailbox headers to client, it emits ServerReplytoDiscoveryHeaders
@@ -182,14 +190,7 @@ function PostMan(_io) {
 		});
 	};
 
-	//TODO #4 check if this new message makes the Buffer of sender/receiver become full
-	//PostMan verifies if either the buffer of the sender or the buffer of the Receiver is full
-	this.isPostBoxFull= function(message) {
-		//get from the message the sender and receiver
-		//var isPostBoxFull = false;		
-		return false;
-	
-	};
+
 	
 	this.archiveACK = function(messageACKparameters) {
 		
@@ -390,7 +391,6 @@ function PostMan(_io) {
 		}
 		
 	};
-	
 	
 	this.deleteMessageAndACK = function(deliveryReceipt) {
 	    
@@ -623,7 +623,7 @@ PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 
 
 
-PostMan.prototype.getMessageRetrievalParameters = function(encryptedInput , client) {
+PostMan.prototype.getMessageRetrieval = function(encryptedInput , client) {
 	var retrievalParameters = null;
 	try {    	
 		retrievalParameters = PostMan.prototype.decrypt(encryptedInput, client );	
@@ -632,13 +632,13 @@ PostMan.prototype.getMessageRetrievalParameters = function(encryptedInput , clie
 			PostMan.prototype.isUUID(retrievalParameters.msgID) == false ||
 			Object.keys(retrievalParameters).length != 1 ) {
 			
-			console.log("DEBUG ::: getMessageRetrievalParameters  :::  didn't pass the format check "   );
+			console.log("DEBUG ::: getMessageRetrieval  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
 		return retrievalParameters;
 	} 
 	catch (ex) {
-		console.log("DEBUG ::: getMessageRetrievalParameters  :::  exceptrion thrown " + ex  );
+		console.log("DEBUG ::: getMessageRetrieval  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -950,6 +950,25 @@ PostMan.prototype.getKeysRequest = function(encrypted, client) {
 		return null;
 	}	
 };
+
+PostMan.prototype.getReconnectNotification = function( encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID( input.publicClientID ) == false ||
+			Object.keys(input).length != 1 ) {	
+			console.log("DEBUG ::: getReconnectNotification ::: format check failed: " + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getReconnectNotification ::: format check failed, ex: " + ex );
+		return null;
+	}	
+};
+
 
 
 

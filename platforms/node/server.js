@@ -285,8 +285,24 @@ app.get('/cancelPayment', function (req, res) {
 	});
 });
 
-
-
+app.locals.onConnection = function ( client ){
+	
+	console.log("DEBUG ::: connection ::: client: " + client.publicClientID );
+	console.log('DEBUG ::: connection ::: socket: ' + client.socketid );
+	
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
+	postMan.sendKeysDeliveries( client ); 
+	postMan.sendMessageACKs( client );
+	postMan.sendMessageHeaders( client );
+	postMan.sendKeysRequests( client );		
+	
+	//XEP-0080: User Location
+	postMan.sendDetectedLocation(client);	
+	
+	//XEP-0084: User Avatar 
+	postMan.send("RequestForProfile",  { lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client);
+	
+};
 app.locals.notifyNeighbours = function (client, online){
 	
 	brokerOfVisibles.getListOfPeopleAround(client, online).then(function(listOfPeople){ 
@@ -317,26 +333,26 @@ app.locals.notifyNeighbours = function (client, online){
 };
 
 
-app.locals.disconnectHandler = function(socket) {
+app.locals.onDisconnect = function(socket) {
 	
 	socket.visibleClient.socketid = null ;	
 	brokerOfVisibles.updateClientsProfile(socket.visibleClient);	
-	console.log('DEBUG ::: disconnect ::: ' + socket.visibleClient.publicClientID);
+	console.log('DEBUG ::: onDisconnect ::: ' + socket.visibleClient.publicClientID);
 	
 };
 
-app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
+app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 	
 	var client = socket.visibleClient;
 	
 	if (client.nickName == null){
-		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: slowly....");
+		console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: slowly....");
 		return;
 	} 
 		
 	var parameters = postMan.getRequestWhoIsaround(input, client);
 	if (parameters == null) {
-		console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss let's send the people around ... anyway");
+		console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: upsss let's send the people around ... anyway");
 	}
 	
 	if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
@@ -346,7 +362,7 @@ app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
 		brokerOfVisibles.updateClientsProfile(client);		  				  			
 	}
 	
-	if (client == null ) console.log("DEBUG ::: RequestOfListOfPeopleAround  ::: upsss client es null");
+	if (client == null ) console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: upsss client es null");
 	var online = true;
 	app.locals.notifyNeighbours(client, online);
 	online = false;
@@ -354,7 +370,7 @@ app.locals.RequestOfListOfPeopleAroundHandler = function (input, socket) {
 };
 
 
-app.locals.ProfileRetrievalHandler = function(input , socket) {
+app.locals.onProfileRetrieval = function(input , socket) {
 	
 	var client = socket.visibleClient;
 	
@@ -375,7 +391,7 @@ app.locals.ProfileRetrievalHandler = function(input , socket) {
 	
 };
 
-app.locals.profileUpdateHandler = function(input , socket) {	
+app.locals.onProfileUpdate = function(input , socket) {	
 	
 	var client = socket.visibleClient;	
 
@@ -392,7 +408,7 @@ app.locals.profileUpdateHandler = function(input , socket) {
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
 	
-	if (client == null ) console.log("DEBUG ::: ProfileUpdateHandler  ::: upsss client es null");
+	if (client == null ) console.log("DEBUG ::: onProfileUpdate  ::: upsss client es null");
 	var online = true;
 	app.locals.notifyNeighbours(client, online);
 	online = false;
@@ -400,7 +416,7 @@ app.locals.profileUpdateHandler = function(input , socket) {
 	
 };
 
-app.locals.MessageDeliveryACKHandler = function(input, socket) {		
+app.locals.onMessageDeliveryACK = function(input, socket) {		
 	
 	var client = socket.visibleClient;
 	
@@ -409,7 +425,7 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 	
 	//check if sender of MessageDeliveryACK is actually the receiver
 	if (messageACKparameters.to != client.publicClientID) {
-		console.log('DEBUG ::: MessageDeliveryACK ::: something went wrong on MessageDeliveryACKHandler ' );
+		console.log('DEBUG ::: onMessageDeliveryACK ::: something went wrong on onMessageDeliveryACK ' );
 		return;
 	}
 				
@@ -433,11 +449,11 @@ app.locals.MessageDeliveryACKHandler = function(input, socket) {
 	
 };
 
-app.locals.messageRetrievalHandler = function( input, socket) {		
+app.locals.onMessageRetrieval = function( input, socket) {		
 	
 	var client = socket.visibleClient;		
 	
-	var retrievalParameters = postMan.getMessageRetrievalParameters( input , client);		
+	var retrievalParameters = postMan.getMessageRetrieval( input , client);		
 	if (retrievalParameters == null) return;		
 	
 	postMan.getMessageFromArchive(retrievalParameters, client).then(function(message){	
@@ -449,28 +465,44 @@ app.locals.messageRetrievalHandler = function( input, socket) {
 };
 
 //XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
-app.locals.reconnectHandler = function( socket ) {		
+app.locals.onReconnectNotification = function( input, socket ) {
 	
+	console.log('DEBUG ::: onReconnectNotification::: ');	
 	var client = socket.visibleClient;		
-	client.socketid = socket.id ;
-
-	brokerOfVisibles.updateClientsProfile(client);	
-	postMan.sendMessageHeaders(client);	
-	postMan.sendMessageACKs(client);
+	
+	var notification = postMan.getReconnectNotification( input , client);		
+	if ( notification == null ){
+		console.log('DEBUG ::: onReconnectNotification::: upss');
+		return;
+	}
+	
+	brokerOfVisibles.getClientById( notification.publicClientID ).then(function(client){
 		
+		if (client == null ||
+			notification.publicClientID == socket.visibleClient.publicClientID ){
+	  		console.log('DEBUG ::: login ::: unknown client with this publicClientID');	  		
+			return;
+		}
+		
+		client.socketid = socket.id ;
+		socket.visibleClient = client;			
+		brokerOfVisibles.updateClientsProfile( client );
+		app.locals.onConnection( client );
+
+	});		
 };
 
-app.locals.KeysDeliveryHandler = function( input, socket){		
+app.locals.onKeysDelivery = function( input, socket){		
 
 	var client = socket.visibleClient;
 	
 	var keysDelivery = postMan.getKeysDelivery(input , client);		
 	if ( keysDelivery == null ) return;
 	
-	console.log('DEBUG ::: KeysDeliveryHandler ::: input ' + JSON.stringify(keysDelivery) );
+	console.log('DEBUG ::: onKeysDelivery ::: input ' + JSON.stringify(keysDelivery) );
 	
 	if ( keysDelivery.from != client.publicClientID ){
-		console.log('DEBUG ::: KeysDeliveryHandler ::: something went wrong on KeysDeliveryHandler ' );
+		console.log('DEBUG ::: onKeysDelivery ::: something went wrong on onKeysDelivery ' );
 		return;
 	}
 				
@@ -490,17 +522,17 @@ app.locals.KeysDeliveryHandler = function( input, socket){
 
 };
 
-app.locals.KeysRequestHandler = function( input, socket){		
+app.locals.onKeysRequest = function( input, socket){		
 
 	var client = socket.visibleClient;
 	
 	var KeysRequest = postMan.getKeysRequest( input , client);		
 	if ( KeysRequest == null ) return;
 	
-	console.log('DEBUG ::: KeysRequestHandler ::: KeysRequest: ' + JSON.stringify(KeysRequest) );
+	console.log('DEBUG ::: onKeysRequest ::: KeysRequest: ' + JSON.stringify(KeysRequest) );
 	
 	if ( KeysRequest.from != client.publicClientID ){
-		console.log('DEBUG ::: KeysRequestHandler ::: something went wrong on KeysRequest ' );
+		console.log('DEBUG ::: onKeysRequest ::: something went wrong on KeysRequest ' );
 		return;
 	}
 				
@@ -514,7 +546,7 @@ app.locals.KeysRequestHandler = function( input, socket){
 
 };
 
-app.locals.message2clientHandler = function( msg , socket){		
+app.locals.onMessage2client = function( msg , socket){		
 
 	var client = socket.visibleClient;	
 	if ( postMan.isUUID( msg.to ) == false  ||
@@ -526,7 +558,7 @@ app.locals.message2clientHandler = function( msg , socket){
 		 postMan.lengthTest(msg.messageBody.encryptedMsg , config.MAX_SIZE_SMS ) == false ||		  
 		 msg.from != client.publicClientID ||
 		 postMan.isPostBoxFull(msg) == true  ){
-		console.log('DEBUG ::: message2clientHandler ::: something went wrong' + JSON.stringify(msg) );
+		console.log('DEBUG ::: onMessage2client ::: something went wrong' + JSON.stringify(msg) );
 		return;
 	}
 	
@@ -540,10 +572,10 @@ app.locals.message2clientHandler = function( msg , socket){
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){			
 			postMan.sendMsg( msg , clientReceiver ); 
-			console.log('DEBUG ::: message2clientHandler ::: client is online' + JSON.stringify( msg ) );
+			console.log('DEBUG ::: onMessage2client ::: client is online' + JSON.stringify( msg ) );
 					
  		}else {
- 			console.log('DEBUG ::: message2clientHandler ::: client is offline' + JSON.stringify( msg ) );
+ 			console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) );
 
  			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
  			postMan.archiveMessage( msg );
@@ -570,24 +602,17 @@ io.use(function(socket, next){
 			console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
 			return null;
 		}			
-			
-		var verified = postMan.verifyHandshake ( token , client );
-		
-	  	if (client && verified == true){  		
-	  		
+		var verified = postMan.verifyHandshake ( token , client );		
+	  	if (client && verified == true){	  		
 	  		client.socketid = socket.id ;
-
 	  		// update DB
-	  		brokerOfVisibles.updateClientsProfile(client);		
-	  		
+	  		brokerOfVisibles.updateClientsProfile(client);	  		
 	  		//attaches the client to the socket
-	  		socket.visibleClient = client;	
-	  		
+	  		socket.visibleClient = client;	  		
 			if(client.socketid == ""){
 				console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
 			}
-			next();
-			
+			next();			
 	  	}else{
 	  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! wrong handshake');  		
 	  	}
@@ -604,46 +629,34 @@ io.sockets.on("connection", function (socket) {
 	}
 	var client = socket.visibleClient;
 	
-	console.log("DEBUG ::: connection ::: " + client.publicClientID );
-		
-	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
-	postMan.sendKeysDeliveries( client ); 
-	postMan.sendMessageACKs( client );
-	postMan.sendMessageHeaders( client );
-	postMan.sendKeysRequests( client );		
-	
-	//XEP-0080: User Location
-	postMan.sendDetectedLocation(client);	
-	
-	//XEP-0084: User Avatar 
-	postMan.send("RequestForProfile",  { lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client);
+	app.locals.onConnection( client );
 	
 	//XEP-0077: In-Band Registration
-	socket.on('disconnect',  function (msg){ app.locals.disconnectHandler( socket) } );
+	socket.on('disconnect',  function (msg){ app.locals.onDisconnect( socket) } );
    
 	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
-	socket.on("messageRetrieval", function (msg){ app.locals.messageRetrievalHandler ( msg , socket) } );
+	socket.on("messageRetrieval", function (msg){ app.locals.onMessageRetrieval ( msg , socket) } );
 
 	//XEP-0184: Message Delivery Receipts
-	socket.on("MessageDeliveryACK", function (msg){ app.locals.MessageDeliveryACKHandler ( msg , socket) } );
+	socket.on("MessageDeliveryACK", function (msg){ app.locals.onMessageDeliveryACK ( msg , socket) } );
 	
 	//XEP-0163: Personal Eventing Protocol
-	socket.on("ProfileRetrieval", function (msg){ app.locals.ProfileRetrievalHandler ( msg , socket) } );
+	socket.on("ProfileRetrieval", function (msg){ app.locals.onProfileRetrieval ( msg , socket) } );
 	
 	//XEP-0084: User Avatar, XEP-0077: In-Band Registration
-	socket.on("profileUpdate", function (msg){ app.locals.profileUpdateHandler ( msg , socket) } );	
+	socket.on("profileUpdate", function (msg){ app.locals.onProfileUpdate ( msg , socket) } );	
 	
 	//XEP-0080: User Location
-	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.RequestOfListOfPeopleAroundHandler( msg , socket) } );
+	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.onRequestOfListOfPeopleAround( msg , socket) } );
 	
-	socket.on("reconnectNotification", function (msg){ app.locals.reconnectHandler ( socket) } );	
+	socket.on("reconnectNotification", function (msg){ app.locals.onReconnectNotification ( msg, socket) } );	
 	
-	socket.on("KeysDelivery", function (msg){ app.locals.KeysDeliveryHandler ( msg , socket) } );
+	socket.on("KeysDelivery", function (msg){ app.locals.onKeysDelivery ( msg , socket) } );
 
-	socket.on("KeysRequest", function (msg){ app.locals.KeysRequestHandler ( msg , socket) } );	
+	socket.on("KeysRequest", function (msg){ app.locals.onKeysRequest ( msg , socket) } );	
 
 	//XEP-0184: Message Delivery Receipts
-	socket.on("message2client", function (msg){ app.locals.message2clientHandler ( msg , socket) } );
+	socket.on("message2client", function (msg){ app.locals.onMessage2client ( msg , socket) } );
 	
 });
 

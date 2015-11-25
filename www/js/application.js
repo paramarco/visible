@@ -2592,7 +2592,8 @@ Application.prototype.connect2server = function(result){
 	socket.on('connect', function () {
 		
 		app.connecting = false;	
-	
+		log.info("socket.on.connect");
+		
 		var newerDate = new Date().getTime();	
 		var olderDate = new Date(newerDate - config.oneMonth).getTime();
 
@@ -2619,7 +2620,7 @@ Application.prototype.connect2server = function(result){
 	socket.on('reconnect', function () {
 		log.info("socket.on.reconnect"); 
 		app.connecting = false;		
-  		postman.send("reconnectNotification", {	empty : "" } );
+  		postman.send("reconnectNotification", {	publicClientID : user.publicClientID } );
   		var newerDate = new Date().getTime();	
 		var olderDate = new Date(newerDate - config.oneMonth).getTime();
   		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
@@ -3954,7 +3955,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************
