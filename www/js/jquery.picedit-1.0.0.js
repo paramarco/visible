@@ -251,7 +251,7 @@
             	canvas.height = img.height;                    
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
                 imageAux = document.createElement("img");
-                imageAux.src = canvas.toDataURL('image/jpg', 0.7);               				
+                imageAux.src = canvas.toDataURL('image/jpg', 1.0);               				
 				_this._image = imageAux;				
 				_this._resizeViewport();
 				_this._paintCanvas();
@@ -406,7 +406,7 @@
 				);				
 			}else{
 				_this._create_image_with_datasrc(
-					canvas.toDataURL("image/jpeg", 0.7),				 
+					canvas.toDataURL("image/jpeg", 0.9 ),				 
 					function() {
 						_this.hide_messagebox();
 					},
@@ -495,7 +495,7 @@
 				canvas.height = live.clientHeight;
 				ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
 				_this._videobox.removeClass("active");
-				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
 					_this._videobox.removeClass("active");
 				});
 			}
@@ -511,7 +511,7 @@
 				canvas.height = _this._image.height; //canvas.height = crop.height;
 				//ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, crop.width, crop.height);
 				ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, _this._image.width, _this._image.height);
-				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
 					_this.hide_messagebox();
 				});
 			});
@@ -551,7 +551,7 @@
                     if ( _this._getImageFormat(img) == "image/png"){
                     	imageAux.src = canvas.toDataURL("image/png");
                     }else{
-                    	imageAux.src = canvas.toDataURL("image/jpg", 0.7);
+                    	imageAux.src = canvas.toDataURL("image/jpg", 0.9);
                     }
                 }
 				
@@ -669,14 +669,14 @@
 			ctx.drawImage(this._painter_canvas, 0, 0, canvas.width, canvas.height);
 			if(canvas.width > 1280 && canvas.height > 800) {
 				this.set_loading().delay(200).promise().done(function() {
-					_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+					_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
 						_this.pen_tool_params_set();
 						_this.hide_messagebox();
 					});
 				});
 			}
 			else {
-				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 0.7), function() {
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
 					_this.pen_tool_params_set();
 				});
 			}

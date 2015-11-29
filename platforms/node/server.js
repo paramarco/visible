@@ -572,10 +572,10 @@ app.locals.onMessage2client = function( msg , socket){
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){			
 			postMan.sendMsg( msg , clientReceiver ); 
-			console.log('DEBUG ::: onMessage2client ::: client is online' + JSON.stringify( msg ) );
+			//console.log('DEBUG ::: onMessage2client ::: client is online' + JSON.stringify( msg ) );
 					
  		}else {
- 			console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) );
+ 			//console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) );
 
  			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
  			postMan.archiveMessage( msg );

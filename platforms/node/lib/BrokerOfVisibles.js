@@ -123,6 +123,7 @@ function BrokerOfVisibles(_io) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
+	    						.field("rsamodulus")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
@@ -137,7 +138,7 @@ function BrokerOfVisibles(_io) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('DEBUG ::: getClientById ::: I dont know any publicClientID like this');
+			    	console.log('DEBUG ::: getClientById ::: publicClientID not found');
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -171,14 +172,15 @@ function BrokerOfVisibles(_io) {
 			    else
 			    	client.location = { "lat" : entry.lat.toString(), "lon" : entry.lon.toString() };			    
 			    
-			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );		   		
+			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
 			    client.lastProfileUpdate = entry.lastprofileupdate;
+			    client.rsamodulus = entry.rsamodulus;
 
 			    
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("DEBUG ::: getClientById  :::  exceptrion thrown " + ex  );
+				console.log("DEBUG ::: getClientById  :::  exception thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    

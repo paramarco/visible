@@ -1,5 +1,7 @@
 //MVP
 
+
+//TODO go to top in Main Page
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 
@@ -118,7 +120,7 @@ Postman.prototype.encrypt = function(message) {
 
 	}
 	catch (ex) {	
-		////log.debug("Postman.prototype.encrypt", ex);
+		log.debug("Postman.prototype.encrypt", ex);
 		return null;
 	}	
 };
@@ -137,7 +139,7 @@ Postman.prototype.encryptHandshake = function(message) {
 
 	}
 	catch (ex) {	
-		////log.debug("Postman.prototype.encryptHandshake", ex);
+		log.debug("Postman.prototype.encryptHandshake", ex);
 		return null;
 	}	
 };
@@ -168,7 +170,7 @@ Postman.prototype.encryptMsgBody = function( message ) {
 		return messageBody;
 	}
 	catch (ex) {	
-		////log.debug("Postman.prototype.encryptMsgBody",ex);
+		log.debug("Postman.prototype.encryptMsgBody",ex);
 		return null;
 	}	
 };
@@ -189,7 +191,7 @@ Postman.prototype.decrypt = function(encrypted) {
 
 	}
 	catch (ex) {	
-		////log.debug("Postman.prototype.decrypt", ex);
+		log.debug("Postman.prototype.decrypt", ex);
 		return null;
 	}	
 };
@@ -212,7 +214,7 @@ Postman.prototype.decryptHandshake = function(encrypted) {
 
 	}
 	catch (ex) {	
-		////log.debug("Postman.prototype.decryptHandshake", ex);
+		log.debug("Postman.prototype.decryptHandshake", ex);
 		return null;
 	}	
 };
@@ -245,7 +247,7 @@ Postman.prototype.decryptMsgBody = function( message ) {
 		return KJUR.jws.JWS.readSafeJSONString(decipher.output.data);
 	}
 	catch (ex) {	
-		//log.debug("Postman.prototype.decryptMsgBody", ex);
+		log.debug("Postman.prototype.decryptMsgBody", ex);
 		return null;
 	}	
 };
@@ -287,7 +289,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 		
 		var listOfNewContacts = Postman.prototype.decrypt(encryptedList).list;
 		if (Array.isArray(listOfNewContacts) == false) { 
-			//log.debug("Postman.prototype.getProcessNewContacts - type check 1", listOfNewContacts); 
+			log.debug("Postman.prototype.getProcessNewContacts - type check 1", listOfNewContacts); 
 			return null;
 		}
 
@@ -298,7 +300,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 				typeof listOfNewContacts[i].location !== 'object'||
 				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
 				Object.keys(listOfNewContacts[i]).length != 5  ) {	
-				//log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
+				log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
 				return null;
 			}
 		}		
@@ -306,7 +308,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 		return listOfNewContacts; 
 	}
 	catch (ex) {
-		//log.debug("Postman.prototype.getProcessNewContacts - type check 3", listOfNewContacts); 
+		log.debug("Postman.prototype.getProcessNewContacts - type check 3", listOfNewContacts); 
 		return null;
 	}	
 };
@@ -327,7 +329,7 @@ Postman.prototype.getDeliveryReceipt = function(inputDeliveryReceipt) {
 		return deliveryReceipt; 
 	}
 	catch (ex) {	
-		//log.debug("Postman.prototype.getDeliveryReceipt", ex); 
+		log.debug("Postman.prototype.getDeliveryReceipt", ex); 
 		return null;
 	}	
 };
@@ -340,14 +342,14 @@ Postman.prototype.getProfileRequest = function(input) {
 		if (parameters == null ||
 			typeof parameters.lastProfileUpdate !== 'number' 	|| 
 			Object.keys(parameters).length != 1  ) {
-			//log.debug("Postman.prototype.getProfileRequest - type check", parameters); 
+			log.debug("Postman.prototype.getProfileRequest - type check", parameters); 
 			return null;
 		}
 		
 		return parameters; 
 	}
 	catch (ex) {	
-		//log.debug("Postman.prototype.getProfileRequest - type check", ex); 
+		log.debug("Postman.prototype.getProfileRequest - type check", ex); 
 		return null;
 	}	
 };
@@ -366,14 +368,14 @@ Postman.prototype.getProfileFromServer = function(input) {
 			typeof parameters.telephone !== 'string' || parameters.telephone == null ||	
 			typeof parameters.email !== 'string' || parameters.email == null) {
 			
-			//log.debug("Postman.prototype.getProfileFromServer - type check", parameters); 
+			log.debug("Postman.prototype.getProfileFromServer - type check", parameters); 
 			return null;
 		}
 		
 		return parameters; 
 	}
 	catch (ex) {	
-		//log.debug("Postman.prototype.getProfileFromServer - type check", ex); 
+		log.debug("Postman.prototype.getProfileFromServer - type check", ex); 
 		return null;
 	}	
 };
@@ -388,14 +390,14 @@ Postman.prototype.getLocationFromServer = function(input) {
 			typeof position !== 'object' 	|| 
 			typeof position.coords !== 'object'  ) {
 							
-			//log.debug("Postman.prototype.getLocationFromServer - type check", position); 
+			log.debug("Postman.prototype.getLocationFromServer - type check", position); 
 			return null;
 		}
 		
 		return position; 
 	}
 	catch (ex) {	
-		//log.debug("Postman.prototype.getLocationFromServer - type check", ex); 
+		log.debug("Postman.prototype.getLocationFromServer - type check", ex); 
 		return null;
 	}	
 };
@@ -409,14 +411,14 @@ Postman.prototype.getKeysDelivery = function(encrypted) {
 			Postman.prototype._isUUID(input.from) == false  ||
 			typeof input.setOfKeys != 'object' ||
 			Object.keys(input).length != 3 ) {	
-			//log.debug("Postman.prototype.getKeysDelivery - type check", input); 
+			log.debug("Postman.prototype.getKeysDelivery - type check", input); 
 			return null;
 		}
 		
 		return input; 
 	}
 	catch (ex) {
-		//log.debug("Postman.prototype.getKeysDelivery - type check", ex); 
+		log.debug("Postman.prototype.getKeysDelivery - type check", ex); 
 		return null;
 	}	
 };
@@ -429,13 +431,13 @@ Postman.prototype.getKeysRequest = function(encrypted) {
 			Postman.prototype._isUUID(input.to) == false  ||
 			Postman.prototype._isUUID(input.from) == false  ||
 			Object.keys(input).length != 2 ) {	
-			//log.debug("Postman.prototype.getKeysRequest - type check", input); 
+			log.debug("Postman.prototype.getKeysRequest - type check", input); 
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		//log.debug("Postman.prototype.getKeysRequest - type check", ex); 
+		log.debug("Postman.prototype.getKeysRequest - type check", ex); 
 		return null;
 	}	
 };
@@ -450,7 +452,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 			Postman.prototype._isUUID( input.from ) == false  ||
 			Postman.prototype._isUUID( input.msgID ) == false ){
 				
-		//log.debug("Postman.prototype.getMessageFromClient - type check", input); 
+		log.debug("Postman.prototype.getMessageFromClient - type check", input); 
 			return null;
 		}
 		
@@ -461,7 +463,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 		return message; 	
 	} 
 	catch (ex) {	
-		//log.debug("Postman.prototype.getMessageFromClient - type check", ex);
+		log.debug("Postman.prototype.getMessageFromClient - type check", ex);
 		return null;
 	}
 };
@@ -536,7 +538,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 	if (typeof event2trigger !== 'string' ||
 		typeof data !== 'object' || data == null ) 	{	
 		
-		//log.debug("Postman.prototype.send - type check", data);
+		log.debug("Postman.prototype.send - type check", data);
 		return null;
 	}	
 	
@@ -546,7 +548,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 		}	
 					
 	}catch(e){
-		//log.debug("Postman.prototype.send - type check", e);
+		log.debug("Postman.prototype.send - type check", e);
 	}		
 		
 };
@@ -554,7 +556,7 @@ Postman.prototype.send = function(event2trigger, data  ) {
 Postman.prototype.sendMsg = function( msg ) {	
 	try{
 		if (msg.messageBody == null){
-		//log.debug("Postman.prototype.sendMsg - type check", msg);
+		log.debug("Postman.prototype.sendMsg - type check", msg);
 			return;
 		}
 		
@@ -580,7 +582,7 @@ Postman.prototype.sendMsg = function( msg ) {
 		});		
 				
 	}catch(e){
-		//log.debug("Postman.prototype.sendMsg", e);
+		log.debug("Postman.prototype.sendMsg", e);
 	}	
 };
 
@@ -908,7 +910,7 @@ GUI.prototype.hideLoadingSpinner = function(){
 
 GUI.prototype.hideLocalNotifications = function() {
 	cordova.plugins.notification.local.clearAll(function() {
-		//log.info("GUI.prototype.hideLocalNotifications - notification cleared");
+		log.info("GUI.prototype.hideLocalNotifications - notification cleared");
 		gui.localNotificationText = "";
 	}, this);
 };
@@ -1435,7 +1437,7 @@ GUI.prototype.onAddContact2Group = function( contact ) {
 
 GUI.prototype.onAppBrowserLoad = function(event) {
 	
-	//log.info("GUI.prototype.onAppBrowserLoad - begin");
+	log.info("GUI.prototype.onAppBrowserLoad - begin");
 	
     if (event.url.match("successPayment") !== null) {
     	gui.inAppBrowser.removeEventListener('exit', gui.onAppBrowserExit );
@@ -2473,7 +2475,7 @@ MailBox.prototype.storeMessage = function( msg2Store ) {
 		};	
 	}
 	catch(e){
-		//log.debug("MailBox.prototype.storeMessage", e);
+		log.debug("MailBox.prototype.storeMessage", e);
 	}
  		
 };
@@ -2489,13 +2491,13 @@ MailBox.prototype.unwrapMessagesOf = function( contact ) {
 			if (cursor) {
 	     		if ( cursor.value.messageBody.hasOwnProperty('index4Key') ){
 					postman.onMsgFromClient(cursor.value); 
-					//log.info("MailBox.prototype.unwrapMessagesOf");			
+					log.info("MailBox.prototype.unwrapMessagesOf");			
 	     		}
 			}    	 
 		};	
 	}
 	catch(e){
-		//log.debug("MailBox.prototype.unwrapMessagesOf",e);	
+		log.debug("MailBox.prototype.unwrapMessagesOf",e);	
 	}
 
 };
@@ -2557,7 +2559,7 @@ Application.prototype.connect2paypal = function(myPurchase) {
 		}
 	})
 	.fail(function() {
-		//log.info("Application.prototype.connect2paypal - failed");
+		log.info("Application.prototype.connect2paypal - failed");
 		//navigator.notification.alert("Are you connected to Internet?", null, 'Uh oh!');
 	})
 	.always(function() { gui.hideLoadingSpinner(); });		
@@ -2592,7 +2594,8 @@ Application.prototype.connect2server = function(result){
 	socket.on('connect', function () {
 		
 		app.connecting = false;	
-	
+		log.info("socket.on.connect");
+		
 		var newerDate = new Date().getTime();	
 		var olderDate = new Date(newerDate - config.oneMonth).getTime();
 
@@ -2601,25 +2604,25 @@ Application.prototype.connect2server = function(result){
 	});
 	
 	socket.on('disconnect', function () {
-		//log.info("socket.on.disconnect"); 
+		log.info("socket.on.disconnect"); 
 		app.connecting = false;					
 	});
 	
 	socket.on('reconnect_attempt', function () {
-		//log.info("socket.on.reconnect_attempt"); 
+		log.info("socket.on.reconnect_attempt"); 
 		app.connecting = true;					
 	});
 	
 	socket.on('reconnect_failed', function () {
-		//log.info("socket.on.reconnect_failed"); 
+		log.info("socket.on.reconnect_failed"); 
 		app.connecting = false;
 		app.sendLogin();					
 	});
 	
 	socket.on('reconnect', function () {
-		//log.info("socket.on.reconnect"); 
+		log.info("socket.on.reconnect"); 
 		app.connecting = false;		
-  		postman.send("reconnectNotification", {	empty : "" } );
+  		postman.send("reconnectNotification", {	publicClientID : user.publicClientID } );
   		var newerDate = new Date().getTime();	
 		var olderDate = new Date(newerDate - config.oneMonth).getTime();
   		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
@@ -2663,7 +2666,7 @@ Application.prototype.connect2server = function(result){
 		var listOfHeaders = postman.getListOfHeaders(inputListOfHeaders);
 		if (listOfHeaders == null) { return; }
 		
-		//log.info("socket.on.ServerReplytoDiscoveryHeaders", listOfHeaders); 
+		log.info("socket.on.ServerReplytoDiscoveryHeaders", listOfHeaders); 
 
 		var loopRequestingMessages = setInterval(function(){
 			if (listOfHeaders.length > 0){
@@ -2733,7 +2736,7 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			//log.info("socket.on.KeysDelivery - discard my own delivery");		
+			log.info("socket.on.KeysDelivery - discard my own delivery");		
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
@@ -2769,7 +2772,7 @@ Application.prototype.connect2server = function(result){
 					mailBox.unwrapMessagesOf( contact );
 				} 
 			}catch (ex) {	
-				//log.debug("socket.on.KeysDelivery", contact);	
+				log.debug("socket.on.KeysDelivery", contact);	
 				return null;
 			}	
 	 	} // END else			
@@ -2781,14 +2784,14 @@ Application.prototype.connect2server = function(result){
 		if (data == null) { return;	}
 		
 		if ( data.from == user.publicClientID ){
-			//log.info("socket.on.KeysRequest - discard my own Request");
+			log.info("socket.on.KeysRequest - discard my own Request");
 		}else{			
 			try {				
 				var contact = contactsHandler.getContactById( data.from );
 				contactsHandler.sendKeys(contact);		
 
 			}catch (ex) {	
-				//log.debug("socket.on.KeysRequest", ex);
+				log.debug("socket.on.KeysRequest", ex);
 				return null;
 			}	
 	 	}		
@@ -2872,7 +2875,8 @@ Application.prototype.generateAsymetricKeys = function(){
 		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
 	}else{
 		var keyPair = forge.pki.rsa.generateKeyPair( options );
-		app.sendKeyPair( false, keyPair);
+		var err;
+		app.sendKeyPair( err, keyPair);
 	}
 };	
 
@@ -2979,11 +2983,11 @@ Application.prototype.loadStoredData = function() {
 	};
 	
 	this.indexedDBHandler.onerror = function(e){		
-		//log.debug("indexedDBHandler.onerror", e);
+		log.debug("indexedDBHandler.onerror", e);
  		app.generateAsymetricKeys();		
 	};
 	this.indexedDBHandler.onblocked = function(){
-		//log.debug("indexedDBHandler.onblocked");
+		log.debug("indexedDBHandler.onblocked");
 	};
 };
 
@@ -3006,7 +3010,7 @@ Application.prototype.loadUserSettings = function(){
 	     	}
 		};		
 	}catch(e){
-		//log.debug("Application.prototype.loadUserSettings", e);	   
+		log.debug("Application.prototype.loadUserSettings", e);	   
 		app.generateAsymetricKeys();
 	}
 };
@@ -3027,7 +3031,7 @@ Application.prototype.onDeviceReady = function() {
 		app.events.deviceReady.resolve();		
 
 	}catch(e){
-    	//log.debug("Application.prototype.onDeviceReady", e);
+    	log.debug("Application.prototype.onDeviceReady", e);
     }	
 };
 
@@ -3074,7 +3078,7 @@ Application.prototype.onResumeCustom =  function() {
 Application.prototype.sendKeyPair = function (err, keypair ){
 
 	if (err) {
-		//log.debug("Application.prototype.sendKeyPair", err);
+		log.debug("Application.prototype.sendKeyPair", err);
 		app.generateAsymetricKeys();
 		return;
 	}
@@ -3097,7 +3101,7 @@ Application.prototype.sendKeyPair = function (err, keypair ){
  			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
  			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
  			
-	 		//log.info("Application.prototype.sendKeyPair - another attempt");  		
+	 		log.info("Application.prototype.sendKeyPair - another attempt");  		
 	 		app.generateAsymetricKeys();
 	 		
 	 	}else{
@@ -3137,7 +3141,7 @@ Application.prototype.sendLogin = function(){
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
-		//log.debug("Application.prototype.sendLogin", app );  
+		log.debug("Application.prototype.sendLogin", app );  
 		return;
 	} 
 	app.connecting = true;
@@ -3158,7 +3162,7 @@ Application.prototype.sendLogin = function(){
 	 })
 	 .fail(function() {
 		app.connecting = false; 
-		//log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
+		log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
 		setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
 	 })
 	 .always(function() {
@@ -3316,9 +3320,9 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		//log.info("Application.prototype.setLanguage ", language);
+		log.info("Application.prototype.setLanguage ", language);
 	}else{
-		//log.info("Application.prototype.setLanguage - NOT FOUND", language);	
+		log.info("Application.prototype.setLanguage - NOT FOUND", language);	
 		language.value = "English" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
@@ -3405,7 +3409,7 @@ function ContactsHandler() {
 
 ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
 
-	$('#linkAddNewContact'+contact.publicClientID)
+	$('#linkAddNewContact' + contact.publicClientID)
 		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-carat-r' })
 		.unbind("click")
 		.on("click", function(){ gui.showConversation( contact ); });
@@ -3525,7 +3529,7 @@ ContactsHandler.prototype.setContactOnDB = function(contact) {
 		};	
 	}
 	catch(e){
-		//log.debug("ContactsHandler.prototype.setContactOnDB", e); 
+		log.debug("ContactsHandler.prototype.setContactOnDB", e); 
 	}
 };
 
@@ -3560,7 +3564,7 @@ ContactsHandler.prototype.updateContactOnDB = function( contact ) {
 		};	
 	}
 	catch(e){
-		//log.debug("ContactsHandler.prototype.updateContactOnDB", e);
+		log.debug("ContactsHandler.prototype.updateContactOnDB", e);
 	}
 };
 	
@@ -3669,7 +3673,7 @@ GroupsHandler.prototype.setGroupOnDB = function( group ) {
 		};	
 	}
 	catch(e){
-		//log.debug("ContactsHandler.prototype.setGroupOnDB", e);
+		log.debug("ContactsHandler.prototype.setGroupOnDB", e);
 	}
 };
 
@@ -3952,8 +3956,8 @@ function Dictionary(){
  * *********************************************************************************************
  * *********************************************************************************************/
 
-//window.shimIndexedDB.__debug(false);
-//log4javascript.setEnabled(false);
+window.shimIndexedDB.__debug(false);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************
@@ -3972,7 +3976,7 @@ var abstractHandler = new AbstractHandler();
 var contactsHandler = new ContactsHandler();
 var groupsHandler = new GroupsHandler();
 var dictionary = new Dictionary();
-//var log = log4javascript.getDefaultLogger();
+var log = log4javascript.getDefaultLogger();
 var app = new Application();
 
 /***********************************************************************************************

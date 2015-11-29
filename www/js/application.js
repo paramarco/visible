@@ -1,5 +1,9 @@
 //MVP
 
+
+//TODO improve image resolution
+//TODO bring logic of picEdit to app
+
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 
@@ -701,6 +705,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.listOfImages4Gallery = [];
 			gui.indexOfImages4Gallery = 0;			
 			gui.onProfileUpdate();
+			$.mobile.silentScroll(0);
 	    }    
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
@@ -709,7 +714,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMapOnProfileOfContact();				 
 	    }
 	    if (ui.options.target == "#chat-page"){		
-								 
+			$("#ProfileOfContact-page").remove();					 
 	    }	    
 	    if (ui.options.target == "#profile"){		
 			gui.loadProfile(); 					 
@@ -1841,7 +1846,7 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 		'</li>';
 				
 	$("#listOfContactsInMainPage")
-		.append(html2insert)
+		.prepend(html2insert)
 		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	
 	if (isNewContact){
@@ -2867,9 +2872,17 @@ Application.prototype.generateAsymetricKeys = function(){
 	options.e = 0x10001;
 	
 	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
-		
-	if( typeof Worker !== "undefined" ) {
+	
+	if ( $.browser.chrome ){
+	    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
+	    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
+	    var blob = new Blob(array, {type: "text/javascript"});
+	    options.workerScript  = window.URL.createObjectURL(blob);
+	}else{
 		options.workerScript = "js/prime.worker.js";
+	}
+		
+	if( typeof Worker !== "undefined" ){		
 		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
 	}else{
 		var keyPair = forge.pki.rsa.generateKeyPair( options );
