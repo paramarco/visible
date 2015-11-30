@@ -6,5 +6,5 @@ $( document ).on( "mobileinit", function() {
 
  // these two options fuck-up the photoswipe   
 //   $.mobile.changePage.defaults.changeHash = false;
- //  $.mobile.hashListeningEnabled = false;
+//   $.mobile.hashListeningEnabled = false;
 });

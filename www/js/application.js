@@ -1,9 +1,5 @@
 //MVP
 
-
-//TODO improve image resolution
-//TODO bring logic of picEdit to app
-
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 
@@ -902,8 +898,7 @@ GUI.prototype.getPurchaseDetails = function() {
 	purchase.licenseDurationChoosen = $("input[name='license-choice']:checked").val();
 	purchase.isNGOdonationChecked = $("#NGOdonation").is(':checked');
 	purchase.isFSIdonationChecked = $("#FSIdonation").is(':checked');
-//	purchase.isBackupChecked = $("#Backup").is(':checked');
-	
+
 	return purchase;
 };
 
@@ -1320,6 +1315,7 @@ GUI.prototype.loadProfile = function() {
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
 		defaultImage: defaultImage ,
+		isMobile : app.isMobile,
 		imageUpdated: function(img){
 			
 			user.myPhotoPath = img.src;
@@ -1327,9 +1323,7 @@ GUI.prototype.loadProfile = function() {
 			app.profileIsChanged = true;
 
 		},
-		callmeAtNativeInvocation : function(){
-			app.setMultimediaAsOpen();						
-		}
+		onNativeCameraInit : app.onNativeCameraInit
 	});
 
 };
@@ -1370,13 +1364,12 @@ GUI.prototype.loadGroupMenu = function( group ) {
 		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
 		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
 		navToolsEnabled : true,
+		isMobile : app.isMobile,
 		defaultImage: gui.groupOnMenu.imgsrc,
 		imageUpdated: function(img){			
 			gui.groupOnMenu.imgsrc = img.src;
 		},
-		callmeAtNativeInvocation : function(){
-			app.setMultimediaAsOpen();						
-		}
+		onNativeCameraInit : app.onNativeCameraInit
 	});
 };
 
@@ -1450,7 +1443,6 @@ GUI.prototype.onAppBrowserLoad = function(event) {
 		app.licenseDurationChoosen = decodeURI(postman.getParameterByName("licenseDurationChoosen",event.url));
 		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("isNGOdonationChecked",event.url));
 		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("isFSIdonationChecked",event.url));
-//		app.isBackupChecked = decodeURI(postman.getParameterByName("link",event.url));
 		                
 		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
     }    
@@ -1702,7 +1694,7 @@ GUI.prototype.setTimeLastSMS = function( obj ) {
 GUI.prototype.showAddContact2Group = function( contact ) {
 
 	$('#buttonAddContact2Group' + contact.publicClientID)
-		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-check' })
+		.attr({	'class': 'icon-list ui-btn ui-btn-icon-notext ui-icon-check' });
 	
 	$("#contacts4Group")
 		.find("#divAddContact2Group"+ contact.publicClientID)
@@ -1931,19 +1923,17 @@ GUI.prototype.showImagePic = function() {
 		displayWidth: $(window).width() * 0.70 ,
 		displayHeight: $(window).height() * 0.60 , 
 		navToolsEnabled : false,
-		callmeAtImageCreation : function(){
+		isMobile : app.isMobile,
+		onImageCreation : function(){
 			$("#popupDivMultimedia").popup( "close" );						
 		},
-		callmeAtNativeInvocation : function(){
-			app.setMultimediaAsOpen();						
-		},		
+		onNativeCameraInit : app.onNativeCameraInit,		
  		imageUpdated: function(img){  			
 			var message2send = new Message(	{ 	
 				to : app.currentChatWith, 
 				from : user.publicClientID , 
 				messageBody : { messageType : "multimedia", src : img.src }
 			});
-			//message2send.setChatWith( app.currentChatWith );
 
 			var msg2store = new Message( message2send );
 			mailBox.storeMessage( msg2store );
@@ -2227,102 +2217,6 @@ GUI.prototype.showWelcomeMessage = function(text2show){
 };
 
 
-
-
-
-
-
-/*
-GUI.prototype.loadVisibleFirstTimeOnMainPage = function() {
-	
-	$('#listOfContactsInMainPage').hide();	
-	var strVar="";
-	strVar += "		<div hidden id=\"formInFirstLogin\">";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> ";
-	strVar += "				<input type=\"file\" accept=\"image\/*;capture=camera\" name=\"imageOnVisibleFirstTime\" id=\"imageOnVisibleFirstTime\" class=\"picedit_box\"> ";
-	strVar += "	    	<\/ul>";
-	strVar += "			<ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
-	strVar += "				<div data-role=\"fieldcontain\">";
-	strVar += "                     <label for=\"firstLoginNameField\">my nick Name:<\/label>";
-	strVar += "                     <input id=\"firstLoginNameField\" type=\"text\" name=\"firstLoginNameField\" value=\"\"> ";
-	strVar += "				<\/div>";
-	strVar += "			<\/ul>";
-	strVar += "		<\/div>";
-	strVar += "		<ul hidden id=\"listInFirstLogin\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">";
-	strVar += "			<li id=\"firstLoginInputButton\">";
-	strVar += "				<a>";
-	strVar += "					<h2 align=\"center\" >I want to be visible!<\/h2>";
-	strVar += "				<\/a>";
-	strVar += "			<\/li>";
-	strVar += "		<\/ul>	";
-	
-	$("#contentOfMainPage").append(strVar);	
-	$("#contentOfMainPage").trigger("create");
-	
- 	$('#imageOnVisibleFirstTime').picEdit({
- 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
-		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
-		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
-		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
-		displayWidth: $(window).width() * 0.90 ,
-		displayHeight: $(window).height() * 0.80 , 
-		navToolsEnabled : true,
- 		imageUpdated: function(img){
- 			user.myPhotoPath = img.src;	     			
- 		}
- 	});  	
-	         	    
-	//$("#link2profileFromMyPanel").remove();
-	$.mobile.loading( "hide" );
-	
-	$("#formInFirstLogin").show();
-	$("#listInFirstLogin").show();
-
-};
-
-
-GUI.prototype.removeVisibleFirstTimeOnMainPage = function() {
-	$("#formInFirstLogin").remove();
-	$("#listInFirstLogin").remove();
-	$('#listOfContactsInMainPage').show();
-};
-*/
-
-
-
-
-/*
-GUI.prototype.firstLogin = function() {	
-	
-	user.myCurrentNick = $("#firstLoginNameField").val();
-	
-	if ( user.myCurrentNick == null || user.myCurrentNick == "" ||  user.myPhotoPath == null) {
-		
-		$("#popupDiv").remove();
-		var prompt2show = 	'<div id="popupDiv" data-role="popup"> '+
-							'	<a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
-							'	<p><br></p> <p> please without photo this and Name this is not personal...	</p> '+
-							'</div>';
-		$("#contentOfvisibleFirstTime").append(prompt2show);
-		$("#contentOfvisibleFirstTime").trigger("create");
-		$(".backButton").unbind( "click" ).bind("click", function(){			 
-			gui.onBackButton();
-		});	
-		$("#popupDiv").popup("open");		
-		return;
-	}
-	
-	gui.showLoadingSpinner("generating your encryption keys ...");
-	gui.removeVisibleFirstTimeOnMainPage();
-	setTimeout( app.firstLogin , config.TIME_LOAD_SPINNER );
-	
-};
-*/
-
-
-
-
-
 /**
  * @param obj := ContactOnKnet | Group
  */
@@ -2370,8 +2264,6 @@ GUI.prototype.refreshPurchasePrice = function() {
 	if(purchase.licenseDurationChoosen == "oneYear") price = price + 1;
 	if(purchase.isNGOdonationChecked) price = price + 1;
 	if(purchase.isFSIdonationChecked) price = price + 1;
-//	if(purchase.isBackupChecked) price = price + 1;
-
 	
 	$("#price").html(price + "\u20AC");
 	
@@ -2524,6 +2416,7 @@ function Application() {
 	this.events.userSettingsLoaded = new $.Deferred();
 	this.events.positionLoaded = new $.Deferred();
 	this.events.deviceReady  = new $.Deferred();
+	this.isMobile = true;
 };
 
 // Bind Event Listeners
@@ -2719,7 +2612,7 @@ Application.prototype.connect2server = function(result){
 		if ( contact.nickName != "" ) kids.closest("h2").html(contact.nickName);		
 		if ( contact.commentary != "" ) kids.closest("p").html(contact.commentary);
 			
-		//gui.refreshProfileInfo( contactUpdate );
+		//DOES NOT WORK gui.refreshProfileInfo( contactUpdate );
 				
 	});//END ProfileFromServer
 	
@@ -2910,6 +2803,7 @@ Application.prototype.initializeDevice = function() {
 	
 	if (typeof cordova == "undefined" || cordova == null ){
 		app.events.deviceReady.resolve();
+		app.isMobile = false;
 	}
 	
 };
@@ -2981,16 +2875,12 @@ Application.prototype.loadStoredData = function() {
 		
 	this.indexedDBHandler.onsuccess = function (event,caca) {
 		
-		db = event.target.result;	
-				
-//		setTimeout(
-//			function (){
-				app.loadUserSettings();				
-				app.loadContacts();
-				app.loadGroups();
-//			},
-//			config.TIME_WAIT_DB
-//		);		
+		db = event.target.result;					
+
+		app.loadUserSettings();				
+		app.loadContacts();
+		app.loadGroups();
+	
 	};
 	
 	this.indexedDBHandler.onerror = function(e){		
@@ -3031,10 +2921,6 @@ Application.prototype.loadUserSettings = function(){
 
 // deviceready Event Handler 
 Application.prototype.onDeviceReady = function() {
-//    app.receivedEvent();
-//};
-// Update DOM on a Received Event
-//Application.prototype.receivedEvent = function() {
 	
 	try{
 		app.devicePlatform  = device.platform;
@@ -3045,6 +2931,39 @@ Application.prototype.onDeviceReady = function() {
     	log.debug("Application.prototype.onDeviceReady", e);
     }	
 };
+
+Application.prototype.onNativeCameraInit = function( sourceType , callback) {
+
+	app.setMultimediaAsOpen();
+	
+	console.log("DEBUG ::: Application.prototype.onNativeCameraInit");
+	
+	var options = { 	
+		//targetWidth: 300,
+		//targetHeight: 300
+		//saveToPhotoAlbum: true  //(this options breaks everything..)
+	};
+
+	if (sourceType == "PHOTOLIBRARY"){
+		options.sourceType = navigator.camera.PictureSourceType.PHOTOLIBRARY;
+		options.destinationType = navigator.camera.DestinationType.FILE_URI; 
+	}else if (sourceType == "CAMERA"){
+		options.sourceType = navigator.camera.PictureSourceType.CAMERA;
+		options.destinationType = navigator.camera.DestinationType.FILE_URI; 
+	}
+									
+	navigator.camera.getPicture(	
+		function (datasrc){ 
+			callback (datasrc);
+		}, 
+		function(message){
+			console.log("DEBUG ::: Application.prototype.onNativeCameraInit failed");
+		},
+		options
+	);
+
+};
+
 
 Application.prototype.onOnlineCustom =  function() {
 	
@@ -3079,11 +2998,6 @@ Application.prototype.onResumeCustom =  function() {
 	app.multimediaWasOpened = false;
    	
 };
-
-
-
-
-
 
 
 Application.prototype.sendKeyPair = function (err, keypair ){
@@ -3216,90 +3130,6 @@ Application.prototype.sendRequest4Neighbours = function(position){
 	}
 		
 };
-/*
-Application.prototype.handshake = function(handshakeRequest){	
-	
- 	$.post('http://' + config.ipServerAuth +  ":" + 
- 		config.portServerAuth + '/handshake', handshakeRequest ).done(function (answer) {
- 		
- 		gui.showLoadingSpinner("exchanging the encryption keys ...");
-	 		
- 		var result = postman.decryptHandshake( answer );
- 		
-	 	//type checking before going to the next step
-	 	if (typeof result == "undefined" || result == null ){
-	 		app.firstLogin();
-	 	}else{
-
-			//update app object	
-	 		user = new userSettings(result);			
-	 		user.handshakeToken = handshakeRequest.handshakeToken;
-	 		user.lastProfileUpdate = new Date().getTime();	
-			
-	 		//update internal DB
-			var transaction = db.transaction(["usersettings"],"readwrite");	
-			var store = transaction.objectStore("usersettings");
-			var request = store.add( user );			
-
-			//trigger configuration as already loaded
-			app.events.userSettingsLoaded.resolve();			
-			gui.removeVisibleFirstTimeOnMainPage();	
- 		
-	 	}
-	})
-	.fail(function() {
-		app.handshake(handshakeRequest);
-	});	
-	
-};
-*/
-/*
-Application.prototype.firstLogin = function(){
-	
-	// generate an RSA key pair synchronously
-	var keypair = forge.pki.rsa.generateKeyPair({bits: 2048, e: 0x10001});
-	var publicKeyClient = { 
-		n : keypair.publicKey.n.toString(32)
-	};
- 
-	$.post('http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/signin', publicKeyClient ).done(function (response) { 
-	 	
-		 // decrypt data with a private key using RSAES-OAEP		 
-	 	var decrypted = keypair.privateKey.decrypt( response , 'RSA-OAEP' );
-	 		 	
-	 	var symetricKey = $(decrypted).find('symetricKey').text();
-	 	app.symetricKey2use = symetricKey;
-	 	var handshakeToken = $(decrypted).find('handshakeToken').text();
-		var challenge = $(decrypted).find('challenge').text();
-		var encryptedChallenge4handshake = postman.encryptHandshake({ challenge : challenge });
- 	
-	 	var handshakeRequest = {
-	 		handshakeToken : handshakeToken,
-	 		encrypted : encodeURI( encryptedChallenge4handshake )
-	 	};
-	 	
-	 	//type checking before going to the next step
-	 	if (typeof decrypted == "undefined" || decrypted == null ||
-	 		typeof symetricKey == "undefined" || symetricKey == null ||
-	 		typeof handshakeToken == "undefined" || handshakeToken == null ||
-	 		typeof challenge == "undefined" || challenge == null ||
-	 		typeof encryptedChallenge4handshake == "undefined" || encryptedChallenge4handshake == null ){
-	 		app.firstLogin();	 		
-	 	}else{
-	 		app.handshake(handshakeRequest);
-	 	}
-
-	})
-	.fail(function() {
-		app.firstLogin();
-	});
-
-
-};
-*/
-
-
-
 
 
 Application.prototype.setLanguage = function(language) {
@@ -3968,7 +3798,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(true);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************

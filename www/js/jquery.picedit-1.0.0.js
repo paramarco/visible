@@ -34,9 +34,9 @@
 			aspectRatio: true,				// Preserve aspect ratio
             defaultImage: function(){},            // Default image to be used with the plugin
             navToolsEnabled: true,
-            porup2remove : false,
-            callmeAtImageCreation : function(){},
-            callmeAtNativeInvocation : function(){}
+            onImageCreation : function(){},
+            onNativeCameraInit : function(sourceType, callback){},
+            isMobile : false
         };
 
     // The actual plugin constructor
@@ -308,31 +308,15 @@
 		},
 		// Perform image load when user clicks on image button
 		load_image: function () {
-			var _this = this;
-			
-			if (typeof cordova == "undefined" || cordova == null ){
-				this._fileinput.click();
+			var _this = this;			
+			if ( this.options.isMobile ){
+				this.options.onNativeCameraInit( "PHOTOLIBRARY" , function (datasrc){ 
+					_this._create_image_with_datasrc(datasrc, false, true);
+					console.log("DEBUG ::: load_image ::: " + datasrc);
+				});
+				
 			}else{
-				
-				
-				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
-				
-				var cameraOptions = { 
-					destinationType : navigator.camera.DestinationType.FILE_URI,
-					sourceType : navigator.camera.PictureSourceType.PHOTOLIBRARY
-				};
-				
-				navigator.camera.getPicture(	
-					function (datasrc){ 
-						//_this._videobox.addClass("active");
-						_this._create_image_with_datasrc(datasrc, false, true);
-						//_this._videobox.removeClass("active");
-					}, 
-					function(message){
-						console.log('DEBUG ::: picEdit.load_image ::: Captured Failed because: ' + message); 
-					},
-					cameraOptions
-			    );
+				this._fileinput.click();
 			}
 		},
 		// Open pen tool and start drawing
@@ -395,27 +379,10 @@
 			canvas.height = _this._viewport.height;
 			ctx.drawImage(_this._image, 0, 0, canvas.width, canvas.height);
 			if (_this._getImageFormat(_this._image) == "image/png"){
-				_this._create_image_with_datasrc(
-					canvas.toDataURL("image/png"),				 
-					function() {
-						_this.hide_messagebox();
-					},
-					false,
-					false,
-					true
-				);				
-			}else{
-				_this._create_image_with_datasrc(
-					canvas.toDataURL("image/jpeg", 0.9 ),				 
-					function() {
-						_this.hide_messagebox();
-					},
-					false,
-					false,
-					true
-				);				
-			}
-			
+				_this._create_image_with_datasrc(canvas.toDataURL("image/png"),	_this.hide_messagebox(),false,false,true);				
+			}else{ 				
+				_this._create_image_with_datasrc( canvas.toDataURL("image/jpeg", 0.9 ),	_this.hide_messagebox() ,false,false,true);
+			}			
 			this._hideAllNav();
 		},
 		// Open video element and start capturing live video from camera to later make a photo
@@ -423,9 +390,12 @@
 			
 			var _this = this;
 			
-			if (typeof cordova == "undefined" || cordova == null ){
-
-				var getUserMedia;
+			if ( this.options.isMobile ){
+				this.options.onNativeCameraInit( "CAMERA", 	function (datasrc){ 
+					_this._create_image_with_datasrc( datasrc, false, true );
+				});
+			}else{
+   				var getUserMedia;
 				var browserUserMedia = 	(	navigator.getUserMedia ||
 						                   	navigator.webkitGetUserMedia ||
 						                    navigator.mozGetUserMedia ||
@@ -455,38 +425,15 @@
 						return _this.set_messagebox("No video source detected! Please allow camera access!");
 					}
 				);
-			}else{
-				
-				if(this.options.callmeAtNativeInvocation) this.options.callmeAtNativeInvocation();
-				
-				var cameraOptions = { 
-					//quality : 75,
-					destinationType : navigator.camera.DestinationType.FILE_URI,
-					sourceType : navigator.camera.PictureSourceType.CAMERA
-					//encodingType: navigator.camera.EncodingType.JPEG,
-					//targetWidth: 300,
-					//targetHeight: 300,
-					//saveToPhotoAlbum: true
-				};
-								
-				navigator.camera.getPicture(	
-					function (datasrc){ 
-						_this._create_image_with_datasrc(datasrc, false, true);
-					}, 
-					function(message){
-						console.log('DEBUG ::: camera.getPicture ::: Captured Failed because: ' + message); 
-					},
-					cameraOptions
-			    );
 			}
 		},
 		camera_close: function() {
-			if (typeof cordova == "undefined" || cordova == null ){
+			if ( !this.options.isMobile ){
 				this._videobox.removeClass("active");
 			}
 		},
 		take_photo: function() {
-			if (typeof cordova == "undefined" || cordova == null ){
+			if ( !this.options.isMobile ){
 				var _this = this;
 				var live = this._videobox.find("video")[0];
 				var canvas = document.createElement('canvas');
@@ -529,7 +476,7 @@
 		// Create and update image from datasrc
 		_create_image_with_datasrc: function(datasrc, callback, file, dataurl, withoutcall2resize) {
 			
-			if(this.options.callmeAtImageCreation) this.options.callmeAtImageCreation();
+			if(this.options.onImageCreation) this.options.onImageCreation();
 			var _this = this;
 			var img = document.createElement("img");
             if(dataurl) img.setAttribute('crossOrigin', 'anonymous');
@@ -559,14 +506,11 @@
 				_this._resizeViewport();				
 				if ( withoutcall2resize ){
 					_this._paintCanvas();
-					_this.options.imageUpdated(_this._image);
-					
+					_this.options.imageUpdated(_this._image);					
 					_this._mainbuttons.addClass("active");
-					$(_this.element).find(".picedit_nav_box").addClass("active")
-					
+					$(_this.element).find(".picedit_nav_box").addClass("active");					
 					if(callback && typeof(callback) == "function") callback();	
-				}else{
-					
+				}else{					
 					_this.resize_image();
 					if(callback && typeof(callback) == "function") callback();										
 				}			
