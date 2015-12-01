@@ -485,6 +485,28 @@ function BrokerOfVisibles(_io) {
 	
 	};
 	
+	this.updatePushRegistry = function( client ) {
+	
+		if ( client.pushToken != null )
+			client.pushToken = BrokerOfVisibles.prototype.sanitize( pushToken );
+				
+		var query2send = squel.update()
+							    .table("client")
+							    .set("pushtoken", client.pushToken)	
+							    .where("publicclientid = '" + client.publicClientID + "'")
+							    .toString();
+			query2send = "BEGIN; " + query2send + "; COMMIT;";				  
+		
+		clientOfDB.query(query2send, function(err, result) {		     
+			 
+			if(err) {
+				console.error('DEBUG ::: updatePushRegistry :::error running query', err);	
+				console.error('DEBUG ::: updatePushRegistry ::: query error: ', query2send);	
+			}
+    
+		});	
+	
+	};
 	
 	this.updateClientsProfile = function(client) {
 		

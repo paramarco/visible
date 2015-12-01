@@ -139,12 +139,6 @@
         "org.apache.cordova.geolocation": {
             "PACKAGE_NAME": "com.instaltic.visible"
         },
-        "org.apache.cordova.file": {
-            "PACKAGE_NAME": "com.instaltic.visible"
-        },
-        "org.apache.cordova.file-transfer": {
-            "PACKAGE_NAME": "com.instaltic.visible"
-        },
         "org.apache.cordova.dialogs": {
             "PACKAGE_NAME": "com.instaltic.visible"
         },
@@ -157,9 +151,6 @@
         "org.apache.cordova.globalization": {
             "PACKAGE_NAME": "com.instaltic.visible"
         },
-        "org.apache.cordova.inappbrowser": {
-            "PACKAGE_NAME": "com.instaltic.visible"
-        },
         "org.apache.cordova.console": {
             "PACKAGE_NAME": "com.instaltic.visible"
         },
@@ -169,16 +160,22 @@
         "org.apache.cordova.camera": {
             "PACKAGE_NAME": "com.instaltic.visible"
         },
+        "cordova-plugin-inappbrowser": {
+            "PACKAGE_NAME": "com.instaltic.knet"
+        },
+        "cordova-plugin-file-transfer": {
+            "PACKAGE_NAME": "com.instaltic.knet"
+        },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "com.instaltic.knet"
+        },
         "de.appplant.cordova.plugin.local-notification": {
-            "PACKAGE_NAME": "com.instaltic.visible"
+            "PACKAGE_NAME": "com.instaltic.knet"
         }
     },
     "dependent_plugins": {
-        "org.apache.cordova.device": {
-            "PACKAGE_NAME": "com.instaltic.visible"
-        },
-        "android.support.v4": {
-            "PACKAGE_NAME": "com.instaltic.visible"
+        "cordova-plugin-device": {
+            "PACKAGE_NAME": "com.instaltic.knet"
         }
     }
 }

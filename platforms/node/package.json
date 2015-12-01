@@ -1,7 +1,7 @@
 {
-  "name": "visible",
+  "name": "knet",
   "version": "0.0.1",
-  "description": "server side of visible",
+  "description": "server side of knet",
   "main": "server.js",
   "dependencies": {
     "express": 		"~4.13.3",
@@ -16,8 +16,9 @@
     "when": 		"~3.7.2",
     "squel": 		"~3.10.0",
     "n-readlines": 	"~0.2.0",
-    "minimist" : "~1.1.1",
+    "minimist" : 	"~1.1.1",
     "socket.io-redis" : "~0.1.4",
+    "node-gcm" : 	"0.13.0",
     "shrinkwrap": 	"~0.0.3"
   },
   "repository": {

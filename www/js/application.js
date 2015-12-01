@@ -2438,8 +2438,11 @@ Application.prototype.bindPushEvents = function() {
 	
 	push.on('registration', function(data) {
        console.log("DEBUG ::: bindPushEvents registrationId: "+ data.registrationId);
+       app.sendPushRegistrationId( data.registrationId );
+       
 	});
 	push.on('notification', function(data){
+		console.log("DEBUG ::: notification: "+ JSON.stringify(data) );
 	   // data.message, 
 	   // data.title, 
 	   // data.count, 
@@ -2517,6 +2520,10 @@ Application.prototype.connect2server = function(result){
 		var olderDate = new Date(newerDate - config.oneMonth).getTime();
 
 		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
+		
+		if( app.isMobile ){
+			app.bindPushEvents();
+		}	
 
 	});
 	
@@ -2717,6 +2724,8 @@ Application.prototype.connect2server = function(result){
 	socket.on("MessageFromClient", function (input){
 		postman.onMsgFromClient( input );	
 	});//END MessageFromClient event
+	
+	
 	
 };//END of connect2server
 
@@ -2947,8 +2956,7 @@ Application.prototype.onDeviceReady = function() {
 	try{
 		app.devicePlatform  = device.platform;
 		app.deviceVersion = device.version;
-		app.events.deviceReady.resolve();
-		app.bindPushEvents();
+		app.events.deviceReady.resolve();		
 
 	}catch(e){
     	log.debug("Application.prototype.onDeviceReady", e);
@@ -3132,6 +3140,18 @@ Application.prototype.sendProfileUpdate = function() {
 	};			
 	postman.send("profileUpdate", profileResponseObject );	
 };
+
+Application.prototype.sendPushRegistrationId = function( token ) {
+
+	var registration = {
+		publicClientID : user.publicClientID,
+		token : token
+	};
+	postman.send("PushRegistration", registration );
+		
+};
+
+
 
 Application.prototype.sendRequest4Neighbours = function(position){	
 	

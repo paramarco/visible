@@ -416,6 +416,33 @@ app.locals.onProfileUpdate = function(input , socket) {
 	
 };
 
+app.locals.onPushRegistration = function( input , socket) {	
+	
+	console.log('DEBUG ::: onPushRegistration ::: ');	
+	var client = socket.visibleClient;		
+	//TODO
+	var registration = postMan.getPushRegistration( input , client);		
+	if ( registration == null ){
+		console.log('DEBUG ::: onPushRegistration ::: upss');
+		return;
+	}
+	
+	brokerOfVisibles.getClientById( registration.publicClientID ).then(function(client){
+		
+		if (client == null ||
+			registration.publicClientID != socket.visibleClient.publicClientID ){
+	  		console.log('DEBUG ::: onPushRegistration ::: publicClientID != publicClientID');	  		
+			return;
+		}
+
+		client.pushToken = registration.token; 
+		socket.visibleClient = client;
+		brokerOfVisibles.updatePushRegistry( client );	
+	});	
+	
+};
+
+
 app.locals.onMessageDeliveryACK = function(input, socket) {		
 	
 	var client = socket.visibleClient;
@@ -479,8 +506,8 @@ app.locals.onReconnectNotification = function( input, socket ) {
 	brokerOfVisibles.getClientById( notification.publicClientID ).then(function(client){
 		
 		if (client == null ||
-			notification.publicClientID == socket.visibleClient.publicClientID ){
-	  		console.log('DEBUG ::: login ::: unknown client with this publicClientID');	  		
+			notification.publicClientID != socket.visibleClient.publicClientID ){
+	  		console.log('DEBUG ::: onReconnectNotification ::: publicClientID != publicClientID');	  		
 			return;
 		}
 		
@@ -579,6 +606,7 @@ app.locals.onMessage2client = function( msg , socket){
 
  			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
  			postMan.archiveMessage( msg );
+ 			postMan.sendPushNotification( msg , clientReceiver ); 
  		}		
 	});
 };
@@ -657,6 +685,9 @@ io.sockets.on("connection", function (socket) {
 
 	//XEP-0184: Message Delivery Receipts
 	socket.on("message2client", function (msg){ app.locals.onMessage2client ( msg , socket) } );
+	
+	//XEP-
+	socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
 	
 });
 

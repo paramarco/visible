@@ -36,7 +36,7 @@ Object.prototype.equals = function(x)
 
 */
 
-
+var gcm = require('node-gcm');
 var	_ = require('underscore')._ ;
 var Message	= require('./Message.js');
 var crypto = require('jsrsasign');
@@ -299,6 +299,32 @@ function PostMan(_io) {
 			}		
 		});		
 	};
+	
+	
+	this.sendPushNotification = function( msg , clientReceiver) {
+
+		try {	
+			var message = new gcm.Message();
+ 
+			message.addData('caca', 'cacaValue');
+			 
+			var regTokens = [];
+			regTokens.push( clientReceiver.tokenPush );
+			 
+			// Set up the sender with you API key 
+			var sender = new gcm.Sender('AIzaSyBS0We6e-2eKed_oBp8rL3aeW-2lCifOM0');
+			 
+			// Now the sender can be used to send messages 
+			sender.send(message, { registrationTokens: regTokens }, function (err, response) {
+			    if(err) console.error(err);
+			    else    console.log(response);
+			});		
+			
+		}catch (ex) {
+			console.log("DEBUG ::: sendPushNotification :::  exception " + ex  );						
+		}		
+	};
+	
 	
 	this.sendKeysRequests = function(client) {
 
@@ -950,6 +976,26 @@ PostMan.prototype.getKeysRequest = function(encrypted, client) {
 		return null;
 	}	
 };
+
+PostMan.prototype.getPushRegistration = function( encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID( input.publicClientID ) == false ||
+			typeof input.token != 'string' ||
+			Object.keys(input).length != 2 ) {	
+			console.log("DEBUG ::: getPushRegistration ::: format check failed: " + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.log("DEBUG ::: getPushRegistration ::: format check failed, ex: " + ex );
+		return null;
+	}	
+};
+
 
 PostMan.prototype.getReconnectNotification = function( encrypted, client) {	
 	try {    

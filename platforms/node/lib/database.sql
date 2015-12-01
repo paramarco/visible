@@ -124,7 +124,8 @@ CREATE TABLE public.client
   telephone text,
   email text,
   visibility text,
-  rsamodulus text
+  rsamodulus text,
+  pushtoken text
 
 )
 WITH ( OIDS=FALSE );

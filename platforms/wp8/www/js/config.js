@@ -28,4 +28,9 @@ function Config ()  {
 	this.TIME_LOAD_SPINNER = 200;
 	this.TIME_WAIT_WAKEUP = 6500;
 	this.TIME_WAIT_HTTP_POST = 7000;
+	this.pushOptions = {
+		"android": { "senderID": "442395718407" },
+		"ios": { "alert": "true", "badge": "true", "sound": "true" },
+		"windows": {}
+	}; 
 }

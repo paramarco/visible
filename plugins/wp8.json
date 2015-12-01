@@ -95,9 +95,6 @@
         "android.support.v4": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
         },
-        "de.appplant.cordova.plugin.local-notification": {
-            "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
-        },
         "org.apache.cordova.camera": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
         },
@@ -110,19 +107,10 @@
         "org.apache.cordova.dialogs": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
         },
-        "org.apache.cordova.file": {
-            "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
-        },
-        "org.apache.cordova.file-transfer": {
-            "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
-        },
         "org.apache.cordova.geolocation": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
         },
         "org.apache.cordova.globalization": {
-            "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
-        },
-        "org.apache.cordova.inappbrowser": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
         },
         "org.apache.cordova.network-information": {
@@ -133,11 +121,23 @@
         },
         "org.devgeeks.Canvas2ImagePlugin": {
             "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
+        },
+        "cordova-plugin-inappbrowser": {
+            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
+        },
+        "cordova-plugin-file-transfer": {
+            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
+        },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
+        },
+        "de.appplant.cordova.plugin.local-notification": {
+            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
         }
     },
     "dependent_plugins": {
-        "org.apache.cordova.device": {
-            "PACKAGE_NAME": "{ada87970-32bf-11e5-8e8e-af52a34335a2}"
+        "cordova-plugin-device": {
+            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
         }
     }
 }
