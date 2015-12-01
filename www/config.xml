@@ -57,7 +57,8 @@
     <gap:plugin name="org.apache.cordova.console" />
     <gap:plugin name="org.apache.cordova.network-information" />
     <gap:plugin name="org.apache.cordova.camera" />
-    <gap:plugin name="de.appplant.cordova.plugin.local-notification" /> 
+    <gap:plugin name="de.appplant.cordova.plugin.local-notification" />
+    <gap:plugin name="phonegap-plugin-push" source="npm" version="1.4.4" /> 
 
     <!-- Define app icon for each platform. -->
     <icon src="res/icon/android/logo_96x96.png" />

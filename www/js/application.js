@@ -2420,7 +2420,7 @@ function Application() {
 };
 
 // Bind Event Listeners
-Application.prototype.bindEvents = function() {
+Application.prototype.bindDeviceEvents = function() {
     document.addEventListener('deviceready', this.onDeviceReady, false);
     document.addEventListener('backbutton',  gui.onBackButton , false);
     document.addEventListener('menubutton', function(){}, false);
@@ -2430,6 +2430,27 @@ Application.prototype.bindEvents = function() {
     document.addEventListener("pause", function(){ app.inBackground = true; }, false);
     document.addEventListener("resume", this.onResumeCustom  , false);   
     document.addEventListener("online", this.onOnlineCustom, false);    
+};
+
+Application.prototype.bindPushEvents = function() {
+
+	var push = PushNotification.init( config.pushOptions );
+	
+	push.on('registration', function(data) {
+       console.log("DEBUG ::: bindPushEvents registrationId: "+ data.registrationId);
+	});
+	push.on('notification', function(data){
+	   // data.message, 
+	   // data.title, 
+	   // data.count, 
+	   // data.sound, 
+	   // data.image, 
+	   // data.additionalData 
+	});
+	push.on('error', function(e) {
+		console.log("DEBUG ::: bindPushEvents e.message: "+ e.message);
+	});
+	  
 };
 
 Application.prototype.connect2paypal = function(myPurchase) {
@@ -2793,13 +2814,14 @@ Application.prototype.init = function() {
 	gui.loadAsideMenuMainPage();
 	app.detectPosition();
 	app.detectLanguage();
-	app.loadPersistentData();	
+	app.loadPersistentData();
+	
 	
 };
 
 Application.prototype.initializeDevice = function() {
 	
-	Application.prototype.bindEvents();	
+	Application.prototype.bindDeviceEvents();	
 	
 	if (typeof cordova == "undefined" || cordova == null ){
 		app.events.deviceReady.resolve();
@@ -2925,7 +2947,8 @@ Application.prototype.onDeviceReady = function() {
 	try{
 		app.devicePlatform  = device.platform;
 		app.deviceVersion = device.version;
-		app.events.deviceReady.resolve();		
+		app.events.deviceReady.resolve();
+		app.bindPushEvents();
 
 	}catch(e){
     	log.debug("Application.prototype.onDeviceReady", e);
@@ -3551,7 +3574,7 @@ function Dictionary(){
 		label_11: "Here you are",
 		label_12: "is still thinking on a nice commentary",
 		label_13: "I'm new on Visible!",
-		label_14: "or drag and drop an image here",
+		label_14: "drag & drop",
 		label_15: "new contact saved ! <br> ;-) ",
 		label_16: "you got some new messages from:",
 		label_17: "My commentary:",
@@ -3591,7 +3614,7 @@ function Dictionary(){
 		label_11: "Hier sind Sie",
 		label_12: "Denkt immer noch an einen sch&ouml;nen Kommentar",
 		label_13: "Ich bin neu auf Visible!",
-		label_14: "Oder per Drag & Drop ein Bild hier",
+		label_14: "Drag & Drop",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
 		label_16: "Sie einige neue Nachrichten erhalten von:",
 		label_17: "Mein Kommentar:",
@@ -3631,7 +3654,7 @@ function Dictionary(){
 		label_11: "Ecco a voi",
 		label_12: "&egrave; ancora pensando a un bel commento",
 		label_13: "Sono nuovo su Visible!",
-		label_14: "oppure trascinare l'immagine qui",
+		label_14: "trascinare l'immagine",
 		label_15: "novo contacto guardado! <br>;-)",
 		label_16: "hai ricevuto qualche nuovo messaggio:",
 		label_17: "Il mio commento:",
@@ -3672,7 +3695,7 @@ function Dictionary(){
 		label_11: "Aqu&iacute; estas",
 		label_12: "sigue aun pensando en un comentario bonito ;-)",
 		label_13: "soy nuevo en Visible!",
-		label_14: "o bien arrastra una imagen aqu&iacute;",
+		label_14: "arrastra una imagen",
 		label_15: "nuevo contacto guardado! <br>;-)",
 		label_16: "has recibido mensajes nuevos de:",
 		label_17: "Mi comentario:",
@@ -3712,7 +3735,7 @@ function Dictionary(){
 		label_11: "Ici, vous &ecirc;tes",
 		label_12: "est encore la r&eacute;flexion sur une belle commentaires",
 		label_13: "Je suis nouveau sur Visible!",
-		label_14: "ou glissez-d&eacute;posez une image ici",
+		label_14: "glissez-d&eacute;posez",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
 		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
 		label_17: "Mon commentaire:",
@@ -3752,7 +3775,7 @@ function Dictionary(){
 		label_11: "Aqui est&aacute;",
 		label_12: "ainda est&aacute; pensando em um coment&aacute;rio agrad&aacute;vel",
 		label_13: "Eu sou novo no Visible!",
-		label_14: "ou arrastar e soltar uma imagem aqui",
+		label_14: "arrastar e solta",
 		label_15: "novo contacto guardado! <br>;-)",
 		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: ",
 		label_17: "Meu coment&aacute;rio:",
@@ -3808,6 +3831,7 @@ log4javascript.setEnabled(false);
 
 var db;
 var socket;
+var push;
 var user;
 var config = new Config();
 var gui = new GUI();
