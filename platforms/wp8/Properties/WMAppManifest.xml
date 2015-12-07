@@ -1,45 +1,53 @@
-<?xml version='1.0' encoding='utf-8'?>
-<Deployment AppPlatformVersion="8.0" xmlns="http://schemas.microsoft.com/windowsphone/2012/deployment">
-    <DefaultLanguage code="en-US" xmlns="" />
-    <Languages xmlns="">
-        <Language code="en-US" />
-    </Languages>
-    <App Author="instalTIC S.L." BitsPerPixel="32" Description="instalTIC S.L." Genre="apps.normal" ProductID="{6d1f35c0-986c-11e5-8bb9-b7b769763912}" Publisher="instalTIC S.L." PublisherID="{db093ed5-53b1-45f7-af72-751e8f36ab80}" RuntimeType="Silverlight" Title="knet" Version="1.2.5" xmlns="">
-        <IconPath IsRelative="true" IsResource="false">ApplicationIcon.png</IconPath>
-        <Capabilities>
-            <Capability Name="ID_CAP_WEBBROWSERCOMPONENT" />
-            <Capability Name="ID_CAP_ISV_CAMERA" />
-            <Capability Name="ID_CAP_CONTACTS" />
-            <Capability Name="ID_CAP_LOCATION" />
-            <Capability Name="ID_CAP_MEDIALIB_PHOTO" />
-            <Capability Name="ID_CAP_NETWORKING" />
-            <Capability Name="ID_CAP_IDENTITY_DEVICE" />
-        </Capabilities>
-        <Tasks>
-            <DefaultTask Name="_default" NavigationPage="MainPage.xaml" />
-        </Tasks>
-        <Tokens>
-            <PrimaryToken TaskName="_default" TokenID="knet">
-                <TemplateFlip>
-                    <SmallImageURI IsRelative="true" IsResource="false">Background.png</SmallImageURI>
-                    <Count>0</Count>
-                    <BackgroundImageURI IsRelative="true" IsResource="false">Background.png</BackgroundImageURI>
-                    <Title>HelloCordova</Title>
-                    <BackContent />
-                    <BackBackgroundImageURI />
-                    <BackTitle />
-                    <LargeBackgroundImageURI />
-                    <LargeBackContent />
-                    <LargeBackBackgroundImageURI />
-                    <DeviceLockImageURI />
-                    <HasLarge>false</HasLarge>
-                </TemplateFlip>
-            </PrimaryToken>
-        </Tokens>
-        <ScreenResolutions>
-            <ScreenResolution Name="ID_RESOLUTION_WVGA" />
-            <ScreenResolution Name="ID_RESOLUTION_WXGA" />
-            <ScreenResolution Name="ID_RESOLUTION_HD720P" />
-        </ScreenResolutions>
-    </App>
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Deployment xmlns="http://schemas.microsoft.com/windowsphone/2012/deployment" AppPlatformVersion="8.0">
+<!-- 
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+  <DefaultLanguage xmlns="" code="en-US" />
+  <Languages xmlns="">
+    <Language code="en-US" />
+  </Languages>
+  <App xmlns="" ProductID="{6da69560-9d26-11e5-afba-17bfa3ba48fa}" Title="HelloCordova" RuntimeType="Silverlight" Version="1.0.0.0" Genre="apps.normal" Author="HelloCordova author" BitsPerPixel="32" Description="Apache Cordova for Windows Phone" Publisher="HelloCordova" PublisherID="{db093ed5-53b1-45f7-af72-751e8f36ab80}">
+    <IconPath IsRelative="true" IsResource="false">ApplicationIcon.png</IconPath>
+    <Capabilities>
+      <Capability Name="ID_CAP_WEBBROWSERCOMPONENT" />
+      <Capability Name="ID_CAP_NETWORKING" />
+    </Capabilities>
+    <Tasks>
+      <DefaultTask Name="_default" NavigationPage="MainPage.xaml" />
+    </Tasks>
+    <Tokens>
+      <PrimaryToken TokenID="HelloCordovaToken" TaskName="_default">
+        <TemplateFlip>
+          <SmallImageURI IsResource="false" IsRelative="true">Background.png</SmallImageURI>
+          <Count>0</Count>
+          <BackgroundImageURI IsResource="false" IsRelative="true">Background.png</BackgroundImageURI>
+          <Title>HelloCordova</Title>
+          <BackContent></BackContent>
+          <BackBackgroundImageURI></BackBackgroundImageURI>
+          <BackTitle></BackTitle>
+          <LargeBackgroundImageURI></LargeBackgroundImageURI>
+          <LargeBackContent></LargeBackContent>
+          <LargeBackBackgroundImageURI></LargeBackBackgroundImageURI>
+          <DeviceLockImageURI></DeviceLockImageURI>
+          <HasLarge>false</HasLarge>
+        </TemplateFlip>
+      </PrimaryToken>
+    </Tokens>
+    <ScreenResolutions>
+      <ScreenResolution Name="ID_RESOLUTION_WVGA" />
+      <ScreenResolution Name="ID_RESOLUTION_WXGA" />
+      <ScreenResolution Name="ID_RESOLUTION_HD720P" />
+    </ScreenResolutions>
+  </App>
 </Deployment>

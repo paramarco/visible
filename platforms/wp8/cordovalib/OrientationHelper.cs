@@ -125,16 +125,6 @@ namespace WPCordovaClassLib.Cordova
             // No commands are currently accepted.
             return true;
         }
-
-        public void AttachNativeHandlers()
-        {
-            // nothing todo
-        }
-
-        public void DetachNativeHandlers()
-        {
-            // nothing to do
-        }
     }
 
 

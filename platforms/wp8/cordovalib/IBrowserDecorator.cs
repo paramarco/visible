@@ -26,7 +26,5 @@ namespace WPCordovaClassLib.CordovaLib
         WebBrowser Browser { get; set; }
         void InjectScript();
         bool HandleCommand(string cmd);
-        void AttachNativeHandlers();
-        void DetachNativeHandlers();
     }
 }

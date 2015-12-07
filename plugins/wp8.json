@@ -29,14 +29,6 @@
                             "count": 1
                         },
                         {
-                            "xml": "<feature name=\"File\"><param name=\"wp-package\" value=\"File\" /></feature>",
-                            "count": 1
-                        },
-                        {
-                            "xml": "<feature name=\"FileTransfer\"><param name=\"wp-package\" value=\"FileTransfer\" /></feature>",
-                            "count": 1
-                        },
-                        {
                             "xml": "<feature name=\"Globalization\"><param name=\"wp-package\" value=\"Globalization\" /></feature>",
                             "count": 1
                         },
@@ -125,14 +117,11 @@
         "cordova-plugin-inappbrowser": {
             "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
         },
-        "cordova-plugin-file-transfer": {
-            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
-        },
-        "cordova-plugin-file": {
-            "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
-        },
         "de.appplant.cordova.plugin.local-notification": {
             "PACKAGE_NAME": "{6d1f35c0-986c-11e5-8bb9-b7b769763912}"
+        },
+        "phonegap-plugin-push": {
+            "PACKAGE_NAME": "{6da69560-9d26-11e5-afba-17bfa3ba48fa}"
         }
     },
     "dependent_plugins": {

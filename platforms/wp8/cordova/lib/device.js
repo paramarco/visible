@@ -18,6 +18,9 @@
 */
 
 var Q     = require('q'),
+    fs    = require('fs'),
+    path  = require('path'),
+    shell = require('shelljs'),
     utils = require('./utils');
 
 // returns one of available devices which name match with parovided string

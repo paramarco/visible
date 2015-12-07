@@ -488,7 +488,7 @@ function BrokerOfVisibles(_io) {
 	this.updatePushRegistry = function( client ) {
 	
 		if ( client.pushToken != null )
-			client.pushToken = BrokerOfVisibles.prototype.sanitize( pushToken );
+			client.pushToken = BrokerOfVisibles.prototype.sanitize( client.pushToken );
 				
 		var query2send = squel.update()
 							    .table("client")
