@@ -27,7 +27,9 @@ config.listOfServerSockets = [
 ];
 config.instance = [];
 config.instance[0] = {
-	db : { 
+	db : {
+		host : "localhost",
+		name : "visible.0.0.1.db", 
 		user : "visible",
 		pass : "paramarco"
 	},
@@ -35,7 +37,9 @@ config.instance[0] = {
 	portNumber : "8090"	
 };
 config.instance[1] = {
-	db : { 
+	db : {
+		host : "localhost",
+		name : "visible.0.0.1.db", 
 		user : "",
 		pass : ""
 	},
@@ -43,7 +47,9 @@ config.instance[1] = {
 	portNumber : "8090"
 };
 config.instance[2] = {
-	db : { 
+	db : {
+		host : "localhost",
+		name : "visible.0.0.1.db",
 		user : "",
 		pass : ""
 	},
@@ -57,8 +63,5 @@ config.paypal = {
 	returnURL : "http://127.0.0.1:8090/successPayment",
 	cancelURL : "http://127.0.0.1:8090/cancelPayment"
 };
-
-
-
 
 module.exports = config ;

@@ -16,9 +16,9 @@ function BrokerOfVisibles(_io) {
     //call `done()` to release the client back to the pool
     //done();
     //client.end();
-	this.initDBConnection = function (user, pass){
+	this.initDBConnection = function (user, pass, host, name){
 		var d = when.defer();
-		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
+		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/"+ name;
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
 				return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
@@ -338,6 +338,47 @@ function BrokerOfVisibles(_io) {
 			    
 		    }catch (ex) {
 				console.log("DEBUG ::: getProfileByID  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+
+	};
+	
+	this.getPushRegistryByID = function( publicClientID ) {	
+		
+		var d = when.defer();
+		
+	    var query2send = squel.select()
+    						.field("pushtoken")
+						    .from("client")
+						    .where("publicclientid = '" + publicClientID + "'")
+						    .toString();
+	    
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	console.error('DEBUG ::: getPushRegistryByID ::: error running query', err);	
+		    	return d.resolve(null);
+		    }
+		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined"){
+			    	console.log('DEBUG ::: getPushRegistryByID ::: publicClientID not found');
+			    	return  d.resolve( null );
+			    }
+		    		    
+			    var pushRegistry = {};
+			    var entry = result.rows[0];			    
+			    pushRegistry.token = entry.pushtoken;
+			    
+				return d.resolve( pushRegistry );	    
+			    
+		    }catch (ex) {
+				console.log("DEBUG ::: getPushRegistryByID ::: exception " + ex  );
 				return  d.resolve(null);	
 			}
 		    

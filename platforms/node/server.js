@@ -597,16 +597,17 @@ app.locals.onMessage2client = function( msg , socket){
 	postMan.send("MessageDeliveryReceipt",  deliveryReceipt , client);
 	
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
-		if ( clientReceiver != null ){			
-			postMan.sendMsg( msg , clientReceiver ); 
+		if ( clientReceiver != null ){
 			//console.log('DEBUG ::: onMessage2client ::: client is online' + JSON.stringify( msg ) );
-					
+			postMan.sendMsg( msg , clientReceiver ); 					
  		}else {
- 			//console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) );
-
- 			msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
+ 			//console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) ); 			
  			postMan.archiveMessage( msg );
- 			postMan.sendPushNotification( msg , clientReceiver ); 
+			brokerOfVisibles.getPushRegistryByID( msg.to ).then(function( pushRegistry ){				
+				if ( pushRegistry != null ){			
+					postMan.sendPushNotification( msg, pushRegistry );
+		 		}		
+			}); 			 
  		}		
 	});
 };
@@ -694,17 +695,17 @@ io.sockets.on("connection", function (socket) {
 //$ sudo node server.js --instanceNumber=[number] &
 var argv = require('minimist')(process.argv.slice(2));
 var id = parseInt(argv.instanceNumber);
-
+var conf = config.instance[id];
 
 var DBConnectionEstablished = [
-	postMan.initDBConnection(config.instance[id].db.user, config.instance[id].db.pass),
-	brokerOfVisibles.initDBConnection(config.instance[id].db.user, config.instance[id].db.pass)
+	postMan.initDBConnection( conf.db.user, conf.db.pass, conf.db.host, conf.db.name ),
+	brokerOfVisibles.initDBConnection( conf.db.user, conf.db.pass, conf.db.host, conf.db.name )
 ];
 
 when.all ( DBConnectionEstablished ).then(function(){
 	
-	app.set('port', config.instance[id].portNumber);
-  	app.set('ipaddr', config.instance[id].ipAddress );
+	app.set('port', conf.portNumber);
+  	app.set('ipaddr', conf.ipAddress );
 
 	server.listen(	
 		app.get('port'),

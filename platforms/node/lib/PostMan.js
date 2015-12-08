@@ -57,9 +57,9 @@ function PostMan(_io) {
     //TODO : what about calling `done()` to release the client back to the pool
     //	done();
     //	client.end();
-	this.initDBConnection = function (user, pass){
+	this.initDBConnection = function (user, pass, host, name){
 		var d = when.defer();
-		var conString = "postgres://" +  user + ":" + pass + "@localhost/visible.0.0.1.db";
+		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/" + name;
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
 				return console.error('DEBUG ::: PostMan  ::: error fetching client from pool', err);
@@ -170,6 +170,8 @@ function PostMan(_io) {
 	
 	
 	this.archiveMessage = function(msg) {
+		
+		msg.messageBody.encryptedMsg = msg.messageBody.encryptedMsg.replace(/'/g, "##&#39##");
 		
 		var query2send = squel.insert()
 						    .into("message")
@@ -301,15 +303,27 @@ function PostMan(_io) {
 	};
 	
 	
-	this.sendPushNotification = function( msg , clientReceiver) {
+	this.sendPushNotification = function( msg, pushRegistry ) {
 
-		try {	
-			var message = new gcm.Message();
+		try {			
+			var message = new gcm.Message({
+			    collapseKey: 'do_not_collapse',
+			    priority: 'high',
+			    contentAvailable: true,
+			    delayWhileIdle: true,
+			    timeToLive: 3,
+			    restrictedPackageName: "com.instaltic.knet",
+			    dryRun: true
+			});
  
-			message.addData('caca', 'cacaValue');
+			message.addData('sender', msg.from);
+			message.addNotification('title', 'knet');
+			message.addNotification('body', 'SMS');
+			message.addNotification('icon', 'myicon');
+			message.addNotification('tag', 'knet');
 			 
 			var regTokens = [];
-			regTokens.push( clientReceiver.tokenPush );
+			regTokens.push( pushRegistry.token );
 			 
 			// Set up the sender with you API key 
 			var sender = new gcm.Sender('AIzaSyBS0We6e-2eKed_oBp8rL3aeW-2lCifOM0');
