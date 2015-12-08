@@ -1,45 +1,48 @@
-//MVP
-
-//NON MVP
-//TODO push notifications (platform side)
-
 /*
-var privateKey  = fs.readFileSync('sslcert/server.key', 'utf8');
-var certificate = fs.readFileSync('sslcert/server.crt', 'utf8');
-var credentials = {
-	key: privateKey, 
-	cert: certificate, 
-	requestCert: false
-};
 */
 
+//$ sudo node server.js --instanceNumber=[number] &
 var fs = require('fs');
-var http = require('http');//var https = require('https');
 var express = require('express');
-var app = express();
 var cors = require('cors');
 var bodyParser = require('body-parser');
 var	uuid = require('node-uuid');
 var when = require('when');
-var readline = require('readline');
-var server = http.createServer(app); //var server = https.createServer(credentials, app);
-
-var	io 				= require("socket.io")(server);
-var _ 				= require('underscore')._ ,
-	Room			= require('./lib/Group.js'),
-	config 			= require('./lib/Config.js'),
-	Client			= require('./lib/Client.js'),
-	BrokerOfVisibles= require('./lib/BrokerOfVisibles.js'),
-	PostMan			= require('./lib/PostMan.js'),
-	Message			= require('./lib/Message.js'),
-	forge = require('node-forge')({disableNativeCode: true}),
-	brokerOfVisibles = new BrokerOfVisibles(io),
-	postMan = new PostMan(io);
-//DEBUG
 var redis = require('socket.io-redis');
+var argv = require('minimist')(process.argv.slice(2));
+var http = require('http');
+var https = require('https');
+var _ = require('underscore')._ ;
+var	forge = require('node-forge')({disableNativeCode: true});
 
-//DEBUG
-var paypal = require('./lib/Paypal.js'); 
+var config 			= require('./lib/Config.js');
+var BrokerOfVisibles= require('./lib/BrokerOfVisibles.js');
+var PostMan			= require('./lib/PostMan.js');
+var Message			= require('./lib/Message.js');
+var paypal 			= require('./lib/Paypal.js');
+
+var conf = config.instance[ parseInt(argv.instanceNumber) ];
+console.log('INFO ::: Server ::: starting instance: ' + argv.instanceNumber);
+
+var app = express();
+var server;
+if ( conf.useSSL ){
+	console.log('INFO ::: Server ::: HTTPS ');
+	var credentials = {			
+		key: fs.readFileSync('sslcert/server.key', 'utf8'), 
+		cert: fs.readFileSync('sslcert/server.crt', 'utf8'),
+		requestCert: false
+	};
+	server = https.createServer(credentials, app);
+}else{
+	console.log('INFO ::: Server ::: HTTP ');
+	server = http.createServer(app); 
+}
+
+var	io = require("socket.io")(server);
+var	brokerOfVisibles = new BrokerOfVisibles(io);
+var	postMan = new PostMan(io);
+ 
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -603,19 +606,21 @@ app.locals.onMessage2client = function( msg , socket){
  		}else {
  			//console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) ); 			
  			postMan.archiveMessage( msg );
-			brokerOfVisibles.getPushRegistryByID( msg.to ).then(function( pushRegistry ){				
-				if ( pushRegistry != null ){			
-					postMan.sendPushNotification( msg, pushRegistry );
-		 		}		
-			}); 			 
+ 			
+ 			brokerOfVisibles.getPushRegistryByID( msg.to ).then(function( pushRegistry ){				
+ 				if ( pushRegistry != null ){			
+ 					postMan.sendPushNotification( msg, pushRegistry );
+ 		 		}		
+ 			});
+ 			 
  		}		
 	});
 };
 
 
 
-io.adapter(redis({ host: 'localhost', port: 6379 }));
-	
+io.adapter(redis({ host: config.redis.host , port: config.redis.port }));
+
 io.use(function(socket, next){
 	
 	var token = socket.handshake.query.token;
@@ -658,6 +663,7 @@ io.sockets.on("connection", function (socket) {
 	}
 	var client = socket.visibleClient;
 	
+	//XEP-0305: XMPP Quickstart
 	app.locals.onConnection( client );
 	
 	//XEP-0077: In-Band Registration
@@ -678,24 +684,22 @@ io.sockets.on("connection", function (socket) {
 	//XEP-0080: User Location
 	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.onRequestOfListOfPeopleAround( msg , socket) } );
 	
+	//XEP-0305: XMPP Quickstart
 	socket.on("reconnectNotification", function (msg){ app.locals.onReconnectNotification ( msg, socket) } );	
 	
+	//XEP-0189: Public Key Publishing
 	socket.on("KeysDelivery", function (msg){ app.locals.onKeysDelivery ( msg , socket) } );
 
+	//XEP-0189: Public Key Publishing
 	socket.on("KeysRequest", function (msg){ app.locals.onKeysRequest ( msg , socket) } );	
 
 	//XEP-0184: Message Delivery Receipts
 	socket.on("message2client", function (msg){ app.locals.onMessage2client ( msg , socket) } );
 	
-	//XEP-
+	//XEP-0357: Push Notifications
 	socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
 	
 });
-
-//$ sudo node server.js --instanceNumber=[number] &
-var argv = require('minimist')(process.argv.slice(2));
-var id = parseInt(argv.instanceNumber);
-var conf = config.instance[id];
 
 var DBConnectionEstablished = [
 	postMan.initDBConnection( conf.db.user, conf.db.pass, conf.db.host, conf.db.name ),
@@ -711,7 +715,7 @@ when.all ( DBConnectionEstablished ).then(function(){
 		app.get('port'),
 		app.get('ipaddr'), 
 		function(){	
-			console.log('server is listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
+			console.log('INFO ::: Server ::: listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
 		}
 	);	
 	

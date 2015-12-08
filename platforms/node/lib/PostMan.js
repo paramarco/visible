@@ -62,8 +62,9 @@ function PostMan(_io) {
 		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/" + name;
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
-				return console.error('DEBUG ::: PostMan  ::: error fetching client from pool', err);
+				return console.error('DEBUG ::: PostMan  ::: ERROR connecting to the Database', err);
 			}
+			console.error('INFO ::: PostMan ::: correctly connected to the Database');
 			clientOfDB = client;
 			return d.resolve(true);
 		});	
@@ -305,33 +306,31 @@ function PostMan(_io) {
 	
 	this.sendPushNotification = function( msg, pushRegistry ) {
 
-		try {			
+		try {
 			var message = new gcm.Message({
-			    collapseKey: 'do_not_collapse',
+				collapseKey: 'do_not_collapse',
 			    priority: 'high',
-			    contentAvailable: true,
-			    delayWhileIdle: true,
-			    timeToLive: 3,
-			    restrictedPackageName: "com.instaltic.knet",
-			    dryRun: true
+			    delayWhileIdle: false,
+			    timeToLive: 2419200,			    
 			});
- 
-			message.addData('sender', msg.from);
-			message.addNotification('title', 'knet');
-			message.addNotification('body', 'SMS');
-			message.addNotification('icon', 'myicon');
-			message.addNotification('tag', 'knet');
+			message.addData('title', 'knet');
+			message.addData('message', 'knet');
+			message.addData('image', 'icon');
+			//message.addNotification('title', 'knet');
+			//message.addNotification('body', 'SMS');
+			//message.addNotification('icon', 'myicon');
+			//message.addNotification('tag', 'knet');
 			 
 			var regTokens = [];
 			regTokens.push( pushRegistry.token );
 			 
 			// Set up the sender with you API key 
-			var sender = new gcm.Sender('AIzaSyBS0We6e-2eKed_oBp8rL3aeW-2lCifOM0');
+			var sender = new gcm.Sender( config.keyGCM );
 			 
 			// Now the sender can be used to send messages 
 			sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-			    if(err) console.error(err);
-			    else    console.log(response);
+			    if(err) console.log("DEBUG ::: sendPushNotification :::  err " + err  );
+			    else    console.log("DEBUG ::: sendPushNotification :::  response " + response );
 			});		
 			
 		}catch (ex) {

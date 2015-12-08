@@ -1,17 +1,18 @@
 //MVP
 
+//TODO load messages in conversation in chuncks
+//TODO FIX size of videos & remark counter on Main Page
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
+//TODO push notifications (plugin configuration on client iOS & windows)
 
 //non MVP
-
+//TODO chat input floating on top
 //TODO optimization: lazy rendering of images
 //TODO develop web
-//TODO push notifications (plugin configuration on client side)
 //TODO have our own emoticons
 //TODO Apache Cordova Plugin for Android,Windows,Iphone for InAppPruchase
 //TODO try to save img as files in mobile version(save to file as they're received)
-//TODO a wall of my news
 //TODO chineese,arab, japaneese
 //TODO viralization via email, SMS from the user's contacts
 
@@ -598,7 +599,6 @@ Postman.prototype.signToken = function(message) {
 //END Class Postman
 
 function GUI() {
-	this.localNotificationText = "";
 	this.listOfImages4Gallery = [] ;
 	this.indexOfImages4Gallery = 0;
 	this.inAppBrowser = null;
@@ -909,7 +909,6 @@ GUI.prototype.hideLoadingSpinner = function(){
 GUI.prototype.hideLocalNotifications = function() {
 	cordova.plugins.notification.local.clearAll(function() {
 		log.info("GUI.prototype.hideLocalNotifications - notification cleared");
-		gui.localNotificationText = "";
 	}, this);
 };
 GUI.prototype.loadAsideMenuMainPage = function() {
@@ -1474,7 +1473,10 @@ GUI.prototype.onBackButton = function() {
 				if (typeof cordova != "undefined" && cordova != null ){	
 					$.when( app.events.deviceReady , app.events.documentReady).done(function(){
 						function onConfirmQuit(button){
-					       if(button == 2){	navigator.app.exitApp(); }
+					       if(button == 2){
+					    	 cordova.plugins.notification.local.cancelAll(function(){}, this);
+					    	 navigator.app.exitApp();
+					       }
 						}
 						navigator.notification.confirm(
 							dictionary.Literals.label_18,// 'Do you want to quit?'
@@ -1955,40 +1957,33 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 	$('.mask-color').fadeIn('fast');
 };
 
-GUI.prototype.showLocalNotification = function(msg) {
+GUI.prototype.showLocalNotification = function(msg) {	
 	
-	var contact = contactsHandler.getContactById(msg.from); 		
-	
-	if (app.inBackground && contact && typeof cordova != "undefined" ){			
-		
-		cordova.plugins.notification.local.isPresent( 1 , function (present) {
-			
-			if (gui.localNotificationText != "" && gui.localNotificationText.indexOf(contact.nickName) == -1 && contact.nickName != "" 	) {					
-				gui.localNotificationText +=  ", " + contact.nickName ;
-			}
-			if (gui.localNotificationText == "" ){
-				gui.localNotificationText += contact.nickName ;
-			}
-			var text2show = gui.localNotificationText;
-			
+	if ( app.isMobile && app.inBackground ){
+
+		var contact = contactsHandler.getContactById( msg.from );
+		var sendersName = ( contact ) ? contact.nickName : dictionary.Literals.label_16;
+		var text2show = "";	
+		if ( msg.messageBody.messageType == "multimedia" ){
+			text2show = "multimedia";
+		}else if ( msg.messageBody.messageType == "text" ){
+			text2show = decodeURI(gui._sanitize( msg.messageBody.text )).substring(0, 20);
+		}				
+		cordova.plugins.notification.local.isPresent( 0 , function (present) {			
 			if (present){				
-				
 		    	cordova.plugins.notification.local.update({
-		    	    id: 1,
-		    	    title: dictionary.Literals.label_16,
+		    	    id: 0,
+		    	    title: sendersName,
 		    	    text: text2show  
-		    	});
-		    	
-		    }else{
-		    	
+		    	});		    	
+		    }else{		    	
 				cordova.plugins.notification.local.schedule({
-				    id: 1,
-				    title: dictionary.Literals.label_16,
+				    id: 0,
+				    title: sendersName,
 				    text: text2show		    
 				});	
 		    }		    
-		});
-				
+		});				
 	}	
 };
 
@@ -3596,7 +3591,7 @@ function Dictionary(){
 		label_13: "I'm new on Visible!",
 		label_14: "drag & drop",
 		label_15: "new contact saved ! <br> ;-) ",
-		label_16: "you got some new messages from:",
+		label_16: "new message from:",
 		label_17: "My commentary:",
 		label_18: "Do you really want to exit?",
 		label_19: "Exit",
@@ -3636,7 +3631,7 @@ function Dictionary(){
 		label_13: "Ich bin neu auf Visible!",
 		label_14: "Drag & Drop",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
-		label_16: "Sie einige neue Nachrichten erhalten von:",
+		label_16: "neue Nachrichten von:",
 		label_17: "Mein Kommentar:",
 		label_18: "Wollen Sie wirklich beenden?",
 		label_19: "Verlassen",
@@ -3676,7 +3671,7 @@ function Dictionary(){
 		label_13: "Sono nuovo su Visible!",
 		label_14: "trascinare l'immagine",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "hai ricevuto qualche nuovo messaggio:",
+		label_16: "nuovo messaggio:",
 		label_17: "Il mio commento:",
 		label_18: "Sei sicuro di voler uscire?",
 		label_19: "Uscire",
@@ -3717,7 +3712,7 @@ function Dictionary(){
 		label_13: "soy nuevo en Visible!",
 		label_14: "arrastra una imagen",
 		label_15: "nuevo contacto guardado! <br>;-)",
-		label_16: "has recibido mensajes nuevos de:",
+		label_16: "mensaje de:",
 		label_17: "Mi comentario:",
 		label_18: "De verdad quieres salir?",
 		label_19: "Salir",
@@ -3757,7 +3752,7 @@ function Dictionary(){
 		label_13: "Je suis nouveau sur Visible!",
 		label_14: "glissez-d&eacute;posez",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
-		label_16: "vous avez re&ccedil;u de nouveaux messages de:",
+		label_16: "nouveau message de:",
 		label_17: "Mon commentaire:",
 		label_18: "Voulez-vous vraiment quitter?",
 		label_19: "Quitter",
@@ -3797,7 +3792,7 @@ function Dictionary(){
 		label_13: "Eu sou novo no Visible!",
 		label_14: "arrastar e solta",
 		label_15: "novo contacto guardado! <br>;-)",
-		label_16: "voc&ecirc; recebeu v&aacute;rias mensagens novas de: ",
+		label_16: "mensagens novas de: ",
 		label_17: "Meu coment&aacute;rio:",
 		label_18: "Voce realmente deseja sair?",
 		label_19: "Sair",

@@ -21,8 +21,10 @@ function BrokerOfVisibles(_io) {
 		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/"+ name;
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
-				return console.error('DEBUG ::: BrokerOfVisibles  ::: error fetching client from pool', err);
+				return console.error('DEBUG ::: BrokerOfVisibles ::: ERROR connecting to the Database', err);
 			}
+			console.error('INFO ::: BrokerOfVisibles ::: correctly connected to the Database');
+
 			clientOfDB = client;
 			return d.resolve(true);
 		});	

@@ -29,7 +29,7 @@ function Config ()  {
 	this.TIME_WAIT_WAKEUP = 6500;
 	this.TIME_WAIT_HTTP_POST = 7000;
 	this.pushOptions = {
-		"android": { "senderID": "442395718407" },
+		"android": { senderID: "442395718407", clearNotifications : true, forceShow : true , icon: "icon" },
 		"ios": { "alert": "true", "badge": "true", "sound": "true" },
 		"windows": {}
 	}; 
