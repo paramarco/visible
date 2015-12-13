@@ -147,6 +147,14 @@
             <DependentUpon>MainPage.xaml</DependentUpon>
         </Compile>
         <Compile Include="Properties\AssemblyInfo.cs" />
+        <Page Include="Plugins\org.apache.cordova.media-capture\AudioRecorder.xaml">
+            <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+        </Page>
+        <Page Include="Plugins\org.apache.cordova.media-capture\VideoRecorder.xaml">
+            <SubType>Designer</SubType>
+            <Generator>MSBuild:Compile</Generator>
+        </Page>
     </ItemGroup>
     <ItemGroup>
         <ApplicationDefinition Include="App.xaml">
@@ -217,4 +225,37 @@
         <PostBuildEvent>
         </PostBuildEvent>
     </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.camera\Camera.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.file\File.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media-capture\Capture.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media-capture\AudioCaptureTask.cs" />
+    </ItemGroup>
+    <ItemGroup />
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media-capture\AudioRecorder.xaml.cs">
+            <DependentUpon>AudioRecorder.xaml</DependentUpon>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media-capture\VideoCaptureTask.cs" />
+    </ItemGroup>
+    <ItemGroup />
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media-capture\VideoRecorder.xaml.cs">
+            <DependentUpon>VideoRecorder.xaml</DependentUpon>
+        </Compile>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media\Media.cs" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.media\AudioPlayer.cs" />
+    </ItemGroup>
 </Project>
