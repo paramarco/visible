@@ -1,11 +1,13 @@
 //MVP
 
+//TODO load messages in conversation in chuncks
+//TODO FIX size of videos & remark counter on Main Page
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 //TODO push notifications (plugin configuration on client iOS & windows)
 
 //non MVP
-
+//TODO chat input floating on top
 //TODO optimization: lazy rendering of images
 //TODO develop web
 //TODO have our own emoticons
@@ -3606,7 +3608,7 @@ function Dictionary(){
 		label_32 : "Donation for our Open Source Initiative",
 		label_33 : "Total: ",
 		label_34 : "Buy",
-		label_35 : "Welcome ! we're generating your security protocol now, this process could take a few minutes, please be patience",
+		label_35 : "Welcome ! we're generating your security channel, this process could take a few minutes, please be patience",
 		label_36 : "new Group",
 		label_37 : "My Groups",
 		label_38 : "create",

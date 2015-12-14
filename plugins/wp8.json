@@ -97,6 +97,10 @@
                         {
                             "xml": "<Capability Name=\"ID_CAP_MICROPHONE\" />",
                             "count": 2
+                        },
+                        {
+                            "xml": "<Capability Name=\"ID_CAP_LOCATION\" />",
+                            "count": 1
                         }
                     ]
                 }
@@ -144,6 +148,9 @@
             "PACKAGE_NAME": "{6da69560-9d26-11e5-afba-17bfa3ba48fa}"
         },
         "org.apache.cordova.media": {
+            "PACKAGE_NAME": "{6da69560-9d26-11e5-afba-17bfa3ba48fa}"
+        },
+        "org.apache.cordova.geolocation": {
             "PACKAGE_NAME": "{6da69560-9d26-11e5-afba-17bfa3ba48fa}"
         }
     },

@@ -258,4 +258,7 @@
     <ItemGroup>
         <Compile Include="Plugins\org.apache.cordova.media\AudioPlayer.cs" />
     </ItemGroup>
+    <ItemGroup>
+        <Compile Include="Plugins\org.apache.cordova.geolocation\Geolocation.cs" />
+    </ItemGroup>
 </Project>

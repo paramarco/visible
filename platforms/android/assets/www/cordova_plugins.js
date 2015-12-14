@@ -412,6 +412,7 @@ module.exports.metadata =
     "org.apache.cordova.camera": "0.3.6",
     "org.apache.cordova.media-capture": "0.3.6",
     "org.apache.cordova.media": "0.2.16",
+    "org.apache.cordova.geolocation": "0.3.12",
     "cordova-plugin-device": "1.1.0",
     "org.apache.cordova.file": "1.3.3"
 }
