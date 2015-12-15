@@ -2,6 +2,7 @@
 
 //TODO load messages in conversation in chuncks
 //TODO FIX size of videos & remark counter on Main Page
+//TODO FIX  m.youtube url for videos 
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 //TODO push notifications (plugin configuration on client iOS & windows)
@@ -2094,7 +2095,11 @@ GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
 	}
 	if (withFX){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
+		setTimeout( function() { 
+			//$.mobile.silentScroll($(document).height());
+			document.getElementById('messageStateColor_' + message.msgID).parentElement.parentElement.scrollIntoView();
+		} , 
+		config.TIME_SILENT_SCROLL );		
 	}
 };
 
