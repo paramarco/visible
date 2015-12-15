@@ -2,6 +2,7 @@
 
 //TODO load messages in conversation in chuncks
 //TODO FIX size of videos & remark counter on Main Page
+//TODO FIX  m.youtube url for videos 
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
 //TODO push notifications (plugin configuration on client iOS & windows)
@@ -1514,7 +1515,7 @@ GUI.prototype.onChatInput = function() {
 	textMessage = textMessage.replace(/\n/g, "");
 
 	document.getElementById('chat-input').value='';
-
+	//$("#chat-input").blur();
 	if ( textMessage == '' ){ 	return;	}
 	
 	var message2send = new Message(	{ 	
@@ -1534,6 +1535,8 @@ GUI.prototype.onChatInput = function() {
 	$('#chat-multimedia-image').attr("src", "img/multimedia_50x37.png");
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
+	
+	
 };
 
 GUI.prototype.onGroupsButton = function() {
@@ -1823,9 +1826,11 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 	}	
 	var htmlOfCounter = "";
 	if ( obj.counterOfUnreadSMS > 0 ){
-		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="ui-li-count">'+ obj.counterOfUnreadSMS + '</span>';
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="ui-li-count" style="border-color: #FF9720;">'+
+		                   obj.counterOfUnreadSMS +
+		                '</span>';
 	}else{
-		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class=""></span>';
+		htmlOfCounter = '<span id="counterOf_'+ obj.publicClientID + '" class="" style="border-color: #FF9720;"></span>';
 	}
 		
 	var html2insert = 	
@@ -1959,7 +1964,8 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 
 GUI.prototype.showLocalNotification = function(msg) {	
 	
-	if ( app.isMobile && app.inBackground ){
+	if ( app.isMobile && 
+		(app.inBackground || msg.from != app.currentChatWith) ){
 
 		var contact = contactsHandler.getContactById( msg.from );
 		var sendersName = ( contact ) ? contact.nickName : dictionary.Literals.label_16;
@@ -1974,13 +1980,15 @@ GUI.prototype.showLocalNotification = function(msg) {
 		    	cordova.plugins.notification.local.update({
 		    	    id: 0,
 		    	    title: sendersName,
-		    	    text: text2show  
+		    	    text: text2show ,
+		    	    smallIcon : "res://icon.png"	
 		    	});		    	
 		    }else{		    	
 				cordova.plugins.notification.local.schedule({
 				    id: 0,
 				    title: sendersName,
-				    text: text2show		    
+				    text: text2show,
+				    smallIcon : "res://icon.png"
 				});	
 		    }		    
 		});				
@@ -2094,7 +2102,13 @@ GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
 	}
 	if (withFX){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( function() { $.mobile.silentScroll($(document).height()); } , config.TIME_SILENT_SCROLL ); 		
+		setTimeout( function() { 
+			$.mobile.silentScroll($(document).height());
+			var newEntry = document.getElementById('messageStateColor_' + message.msgID).parentElement.parentElement;
+			//newEntry.focus();
+			newEntry.scrollIntoView();
+		} , 
+		config.TIME_SILENT_SCROLL );		
 	}
 };
 
@@ -2224,7 +2238,7 @@ GUI.prototype.refreshCounterOfChat = function( obj ) {
 		$("#counterOf_"+obj.publicClientID).text("");
 		$("#counterOf_"+obj.publicClientID).attr("class", "");
 	}
-	
+
 	$('#listOfContactsInMainPage').listview().listview('refresh');	
 };
 
@@ -3836,7 +3850,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************
