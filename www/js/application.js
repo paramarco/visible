@@ -2742,8 +2742,8 @@ Application.prototype.detectLanguage = function() {
 	language.value = null;
 	
 	if (typeof cordova == "undefined" || cordova == null ){
-		
-		language.detected = navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
+		language.detected = 
+		 navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
 		app.setLanguage(language);
 		
 	}else{
@@ -2775,7 +2775,11 @@ Application.prototype.detectPosition = function(){
 	        function fail(error) {
 	        	app.events.positionLoaded.resolve();
 	        }
-	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
+	        navigator.geolocation.getCurrentPosition(
+	        	success, 
+	        	fail,
+	        	{ maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 }
+	        );
 	    } 
 	    
     }else{
@@ -3030,10 +3034,11 @@ Application.prototype.onResumeCustom =  function() {
    	if	( app.multimediaWasOpened == false ){
    		gui.hideLocalNotifications();
 		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 		
-	}
-	
+	}	    	
 	app.inBackground = false; 
 	app.multimediaWasOpened = false;
+	
+	postman.send("reconnectNotification", {	publicClientID : user.publicClientID } );
    	
 };
 

@@ -1,14 +1,12 @@
 //MVP
 
 //TODO load messages in conversation in chuncks
-//TODO FIX size of videos & remark counter on Main Page
 //TODO FIX  m.youtube url for videos 
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
-//TODO push notifications (plugin configuration on client iOS & windows)
 
 //non MVP
-//TODO chat input floating on top
+//TODO push notifications (plugin configuration on client iOS & windows)
 //TODO optimization: lazy rendering of images
 //TODO develop web
 //TODO have our own emoticons
@@ -2104,9 +2102,9 @@ GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
 		setTimeout( function() { 
 			$.mobile.silentScroll($(document).height());
-			var newEntry = document.getElementById('messageStateColor_' + message.msgID).parentElement.parentElement;
+			//var newEntry = document.getElementById('messageStateColor_' + message.msgID).parentElement.parentElement;
 			//newEntry.focus();
-			newEntry.scrollIntoView();
+			//newEntry.scrollIntoView();
 		} , 
 		config.TIME_SILENT_SCROLL );		
 	}
@@ -2744,8 +2742,8 @@ Application.prototype.detectLanguage = function() {
 	language.value = null;
 	
 	if (typeof cordova == "undefined" || cordova == null ){
-		
-		language.detected = navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
+		language.detected = 
+		 navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
 		app.setLanguage(language);
 		
 	}else{
@@ -2777,7 +2775,11 @@ Application.prototype.detectPosition = function(){
 	        function fail(error) {
 	        	app.events.positionLoaded.resolve();
 	        }
-	        navigator.geolocation.getCurrentPosition(success, fail, { maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 });
+	        navigator.geolocation.getCurrentPosition(
+	        	success, 
+	        	fail,
+	        	{ maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 }
+	        );
 	    } 
 	    
     }else{
@@ -3032,10 +3034,11 @@ Application.prototype.onResumeCustom =  function() {
    	if	( app.multimediaWasOpened == false ){
    		gui.hideLocalNotifications();
 		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 		
-	}
-	
+	}	    	
 	app.inBackground = false; 
 	app.multimediaWasOpened = false;
+	
+	postman.send("reconnectNotification", {	publicClientID : user.publicClientID } );
    	
 };
 

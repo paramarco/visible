@@ -288,24 +288,6 @@ app.get('/cancelPayment', function (req, res) {
 	});
 });
 
-app.locals.onConnection = function ( client ){
-	
-	console.log("DEBUG ::: connection ::: client: " + client.publicClientID );
-	console.log('DEBUG ::: connection ::: socket: ' + client.socketid );
-	
-	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
-	postMan.sendKeysDeliveries( client ); 
-	postMan.sendMessageACKs( client );
-	postMan.sendMessageHeaders( client );
-	postMan.sendKeysRequests( client );		
-	
-	//XEP-0080: User Location
-	postMan.sendDetectedLocation(client);	
-	
-	//XEP-0084: User Avatar 
-	postMan.send("RequestForProfile",  { lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client);
-	
-};
 app.locals.notifyNeighbours = function (client, online){
 	
 	brokerOfVisibles.getListOfPeopleAround(client, online).then(function(listOfPeople){ 
@@ -334,6 +316,45 @@ app.locals.notifyNeighbours = function (client, online){
 	});	
 	
 };
+
+app.locals.onClientAlive = function ( publicClientID , socket ){
+	
+	brokerOfVisibles.getClientById( publicClientID ).then(function(client){
+		
+		if (client == null ||
+			publicClientID != socket.visibleClient.publicClientID ){
+	  		console.log('DEBUG ::: onClientAlive ::: publicClientID != publicClientID');	  		
+			return;
+		}
+		
+		client.socketid = socket.id ;
+		socket.visibleClient = client;			
+		brokerOfVisibles.updateClientsProfile( client );
+		app.locals.onConnection( client );
+
+	});
+
+};
+
+app.locals.onConnection = function ( client ){
+	
+	console.log("DEBUG ::: connection ::: client: " + client.publicClientID );
+	console.log('DEBUG ::: connection ::: socket: ' + client.socketid );
+	
+	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
+	postMan.sendKeysDeliveries( client ); 
+	postMan.sendMessageACKs( client );
+	postMan.sendMessageHeaders( client );
+	postMan.sendKeysRequests( client );		
+	
+	//XEP-0080: User Location
+	postMan.sendDetectedLocation(client);	
+	
+	//XEP-0084: User Avatar 
+	postMan.send("RequestForProfile",  { lastProfileUpdate : parseInt(client.lastProfileUpdate) } , client);
+	
+};
+
 
 
 app.locals.onDisconnect = function(socket) {
@@ -506,20 +527,8 @@ app.locals.onReconnectNotification = function( input, socket ) {
 		return;
 	}
 	
-	brokerOfVisibles.getClientById( notification.publicClientID ).then(function(client){
-		
-		if (client == null ||
-			notification.publicClientID != socket.visibleClient.publicClientID ){
-	  		console.log('DEBUG ::: onReconnectNotification ::: publicClientID != publicClientID');	  		
-			return;
-		}
-		
-		client.socketid = socket.id ;
-		socket.visibleClient = client;			
-		brokerOfVisibles.updateClientsProfile( client );
-		app.locals.onConnection( client );
-
-	});		
+	app.locals.onClientAlive( notification.publicClientID, socket);	
+	
 };
 
 app.locals.onKeysDelivery = function( input, socket){		
@@ -592,12 +601,16 @@ app.locals.onMessage2client = function( msg , socket){
 		return;
 	}
 	
+	app.locals.onClientAlive( msg.from, socket);
+	
 	var deliveryReceipt = { 
 		msgID : msg.msgID, 
 		typeOfACK : "ACKfromServer", 
 		to : msg.to
 	};	
 	postMan.send("MessageDeliveryReceipt",  deliveryReceipt , client);
+	
+		
 	
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){
@@ -622,6 +635,8 @@ app.locals.onMessage2client = function( msg , socket){
 io.adapter(redis({ host: config.redis.host , port: config.redis.port }));
 
 io.use(function(socket, next){
+	
+	console.log('DEBUG ::: io.use ::: ');
 	
 	var token = socket.handshake.query.token;
 	

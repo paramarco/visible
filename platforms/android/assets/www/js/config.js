@@ -26,7 +26,7 @@ function Config ()  {
 	this.TIME_SILENT_SCROLL = 330;
 	this.TIME_LOAD_EMOJI = 3000;
 	this.TIME_LOAD_SPINNER = 200;
-	this.TIME_WAIT_WAKEUP = 6500;
+	this.TIME_WAIT_WAKEUP = 2000;
 	this.TIME_WAIT_HTTP_POST = 7000;
 	this.pushOptions = {
 		"android": { senderID: "442395718407", clearNotifications : true, forceShow : true , icon: "icon" },
