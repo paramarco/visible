@@ -1,11 +1,11 @@
 //MVP
 
-//TODO load messages in conversation in chuncks
-//TODO FIX  m.youtube url for videos 
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
+//TODO forward multimedia
 
 //non MVP
+//TODO FIX  m.youtube url for videos 
 //TODO push notifications (plugin configuration on client iOS & windows)
 //TODO optimization: lazy rendering of images
 //TODO develop web
@@ -495,7 +495,7 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		if (typeof obj == "undefined") return;
 		 		 		
 		if ( app.currentChatWith == publicClientID ){
-			gui.showMsgInConversation( msg, false, true);
+			gui.showMsgInConversation( msg, { isReverse : false, withFX : true } );
 		}else{
 			obj.counterOfUnreadSMS++ ;
 			gui.refreshCounterOfChat( obj );  		  			
@@ -717,8 +717,11 @@ GUI.prototype.bindDOMevents = function(){
 	    if (ui.options.target == "#createGroup"){		
 			gui.loadGroupMenu();
 	    }
-        
+	    if (ui.options.target == "#forwardMenu"){		
+			gui.loadContactsOnForwardMenu();
+	    }        
 	    gui.hideLoadingSpinner();
+	    
 	});	
 	$(document).on("pageshow","#emoticons",function(event){
 		$('#chat-input').emojiPicker("toggle");
@@ -889,8 +892,35 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	app.events.documentReady.resolve();
 		
+	//$('.lazy').lazy();
+	$('input, textarea').off('touchstart mousedown').on('touchstart mousedown', function(e) {
+	    e.stopPropagation();
+	});
+	
+
 };
 
+GUI.prototype.bindPagination = function( newerDate ){
+	
+	var str = '<button id=\"paginationButton\">' + dictionary.Literals.label_41 + '<\/button>';
+	$("#chat-page-content").prepend( str ).trigger("create");
+	
+	$("#paginationButton").unbind( "click" ).bind("click", function(){
+		gui.showLoadingSpinner();
+		$("#paginationButton").remove();
+		mailBox.retrieveMessages( app.currentChatWith, newerDate ).done(function(list){
+			list.map(function( message ){			
+				gui.showMsgInConversation( message, { isReverse : true, withFX : false });
+			});	
+			gui.hideLoadingSpinner();
+			var size = list.length;
+			if ( size  == config.MAX_SMS_RETRIEVAL ){
+				gui.bindPagination( list[size - 1].timestamp );	
+			}
+		});		
+		gui.hideLoadingSpinner();
+	});
+};
 
 GUI.prototype.getPurchaseDetails = function() {
 	var purchase = {};
@@ -1180,9 +1210,6 @@ GUI.prototype.loadBody = function() {
 	strVar += "			  	<\/div>";
 	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div id=\"chat-page-content\" role=\"main\" class=\"ui-content\">";
-	strVar += "				<!--	<div class=\"pagination\">";
-	strVar += "							<i class=\"icon-spinner icon-spin icon-2x\"><\/i>Loading previous messages";
-	strVar += "						<\/div>		-->";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "			<div data-role=\"footer\" data-position=\"fixed\">				";
 	strVar += "				<div id=\"chat-multimedia-button\" class=\"ui-block-20percent\" >					";
@@ -1236,9 +1263,29 @@ GUI.prototype.loadBody = function() {
 	strVar += "			<div id=\"multimedia-content\" role=\"main\" class=\"ui-content\">";
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page emoticons-->";
+	
+	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"forwardMenu\">";
+	strVar += "		<\/div><!-- \/page forwardMenu-->";	
 			
 	$("body").append(strVar); 
 	
+};
+
+GUI.prototype.loadContactsOnForwardMenu = function() {
+	
+	$("#forwardMenu").empty();
+	var html = "<ul id=\"listOfContactsInForwardMenu\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\"> ";	
+	$("#forwardMenu").append( html );
+	$("#forwardMenu").trigger("create");
+	
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) { 
+        	gui.showContactOnForwardMenu(cursor.value);
+         	cursor.continue(); 
+     	}
+	};	
 };
 
 GUI.prototype.loadContactsOnMapPage = function() {
@@ -1251,6 +1298,7 @@ GUI.prototype.loadContactsOnMapPage = function() {
      	}
 	};	
 };
+
 GUI.prototype.loadGalleryInDOM = function() {
 
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
@@ -1280,10 +1328,10 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "					  <\/div>";
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";
-	strVar += "            <\/div>	<!-- <div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> -->";
+	strVar += "            <\/div>	<div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> ";
 	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
 	strVar += "	            <div class=\"pswp__share-tooltip\">";
-	strVar += "					<!-- <a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
+	strVar += "				<!--<a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
 	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
 	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
 	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
@@ -1300,6 +1348,21 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "    <\/div>";
 	
 	$("#chat-page-content").append(strVar);
+
+	$('.pswp__button--share').on("click",  function(e) {
+		
+		app.buffer = gui.photoGallery.currItem.src;
+		
+		gui.photoGallery.listen('destroy', function() { 			
+			setTimeout( function() { 
+				gui.photoGalleryClosed = true;
+				$('body').pagecontainer('change', '#forwardMenu', { transition : "none" });
+
+			} , config.TIME_SILENT_SCROLL );
+		});	
+		gui.photoGallery.close();
+	
+	});
 
 };
 
@@ -1373,8 +1436,10 @@ GUI.prototype.loadGroupMenu = function( group ) {
 
 GUI.prototype.loadMaps = function(){
 	
-	if ( app.map != null )  return;	
-	
+	if ( app.map != null ) {
+		app.map.remove();
+		$("#listOfContactsInMapPage").empty();
+	}
 	app.map = L.map('map-canvas');
 	
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
@@ -1385,13 +1450,14 @@ GUI.prototype.loadMaps = function(){
 		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
 		trackResize : true
 	}).addTo(app.map);
-	
+
 	app.map.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 14);  
 	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
 	L.marker(latlng).addTo(app.map).bindPopup(dictionary.Literals.label_11).openPopup();
 	L.circle(latlng, 200).addTo(app.map); 
-	app.map.addEventListener("load",gui.loadContactsOnMapPage());	
-		
+
+	app.map.addEventListener("load",gui.loadContactsOnMapPage());
+	
 };
 
 
@@ -1499,7 +1565,10 @@ GUI.prototype.onBackButton = function() {
 			break;
 		case /ProfileOfContact/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-			break;			
+			break;
+		case /forwardMenu/.test(page):
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;	
 		default:
 			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			break;	
@@ -1526,7 +1595,7 @@ GUI.prototype.onChatInput = function() {
 	var msg2store = new Message( message2send );
 	mailBox.storeMessage( msg2store ); 
 	
-	gui.showMsgInConversation( msg2store, false, true);
+	gui.showMsgInConversation( msg2store, { isReverse : false, withFX : true });
 
 	postman.sendMsg( message2send );	
 	
@@ -1592,19 +1661,18 @@ GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, l
 
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 		
-		var newList = listOfMessages.concat(list);
+		var newList = listOfMessages.concat( list );
 		
-		if (newList.length > config.limitBackwardMessages || 
-			olderDate < config.beginingOf2015 ){
+		if (newList.length > 0 || olderDate < config.TIME_UNIX_2015 ){
 							
 			newList.map(function(message){			
-				gui.showMsgInConversation( message, false, true);
+				gui.showMsgInConversation( message, { isReverse : false, withFX : true });
 			});			
-			gui.printOldMessagesOf(publicClientID, olderDate - config.oneMonth, olderDate);
+			gui.printOldMessagesOf(publicClientID, olderDate - config.TIME_UNIX_MONTH, olderDate);
 			
 		}else {	
-			olderDate = olderDate - config.oneMonth;
-			newerDate = newerDate - config.oneMonth;
+			olderDate = olderDate - config.TIME_UNIX_MONTH;
+			newerDate = newerDate - config.TIME_UNIX_MONTH;
 			gui.printMessagesOf(publicClientID, olderDate, newerDate, newList);
 		}
 	});
@@ -1616,12 +1684,12 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	mailBox.getAllMessagesOf(publicClientID, olderDate, newerDate).done(function(list){
 
 		list.reverse().map(function(message){	
-			gui.showMsgInConversation(message, true, false);			
+			gui.showMsgInConversation(message, { isReverse : true, withFX : false });			
 		});
 		
-		if ( olderDate > config.beginingOf2015 ){
-			olderDate = olderDate - config.oneMonth;
-			newerDate = newerDate - config.oneMonth;
+		if ( olderDate > config.TIME_UNIX_2015 ){
+			olderDate = olderDate - config.TIME_UNIX_MONTH;
+			newerDate = newerDate - config.TIME_UNIX_MONTH;
 			gui.printOldMessagesOf(publicClientID, olderDate, newerDate);
 		}else {
 			gui.hideLoadingSpinner();
@@ -1721,10 +1789,18 @@ GUI.prototype.showConversation = function( obj ) {
 
 	$("#imgOfChat-page-header").attr("src", obj.imgsrc );
 	
-	var newerDate = new Date().getTime();	
-	var olderDate = new Date(newerDate - config.oneMonth).getTime();
-
-	gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
+	//var newerDate = new Date().getTime();	
+	//var olderDate = new Date(newerDate - config.TIME_UNIX_MONTH).getTime();
+	//gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
+	mailBox.retrieveMessages( obj.publicClientID ).done(function(list){
+		if ( list.length == config.MAX_SMS_RETRIEVAL ){
+			gui.bindPagination( list[0].timestamp );	
+		}
+		list.reverse().map(function( message ){			
+			gui.showMsgInConversation( message, { isReverse : false, withFX : true } );
+		});	
+		gui.hideLoadingSpinner();		
+	});
 	
 	if ( obj.counterOfUnreadSMS > 0 ){
 		obj.counterOfUnreadSMS = 0;
@@ -1764,10 +1840,30 @@ GUI.prototype.showContactsOnGroupMenu = function() {
 	});	
 };
 
+GUI.prototype.showContactOnForwardMenu = function( contact ) {
+	
+	var html2insert = 	
+		'<li id="' + contact.publicClientID + '-inForwardMenu">'+
+		' <a>  '+
+		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ contact.nickName + '</h2> '+
+		'  <p>' + contact.commentary + '</p></a>'+
+		' <a></a>'+
+		'</li>';
+		
+	$("#listOfContactsInForwardMenu")
+		.append(html2insert)
+		.listview().listview('refresh')
+		.find('#' + contact.publicClientID + "-inForwardMenu").first().on("click", function(){			 
+			app.sendMultimediaMsg({ receiver : contact.publicClientID, src : app.buffer });
+			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			$("#forwardMenu").empty();
+		});
+	
+};
+
 GUI.prototype.showContactOnMapPage = function( contact ) {
 	
-	var attributesOfLink = "" ; 
-		
 	var html2insert = 	
 		'<li id="' + contact.publicClientID + '-inMap">'+
 		' <a>  '+
@@ -1867,11 +1963,14 @@ GUI.prototype.showGallery = function(index) {
 	options.barsSize = {top:0,bottom:0};
 	options.captionEl = false;
 	options.fullscreenEl = false;
-	options.shareEl = false;
+	options.shareEl = true;
 	options.bgOpacity = 0.85;
 	options.tapToClose = false;
 	options.tapToToggleControls = false;
 
+	options.shareButtons= [];
+	options.getImageURLForShare = function( shareButtonData ) {};
+	
 	gui.photoGalleryClosed = false;
 	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
 	gui.photoGallery.init();
@@ -1933,22 +2032,9 @@ GUI.prototype.showImagePic = function() {
 			$("#popupDivMultimedia").popup( "close" );						
 		},
 		onNativeCameraInit : app.onNativeCameraInit,		
- 		imageUpdated: function(img){  			
-			var message2send = new Message(	{ 	
-				to : app.currentChatWith, 
-				from : user.publicClientID , 
-				messageBody : { messageType : "multimedia", src : img.src }
-			});
-
-			var msg2store = new Message( message2send );
-			mailBox.storeMessage( msg2store );
-			
-			gui.showMsgInConversation( msg2store, false, true);					
-			$.mobile.silentScroll($(document).height());
-			
-			postman.sendMsg( message2send );
-					
- 		}// END imageUpdated
+ 		imageUpdated: function(img){ 
+ 			app.sendMultimediaMsg({ receiver : app.currentChatWith, src : img.src });
+ 		}
  	});// END picEdit construct	
 		
 	$("#popupDivMultimedia").popup("open");
@@ -1994,8 +2080,11 @@ GUI.prototype.showLocalNotification = function(msg) {
 };
 
 
-
-GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
+/**
+ * @param message := Message
+ * @param options := { isReverse := boolean , withFX := boolean }
+ */
+GUI.prototype.showMsgInConversation = function( message, options ) {
 
 	var authorOfMessage;
 	var classOfmessageStateColor = "";
@@ -2063,7 +2152,9 @@ GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
 			'<div class="image-preview"> ' + 
 			' <a>' +   
 			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
+//			'  <img class="lazy" data-indexInGallery='+ gui.indexOfImages4Gallery +			
 			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
+//			' data-src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
 			' </a>' + 
 			' <div class="name"></div>' + 
 			'</div>' ;
@@ -2092,13 +2183,13 @@ GUI.prototype.showMsgInConversation = function( message, isReverse , withFX ) {
 	if (message.from != user.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); 
 	}
-	if (isReverse){
+	if ( options.isReverse ){
 		$("#chat-page-content").prepend($newMsg);
 	}else{
 		$("#chat-page-content").append($newMsg);
 		$("#chat-page-content").trigger("create");
 	}
-	if (withFX){
+	if ( options.withFX ){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
 		setTimeout( function() { 
 			$.mobile.silentScroll($(document).height());
@@ -2341,20 +2432,52 @@ MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
 	return deferred.promise();
 };
 
+/**
+ * @param id := uuid
+ * @param newerDate := Date().getTime()
+ */
+MailBox.prototype.retrieveMessages = function( id , newerDate) {
+	
+	if ( typeof newerDate == "undefined"){
+		newerDate = new Date().getTime();	
+	}
+	var olderDate = config.TIME_UNIX_2015;
+	var range = IDBKeyRange.bound( olderDate , newerDate );		
+	var deferred = $.Deferred();
+	var listOfMessages = [];
+	var counter = 0;
+	
+	db.transaction(["messages"], "readonly").objectStore("messages").index("timestamp").openCursor(range, "prev").onsuccess = function(e) {		
+		var cursor = e.target.result;
+     	if (cursor && counter < config.MAX_SMS_RETRIEVAL) {
+     		if ( cursor.value.chatWith == id ){
+     			listOfMessages.push( cursor.value );
+     			counter = counter + 1;
+     		}        	
+         	cursor.continue(); 
+     	}else{			
+     		deferred.resolve( listOfMessages );     			
+     	}
+	};
+	
+	return deferred.promise();
+};
+
+
 MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMessages) {
 	
 	mailBox.getMessagesSentOffline(olderDate, newerDate).done(function(list){
 
-		if (listOfMessages.length > config.limitOfflineMessages2Get || 
-			olderDate < config.beginingOf2015 ){
+		if (listOfMessages.length > config.MAX_SEND_OFFLINE_SMS || 
+			olderDate < config.TIME_UNIX_2015 ){
 							
 			listOfMessages.map(function(message){
 				postman.sendMsg( message );											
 			});
 			
 		}else {			
-			olderDate = olderDate - config.oneMonth;
-			newerDate = newerDate - config.oneMonth;
+			olderDate = olderDate - config.TIME_UNIX_MONTH;
+			newerDate = newerDate - config.TIME_UNIX_MONTH;
 			mailBox.sendOfflineMessages( olderDate, newerDate, listOfMessages.concat(list));
 		}
 	});
@@ -2421,9 +2544,10 @@ function Application() {
 	this.events.documentReady = new $.Deferred();
 	this.events.contactsLoaded = new $.Deferred();
 	this.events.userSettingsLoaded = new $.Deferred();
-	this.events.positionLoaded = new $.Deferred();
+//	this.events.positionLoaded = new $.Deferred();
 	this.events.deviceReady  = new $.Deferred();
 	this.isMobile = true;
+	this.buffer;
 };
 
 // Bind Event Listeners
@@ -2524,7 +2648,7 @@ Application.prototype.connect2server = function(result){
 		log.info("socket.on.connect");
 		
 		var newerDate = new Date().getTime();	
-		var olderDate = new Date(newerDate - config.oneMonth).getTime();
+		var olderDate = new Date(newerDate - config.TIME_UNIX_MONTH).getTime();
 
 		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 		
@@ -2555,7 +2679,7 @@ Application.prototype.connect2server = function(result){
 		app.connecting = false;		
   		postman.send("reconnectNotification", {	publicClientID : user.publicClientID } );
   		var newerDate = new Date().getTime();	
-		var olderDate = new Date(newerDate - config.oneMonth).getTime();
+		var olderDate = new Date(newerDate - config.TIME_UNIX_MONTH).getTime();
   		mailBox.sendOfflineMessages(olderDate,newerDate,[]);
 	});
 
@@ -2609,7 +2733,7 @@ Application.prototype.connect2server = function(result){
 			}else {				
 				clearInterval(loopRequestingMessages);				
 			}							
-		}, config.periodMessageRetrieval); 
+		}, config.TIME_WAIT_MAILBOX_POLLING); 
 	   
 	  });//END ServerReplytoDiscoveryHeaders	
 	  
@@ -2654,7 +2778,13 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on("locationFromServer", function(input) {
 		
-		app.sendRequest4Neighbours( postman.getLocationFromServer(input) );
+		var position = postman.getLocationFromServer(input);
+		log.info("DEBUG ::: locationFromServer ::: " + JSON.stringify(position) );
+		if (position && position != null && app.myPosition.coords.latitude == ""){			
+			app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
+			app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
+		}		
+		app.sendRequest4Neighbours();
 
 	});//END locationFromServer	
 	  
@@ -2773,12 +2903,12 @@ Application.prototype.detectPosition = function(){
 	            app.sendRequest4Neighbours();
 	        }
 	        function fail(error) {
-	        	app.events.positionLoaded.resolve();
+	        	log.info("DEBUG ::: detectPosition ::: failed " + JSON.stringify(error) );	        	
 	        }
 	        navigator.geolocation.getCurrentPosition(
 	        	success, 
 	        	fail,
-	        	{ maximumAge: 9000, enableHighAccuracy: true, timeout: 10000 }
+	        	{ maximumAge: 100000, enableHighAccuracy: true, timeout: 60000 }
 	        );
 	    } 
 	    
@@ -2787,12 +2917,16 @@ Application.prototype.detectPosition = function(){
     	$.when( app.events.deviceReady ).done(function(){
 		    function success(pos) {
 	            app.myPosition = pos;
-	            app.sendRequest4Neighbours();
-	            navigator.geolocation.watchPosition(function(){}, function(){});
+	            app.sendRequest4Neighbours();	           
 	        }
 	        function fail(error) {
+	        	console.log("DEBUG ::: detectPosition ::: failed");
 	        }	
-    		navigator.geolocation.getCurrentPosition( app.sendRequest4Neighbours , fail );
+	        navigator.geolocation.watchPosition( 
+	        	success,
+	        	fail,
+	        	{ maximumAge: 100000, enableHighAccuracy: false, timeout: 60000 }
+	        );
     	});
     }
 };
@@ -2835,8 +2969,7 @@ Application.prototype.init = function() {
 	app.detectPosition();
 	app.detectLanguage();
 	app.loadPersistentData();
-	
-	
+
 };
 
 Application.prototype.initializeDevice = function() {
@@ -3138,6 +3271,21 @@ Application.prototype.sendLogin = function(){
 	 });	
 };
 
+Application.prototype.sendMultimediaMsg = function( options ) {
+	var message2send = new Message(	{ 	
+		to : options.receiver, 
+		from : user.publicClientID , 
+		messageBody : { messageType : "multimedia", src : options.src }
+	});
+
+	var msg2store = new Message( message2send );
+	mailBox.storeMessage( msg2store );
+	
+	gui.showMsgInConversation( msg2store, { isReverse : false, withFX : true });					
+	
+	postman.sendMsg( message2send );
+	
+};
 
 Application.prototype.sendProfileUpdate = function() {
 	
@@ -3165,12 +3313,7 @@ Application.prototype.sendPushRegistrationId = function( token ) {
 
 
 
-Application.prototype.sendRequest4Neighbours = function(position){	
-	
-	if (position && position != null){			
-		app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
-		app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
-	}	
+Application.prototype.sendRequest4Neighbours = function(){	
 	
 	if(app.myPosition.coords.latitude != ""){
 		var whoIsAround = { 
@@ -3272,7 +3415,7 @@ function ContactOnKnet( c ) {
 	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
 	this.location = (c.location) ? c.location : { lat : "", lon : "" };
 	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
-	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.beginingOf2015;
+	this.lastProfileUpdate = (c.lastProfileUpdate) ? parseInt(c.lastProfileUpdate) : config.TIME_UNIX_2015;
 	this.counterOfUnreadSMS = (c.counterOfUnreadSMS) ? c.counterOfUnreadSMS : 0;
 	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
 	this.telephone = (c.telephone) ? c.telephone : "";
@@ -3311,11 +3454,11 @@ ContactsHandler.prototype.addNewContactOnDB = function( contact ) {
 		.on("click", function(){ gui.showConversation( contact ); });
 	
 	var prompt2show = 	
-	'<div id="popupDiv" data-role="popup"> '+
+	//'<div id="popupDiv" data-role="popup"> '+
 	' <a class="backButton ui-btn-right" data-role="button" data-theme="a" data-icon="delete" data-iconpos="notext"></a>'+
 	' <img class="darkink" src="./img/new_contact_added_195x195.png">' +
-	' <p class="darkink">' +  dictionary.Literals.label_15 + '</p> '+
-	'</div>';
+	' <p class="darkink">' +  dictionary.Literals.label_15 + '</p> ';
+	//'</div>';
 	gui.showDialog( prompt2show );	
 	
 	contactsHandler.setContactOnDB( contact );	
@@ -3471,7 +3614,7 @@ function Group( g ) {
 	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? "./img/group_black_195x195.png" : g.imgsrc ;
 	this.nickName = (g.nickName) ? g.nickName : dictionary.Literals.label_23;
 	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? dictionary.Literals.label_12 : g.commentary;
-	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : config.beginingOf2015;
+	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : config.TIME_UNIX_2015;
 	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : 0;
 	this.timeLastSMS = (g.timeLastSMS) ? parseInt(g.timeLastSMS) : 0 ;
 	this.telephone = (g.telephone) ? g.telephone : "";
@@ -3630,7 +3773,8 @@ function Dictionary(){
 		label_37 : "My Groups",
 		label_38 : "create",
 		label_39 : "modify",
-		label_40 : "Group: "
+		label_40 : "Group: ",
+		label_41 : "load earlier messages"
 	};
 	this.Literals_De = {
 		label_1: "Profil",
@@ -3665,12 +3809,13 @@ function Dictionary(){
 		label_32: "Spende f&uuml;r unsere Open Source Initiative",
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
-		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k&ouml;nnte ein paar Minuten dauern, bitte et was Geduld",
+		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess könnte ein paar Minuten dauern, bitte et was Geduld",
 		label_36 : "neue Gruppe",
 		label_37 : "meine Gruppen",
 		label_38 : "kreieren",
 		label_39 : "modifizieren",
-		label_40 : "Gruppe: "
+		label_40 : "Gruppe: ",
+		label_41 : "laden fr&uuml;here Nachrichten"
 	};
 	this.Literals_It = {
 		label_1: "Profilo",
@@ -3710,7 +3855,8 @@ function Dictionary(){
 		label_37 : "I miei gruppi",
 		label_38 : "creare",
 		label_39 : "modificare",
-		label_40 : "Gruppi: "
+		label_40 : "Gruppi: ",
+		label_41 : "caricare i messaggi precedenti"
 		
 	}; 
 	this.Literals_Es = {
@@ -3746,12 +3892,13 @@ function Dictionary(){
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar"	,
-		label_35 : "&iexcl;Bienvenido! generando su protocolo de seguridad, este proceso podr&iacute;a tardar unos minutos, por favor sea paciente",
+		label_35 : "¡Bienvenido! generando su canal de seguridad, este proceso podría tardar unos minutos, por favor sea paciente",
 		label_36 : "nuevo grupo",
 		label_37 : "mis Grupos",
 		label_38 : "crear",
 		label_39 : "modificar",
-		label_40 : "Grupo: "		
+		label_40 : "Grupo: ",
+		label_41 : "cargar mensajes anteriores"		
 	}; 
 	this.Literals_Fr = {
 		label_1: "Profil",
@@ -3786,12 +3933,13 @@ function Dictionary(){
 		label_32: "Don pour notre Open Source Initiative",
 		label_33: "Total: ",
 		label_34: "Acheter",
-		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp",
+		label_35 : "Bienvenue! génération de votre protocole de sécurité, ce processus peut prendre quelques minutes, soyez patient svp",
 		label_36 : "nouveau groupe",
 		label_37 : "mes Groupes",
 		label_38 : "cr&eacute;er",
 		label_39 : "modifier",
-		label_40 : "Groupe: "	
+		label_40 : "Groupe: ",
+		label_41 : "charger les messages pr&eacute;c&eacute;dents"	
 	}; 
 	this.Literals_Pt = {
 		label_1: "Perfil",
@@ -3826,12 +3974,13 @@ function Dictionary(){
 		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar",
-		label_35 : "Bem-vindo! gerando seu protocolo de seguran&ccedil;a, esse processo pode levar alguns minutos, por favor, seja paciente",
+		label_35 : "Bem-vindo! gerando seu protocolo de segurança, esse processo pode levar alguns minutos, por favor, seja paciente",
 		label_36 : "novo grupo",
 		label_37 : "meus Grupos",
 		label_38 : "criar",
 		label_39 : "modificar",
-		label_40 : "Grupo: "
+		label_40 : "Grupo: ",
+		label_41 : "carregar mensagens anteriores"
 	};
 	
 	this.AvailableLiterals = {
@@ -3894,5 +4043,6 @@ $.when( app.events.documentReady,
 $(document).ready(function() {
 	FastClick.attach(document.body);		
 	app.init();	
-	app.initializeDevice();	
+	app.initializeDevice();
+
 });

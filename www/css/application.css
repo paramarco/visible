@@ -1163,7 +1163,7 @@
 .activity .readable .content .youtube-preview
 {
 /*	height: auto;
-	max-height: 60%;*/ 
+	max-height: 50%; */
 	max-width: 100%;
 	width: 100%;
 }
@@ -1262,19 +1262,7 @@
 {
 	float: none;
 }
-.pagination
-{
-	font-size: 14px;
-	line-height: 2em;
-	padding: 10px 0;
-	text-align: center;
-}
-.pagination i
-{
-	margin-right: 7px;
-	vertical-align: middle;
-}
-.activity,.pagination
+.activity
 {
 	border-bottom: 1px solid #dee6e8;
 	padding: 10px;
