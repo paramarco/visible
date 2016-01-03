@@ -259,7 +259,7 @@ app.get('/successPayment', function (req, res) {
 		config.paypal.signature, 
 		config.paypal.returnURL, 
 		config.paypal.cancelURL, 
-		true // debug = true
+		false // debug = true
 	);
 	
 	payment.detail(req.query.token, req.query.PayerID, function(err, data, invoiceNumber, price) {

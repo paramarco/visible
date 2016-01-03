@@ -52,7 +52,11 @@ Paypal.prototype.detail = function(token, payer, callback) {
 
 	params.TOKEN = token;
 	params.METHOD = 'GetExpressCheckoutDetails';
-
+	
+	var timeStamp = new Date();
+	console.log(timeStamp.toLocaleString() + " GetExpressCheckoutDetails " + self.url);
+	console.log(JSON.stringify(params));
+	
 	self.request(self.url, 'POST', params, function(err, data) {
 
 		if (err) {
@@ -74,6 +78,10 @@ Paypal.prototype.detail = function(token, payer, callback) {
 		params.AMT = custom[1];
 		params.CURRENCYCODE = custom[2];
 		params.METHOD = 'DoExpressCheckoutPayment';
+		
+		var timeStamp = new Date();
+		console.log(timeStamp.toLocaleString() + " DoExpressCheckoutPayment " + self.url);
+		console.log(JSON.stringify(params));
 
 		self.request(self.url, 'POST', params, function(err, data) {
 
@@ -115,7 +123,10 @@ Paypal.prototype.pay = function(invoiceNumber, amount, description, currency, ca
 	params.INVNUM = invoiceNumber;
 	params.CUSTOM = invoiceNumber + '|' + params.AMT + '|' + currency;
 
+	var timeStamp = new Date();
+	console.log(timeStamp.toLocaleString() + " SetExpressCheckout " + self.url);
 	console.log(JSON.stringify(params));
+	
 	
 	self.request(self.url, 'POST', params, function(err, data) {
 
