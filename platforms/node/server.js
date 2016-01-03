@@ -202,12 +202,12 @@ app.post('/payment', function (req, res) {
 			config.paypal.signature, 
 			config.paypal.returnURL, 
 			config.paypal.cancelURL, 
-			true // debug = true
+			false // debug = true
 		);
 		var timestamp = new Date().getTime();
 		var invoiceNumber = req.body.handshakeToken + "_" + timestamp;
 		
-		payment.pay( invoiceNumber ,  amount, 'Knet-app', 'EUR', function(err, url) {
+		payment.pay( invoiceNumber ,  amount, 'Knet', 'EUR', function(err, url) {
 			
 		    if (err) {
 		        console.log(err);

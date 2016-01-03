@@ -115,6 +115,8 @@ Paypal.prototype.pay = function(invoiceNumber, amount, description, currency, ca
 	params.INVNUM = invoiceNumber;
 	params.CUSTOM = invoiceNumber + '|' + params.AMT + '|' + currency;
 
+	console.log(JSON.stringify(params));
+	
 	self.request(self.url, 'POST', params, function(err, data) {
 
 		if (err) {

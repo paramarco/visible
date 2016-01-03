@@ -2,7 +2,6 @@
 
 //TODO pay with paypal without sandbox
 //TODO translations in stores & images
-//TODO forward multimedia
 
 //non MVP
 //TODO FIX  m.youtube url for videos 
