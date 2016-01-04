@@ -1,8 +1,6 @@
 //MVP
 
-//TODO pay with paypal without sandbox
 //TODO translations in stores & images
-//TODO forward multimedia
 
 //non MVP
 //TODO FIX  m.youtube url for videos 
@@ -3335,26 +3333,26 @@ Application.prototype.setLanguage = function(language) {
 	language.value = "";
 	switch (true){
 		case /en(?:\-[A-Z]{2}$)|EN$|en$|English$|english$/.test(language.detected):
-			language.value = "English";
+			language.value = "en";
 			break;
 		case /es(?:\-[A-Z]{2}$)|ES$|es$|espa\u00f1ol$|Espa\u00f1ol$/.test(language.detected):
-			language.value = "espa\u00f1ol";
+			language.value = "es";
 			break;
 		case /de(?:\-[A-Z]{2}$)|DE$|de$|deutsch$|Deutsch$/.test(language.detected):
-			language.value = "Deutsch";
+			language.value = "de";
 			break;
 		case /it(?:\-[A-Z]{2}$)|IT$|it$|italiano$|Italiano$/.test(language.detected):
-			language.value = "italiano";
+			language.value = "it";
 			break;	
 		case /fr(?:\-[A-Z]{2}$)|FR$|fr$|fran\u00e7ais$|Fran\u00e7ais$/.test(language.detected):
-			language.value = "fran\u00e7ais";
+			language.value = "fr";
 			break;
 		case /pt(?:\-[A-Z]{2}$)|PT$|pt$|portugu\u00EAs$|Portugu\u00EAs$/.test(language.detected):
-			language.value = "portugu\u00EAs";
+			language.value = "pt";
 			break;			
 			
 		default:
-			language.value = "English";
+			language.value = "en";
 			break;	
 	}
 	
@@ -3362,10 +3360,37 @@ Application.prototype.setLanguage = function(language) {
 		log.info("Application.prototype.setLanguage ", language);
 	}else{
 		log.info("Application.prototype.setLanguage - NOT FOUND", language);	
-		language.value = "English" ;
+		language.value = "en" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
-	gui.setLocalLabels(); 
+	gui.setLocalLabels();
+	
+	// Use $.getJSON instead of $.get if your server is not configured to return the
+	// right MIME type for .json files.
+	/*
+	$.when(
+	  $.get( "cldr/main/" + language.value + "/ca-gregorian.json" ),
+	 // $.get( "cldr/main/" + language.value + "/numbers.json" ),
+	 // $.get( "cldr/main/" + language.value + "/ca-generic.json" ),
+	 // $.get( "cldr/main/" + language.value + "/dateFields.json" ),
+	  $.get( "cldr/main/" + language.value + "/timeZoneNames.json" ),
+	  
+	  $.get( "cldr/supplemental/numberingSystems.json" ),
+	  $.get( "cldr/supplemental/timeData.json" ),
+	  $.get( "cldr/supplemental/weekData.json" )
+	).then(function() {
+
+	  // Normalize $.get results, we only need the JSON, not the request statuses.
+	  return [].slice.apply( arguments, [ 0 ] ).map(function( result ) {
+	      return result[ 0 ];
+	  });
+
+	}).then( Globalize.load ).then(function() {
+
+	  // Your code goes here.
+
+	});
+    */
 };
 
 Application.prototype.setMultimediaAsOpen = function() {
@@ -3735,7 +3760,7 @@ function Dictionary(){
 	
 	var _this = this;
 	
-	this.Literals_En = {
+	this.Literals_en = {
 		label_1: "Profile",
 		label_2: "Groups",
 		label_3: "Search",
@@ -3776,7 +3801,7 @@ function Dictionary(){
 		label_40 : "Group: ",
 		label_41 : "load earlier messages"
 	};
-	this.Literals_De = {
+	this.Literals_de = {
 		label_1: "Profil",
 		label_2: "Gruppen",
 		label_3: "Suchen",
@@ -3817,7 +3842,7 @@ function Dictionary(){
 		label_40 : "Gruppe: ",
 		label_41 : "laden fr&uuml;here Nachrichten"
 	};
-	this.Literals_It = {
+	this.Literals_it = {
 		label_1: "Profilo",
 		label_2: "Gruppi",
 		label_3: "Ricerca",
@@ -3859,7 +3884,7 @@ function Dictionary(){
 		label_41 : "caricare i messaggi precedenti"
 		
 	}; 
-	this.Literals_Es = {
+	this.Literals_es = {
 		label_1: "Perfil",
 		label_2: "Grupos",
 		label_3: "Buscar",
@@ -3900,7 +3925,7 @@ function Dictionary(){
 		label_40 : "Grupo: ",
 		label_41 : "cargar mensajes anteriores"		
 	}; 
-	this.Literals_Fr = {
+	this.Literals_fr = {
 		label_1: "Profil",
 		label_2: "Groupes",
 		label_3: "Recherche",
@@ -3941,7 +3966,7 @@ function Dictionary(){
 		label_40 : "Groupe: ",
 		label_41 : "charger les messages pr&eacute;c&eacute;dents"	
 	}; 
-	this.Literals_Pt = {
+	this.Literals_pt = {
 		label_1: "Perfil",
 		label_2: "Grupos",
 		label_3: "Pesquisa",
@@ -3984,15 +4009,15 @@ function Dictionary(){
 	};
 	
 	this.AvailableLiterals = {
-		"English" : { value : _this.Literals_En } ,
-    	"Deutsch" : { value : _this.Literals_De } ,
-    	"italiano" : { value : _this.Literals_It } ,
-    	"espa\u00f1ol" : { value : _this.Literals_Es } ,
-    	"fran\u00e7ais" : { value : _this.Literals_Fr } ,
-    	"portugu\u00EAs" : { value : _this.Literals_Pt }    	
+		"en" : { value : _this.Literals_en } ,
+    	"de" : { value : _this.Literals_de } ,
+    	"it" : { value : _this.Literals_it } ,
+    	"es" : { value : _this.Literals_es } ,
+    	"fr" : { value : _this.Literals_fr } ,
+    	"pt" : { value : _this.Literals_pt }    	
     };
 	
-	this.Literals = this.AvailableLiterals["English"].value;
+	this.Literals = this.AvailableLiterals["en"].value;
 };
 
 /***********************************************************************************************

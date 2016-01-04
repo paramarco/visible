@@ -602,6 +602,7 @@ function GUI() {
 	this.photoGallery = null;
 	this.photoGalleryClosed = true;
 	this.groupOnMenu = null;
+	this.formatter = function(){};
 };
 
 GUI.prototype._parseLinks = function(htmlOfContent) {
@@ -2168,7 +2169,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'<div class="activity">'+
 		'	<span class="posted_at">'+
 		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
-			timeStampOfMessage.toLocaleString() +
+			gui.formatter.formatDate ( timeStampOfMessage , { datetime: "medium" } ) +
 		' </span>'+
 		'	<div class="readable">'+
 		'		<span class="user">'+ authorOfMessage   +'</span>'+
@@ -3364,33 +3365,10 @@ Application.prototype.setLanguage = function(language) {
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;
 	gui.setLocalLabels();
-	
-	// Use $.getJSON instead of $.get if your server is not configured to return the
-	// right MIME type for .json files.
-	/*
-	$.when(
-	  $.get( "cldr/main/" + language.value + "/ca-gregorian.json" ),
-	 // $.get( "cldr/main/" + language.value + "/numbers.json" ),
-	 // $.get( "cldr/main/" + language.value + "/ca-generic.json" ),
-	 // $.get( "cldr/main/" + language.value + "/dateFields.json" ),
-	  $.get( "cldr/main/" + language.value + "/timeZoneNames.json" ),
-	  
-	  $.get( "cldr/supplemental/numberingSystems.json" ),
-	  $.get( "cldr/supplemental/timeData.json" ),
-	  $.get( "cldr/supplemental/weekData.json" )
-	).then(function() {
-
-	  // Normalize $.get results, we only need the JSON, not the request statuses.
-	  return [].slice.apply( arguments, [ 0 ] ).map(function( result ) {
-	      return result[ 0 ];
-	  });
-
-	}).then( Globalize.load ).then(function() {
-
-	  // Your code goes here.
-
-	});
-    */
+    Globalize.load( dictionary.Literals.CLDR );
+    gui.formatter = Globalize( language.value );
+    console.log( gui.formatter.formatDate( new Date(), { datetime: "medium" } ) );
+      
 };
 
 Application.prototype.setMultimediaAsOpen = function() {
@@ -3799,7 +3777,142 @@ function Dictionary(){
 		label_38 : "create",
 		label_39 : "modify",
 		label_40 : "Group: ",
-		label_41 : "load earlier messages"
+		label_41 : "load earlier messages",
+		CLDR : {
+			  "main": {
+			    "en": {
+			      "identity": {
+			        "version": {
+			          "_cldrVersion": "25",
+			          "_number": "$Revision: 91 $"
+			        },
+			        "generation": {
+			          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+			        },
+			        "language": "en"
+			      },
+			      "dates": {
+			        "calendars": {
+			          "gregorian": {
+			            "months": {
+			              "format": {
+			                "abbreviated": {
+			                  "1": "Jan",
+			                  "2": "Feb",
+			                  "3": "Mar",
+			                  "4": "Apr",
+			                  "5": "May",
+			                  "6": "Jun",
+			                  "7": "Jul",
+			                  "8": "Aug",
+			                  "9": "Sep",
+			                  "10": "Oct",
+			                  "11": "Nov",
+			                  "12": "Dec"
+			                }
+			              }
+			            },
+			            "dayPeriods": {
+			              "format": {
+			                "wide": {
+			                  "am": "AM",
+			                  "am-alt-variant": "am",
+			                  "noon": "noon",
+			                  "pm": "PM",
+			                  "pm-alt-variant": "pm"
+			                }
+			              }
+			            },
+			            "dateFormats": {
+			              "medium": "M/d/y"
+			            },
+			            "timeFormats": {
+			              "medium": "HH:MM",
+			            },
+			            "dateTimeFormats": {
+			              "medium": "{1} {0}"
+			            }
+			          }
+			        },
+			        "fields": {
+			          "second": {
+			            "displayName": "Second",
+			            "relative-type-0": "now",
+			            "relativeTime-type-future": {
+			              "relativeTimePattern-count-one": "in {0} second",
+			              "relativeTimePattern-count-other": "in {0} seconds"
+			            },
+			            "relativeTime-type-past": {
+			              "relativeTimePattern-count-one": "{0} second ago",
+			              "relativeTimePattern-count-other": "{0} seconds ago"
+			            }
+			          }
+			        }
+			      },
+			      "numbers": {
+			        "currencies": {
+			          "USD": {
+			            "symbol": "$"
+			          }
+			        },
+			        "defaultNumberingSystem": "latn",
+			        "symbols-numberSystem-latn": {
+			          "decimal": ".",
+			          "exponential": "E",
+			          "group": ",",
+			          "infinity": "∞",
+			          "minusSign": "-",
+			          "nan": "NaN",
+			          "percentSign": "%",
+			          "perMille": "‰",
+			          "plusSign": "+",
+			          "timeSeparator": ":"
+			        },
+			        "decimalFormats-numberSystem-latn": {
+			          "standard": "#,##0.###"
+			        },
+			        "currencyFormats-numberSystem-latn": {
+			          "currencySpacing": {
+			            "beforeCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            },
+			            "afterCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            }
+			          },
+			          "standard": "¤#,##0.00"
+			        }
+			      }
+			    }
+			  },
+			  "supplemental": {
+			    "version": {
+			      "_cldrVersion": "25",
+			      "_number": "$Revision: 91 $"
+			    },
+			    "currencyData": {
+			      "fractions": {
+			        "DEFAULT": {
+			          "_rounding": "0",
+			          "_digits": "2"
+			        }
+			      }
+			    },
+			    "likelySubtags": {
+			      "en": "en-GB",
+			    },
+			    "plurals-type-cardinal": {
+			      "en": {
+			        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+			        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+			      }
+			    }
+			  }
+			}
 	};
 	this.Literals_de = {
 		label_1: "Profil",
@@ -3834,13 +3947,148 @@ function Dictionary(){
 		label_32: "Spende f&uuml;r unsere Open Source Initiative",
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
-		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k�nnte ein paar Minuten dauern, bitte et was Geduld",
+		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess könnte ein paar Minuten dauern, bitte et was Geduld",
 		label_36 : "neue Gruppe",
 		label_37 : "meine Gruppen",
 		label_38 : "kreieren",
 		label_39 : "modifizieren",
 		label_40 : "Gruppe: ",
-		label_41 : "laden fr&uuml;here Nachrichten"
+		label_41 : "laden fr&uuml;here Nachrichten",
+		CLDR : {
+		  "main": {
+		    "de": {
+		      "identity": {
+		        "version": {
+		          "_cldrVersion": "25",
+		          "_number": "$Revision: 91 $"
+		        },
+		        "generation": {
+		          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+		        },
+		        "language": "de"
+		      },
+		      "dates": {
+		        "calendars": {
+		          "gregorian": {
+		            "months": {
+		              "format": {
+		                "abbreviated": {
+		                  "1": "Jan",
+		                  "2": "Feb",
+		                  "3": "Mar",
+		                  "4": "Apr",
+		                  "5": "May",
+		                  "6": "Jun",
+		                  "7": "Jul",
+		                  "8": "Aug",
+		                  "9": "Sep",
+		                  "10": "Oct",
+		                  "11": "Nov",
+		                  "12": "Dec"
+		                }
+		              }
+		            },
+		            "dayPeriods": {
+		              "format": {
+		                "wide": {
+		                  "am": "AM",
+		                  "am-alt-variant": "am",
+		                  "noon": "noon",
+		                  "pm": "PM",
+		                  "pm-alt-variant": "pm"
+		                }
+		              }
+		            },
+		            "dateFormats": {
+		              "medium": "d/M/y"
+		            },
+		            "timeFormats": {
+		              "medium": "HH:MM",
+		            },
+		            "dateTimeFormats": {
+		              "medium": "{1} {0}"
+		            }
+		          }
+		        },
+		        "fields": {
+		          "second": {
+		            "displayName": "Second",
+		            "relative-type-0": "now",
+		            "relativeTime-type-future": {
+		              "relativeTimePattern-count-one": "in {0} second",
+		              "relativeTimePattern-count-other": "in {0} seconds"
+		            },
+		            "relativeTime-type-past": {
+		              "relativeTimePattern-count-one": "{0} second ago",
+		              "relativeTimePattern-count-other": "{0} seconds ago"
+		            }
+		          }
+		        }
+		      },
+		      "numbers": {
+		        "currencies": {
+		          "USD": {
+		            "symbol": "$"
+		          }
+		        },
+		        "defaultNumberingSystem": "latn",
+		        "symbols-numberSystem-latn": {
+		          "decimal": ".",
+		          "exponential": "E",
+		          "group": ",",
+		          "infinity": "∞",
+		          "minusSign": "-",
+		          "nan": "NaN",
+		          "percentSign": "%",
+		          "perMille": "‰",
+		          "plusSign": "+",
+		          "timeSeparator": ":"
+		        },
+		        "decimalFormats-numberSystem-latn": {
+		          "standard": "#,##0.###"
+		        },
+		        "currencyFormats-numberSystem-latn": {
+		          "currencySpacing": {
+		            "beforeCurrency": {
+		              "currencyMatch": "[:^S:]",
+		              "surroundingMatch": "[:digit:]",
+		              "insertBetween": " "
+		            },
+		            "afterCurrency": {
+		              "currencyMatch": "[:^S:]",
+		              "surroundingMatch": "[:digit:]",
+		              "insertBetween": " "
+		            }
+		          },
+		          "standard": "¤#,##0.00"
+		        }
+		      }
+		    }
+		  },
+		  "supplemental": {
+		    "version": {
+		      "_cldrVersion": "25",
+		      "_number": "$Revision: 91 $"
+		    },
+		    "currencyData": {
+		      "fractions": {
+		        "DEFAULT": {
+		          "_rounding": "0",
+		          "_digits": "2"
+		        }
+		      }
+		    },
+		    "likelySubtags": {
+		      "de": "de-DE",
+		    },
+		    "plurals-type-cardinal": {
+		      "de": {
+		        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+		        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+		      }
+		    }
+		  }
+		}			
 	};
 	this.Literals_it = {
 		label_1: "Profilo",
@@ -3881,7 +4129,142 @@ function Dictionary(){
 		label_38 : "creare",
 		label_39 : "modificare",
 		label_40 : "Gruppi: ",
-		label_41 : "caricare i messaggi precedenti"
+		label_41 : "caricare i messaggi precedenti",
+		CLDR : {
+			  "main": {
+			    "it": {
+			      "identity": {
+			        "version": {
+			          "_cldrVersion": "25",
+			          "_number": "$Revision: 91 $"
+			        },
+			        "generation": {
+			          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+			        },
+			        "language": "it"
+			      },
+			      "dates": {
+			        "calendars": {
+			          "gregorian": {
+			            "months": {
+			              "format": {
+			                "abbreviated": {
+			                  "1": "Jan",
+			                  "2": "Feb",
+			                  "3": "Mar",
+			                  "4": "Apr",
+			                  "5": "May",
+			                  "6": "Jun",
+			                  "7": "Jul",
+			                  "8": "Aug",
+			                  "9": "Sep",
+			                  "10": "Oct",
+			                  "11": "Nov",
+			                  "12": "Dec"
+			                }
+			              }
+			            },
+			            "dayPeriods": {
+			              "format": {
+			                "wide": {
+			                  "am": "AM",
+			                  "am-alt-variant": "am",
+			                  "noon": "noon",
+			                  "pm": "PM",
+			                  "pm-alt-variant": "pm"
+			                }
+			              }
+			            },
+			            "dateFormats": {
+			              "medium": "d/M/y"
+			            },
+			            "timeFormats": {
+			              "medium": "HH:MM",
+			            },
+			            "dateTimeFormats": {
+			              "medium": "{1} {0}"
+			            }
+			          }
+			        },
+			        "fields": {
+			          "second": {
+			            "displayName": "Second",
+			            "relative-type-0": "now",
+			            "relativeTime-type-future": {
+			              "relativeTimePattern-count-one": "in {0} second",
+			              "relativeTimePattern-count-other": "in {0} seconds"
+			            },
+			            "relativeTime-type-past": {
+			              "relativeTimePattern-count-one": "{0} second ago",
+			              "relativeTimePattern-count-other": "{0} seconds ago"
+			            }
+			          }
+			        }
+			      },
+			      "numbers": {
+			        "currencies": {
+			          "USD": {
+			            "symbol": "$"
+			          }
+			        },
+			        "defaultNumberingSystem": "latn",
+			        "symbols-numberSystem-latn": {
+			          "decimal": ".",
+			          "exponential": "E",
+			          "group": ",",
+			          "infinity": "∞",
+			          "minusSign": "-",
+			          "nan": "NaN",
+			          "percentSign": "%",
+			          "perMille": "‰",
+			          "plusSign": "+",
+			          "timeSeparator": ":"
+			        },
+			        "decimalFormats-numberSystem-latn": {
+			          "standard": "#,##0.###"
+			        },
+			        "currencyFormats-numberSystem-latn": {
+			          "currencySpacing": {
+			            "beforeCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            },
+			            "afterCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            }
+			          },
+			          "standard": "¤#,##0.00"
+			        }
+			      }
+			    }
+			  },
+			  "supplemental": {
+			    "version": {
+			      "_cldrVersion": "25",
+			      "_number": "$Revision: 91 $"
+			    },
+			    "currencyData": {
+			      "fractions": {
+			        "DEFAULT": {
+			          "_rounding": "0",
+			          "_digits": "2"
+			        }
+			      }
+			    },
+			    "likelySubtags": {
+			      "it": "it-IT",
+			    },
+			    "plurals-type-cardinal": {
+			      "de": {
+			        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+			        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+			      }
+			    }
+			  }
+			}
 		
 	}; 
 	this.Literals_es = {
@@ -3917,13 +4300,148 @@ function Dictionary(){
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar"	,
-		label_35 : "�Bienvenido! generando su canal de seguridad, este proceso podr�a tardar unos minutos, por favor sea paciente",
+		label_35 : "¡Bienvenido! generando su canal de seguridad, este proceso podría tardar unos minutos, por favor sea paciente",
 		label_36 : "nuevo grupo",
 		label_37 : "mis Grupos",
 		label_38 : "crear",
 		label_39 : "modificar",
 		label_40 : "Grupo: ",
-		label_41 : "cargar mensajes anteriores"		
+		label_41 : "cargar mensajes anteriores",
+		CLDR : {
+			  "main": {
+			    "es": {
+			      "identity": {
+			        "version": {
+			          "_cldrVersion": "25",
+			          "_number": "$Revision: 91 $"
+			        },
+			        "generation": {
+			          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+			        },
+			        "language": "es"
+			      },
+			      "dates": {
+			        "calendars": {
+			          "gregorian": {
+			            "months": {
+			              "format": {
+			                "abbreviated": {
+			                  "1": "Jan",
+			                  "2": "Feb",
+			                  "3": "Mar",
+			                  "4": "Apr",
+			                  "5": "May",
+			                  "6": "Jun",
+			                  "7": "Jul",
+			                  "8": "Aug",
+			                  "9": "Sep",
+			                  "10": "Oct",
+			                  "11": "Nov",
+			                  "12": "Dec"
+			                }
+			              }
+			            },
+			            "dayPeriods": {
+			              "format": {
+			                "wide": {
+			                  "am": "AM",
+			                  "am-alt-variant": "am",
+			                  "noon": "noon",
+			                  "pm": "PM",
+			                  "pm-alt-variant": "pm"
+			                }
+			              }
+			            },
+			            "dateFormats": {
+			              "medium": "d/M/y"
+			            },
+			            "timeFormats": {
+			              "medium": "HH:MM",
+			            },
+			            "dateTimeFormats": {
+			              "medium": "{1} {0}"
+			            }
+			          }
+			        },
+			        "fields": {
+			          "second": {
+			            "displayName": "Second",
+			            "relative-type-0": "now",
+			            "relativeTime-type-future": {
+			              "relativeTimePattern-count-one": "in {0} second",
+			              "relativeTimePattern-count-other": "in {0} seconds"
+			            },
+			            "relativeTime-type-past": {
+			              "relativeTimePattern-count-one": "{0} second ago",
+			              "relativeTimePattern-count-other": "{0} seconds ago"
+			            }
+			          }
+			        }
+			      },
+			      "numbers": {
+			        "currencies": {
+			          "USD": {
+			            "symbol": "$"
+			          }
+			        },
+			        "defaultNumberingSystem": "latn",
+			        "symbols-numberSystem-latn": {
+			          "decimal": ".",
+			          "exponential": "E",
+			          "group": ",",
+			          "infinity": "∞",
+			          "minusSign": "-",
+			          "nan": "NaN",
+			          "percentSign": "%",
+			          "perMille": "‰",
+			          "plusSign": "+",
+			          "timeSeparator": ":"
+			        },
+			        "decimalFormats-numberSystem-latn": {
+			          "standard": "#,##0.###"
+			        },
+			        "currencyFormats-numberSystem-latn": {
+			          "currencySpacing": {
+			            "beforeCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            },
+			            "afterCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            }
+			          },
+			          "standard": "¤#,##0.00"
+			        }
+			      }
+			    }
+			  },
+			  "supplemental": {
+			    "version": {
+			      "_cldrVersion": "25",
+			      "_number": "$Revision: 91 $"
+			    },
+			    "currencyData": {
+			      "fractions": {
+			        "DEFAULT": {
+			          "_rounding": "0",
+			          "_digits": "2"
+			        }
+			      }
+			    },
+			    "likelySubtags": {
+			      "es": "es-ES",
+			    },
+			    "plurals-type-cardinal": {
+			      "es": {
+			        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+			        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+			      }
+			    }
+			  }
+			}		
 	}; 
 	this.Literals_fr = {
 		label_1: "Profil",
@@ -3958,13 +4476,148 @@ function Dictionary(){
 		label_32: "Don pour notre Open Source Initiative",
 		label_33: "Total: ",
 		label_34: "Acheter",
-		label_35 : "Bienvenue! g�n�ration de votre protocole de s�curit�, ce processus peut prendre quelques minutes, soyez patient svp",
+		label_35 : "Bienvenue! génération de votre protocole de sécurité, ce processus peut prendre quelques minutes, soyez patient svp",
 		label_36 : "nouveau groupe",
 		label_37 : "mes Groupes",
 		label_38 : "cr&eacute;er",
 		label_39 : "modifier",
 		label_40 : "Groupe: ",
-		label_41 : "charger les messages pr&eacute;c&eacute;dents"	
+		label_41 : "charger les messages pr&eacute;c&eacute;dents",
+		CLDR : {
+			  "main": {
+			    "fr": {
+			      "identity": {
+			        "version": {
+			          "_cldrVersion": "25",
+			          "_number": "$Revision: 91 $"
+			        },
+			        "generation": {
+			          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+			        },
+			        "language": "fr"
+			      },
+			      "dates": {
+			        "calendars": {
+			          "gregorian": {
+			            "months": {
+			              "format": {
+			                "abbreviated": {
+			                  "1": "Jan",
+			                  "2": "Feb",
+			                  "3": "Mar",
+			                  "4": "Apr",
+			                  "5": "May",
+			                  "6": "Jun",
+			                  "7": "Jul",
+			                  "8": "Aug",
+			                  "9": "Sep",
+			                  "10": "Oct",
+			                  "11": "Nov",
+			                  "12": "Dec"
+			                }
+			              }
+			            },
+			            "dayPeriods": {
+			              "format": {
+			                "wide": {
+			                  "am": "AM",
+			                  "am-alt-variant": "am",
+			                  "noon": "noon",
+			                  "pm": "PM",
+			                  "pm-alt-variant": "pm"
+			                }
+			              }
+			            },
+			            "dateFormats": {
+			              "medium": "d/M/y"
+			            },
+			            "timeFormats": {
+			              "medium": "HH:MM",
+			            },
+			            "dateTimeFormats": {
+			              "medium": "{1} {0}"
+			            }
+			          }
+			        },
+			        "fields": {
+			          "second": {
+			            "displayName": "Second",
+			            "relative-type-0": "now",
+			            "relativeTime-type-future": {
+			              "relativeTimePattern-count-one": "in {0} second",
+			              "relativeTimePattern-count-other": "in {0} seconds"
+			            },
+			            "relativeTime-type-past": {
+			              "relativeTimePattern-count-one": "{0} second ago",
+			              "relativeTimePattern-count-other": "{0} seconds ago"
+			            }
+			          }
+			        }
+			      },
+			      "numbers": {
+			        "currencies": {
+			          "USD": {
+			            "symbol": "$"
+			          }
+			        },
+			        "defaultNumberingSystem": "latn",
+			        "symbols-numberSystem-latn": {
+			          "decimal": ".",
+			          "exponential": "E",
+			          "group": ",",
+			          "infinity": "∞",
+			          "minusSign": "-",
+			          "nan": "NaN",
+			          "percentSign": "%",
+			          "perMille": "‰",
+			          "plusSign": "+",
+			          "timeSeparator": ":"
+			        },
+			        "decimalFormats-numberSystem-latn": {
+			          "standard": "#,##0.###"
+			        },
+			        "currencyFormats-numberSystem-latn": {
+			          "currencySpacing": {
+			            "beforeCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            },
+			            "afterCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            }
+			          },
+			          "standard": "¤#,##0.00"
+			        }
+			      }
+			    }
+			  },
+			  "supplemental": {
+			    "version": {
+			      "_cldrVersion": "25",
+			      "_number": "$Revision: 91 $"
+			    },
+			    "currencyData": {
+			      "fractions": {
+			        "DEFAULT": {
+			          "_rounding": "0",
+			          "_digits": "2"
+			        }
+			      }
+			    },
+			    "likelySubtags": {
+			      "fr": "fr-FR",
+			    },
+			    "plurals-type-cardinal": {
+			      "fr": {
+			        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+			        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+			      }
+			    }
+			  }
+			}	
 	}; 
 	this.Literals_pt = {
 		label_1: "Perfil",
@@ -3999,13 +4652,148 @@ function Dictionary(){
 		label_32: "Doa&ccedil;&atilde;o para o nosso Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar",
-		label_35 : "Bem-vindo! gerando seu protocolo de seguran�a, esse processo pode levar alguns minutos, por favor, seja paciente",
+		label_35 : "Bem-vindo! gerando seu protocolo de segurança, esse processo pode levar alguns minutos, por favor, seja paciente",
 		label_36 : "novo grupo",
 		label_37 : "meus Grupos",
 		label_38 : "criar",
 		label_39 : "modificar",
 		label_40 : "Grupo: ",
-		label_41 : "carregar mensagens anteriores"
+		label_41 : "carregar mensagens anteriores",
+		CLDR : {
+			  "main": {
+			    "pt": {
+			      "identity": {
+			        "version": {
+			          "_cldrVersion": "25",
+			          "_number": "$Revision: 91 $"
+			        },
+			        "generation": {
+			          "_date": "$Date: 2014-03-13 22:27:12 -0500 (Thu, 13 Mar 2014) $"
+			        },
+			        "language": "pt"
+			      },
+			      "dates": {
+			        "calendars": {
+			          "gregorian": {
+			            "months": {
+			              "format": {
+			                "abbreviated": {
+			                  "1": "Jan",
+			                  "2": "Feb",
+			                  "3": "Mar",
+			                  "4": "Apr",
+			                  "5": "May",
+			                  "6": "Jun",
+			                  "7": "Jul",
+			                  "8": "Aug",
+			                  "9": "Sep",
+			                  "10": "Oct",
+			                  "11": "Nov",
+			                  "12": "Dec"
+			                }
+			              }
+			            },
+			            "dayPeriods": {
+			              "format": {
+			                "wide": {
+			                  "am": "AM",
+			                  "am-alt-variant": "am",
+			                  "noon": "noon",
+			                  "pm": "PM",
+			                  "pm-alt-variant": "pm"
+			                }
+			              }
+			            },
+			            "dateFormats": {
+			              "medium": "d/M/y"
+			            },
+			            "timeFormats": {
+			              "medium": "HH:MM",
+			            },
+			            "dateTimeFormats": {
+			              "medium": "{1} {0}"
+			            }
+			          }
+			        },
+			        "fields": {
+			          "second": {
+			            "displayName": "Second",
+			            "relative-type-0": "now",
+			            "relativeTime-type-future": {
+			              "relativeTimePattern-count-one": "in {0} second",
+			              "relativeTimePattern-count-other": "in {0} seconds"
+			            },
+			            "relativeTime-type-past": {
+			              "relativeTimePattern-count-one": "{0} second ago",
+			              "relativeTimePattern-count-other": "{0} seconds ago"
+			            }
+			          }
+			        }
+			      },
+			      "numbers": {
+			        "currencies": {
+			          "USD": {
+			            "symbol": "$"
+			          }
+			        },
+			        "defaultNumberingSystem": "latn",
+			        "symbols-numberSystem-latn": {
+			          "decimal": ".",
+			          "exponential": "E",
+			          "group": ",",
+			          "infinity": "∞",
+			          "minusSign": "-",
+			          "nan": "NaN",
+			          "percentSign": "%",
+			          "perMille": "‰",
+			          "plusSign": "+",
+			          "timeSeparator": ":"
+			        },
+			        "decimalFormats-numberSystem-latn": {
+			          "standard": "#,##0.###"
+			        },
+			        "currencyFormats-numberSystem-latn": {
+			          "currencySpacing": {
+			            "beforeCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            },
+			            "afterCurrency": {
+			              "currencyMatch": "[:^S:]",
+			              "surroundingMatch": "[:digit:]",
+			              "insertBetween": " "
+			            }
+			          },
+			          "standard": "¤#,##0.00"
+			        }
+			      }
+			    }
+			  },
+			  "supplemental": {
+			    "version": {
+			      "_cldrVersion": "25",
+			      "_number": "$Revision: 91 $"
+			    },
+			    "currencyData": {
+			      "fractions": {
+			        "DEFAULT": {
+			          "_rounding": "0",
+			          "_digits": "2"
+			        }
+			      }
+			    },
+			    "likelySubtags": {
+			      "pt": "pt-PT",
+			    },
+			    "plurals-type-cardinal": {
+			      "pt": {
+			        "pluralRule-count-one": "i = 1 and v = 0 @integer 1",
+			        "pluralRule-count-other": " @integer 0, 2~16, 100, 1000, 10000, 100000, 1000000, … @decimal 0.0~1.5, 10.0, 100.0, 1000.0, 10000.0, 100000.0, 1000000.0, …"
+			      }
+			    }
+			  }
+			}
 	};
 	
 	this.AvailableLiterals = {
@@ -4020,6 +4808,7 @@ function Dictionary(){
 	this.Literals = this.AvailableLiterals["en"].value;
 };
 
+
 /***********************************************************************************************
  * *********************************************************************************************
  * **************				DEBUG MODE	 						****************************
@@ -4027,7 +4816,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(true);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************
