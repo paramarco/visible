@@ -2079,6 +2079,21 @@ GUI.prototype.showLocalNotification = function(msg) {
 };
 
 
+/*
+<button class="ytp-button ytp-share-button" aria-haspopup="true" aria-owns="ytp-share-panel" title="Compartir">
+	<svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
+		<defs>
+			<path d="m 20.20,14.19 0,-4.45 7.79,7.79 -7.79,7.79 0,-4.56 C 16.27,20.69 12.10,21.81 9.34,24.76 8.80,25.13 7.60,27.29 8.12,25.65 9.08,21.32 11.80,17.18 15.98,15.38 c 1.33,-0.60 2.76,-0.98 4.21,-1.19 z" id="ytp-svg-40"></path>
+		</defs>
+		<use class="ytp-svg-shadow" xlink:href="#ytp-svg-40"></use>
+		<use class="ytp-svg-fill" xlink:href="#ytp-svg-40"></use>
+	</svg>
+</button>
+*/
+
+
+
+
 /**
  * @param message := Message
  * @param options := { isReverse := boolean , withFX := boolean }
@@ -2141,6 +2156,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 				htmlOfVideoPreview += 
 				'<div class="youtube-preview">'+
 			     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""></iframe>'+
+			     	' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>'+
 		  		'</div>';				
 			}
 		});
@@ -2149,13 +2165,13 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 					
 		htmlOfContent = 
 			'<div class="image-preview"> ' + 
-			' <a>' +   
+			' <a>' + 
 			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
 //			'  <img class="lazy" data-indexInGallery='+ gui.indexOfImages4Gallery +			
 			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
 //			' data-src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-			' </a>' + 
-			' <div class="name"></div>' + 
+			' </a>' +			 
+			' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
 			'</div>' ;
 		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src);
@@ -2167,10 +2183,11 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 	
 	var html2insert = 	
 		'<div class="activity">'+
+		//'	<div class="avatar"></div>'+
 		'	<span class="posted_at">'+
 		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
 			gui.formatter.formatDate ( timeStampOfMessage , { datetime: "medium" } ) +
-		' </span>'+
+		'	</span>'+
 		'	<div class="readable">'+
 		'		<span class="user">'+ authorOfMessage   +'</span>'+
 		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
@@ -3367,7 +3384,6 @@ Application.prototype.setLanguage = function(language) {
 	gui.setLocalLabels();
     Globalize.load( dictionary.Literals.CLDR );
     gui.formatter = Globalize( language.value );
-    console.log( gui.formatter.formatDate( new Date(), { datetime: "medium" } ) );
       
 };
 

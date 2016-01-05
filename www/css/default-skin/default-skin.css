@@ -17,7 +17,7 @@
 
  */
 /* <button> css reset */
-.pswp__button {
+ .pswp__button {
   width: 44px;
   height: 44px;
   position: relative;
@@ -30,17 +30,17 @@
   padding: 0;
   margin: 0;
   float: right;
-  opacity: 0.75;
+  opacity: 1;
   -webkit-transition: opacity 0.2s;
           transition: opacity 0.2s;
   -webkit-box-shadow: none;
           box-shadow: none; }
   .pswp__button:focus,
   .pswp__button:hover {
-    opacity: 1; }
+    opacity: 0.5; }
   .pswp__button:active {
     outline: none;
-    opacity: 0.9; }
+    opacity: 1; }
   .pswp__button::-moz-focus-inner {
     padding: 0;
     border: 0; }
