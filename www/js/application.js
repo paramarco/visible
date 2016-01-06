@@ -33,7 +33,9 @@ UserSettings.prototype.updateUserSettings = function() {
 	var store = transaction.objectStore("usersettings");	
 	var request = store.put(user);	
 };
-
+/*
+ * @param messageBody.messageType := "multimedia" | "text" | "groupUpdate"
+ */
 function Message( input ){
 	this.to = input.to;
 	this.from = input.from;
@@ -897,6 +899,7 @@ GUI.prototype.bindDOMevents = function(){
 	});
 	
 
+
 };
 
 GUI.prototype.bindPagination = function( newerDate ){
@@ -920,6 +923,18 @@ GUI.prototype.bindPagination = function( newerDate ){
 		gui.hideLoadingSpinner();
 	});
 };
+
+GUI.prototype.forwardMsg = function( contact ){
+	
+  	mailBox.getMessageByID( app.msg2forward ).done(function ( msg ){
+  		if (!msg ){	return; }  		
+  		app.forwardMsg( msg , contact);  		
+  	});
+	$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+	$("#forwardMenu").empty();
+
+};
+
 
 GUI.prototype.getPurchaseDetails = function() {
 	var purchase = {};
@@ -1317,7 +1332,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "				<div data-role=\"none\" class=\"pswp__top-bar\">";
 	strVar += "					<div data-role=\"none\" class=\"pswp__counter\"><\/div>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
-	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
+	strVar += "				<button id=\"button--share\" data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--zoom\" title=\"Zoom in\/out\"><\/button>";
 	strVar += "				<div class=\"pswp__preloader\">";
@@ -1348,15 +1363,14 @@ GUI.prototype.loadGalleryInDOM = function() {
 	
 	$("#chat-page-content").append(strVar);
 
-	$('.pswp__button--share').on("click",  function(e) {
+	$('#button--share').on("click",  function(e) {
 		
-		app.buffer = gui.photoGallery.currItem.src;
+		app.msg2forward = gui.photoGallery.currItem.msgId;
 		
 		gui.photoGallery.listen('destroy', function() { 			
 			setTimeout( function() { 
 				gui.photoGalleryClosed = true;
-				$('body').pagecontainer('change', '#forwardMenu', { transition : "none" });
-
+				$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
 			} , config.TIME_SILENT_SCROLL );
 		});	
 		gui.photoGallery.close();
@@ -1697,7 +1711,7 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	});	
 };
 
-GUI.prototype.setImgIntoGallery = function(index, src) {
+GUI.prototype.setImgIntoGallery = function(index, src, msgId) {
 
 	var img = new Image();
 	img.src = src;
@@ -1707,7 +1721,8 @@ GUI.prototype.setImgIntoGallery = function(index, src) {
 		gui.listOfImages4Gallery[index] = {
 			src: src,
 		    w: width,
-		    h: height
+		    h: height,
+		    msgId : msgId
 		};
 	}
 	
@@ -1853,10 +1868,8 @@ GUI.prototype.showContactOnForwardMenu = function( contact ) {
 	$("#listOfContactsInForwardMenu")
 		.append(html2insert)
 		.listview().listview('refresh')
-		.find('#' + contact.publicClientID + "-inForwardMenu").first().on("click", function(){			 
-			app.sendMultimediaMsg({ receiver : contact.publicClientID, src : app.buffer });
-			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-			$("#forwardMenu").empty();
+		.find('#' + contact.publicClientID + "-inForwardMenu").first().on("click", function(){
+			gui.forwardMsg( contact );
 		});
 	
 };
@@ -1968,7 +1981,6 @@ GUI.prototype.showGallery = function(index) {
 	options.tapToToggleControls = false;
 
 	options.shareButtons= [];
-	options.getImageURLForShare = function( shareButtonData ) {};
 	
 	gui.photoGalleryClosed = false;
 	gui.photoGallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default, gui.listOfImages4Gallery, options);
@@ -2156,7 +2168,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 				htmlOfVideoPreview += 
 				'<div class="youtube-preview">'+
 			     	'<iframe width="100%" height="100%" src=' + srcPath + ' frameborder="0" allowfullscreen=""></iframe>'+
-			     	' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>'+
+			     	'<div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>'+
 		  		'</div>';				
 			}
 		});
@@ -2164,17 +2176,15 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 	}else if (message.messageBody.messageType == "multimedia"){
 					
 		htmlOfContent = 
-			'<div class="image-preview"> ' + 
-			' <a>' + 
-			'  <img class="image-embed" data-indexInGallery='+ gui.indexOfImages4Gallery +
-//			'  <img class="lazy" data-indexInGallery='+ gui.indexOfImages4Gallery +			
-			' src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-//			' data-src="' + message.messageBody.src +'" onclick="gui.showGallery('+gui.indexOfImages4Gallery+');">' +
-			' </a>' +			 
-			' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
-			'</div>' ;
+		'<div class="image-preview"> ' + 
+		' <a>' + 
+		'  <img class="image-embed" src="' + message.messageBody.src +'">' +
+//		'  <img class="lazy"  data-src="' + message.messageBody.src +'">' +		
+		' </a>' +			 
+		' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
+		'</div>' ;
 		
-		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src);
+		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
 		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 			
 	}	
@@ -2186,7 +2196,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		//'	<div class="avatar"></div>'+
 		'	<span class="posted_at">'+
 		'  		<div id="messageStateColor_' + message.msgID + '" class="' + classOfmessageStateColor + '"></div>'+	
-			gui.formatter.formatDate ( timeStampOfMessage , { datetime: "medium" } ) +
+				gui.formatter.formatDate ( timeStampOfMessage , { datetime: "medium" } ) +
 		'	</span>'+
 		'	<div class="readable">'+
 		'		<span class="user">'+ authorOfMessage   +'</span>'+
@@ -2194,7 +2204,14 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'	</div>' +
 		'</div>		' ;
 	
-	var $newMsg = $(html2insert);
+	var $newMsg = $(html2insert);	
+	$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
+		app.msg2forward = message.msgID;
+		$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
+	});
+	$newMsg.find(".image-embed").unbind("click").on("click", function(){
+		gui.showGallery( gui.indexOfImages4Gallery - 1 );
+	});
 	
 	if (message.from != user.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); 
@@ -2207,14 +2224,9 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 	}
 	if ( options.withFX ){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout( function() { 
-			$.mobile.silentScroll($(document).height());
-			//var newEntry = document.getElementById('messageStateColor_' + message.msgID).parentElement.parentElement;
-			//newEntry.focus();
-			//newEntry.scrollIntoView();
-		} , 
-		config.TIME_SILENT_SCROLL );		
+		setTimeout(	$.mobile.silentScroll( $(document).height()), config.TIME_SILENT_SCROLL );	
 	}
+
 };
 
 
@@ -2233,7 +2245,9 @@ GUI.prototype.showProfile = function() {
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\"><img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \"><\/a>";
+	strVar += "					<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
+	strVar += "					 <img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "					<\/a>";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
@@ -2563,7 +2577,7 @@ function Application() {
 //	this.events.positionLoaded = new $.Deferred();
 	this.events.deviceReady  = new $.Deferred();
 	this.isMobile = true;
-	this.buffer;
+	this.msg2forward = null;
 };
 
 // Bind Event Listeners
@@ -2779,7 +2793,8 @@ Application.prototype.connect2server = function(result){
 		contactsHandler.updateContactOnDB (contact );
 		
 		$("#profilePhoto" + contact.publicClientID ).attr("src", contact.imgsrc);		
-		if (app.currentChatWith == contact.publicClientID) $("#imgOfChat-page-header").attr("src", contact.imgsrc);
+		if (app.currentChatWith == contact.publicClientID)
+			$("#imgOfChat-page-header").attr("src", contact.imgsrc);
 		
 		var kids = $( "#link2go2ChatWith_" + contact.publicClientID).children(); 		
 
@@ -2945,6 +2960,23 @@ Application.prototype.detectPosition = function(){
 	        );
     	});
     }
+};
+
+Application.prototype.forwardMsg = function( message2send, receiver ) {
+
+	message2send.from = user.publicClientID;
+	message2send.to = receiver.publicClientID;
+	message2send.chatWith = receiver.publicClientID;
+	message2send.timestamp = new Date().getTime();	
+	
+	var msg2store = new Message( message2send );
+	msg2store.msgID = msg2store.assignId();
+	mailBox.storeMessage( msg2store );
+	
+	gui.showMsgInConversation( msg2store, { isReverse : false, withFX : true });					
+	
+	postman.sendMsg( message2send );
+	
 };
 
 Application.prototype.generateAsymetricKeys = function(){
@@ -3843,7 +3875,7 @@ function Dictionary(){
 			              "medium": "M/d/y"
 			            },
 			            "timeFormats": {
-			              "medium": "HH:MM",
+			              "medium": "HH:mm",
 			            },
 			            "dateTimeFormats": {
 			              "medium": "{1} {0}"
@@ -4019,7 +4051,7 @@ function Dictionary(){
 		              "medium": "d/M/y"
 		            },
 		            "timeFormats": {
-		              "medium": "HH:MM",
+		              "medium": "HH:mm",
 		            },
 		            "dateTimeFormats": {
 		              "medium": "{1} {0}"
@@ -4195,7 +4227,7 @@ function Dictionary(){
 			              "medium": "d/M/y"
 			            },
 			            "timeFormats": {
-			              "medium": "HH:MM",
+			              "medium": "HH:mm",
 			            },
 			            "dateTimeFormats": {
 			              "medium": "{1} {0}"
@@ -4372,7 +4404,7 @@ function Dictionary(){
 			              "medium": "d/M/y"
 			            },
 			            "timeFormats": {
-			              "medium": "HH:MM",
+			              "medium": "HH:mm",
 			            },
 			            "dateTimeFormats": {
 			              "medium": "{1} {0}"
@@ -4548,7 +4580,7 @@ function Dictionary(){
 			              "medium": "d/M/y"
 			            },
 			            "timeFormats": {
-			              "medium": "HH:MM",
+			              "medium": "HH:mm",
 			            },
 			            "dateTimeFormats": {
 			              "medium": "{1} {0}"
@@ -4724,7 +4756,7 @@ function Dictionary(){
 			              "medium": "d/M/y"
 			            },
 			            "timeFormats": {
-			              "medium": "HH:MM",
+			              "medium": "HH:mm",
 			            },
 			            "dateTimeFormats": {
 			              "medium": "{1} {0}"

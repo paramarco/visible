@@ -1172,8 +1172,8 @@
 
 .activity .readable .content .youtube-preview
 {
-/*	height: auto;
-	max-height: 50%; */
+/*	height: auto;*/
+	max-height: 50%; 
 	max-width: 100%;
 	width: 100%;
 }
