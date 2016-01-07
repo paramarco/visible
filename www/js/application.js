@@ -2090,22 +2090,6 @@ GUI.prototype.showLocalNotification = function(msg) {
 	}	
 };
 
-
-/*
-<button class="ytp-button ytp-share-button" aria-haspopup="true" aria-owns="ytp-share-panel" title="Compartir">
-	<svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
-		<defs>
-			<path d="m 20.20,14.19 0,-4.45 7.79,7.79 -7.79,7.79 0,-4.56 C 16.27,20.69 12.10,21.81 9.34,24.76 8.80,25.13 7.60,27.29 8.12,25.65 9.08,21.32 11.80,17.18 15.98,15.38 c 1.33,-0.60 2.76,-0.98 4.21,-1.19 z" id="ytp-svg-40"></path>
-		</defs>
-		<use class="ytp-svg-shadow" xlink:href="#ytp-svg-40"></use>
-		<use class="ytp-svg-fill" xlink:href="#ytp-svg-40"></use>
-	</svg>
-</button>
-*/
-
-
-
-
 /**
  * @param message := Message
  * @param options := { isReverse := boolean , withFX := boolean }
@@ -2224,7 +2208,10 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 	}
 	if ( options.withFX ){
 		$('.blue-r-by-end').delay(config.TIME_FADE_ACK).fadeTo(config.TIME_FADE_ACK, 0);		
-		setTimeout(	$.mobile.silentScroll( $(document).height()), config.TIME_SILENT_SCROLL );	
+		setTimeout( function() { 
+			$.mobile.silentScroll($(document).height());
+		} , 
+		config.TIME_SILENT_SCROLL );	
 	}
 
 };
