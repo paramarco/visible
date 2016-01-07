@@ -251,7 +251,7 @@
             	canvas.height = img.height;                    
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);                    
                 imageAux = document.createElement("img");
-                imageAux.src = canvas.toDataURL('image/jpg', 1.0);               				
+                imageAux.src = canvas.toDataURL('image/jpg');               				
 				_this._image = imageAux;				
 				_this._resizeViewport();
 				_this._paintCanvas();
@@ -381,7 +381,7 @@
 			if (_this._getImageFormat(_this._image) == "image/png"){
 				_this._create_image_with_datasrc(canvas.toDataURL("image/png"),	_this.hide_messagebox(),false,false,true);				
 			}else{ 				
-				_this._create_image_with_datasrc( canvas.toDataURL("image/jpeg", 0.9 ),	_this.hide_messagebox() ,false,false,true);
+				_this._create_image_with_datasrc( canvas.toDataURL("image/jpeg"), _this.hide_messagebox() ,false,false,true);
 			}			
 			this._hideAllNav();
 		},
@@ -442,7 +442,7 @@
 				canvas.height = live.clientHeight;
 				ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
 				_this._videobox.removeClass("active");
-				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg"), function() {
 					_this._videobox.removeClass("active");
 				});
 			}
@@ -458,7 +458,7 @@
 				canvas.height = _this._image.height; //canvas.height = crop.height;
 				//ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, crop.width, crop.height);
 				ctx.drawImage(_this._image, crop.left, crop.top, crop.width, crop.height, 0, 0, _this._image.width, _this._image.height);
-				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
+				_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg"), function() {
 					_this.hide_messagebox();
 				});
 			});
@@ -498,7 +498,7 @@
                     if ( _this._getImageFormat(img) == "image/png"){
                     	imageAux.src = canvas.toDataURL("image/png");
                     }else{
-                    	imageAux.src = canvas.toDataURL("image/jpg", 0.9);
+                    	imageAux.src = canvas.toDataURL("image/jpg");
                     }
                 }
 				
@@ -613,14 +613,14 @@
 			ctx.drawImage(this._painter_canvas, 0, 0, canvas.width, canvas.height);
 			if(canvas.width > 1280 && canvas.height > 800) {
 				this.set_loading().delay(200).promise().done(function() {
-					_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
+					_this._create_image_with_datasrc(canvas.toDataURL("image/jpeg"), function() {
 						_this.pen_tool_params_set();
 						_this.hide_messagebox();
 					});
 				});
 			}
 			else {
-				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg", 1.0), function() {
+				this._create_image_with_datasrc(canvas.toDataURL("image/jpeg"), function() {
 					_this.pen_tool_params_set();
 				});
 			}
@@ -693,7 +693,7 @@
 			ctx.translate(cx, cy);
 			ctx.rotate(rads);
 			ctx.drawImage(this._image, -this._image.width / 2, -this._image.height / 2);
-			this._image.src = canvas.toDataURL("image/jpeg", 0.7);
+			this._image.src = canvas.toDataURL("image/jpeg");
 			this._paintCanvas();
 			this.options.imageUpdated(this._image);
 		},

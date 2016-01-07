@@ -2585,9 +2585,7 @@ Application.prototype.bindPushEvents = function() {
 	var push = PushNotification.init( config.pushOptions );
 	
 	push.on('registration', function(data) {
-       console.log("DEBUG ::: bindPushEvents registrationId: "+ data.registrationId);
        app.sendPushRegistrationId( data.registrationId );
-       
 	});
 	push.on('notification', function(data){
 		console.log("DEBUG ::: notification: "+ JSON.stringify(data) );
@@ -3148,7 +3146,9 @@ Application.prototype.onNativeCameraInit = function( sourceType , callback) {
 	
 	console.log("DEBUG ::: Application.prototype.onNativeCameraInit");
 	
-	var options = { 	
+	var options = {
+		quality : 50,
+		encodingType : Camera.EncodingType.JPEG
 		//targetWidth: 300,
 		//targetHeight: 300
 		//saveToPhotoAlbum: true  //(this options breaks everything..)
