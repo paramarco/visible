@@ -950,9 +950,11 @@ GUI.prototype.hideLoadingSpinner = function(){
 };
 
 GUI.prototype.hideLocalNotifications = function() {
-	cordova.plugins.notification.local.clearAll(function() {
-		log.info("GUI.prototype.hideLocalNotifications - notification cleared");
-	}, this);
+	if ( app.isMobile && app.devicePlatform == "Android"){
+		cordova.plugins.notification.local.clearAll(function() {
+			log.info("GUI.prototype.hideLocalNotifications - notification cleared");
+		}, this);
+	}
 };
 GUI.prototype.loadAsideMenuMainPage = function() {
 
@@ -2060,7 +2062,8 @@ GUI.prototype.showLoadingSpinner = function(text2show){
 GUI.prototype.showLocalNotification = function(msg) {	
 	
 	if ( app.isMobile && 
-		(app.inBackground || msg.from != app.currentChatWith) ){
+		(app.inBackground || msg.from != app.currentChatWith) &&
+		 app.devicePlatform == "Android"){
 
 		var contact = contactsHandler.getContactById( msg.from );
 		var sendersName = ( contact ) ? contact.nickName : dictionary.Literals.label_16;
@@ -2069,22 +2072,22 @@ GUI.prototype.showLocalNotification = function(msg) {
 			text2show = "multimedia";
 		}else if ( msg.messageBody.messageType == "text" ){
 			text2show = decodeURI(gui._sanitize( msg.messageBody.text )).substring(0, 20);
-		}				
+		}
+		
+		var options = {
+    	    id: 0,
+    	    title: sendersName,
+    	    text: text2show     	    	
+    	};
+		if ( app.devicePlatform == "Android"){
+			options.smallIcon = "res://icon.png"  
+		}		
+		
 		cordova.plugins.notification.local.isPresent( 0 , function (present) {			
-			if (present){				
-		    	cordova.plugins.notification.local.update({
-		    	    id: 0,
-		    	    title: sendersName,
-		    	    text: text2show ,
-		    	    smallIcon : "res://icon.png"	
-		    	});		    	
+			if ( present ){				
+		    	cordova.plugins.notification.local.update( options );		    	
 		    }else{		    	
-				cordova.plugins.notification.local.schedule({
-				    id: 0,
-				    title: sendersName,
-				    text: text2show,
-				    smallIcon : "res://icon.png"
-				});	
+				cordova.plugins.notification.local.schedule( options );	
 		    }		    
 		});				
 	}	

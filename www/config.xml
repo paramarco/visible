@@ -57,7 +57,8 @@
 	<plugin name="org.apache.cordova.inappbrowser" source="pgb" spec="0.5.2" />
 	<plugin name="org.apache.cordova.network-information" source="pgb" spec="0.2.12" />
 	<plugin name="org.apache.cordova.vibration" source="pgb" spec="0.3.11" />
-	<plugin name="phonegap-plugin-push" spec="1.2.3" />
+    <plugin name="cordova-plugin-device" spec="1.0.1" source="pgb" />
+	<plugin name="phonegap-plugin-push" spec="1.2.3" source="npm" />
 
 
     <!-- Define app icon for each platform. -->
