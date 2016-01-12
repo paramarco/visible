@@ -2633,6 +2633,9 @@ Application.prototype.connect2paypal = function(myPurchase) {
 
 Application.prototype.connect2server = function(result){
 	
+	if ( typeof socket != "undefined" ){
+		socket.disconnect(); 
+	}	
 	app.symetricKey2use = user.myArrayOfKeys[result.index];
 	
 	var challengeClear = postman.decrypt(result.challenge).challenge;	
@@ -2648,14 +2651,13 @@ Application.prototype.connect2server = function(result){
   		config.portServerSockets = remoteServer.portServerSockets;
   	} 
 
-	socket = io.connect(
-		'http://' + config.ipServerSockets +  ":" + config.portServerSockets ,
-		{ 
-			forceNew : true,
-			secure : true, 
-			query : 'token=' + app.tokenSigned	
-		}
-	);
+  	var url = 'http://' + config.ipServerSockets +  ":" + config.portServerSockets ;
+  	var options = { 
+		forceNew : false,
+		secure : true, 
+		query : 'token=' + app.tokenSigned	
+	};
+  	socket = io.connect( url, options );
 	
 	socket.on('connect', function () {
 		
