@@ -102,6 +102,130 @@ Postman.prototype._isUUID = function(uuid) {
 
 };
 
+Postman.prototype.createAsymetricKeys = function() {
+
+	var cn = 'client';
+	console.log('DEBUG :::: createAsymetricKeys ::: key-pair and certificate');
+	var keys = forge.pki.rsa.generateKeyPair(512);
+	console.log('DEBUG :::: createAsymetricKeys ::: key-pair created.');
+
+	var cert = forge.pki.createCertificate();
+	cert.serialNumber = '01';
+	cert.validity.notBefore = new Date();
+	cert.validity.notAfter = new Date();
+	cert.validity.notAfter.setFullYear( cert.validity.notBefore.getFullYear() + 1);
+	var attrs = [{
+		name: 'commonName',
+	    value: cn
+	}, {
+		name: 'countryName',
+		value: 'ES'
+	}, {
+		shortName: 'ST',
+		value: 'Madrid'
+	}, {
+		name: 'localityName',
+		value: 'Madrid'
+	}, {
+		name: 'organizationName',
+	    value: 'instaltic'
+	}, {
+	    shortName: 'OU',
+	    value: 'instaltic'
+	}];
+	cert.setSubject(attrs);
+	cert.setIssuer(attrs);
+	cert.setExtensions([{
+		name: 'basicConstraints',
+	    cA: true
+	}, {
+		name: 'keyUsage',
+	    keyCertSign: true,
+	    digitalSignature: true,
+	    nonRepudiation: true,
+	    keyEncipherment: true,
+	    dataEncipherment: true
+	}, {
+		name: 'subjectAltName',
+		altNames: [{
+			type: 7, // IP
+			ip: '217.127.199.47'
+		}]
+	}]);
+
+	cert.publicKey = keys.publicKey;
+
+	// self-sign certificate
+	cert.sign(keys.privateKey);
+
+	keys.cert = cert;
+	console.log('DEBUG :::: createAsymetricKeys ::: certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	
+	return keys;
+};
+
+Postman.prototype.createTLSConnection = function( keys, serverCertPEM) {
+
+	app.clientTLS = forge.tls.createConnection({
+	  server: false,
+	  caStore: [serverCertPEM],
+	  sessionCache: {},
+	  // supported cipher suites in order of preference
+	  cipherSuites: [
+	    forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+	    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+	  virtualHost: 'authknetserver',
+	  verify: function(c, verified, depth, certs) {
+	    console.log(
+	      'TLS Client verifying certificate w/CN: \"' +
+	      certs[0].subject.getField('CN').value +
+	      '\", verified: ' + verified + '...');
+	    return verified;
+	  },
+	  connected: function(c) {
+	    console.log('Client connected...');
+
+	    // send message to server
+	    setTimeout(function() {
+	      c.prepareHeartbeatRequest('heartbeat');
+	      c.prepare('Hello Server');
+	    }, 1);
+	  },
+	  getCertificate: function(c, hint) {
+	    console.log('Client getting certificate ...');
+	    return forge.pki.certificateToPem( keys.cert );
+	  },
+	  getPrivateKey: function(c, cert) {
+	    return forge.pki.privateKeyToPem( keys.privateKey );
+	  },
+	  tlsDataReady: function(c) {
+	    // send TLS data to server
+	    //end.server.process(c.tlsData.getBytes());
+	  },
+	  dataReady: function(c) {
+	    var response = c.data.getBytes();
+	    console.log('Client received \"' + response + '\"');
+	    success = (response === 'Hello Client');
+	    c.close();
+	  },
+	  heartbeatReceived: function(c, payload) {
+	    console.log('Client received heartbeat: ' + payload.getBytes());
+	  },
+	  closed: function(c) {
+	    console.log('Client disconnected.');
+	    if(success) {
+	      console.log('PASS');
+	    } else {
+	      console.log('FAIL');
+	    }
+	  },
+	  error: function(c, error) {
+	    console.log('Client error: ' + error.message);
+	  }
+	});	
+};
+
+
 Postman.prototype.encrypt = function(message) {
 	try {    
 
@@ -2568,6 +2692,7 @@ function Application() {
 	this.events.deviceReady  = new $.Deferred();
 	this.isMobile = true;
 	this.msg2forward = null;
+	this.clientTLS = null;
 };
 
 // Bind Event Listeners
@@ -3368,6 +3493,34 @@ Application.prototype.sendRequest4Neighbours = function(){
 	}
 		
 };
+
+Application.prototype.sendRequest4TLS = function (){
+
+
+	var keys = postman.createAsymetricKeys();
+		
+	var clientscertpem = forge.pki.certificateToPem( keys.cert );		
+	
+	$.ajax({
+		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/createTLS',
+		method : "POST",
+		data: clientscertpem,
+		dataType: "json",
+		crossDomain: true,
+		xhrFields: {
+			withCredentials: false
+		}
+	})
+ 	.done(function (answer) {		
+ 		
+ 		postman.createTLSConnection( keys, answer.serversPEM );
+ 	})
+ 	.fail(function() {
+		setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
+ 	});// END HTTP POST
+};// END PKI generation
+
+
 
 
 Application.prototype.setLanguage = function(language) {

@@ -49,6 +49,19 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+
+app.post('/createTLS', function (req, res) {
+	
+//	if ( ! postMan.isPEM(req.body.clientscertpem) ) return;
+	
+	var keys = postMan.createAsymetricKeys();
+	postMan.createTLSConnection( keys, req.body.clientscertpem );
+	
+	var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
+	res.json( answer );  
+});
+
+
 app.post('/login', function (req, res) {
 	
 	if ( ! postMan.isUUID(req.body.handshakeToken) ) {
@@ -66,11 +79,6 @@ app.post('/login', function (req, res) {
 		client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
 		client.currentChallenge = uuid.v4();		
 		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-		
-		// DEBUG
-		if ( ip == "127.0.0.1")
-			ip = "129.247.31.224";
-		// DEBUG
 		
 		var clientUpdate = [ 
              brokerOfVisibles.updateClientsLocation( client, ip ) ,

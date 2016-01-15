@@ -53,7 +53,63 @@ function PostMan(_io) {
 	var clientOfDB = null;
 	var self = this;
 	var lastServerAsigned = 0;
+	var serverTLS = null;
 
+	
+	this.createTLSConnection = function( keys, clientsCertPEM) {
+
+		serverTLS = forge.tls.createConnection({
+		  server: true,
+		  caStore: [clientsCertPEM],
+		  sessionCache: {},
+		  // supported cipher suites in order of preference
+		  cipherSuites: [
+		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
+		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
+		  connected: function(c) {
+		    console.log('Server connected');
+		    c.prepareHeartbeatRequest('heartbeat');
+		  },
+		  verifyClient: true,
+		  verify: function(c, verified, depth, certs) {
+		    console.log(
+		      'Server verifying certificate w/CN: \"' +
+		      certs[0].subject.getField('CN').value +
+		      '\", verified: ' + verified + '...');
+		    return verified;
+		  },
+		  getCertificate: function(c, hint) {
+		    console.log('Server getting certificate for \"' + hint[0] + '\"...');
+		    return forge.pki.certificateToPem(keys.cert);
+		  },
+		  getPrivateKey: function(c, cert) {
+		    return forge.pki.privateKeyToPem(keys.privateKey);
+		  },
+		  tlsDataReady: function(c) {
+		    // send TLS data to client
+		    //end.client.process(c.tlsData.getBytes());
+		  },
+		  dataReady: function(c) {
+		    console.log('Server received \"' + c.data.getBytes() + '\"');
+
+		    // send response
+		    c.prepare('Hello Client');
+		    c.close();
+		  },
+		  heartbeatReceived: function(c, payload) {
+		    console.log('Server received heartbeat: ' + payload.getBytes());
+		  },
+		  closed: function(c) {
+		    console.log('Server disconnected.');
+		  },
+		  error: function(c, error) {
+		    console.log('Server error: ' + error.message);
+		  }
+		}); 	
+	};
+
+	
+	
     //TODO : what about calling `done()` to release the client back to the pool
     //	done();
     //	client.end();
@@ -561,6 +617,68 @@ function PostMan(_io) {
 	
 };	
 
+
+PostMan.prototype.createAsymetricKeys = function() {
+
+	var cn = 'authknetserver';
+	console.log('DEBUG :::: createAsymetricKeys ::: key-pair and certificate');
+	var keys = forge.pki.rsa.generateKeyPair(512);
+	console.log('DEBUG :::: createAsymetricKeys ::: key-pair created.');
+
+	var cert = forge.pki.createCertificate();
+	cert.serialNumber = '01';
+	cert.validity.notBefore = new Date();
+	cert.validity.notAfter = new Date();
+	cert.validity.notAfter.setFullYear( cert.validity.notBefore.getFullYear() + 1);
+	var attrs = [{
+		name: 'commonName',
+	    value: cn
+	}, {
+		name: 'countryName',
+		value: 'ES'
+	}, {
+		shortName: 'ST',
+		value: 'Madrid'
+	}, {
+		name: 'localityName',
+		value: 'Madrid'
+	}, {
+		name: 'organizationName',
+	    value: 'instaltic'
+	}, {
+	    shortName: 'OU',
+	    value: 'instaltic'
+	}];
+	cert.setSubject(attrs);
+	cert.setIssuer(attrs);
+	cert.setExtensions([{
+		name: 'basicConstraints',
+	    cA: true
+	}, {
+		name: 'keyUsage',
+	    keyCertSign: true,
+	    digitalSignature: true,
+	    nonRepudiation: true,
+	    keyEncipherment: true,
+	    dataEncipherment: true
+	}, {
+		name: 'subjectAltName',
+		altNames: [{
+			type: 7, // IP
+			ip: '217.127.199.47'
+		}]
+	}]);
+
+	cert.publicKey = keys.publicKey;
+
+	// self-sign certificate
+	cert.sign(keys.privateKey);
+
+	keys.cert = cert;
+	console.log('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	
+	return keys;
+};
 
 
 //verifies if it was signed with the current symmetric key of the client (number of the challenge)
