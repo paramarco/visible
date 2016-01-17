@@ -1,7 +1,7 @@
 function Config ()  {  
 
 	this.ipServerAuth = "217.127.199.47";
-	this.portServerAuth	= "80";		
+	this.portServerAuth	= "443";		
 
 	this.ipServerSockets = "217.127.199.47";
 	this.portServerSockets	= "80";

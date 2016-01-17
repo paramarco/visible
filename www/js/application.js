@@ -223,6 +223,8 @@ Postman.prototype.createTLSConnection = function( keys, serverCertPEM) {
 	    console.log('Client error: ' + error.message);
 	  }
 	});	
+	
+	app.clientTLS.handshake();
 };
 
 
@@ -2799,7 +2801,10 @@ Application.prototype.connect2server = function(result){
 		
 		if( app.isMobile ){
 			app.bindPushEvents();
-		}	
+		}
+		
+		
+		app.sendRequest4TLS();
 
 	});
 	
@@ -3504,7 +3509,7 @@ Application.prototype.sendRequest4TLS = function (){
 	$.ajax({
 		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/createTLS',
 		method : "POST",
-		data: clientscertpem,
+		data: { clientscertpem : clientscertpem },
 		dataType: "json",
 		crossDomain: true,
 		xhrFields: {

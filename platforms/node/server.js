@@ -26,18 +26,13 @@ console.log('INFO ::: Server ::: starting instance: ' + argv.instanceNumber);
 
 var app = express();
 var server;
-if ( conf.useSSL ){
-	console.log('INFO ::: Server ::: HTTPS ');
-	var credentials = {			
-		key: fs.readFileSync('sslcert/server.key', 'utf8'), 
-		cert: fs.readFileSync('sslcert/server.crt', 'utf8'),
-		requestCert: false
-	};
-	server = https.createServer(credentials, app);
+
+if ( conf.useTLS ){
+	console.log('INFO ::: Server ::: HTTP + TLS ');	
 }else{
 	console.log('INFO ::: Server ::: HTTP ');
-	server = http.createServer(app); 
 }
+server = http.createServer(app);
 
 var	io = require("socket.io")(server);
 var	brokerOfVisibles = new BrokerOfVisibles(io);
@@ -49,139 +44,145 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
+if ( conf.useTLS ){
 
-app.post('/createTLS', function (req, res) {
-	
-//	if ( ! postMan.isPEM(req.body.clientscertpem) ) return;
-	
-	var keys = postMan.createAsymetricKeys();
-	postMan.createTLSConnection( keys, req.body.clientscertpem );
-	
-	var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
-	res.json( answer );  
-});
-
-
-app.post('/login', function (req, res) {
-	
-	if ( ! postMan.isUUID(req.body.handshakeToken) ) {
-  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
-		return;
-	}
-	
-	brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
+	app.post('/createTLS', function (req, res) {
 		
-		if (client == null ){
-	  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + req.body.handshakeToken );	  		
-			return;
-		} 
+	//	if ( ! postMan.isPEM(req.body.clientscertpem) ) return;
 		
-		client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
-		client.currentChallenge = uuid.v4();		
-		var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+		var keys = postMan.createAsymetricKeys();
+		postMan.createTLSConnection( keys, req.body.clientscertpem );
 		
-		var clientUpdate = [ 
-             brokerOfVisibles.updateClientsLocation( client, ip ) ,
-		     brokerOfVisibles.updateClientsHandshake( client )
-		];
-		
-		var server2connect = postMan.getRightServer2connect();
-		//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
-		
-		// challenge forwarding to the Client
-		when.all ( clientUpdate ).then(function(){
-			res.json({
-				index: client.indexOfCurrentKey , 
-				challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client ),
-				server2connect : postMan.encrypt( server2connect , client )
-			});			
-		});	
-				
+		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
+		res.json( answer );  
 	});
-      
-});
+}
 
-app.post('/register', function (req, res) {
-	
-	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
-	
-	var publicKeyClient = forge.pki.rsa.setPublicKey( 
-		new forge.jsbn.BigInteger(req.body.n , 32) , 
-		new forge.jsbn.BigInteger("2001" , 32) 
-	);
-	
-	brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
-				
-		var answer = {
-			publicClientID : newClient.publicClientID , 
-			myArrayOfKeys : newClient.myArrayOfKeys,
-			handshakeToken : newClient.handshakeToken					 
-		};
+if ( conf.useTLS ){
+	app.post('/login', function (req, res) {
 		
-		res.json( answer );
+		if ( ! postMan.isUUID(req.body.handshakeToken) ) {
+	  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
+			return;
+		}
+		
+		brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
+			
+			if (client == null ){
+		  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + req.body.handshakeToken );	  		
+				return;
+			} 
+			
+			client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
+			client.currentChallenge = uuid.v4();		
+			var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+			
+			var clientUpdate = [ 
+	             brokerOfVisibles.updateClientsLocation( client, ip ) ,
+			     brokerOfVisibles.updateClientsHandshake( client )
+			];
+			
+			var server2connect = postMan.getRightServer2connect();
+			//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
+			
+			// challenge forwarding to the Client
+			when.all ( clientUpdate ).then(function(){
+				res.json({
+					index: client.indexOfCurrentKey , 
+					challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client ),
+					server2connect : postMan.encrypt( server2connect , client )
+				});			
+			});	
+					
+		});
+	      
+	});
+}
 
-	});	
-	  
-});
-
-
-app.post('/signin', function (req, res) {
-	
-	if ( ! postMan.isRSAmodulus(req.body.n) ) return;
-	
-	brokerOfVisibles.createNewClient().then(function (newClient){
-	
+if ( conf.useTLS ){
+	app.post('/register', function (req, res) {
+		
+		if ( ! postMan.isRSAmodulus(req.body.n) ) return;
+		
 		var publicKeyClient = forge.pki.rsa.setPublicKey( 
 			new forge.jsbn.BigInteger(req.body.n , 32) , 
 			new forge.jsbn.BigInteger("2001" , 32) 
 		);
 		
-		var bytes2encrypt = 
-			"<xml>"		+	
-				"<symetricKey>" + newClient.myArrayOfKeys[newClient.indexOfCurrentKey] + "</symetricKey>" + 
-				"<challenge>" + newClient.currentChallenge + "</challenge>" +
-				"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
-			"</xml>" ;
+		brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
+					
+			var answer = {
+				publicClientID : newClient.publicClientID , 
+				myArrayOfKeys : newClient.myArrayOfKeys,
+				handshakeToken : newClient.handshakeToken					 
+			};
 			
-		var encrypted = publicKeyClient.encrypt( bytes2encrypt , 'RSA-OAEP');
+			res.json( answer );
+	
+		});	
+		  
+	});
+}
+if ( conf.useTLS ){
+	app.post('/signin', function (req, res) {
 		
-		res.json( encrypted );
-
-	});	
-	  
-});
-
-app.post('/handshake', function (req, res) {
-	
-	if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
-	
-	var handshakeToken = req.body.handshakeToken;
-	var encrypted = decodeURI(req.body.encrypted);
-	
-	brokerOfVisibles.getClientByHandshakeToken(handshakeToken).then(function (client){
-
-		if (client != null){			
-
-			var decrypted = postMan.decryptHandshake( encrypted , client );
-			if (typeof decrypted == "undefined" || decrypted == null ){
-				res.json( { error : null } );
-				return;
-			}
+		if ( ! postMan.isRSAmodulus(req.body.n) ) return;
+		
+		brokerOfVisibles.createNewClient().then(function (newClient){
+		
+			var publicKeyClient = forge.pki.rsa.setPublicKey( 
+				new forge.jsbn.BigInteger(req.body.n , 32) , 
+				new forge.jsbn.BigInteger("2001" , 32) 
+			);
 			
-			if ( decrypted.challenge == client.currentChallenge ){
-				var answer = {
-					publicClientID : client.publicClientID , 
-					myArrayOfKeys : client.myArrayOfKeys 					 
-				};
-							
-				res.json( postMan.encryptHandshake( answer , client ) );
+			var bytes2encrypt = 
+				"<xml>"		+	
+					"<symetricKey>" + newClient.myArrayOfKeys[newClient.indexOfCurrentKey] + "</symetricKey>" + 
+					"<challenge>" + newClient.currentChallenge + "</challenge>" +
+					"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
+				"</xml>" ;
 				
-			}else {
-				console.log("DEBUG ::: handshake ::: challenge != client.currentChallenge " + challenge );
-			}
-		}		
-	});		  
-});
+			var encrypted = publicKeyClient.encrypt( bytes2encrypt , 'RSA-OAEP');
+			
+			res.json( encrypted );
+	
+		});	
+		  
+	});
+}
+if ( conf.useTLS ){
+	app.post('/handshake', function (req, res) {
+		
+		if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
+		
+		var handshakeToken = req.body.handshakeToken;
+		var encrypted = decodeURI(req.body.encrypted);
+		
+		brokerOfVisibles.getClientByHandshakeToken(handshakeToken).then(function (client){
+	
+			if (client != null){			
+	
+				var decrypted = postMan.decryptHandshake( encrypted , client );
+				if (typeof decrypted == "undefined" || decrypted == null ){
+					res.json( { error : null } );
+					return;
+				}
+				
+				if ( decrypted.challenge == client.currentChallenge ){
+					var answer = {
+						publicClientID : client.publicClientID , 
+						myArrayOfKeys : client.myArrayOfKeys 					 
+					};
+								
+					res.json( postMan.encryptHandshake( answer , client ) );
+					
+				}else {
+					console.log("DEBUG ::: handshake ::: challenge != client.currentChallenge " + challenge );
+				}
+			}		
+		});		  
+	});
+}
 
 app.post('/payment', function (req, res) {
 	
@@ -638,91 +639,107 @@ app.locals.onMessage2client = function( msg , socket){
 	});
 };
 
+if ( conf.useTLS ){
+	
+	io.sockets.on("connection", function (socket) {
+		
 
+		//XEP-0305: XMPP Quickstart
+		app.locals.onConnection( client );
+		
+		//XEP-0077: In-Band Registration
+		socket.on('disconnect',  function (msg){ app.locals.onDisconnect( socket) } );
+	   
+		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
+		socket.on("messageRetrieval", function (msg){ app.locals.onMessageRetrieval ( msg , socket) } );
+	};
+	
+}else {
+	io.adapter(redis({ host: config.redis.host , port: config.redis.port }));
 
-io.adapter(redis({ host: config.redis.host , port: config.redis.port }));
+	io.use(function(socket, next){
+		
+		console.log('DEBUG ::: io.use ::: ');
+		
+		var token = socket.handshake.query.token;
+		
+		var decodedToken = postMan.decodeHandshake(token);
+		
+		var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
+		if ( joinServerParameters == null ){ return;}  	
+		
+		brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
 
-io.use(function(socket, next){
-	
-	console.log('DEBUG ::: io.use ::: ');
-	
-	var token = socket.handshake.query.token;
-	
-	var decodedToken = postMan.decodeHandshake(token);
-	
-	var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
-	if ( joinServerParameters == null ){ return;}  	
-	
-	brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
-
-		if (client == null){
-			console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
-			return null;
-		}			
-		var verified = postMan.verifyHandshake ( token , client );		
-	  	if (client && verified == true){	  		
-	  		client.socketid = socket.id ;
-	  		// update DB
-	  		brokerOfVisibles.updateClientsProfile(client);	  		
-	  		//attaches the client to the socket
-	  		socket.visibleClient = client;	  		
-			if(client.socketid == ""){
-				console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
-			}
-			next();			
-	  	}else{
-	  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! wrong handshake');  		
-	  	}
-	  	return;
-	  	
+			if (client == null){
+				console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
+				return null;
+			}			
+			var verified = postMan.verifyHandshake ( token , client );		
+		  	if (client && verified == true){	  		
+		  		client.socketid = socket.id ;
+		  		// update DB
+		  		brokerOfVisibles.updateClientsProfile(client);	  		
+		  		//attaches the client to the socket
+		  		socket.visibleClient = client;	  		
+				if(client.socketid == ""){
+					console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
+				}
+				next();			
+		  	}else{
+		  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! wrong handshake');  		
+		  	}
+		  	return;
+		  	
+		});
 	});
-});
 
-io.sockets.on("connection", function (socket) {
-	
-	if ( typeof socket.visibleClient == 'undefined'){
-		console.log("DEBUG ::: ERROR ::: 404 " );
-		socket.disconnect(); 
-	}
-	var client = socket.visibleClient;
-	
-	//XEP-0305: XMPP Quickstart
-	app.locals.onConnection( client );
-	
-	//XEP-0077: In-Band Registration
-	socket.on('disconnect',  function (msg){ app.locals.onDisconnect( socket) } );
-   
-	//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
-	socket.on("messageRetrieval", function (msg){ app.locals.onMessageRetrieval ( msg , socket) } );
+	io.sockets.on("connection", function (socket) {
+		
+		if ( typeof socket.visibleClient == 'undefined'){
+			console.log("DEBUG ::: ERROR ::: 404 " );
+			socket.disconnect(); 
+		}
+		var client = socket.visibleClient;
+		
+		//XEP-0305: XMPP Quickstart
+		app.locals.onConnection( client );
+		
+		//XEP-0077: In-Band Registration
+		socket.on('disconnect',  function (msg){ app.locals.onDisconnect( socket) } );
+	   
+		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
+		socket.on("messageRetrieval", function (msg){ app.locals.onMessageRetrieval ( msg , socket) } );
 
-	//XEP-0184: Message Delivery Receipts
-	socket.on("MessageDeliveryACK", function (msg){ app.locals.onMessageDeliveryACK ( msg , socket) } );
-	
-	//XEP-0163: Personal Eventing Protocol
-	socket.on("ProfileRetrieval", function (msg){ app.locals.onProfileRetrieval ( msg , socket) } );
-	
-	//XEP-0084: User Avatar, XEP-0077: In-Band Registration
-	socket.on("profileUpdate", function (msg){ app.locals.onProfileUpdate ( msg , socket) } );	
-	
-	//XEP-0080: User Location
-	socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.onRequestOfListOfPeopleAround( msg , socket) } );
-	
-	//XEP-0305: XMPP Quickstart
-	socket.on("reconnectNotification", function (msg){ app.locals.onReconnectNotification ( msg, socket) } );	
-	
-	//XEP-0189: Public Key Publishing
-	socket.on("KeysDelivery", function (msg){ app.locals.onKeysDelivery ( msg , socket) } );
+		//XEP-0184: Message Delivery Receipts
+		socket.on("MessageDeliveryACK", function (msg){ app.locals.onMessageDeliveryACK ( msg , socket) } );
+		
+		//XEP-0163: Personal Eventing Protocol
+		socket.on("ProfileRetrieval", function (msg){ app.locals.onProfileRetrieval ( msg , socket) } );
+		
+		//XEP-0084: User Avatar, XEP-0077: In-Band Registration
+		socket.on("profileUpdate", function (msg){ app.locals.onProfileUpdate ( msg , socket) } );	
+		
+		//XEP-0080: User Location
+		socket.on('RequestOfListOfPeopleAround', function (msg){ app.locals.onRequestOfListOfPeopleAround( msg , socket) } );
+		
+		//XEP-0305: XMPP Quickstart
+		socket.on("reconnectNotification", function (msg){ app.locals.onReconnectNotification ( msg, socket) } );	
+		
+		//XEP-0189: Public Key Publishing
+		socket.on("KeysDelivery", function (msg){ app.locals.onKeysDelivery ( msg , socket) } );
 
-	//XEP-0189: Public Key Publishing
-	socket.on("KeysRequest", function (msg){ app.locals.onKeysRequest ( msg , socket) } );	
+		//XEP-0189: Public Key Publishing
+		socket.on("KeysRequest", function (msg){ app.locals.onKeysRequest ( msg , socket) } );	
 
-	//XEP-0184: Message Delivery Receipts
-	socket.on("message2client", function (msg){ app.locals.onMessage2client ( msg , socket) } );
-	
-	//XEP-0357: Push Notifications
-	socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
-	
-});
+		//XEP-0184: Message Delivery Receipts
+		socket.on("message2client", function (msg){ app.locals.onMessage2client ( msg , socket) } );
+		
+		//XEP-0357: Push Notifications
+		socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
+		
+	});	
+}
+
 
 var DBConnectionEstablished = [
 	postMan.initDBConnection( conf.db.user, conf.db.pass, conf.db.host, conf.db.name ),

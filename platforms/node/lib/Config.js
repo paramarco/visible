@@ -32,7 +32,7 @@ config.instance[0] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useSSL : false
+	useTLS : false
 };
 config.instance[1] = {
 	db : {
@@ -43,7 +43,7 @@ config.instance[1] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useSSL : false
+	useTLS : false
 };
 config.instance[2] = {
 	db : {
@@ -54,7 +54,7 @@ config.instance[2] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useSSL : false	
+	useTLS : false	
 };
 config.paypal = {
 	username : "",
