@@ -112,8 +112,9 @@ Postman.prototype.createAsymetricKeys = function() {
 	var cert = forge.pki.createCertificate();
 	cert.serialNumber = '01';
 	cert.validity.notBefore = new Date();
+	cert.validity.notBefore.setFullYear( cert.validity.notBefore.getFullYear() - 1);
 	cert.validity.notAfter = new Date();
-	cert.validity.notAfter.setFullYear( cert.validity.notBefore.getFullYear() + 1);
+	cert.validity.notAfter.setFullYear( cert.validity.notAfter.getFullYear() + 1);
 	var attrs = [{
 		name: 'commonName',
 	    value: cn
@@ -164,9 +165,9 @@ Postman.prototype.createAsymetricKeys = function() {
 	return keys;
 };
 
-Postman.prototype.createTLSConnection = function( keys, serverCertPEM) {
+Postman.prototype.createTLSConnection = function( keys, serverCertPEM, getDataCallback ) {
 
-	app.clientTLS = forge.tls.createConnection({
+	var clientTLS = forge.tls.createConnection({
 	  server: false,
 	  caStore: [serverCertPEM],
 	  sessionCache: {},
@@ -199,32 +200,26 @@ Postman.prototype.createTLSConnection = function( keys, serverCertPEM) {
 	    return forge.pki.privateKeyToPem( keys.privateKey );
 	  },
 	  tlsDataReady: function(c) {
-	    // send TLS data to server
-	    //end.server.process(c.tlsData.getBytes());
+	  	// send base64-encoded TLS data to server
+		try{		
+			app.authSocket.emit('data2Server', forge.util.encode64(c.tlsData.getBytes())  );			
+		}catch(e){
+			console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
+		}
 	  },
-	  dataReady: function(c) {
-	    var response = c.data.getBytes();
-	    console.log('Client received \"' + response + '\"');
-	    success = (response === 'Hello Client');
-	    c.close();
-	  },
+	  dataReady: getDataCallback ,
 	  heartbeatReceived: function(c, payload) {
 	    console.log('Client received heartbeat: ' + payload.getBytes());
 	  },
 	  closed: function(c) {
 	    console.log('Client disconnected.');
-	    if(success) {
-	      console.log('PASS');
-	    } else {
-	      console.log('FAIL');
-	    }
 	  },
 	  error: function(c, error) {
 	    console.log('Client error: ' + error.message);
 	  }
-	});	
+	});
 	
-	app.clientTLS.handshake();
+	return clientTLS;	
 };
 
 
@@ -2694,7 +2689,7 @@ function Application() {
 	this.events.deviceReady  = new $.Deferred();
 	this.isMobile = true;
 	this.msg2forward = null;
-	this.clientTLS = null;
+	this.authSocket = null;
 };
 
 // Bind Event Listeners
@@ -3501,29 +3496,45 @@ Application.prototype.sendRequest4Neighbours = function(){
 
 Application.prototype.sendRequest4TLS = function (){
 
-
-	var keys = postman.createAsymetricKeys();
-		
-	var clientscertpem = forge.pki.certificateToPem( keys.cert );		
+	var keys = postman.createAsymetricKeys();		
+	var clientPEM = forge.pki.certificateToPem( keys.cert );
+  		
+	var url = 'http://' + config.ipServerAuth +  ":" + config.portServerAuth ;
+  	app.authSocket = io.connect( url );
 	
-	$.ajax({
-		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/createTLS',
-		method : "POST",
-		data: { clientscertpem : clientscertpem },
-		dataType: "json",
-		crossDomain: true,
-		xhrFields: {
-			withCredentials: false
+  	app.authSocket.on('connect', function () {
+  		console.log("authSocket.on.connect"); 
+  		app.authSocket.emit('RequestTLSConnection',{ clientPEM : clientPEM });
+	});
+  	
+  	app.authSocket.on('ResponseTLSConnection', function (answer){
+  		app.authSocket.TLS = postman.createTLSConnection( keys, answer.serversPEM, app.authSocket.getData );
+ 		app.authSocket.TLS.handshake();
+	});
+  	
+  	app.authSocket.on('data2Client', function (data){
+		// base64-decode data and process it
+  		app.authSocket.TLS.process( forge.util.decode64( data ) );
+	});
+	
+  	app.authSocket.on('disconnect', function () {
+  		console.log("authSocket.on.disconnect"); 
+	}); 
+  	
+  	app.authSocket.getData = function(c) {
+		var response = c.data.getBytes();
+		console.log('Client received \"' + response + '\"');
+		if (response === 'Hello Client'){
+		  console.log('PASS');
+		} else {
+		  console.log('FAIL');
 		}
-	})
- 	.done(function (answer) {		
- 		
- 		postman.createTLSConnection( keys, answer.serversPEM );
- 	})
- 	.fail(function() {
-		setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
- 	});// END HTTP POST
-};// END PKI generation
+		//c.close();
+	};
+	
+	
+
+};// END sendRequest4TLS
 
 
 

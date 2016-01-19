@@ -53,14 +53,13 @@ function PostMan(_io) {
 	var clientOfDB = null;
 	var self = this;
 	var lastServerAsigned = 0;
-	var serverTLS = null;
 
 	
-	this.createTLSConnection = function( keys, clientsCertPEM) {
+	this.createTLSConnection = function( keys, clientPEM, socket, receiveDataCallback, sendDataCallback) {
 
-		serverTLS = forge.tls.createConnection({
+		var serverTLS = forge.tls.createConnection({
 		  server: true,
-		  caStore: [clientsCertPEM],
+		  caStore: [clientPEM],
 		  sessionCache: {},
 		  // supported cipher suites in order of preference
 		  cipherSuites: [
@@ -85,17 +84,8 @@ function PostMan(_io) {
 		  getPrivateKey: function(c, cert) {
 		    return forge.pki.privateKeyToPem(keys.privateKey);
 		  },
-		  tlsDataReady: function(c) {
-		    // send TLS data to client
-		    //end.client.process(c.tlsData.getBytes());
-		  },
-		  dataReady: function(c) {
-		    console.log('Server received \"' + c.data.getBytes() + '\"');
-
-		    // send response
-		    c.prepare('Hello Client');
-		    c.close();
-		  },
+		  tlsDataReady:  sendDataCallback ,
+		  dataReady: receiveDataCallback ,
 		  heartbeatReceived: function(c, payload) {
 		    console.log('Server received heartbeat: ' + payload.getBytes());
 		  },
@@ -105,7 +95,9 @@ function PostMan(_io) {
 		  error: function(c, error) {
 		    console.log('Server error: ' + error.message);
 		  }
-		}); 	
+		});
+		
+		return serverTLS;
 	};
 
 	
@@ -628,8 +620,9 @@ PostMan.prototype.createAsymetricKeys = function() {
 	var cert = forge.pki.createCertificate();
 	cert.serialNumber = '01';
 	cert.validity.notBefore = new Date();
+	cert.validity.notBefore.setFullYear( cert.validity.notBefore.getFullYear() - 1);
 	cert.validity.notAfter = new Date();
-	cert.validity.notAfter.setFullYear( cert.validity.notBefore.getFullYear() + 1);
+	cert.validity.notAfter.setFullYear( cert.validity.notAfter.getFullYear() + 1);
 	var attrs = [{
 		name: 'commonName',
 	    value: cn

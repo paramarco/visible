@@ -640,19 +640,55 @@ app.locals.onMessage2client = function( msg , socket){
 };
 
 if ( conf.useTLS ){
+	app.locals.onRequestTLSConnection = function( msg , socket){		
+		
+//		if ( ! postMan.isPEM( msg.clientPEM ) ){
+//			console.log('DEBUG ::: onRequestTLSConnection ::: something went wrong' + JSON.stringify(msg) );
+//			return;
+//		}
+		
+		var keys = postMan.createAsymetricKeys();
+		socket.TLS = postMan.createTLSConnection( keys, msg.clientPEM, socket, socket.TLS.receiveData, socket.TLS.sendData  );
+		socket.on("data2Server", function (data){
+			// base64-decode data and process it
+			socket.TLS.process( forge.util.decode64( data ) );
+		});
+		
+		socket.TLS.receiveData = function(c) {
+			console.log('Server received \"' + c.data.getBytes() + '\"');
+			// send response
+			//c.prepare('Hello Client');
+			//c.close();
+		};
+		
+		socket.TLS.sendData = function(c) {
+			// send base64-encoded TLS data to client
+			try{		
+				socket.emit('data2Client', forge.util.encode64(c.tlsData.getBytes())  );			
+			}catch(e){
+				console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
+			}
+		};
+		
+		
+		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
+		try{
+			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
+		}catch(e){
+			console.log("DEBUG ::: onRequestTLSConnection ::: send ::: exception"  + e);
+		}	
+	};
+}
+
+if ( conf.useTLS ){
 	
 	io.sockets.on("connection", function (socket) {
 		
+		socket.on("RequestTLSConnection", function (msg){ app.locals.onRequestTLSConnection ( msg , socket) } );
 
-		//XEP-0305: XMPP Quickstart
-		app.locals.onConnection( client );
-		
-		//XEP-0077: In-Band Registration
-		socket.on('disconnect',  function (msg){ app.locals.onDisconnect( socket) } );
-	   
-		//XEP-0013: Flexible Offline Message Retrieval :: 2.4 Retrieving Specific Messages
-		socket.on("messageRetrieval", function (msg){ app.locals.onMessageRetrieval ( msg , socket) } );
-	};
+		socket.on('disconnect',  function (msg){ } );	   
+
+	});
 	
 }else {
 	io.adapter(redis({ host: config.redis.host , port: config.redis.port }));
