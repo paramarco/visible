@@ -55,11 +55,11 @@ function PostMan(_io) {
 	var lastServerAsigned = 0;
 
 	
-	this.createTLSConnection = function( keys, clientPEM, socket ) {
+	this.createTLSConnection = function( options ) {
 
 		var serverTLS = forge.tls.createConnection({
 		  server: true,
-		  caStore: [clientPEM],
+		  caStore: [options.clientPEMcertificate],
 		  sessionCache: {},
 		  // supported cipher suites in order of preference
 		  cipherSuites: [
@@ -79,26 +79,28 @@ function PostMan(_io) {
 		  },
 		  getCertificate: function(c, hint) {
 		    console.log('Server getting certificate for \"' + hint[0] + '\"...');
-		    return forge.pki.certificateToPem(keys.cert);
+		    return forge.pki.certificateToPem(options.keys.cert);
 		  },
 		  getPrivateKey: function(c, cert) {
-		    return forge.pki.privateKeyToPem(keys.privateKey);
+		    return forge.pki.privateKeyToPem(options.keys.privateKey);
 		  },
 		  // send base64-encoded TLS data to client
 		  tlsDataReady:  function(c) {			
-			  try{		
-				  io.sockets.to(socket.id).emit('data2Client', forge.util.encode64(c.tlsData.getBytes()) );
+			  try{
+				  var data2send = c.tlsData.getBytes();
+				  io.sockets.to(options.socket.id).emit('data2Client', forge.util.encode64( data2send ) );
 			  }catch(e){
 				  console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
 			  }
 		  } ,
 		 // receive clear base64-encoded data from TLS from client
 		  dataReady: function(c) {
-			  console.log('Server received \"' + c.data.getBytes() + '\"');
+			  var data2receive = c.data.getBytes();
+			  console.log('Server received \"' + data2receive + '\"');
 				// send response
 				//c.prepare('Hello Client');
 				//c.close();
-				postMan.onTLSmsg( socket, c.data.getBytes() );
+			  options.onTLSmsg( options.socket, data2receive );
 		  } ,
 		  heartbeatReceived: function(c, payload) {
 		    console.log('Server received heartbeat: ' + payload.getBytes());
@@ -626,11 +628,14 @@ function PostMan(_io) {
 
 PostMan.prototype.createAsymetricKeys = function() {
 
-	var cn = 'authknetserver';
-	console.log('DEBUG :::: createAsymetricKeys ::: key-pair and certificate');
-	var keys = forge.pki.rsa.generateKeyPair(512);
+	
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	var keys = forge.pki.rsa.generateKeyPair( options );
 	console.log('DEBUG :::: createAsymetricKeys ::: key-pair created.');
 
+	var cn = 'authknetserver';
 	var cert = forge.pki.createCertificate();
 	cert.serialNumber = '01';
 	cert.validity.notBefore = new Date();
@@ -881,37 +886,6 @@ PostMan.prototype.sanitize = function(html) {
 };
 
 
-
-PostMan.prototype.onTLSmsg = function (socket , input) {
-	var obj = JSON.parse( input );
-	var event = obj.event;
-	switch (event) {
-		case "register":
-			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: do something...");
-			
-			var clientPublicKey = forge.pki.publicKeyFromPem ( obj.data.clientPEMpublicKey );
-			var modulusRSA = clientPublicKey.n.toString(32);
-			brokerOfVisibles.createNewClient( modulusRSA ).then(function (newClient){		
-						
-				var answer = {
-					event : "registration",
-					data : {
-						publicClientID : newClient.publicClientID , 
-						myArrayOfKeys : newClient.myArrayOfKeys,
-						handshakeToken : newClient.handshakeToken						
-					}										 
-				};				
-				socket.TLS.prepare( JSON.stringify(answer) );
-		
-			});
-			break;
-		case "":
-			return null;
-			break;
-		default:
-			break;
-	}
-};
 
 
 

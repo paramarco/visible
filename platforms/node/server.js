@@ -44,145 +44,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 
-if ( conf.useTLS ){
-
-	app.post('/createTLS', function (req, res) {
-		
-	//	if ( ! postMan.isPEM(req.body.clientscertpem) ) return;
-		
-		var keys = postMan.createAsymetricKeys();
-		postMan.createTLSConnection( keys, req.body.clientscertpem );
-		
-		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
-		res.json( answer );  
-	});
-}
-
-if ( conf.useTLS ){
-	app.post('/login', function (req, res) {
-		
-		if ( ! postMan.isUUID(req.body.handshakeToken) ) {
-	  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
-			return;
-		}
-		
-		brokerOfVisibles.getClientByHandshakeToken(req.body.handshakeToken).then(function(client){
-			
-			if (client == null ){
-		  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + req.body.handshakeToken );	  		
-				return;
-			} 
-			
-			client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
-			client.currentChallenge = uuid.v4();		
-			var ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
-			
-			var clientUpdate = [ 
-	             brokerOfVisibles.updateClientsLocation( client, ip ) ,
-			     brokerOfVisibles.updateClientsHandshake( client )
-			];
-			
-			var server2connect = postMan.getRightServer2connect();
-			//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
-			
-			// challenge forwarding to the Client
-			when.all ( clientUpdate ).then(function(){
-				res.json({
-					index: client.indexOfCurrentKey , 
-					challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client ),
-					server2connect : postMan.encrypt( server2connect , client )
-				});			
-			});	
-					
-		});
-	      
-	});
-}
-
-if ( conf.useTLS ){
-	app.post('/register', function (req, res) {
-		
-		if ( ! postMan.isRSAmodulus(req.body.n) ) return;
-		
-//		var publicKeyClient = forge.pki.rsa.setPublicKey( 
-//			new forge.jsbn.BigInteger(req.body.n , 32) , 
-//			new forge.jsbn.BigInteger("2001" , 32) 
-//		);
-		
-//		brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
-					
-//			var answer = {
-//				publicClientID : newClient.publicClientID , 
-//				myArrayOfKeys : newClient.myArrayOfKeys,
-//				handshakeToken : newClient.handshakeToken					 
-//			};
-			
-//			res.json( answer );
-	
-		});	
-		  
-	});
-}
-if ( conf.useTLS ){
-	app.post('/signin', function (req, res) {
-		
-		if ( ! postMan.isRSAmodulus(req.body.n) ) return;
-		
-		brokerOfVisibles.createNewClient().then(function (newClient){
-		
-			var publicKeyClient = forge.pki.rsa.setPublicKey( 
-				new forge.jsbn.BigInteger(req.body.n , 32) , 
-				new forge.jsbn.BigInteger("2001" , 32) 
-			);
-			
-			var bytes2encrypt = 
-				"<xml>"		+	
-					"<symetricKey>" + newClient.myArrayOfKeys[newClient.indexOfCurrentKey] + "</symetricKey>" + 
-					"<challenge>" + newClient.currentChallenge + "</challenge>" +
-					"<handshakeToken>" + newClient.handshakeToken + "</handshakeToken>" +
-				"</xml>" ;
-				
-			var encrypted = publicKeyClient.encrypt( bytes2encrypt , 'RSA-OAEP');
-			
-			res.json( encrypted );
-	
-		});	
-		  
-	});
-}
-if ( conf.useTLS ){
-	app.post('/handshake', function (req, res) {
-		
-		if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
-		
-		var handshakeToken = req.body.handshakeToken;
-		var encrypted = decodeURI(req.body.encrypted);
-		
-		brokerOfVisibles.getClientByHandshakeToken(handshakeToken).then(function (client){
-	
-			if (client != null){			
-	
-				var decrypted = postMan.decryptHandshake( encrypted , client );
-				if (typeof decrypted == "undefined" || decrypted == null ){
-					res.json( { error : null } );
-					return;
-				}
-				
-				if ( decrypted.challenge == client.currentChallenge ){
-					var answer = {
-						publicClientID : client.publicClientID , 
-						myArrayOfKeys : client.myArrayOfKeys 					 
-					};
-								
-					res.json( postMan.encryptHandshake( answer , client ) );
-					
-				}else {
-					console.log("DEBUG ::: handshake ::: challenge != client.currentChallenge " + challenge );
-				}
-			}		
-		});		  
-	});
-}
 
 app.post('/payment', function (req, res) {
 	
@@ -640,30 +501,116 @@ app.locals.onMessage2client = function( msg , socket){
 };
 
 if ( conf.useTLS ){
-	app.locals.onRequestTLSConnection = function( input , socket){
+	
+	app.locals.onLoginRequest = function (socket , input) {
 		
+		if ( ! postMan.isUUID( input.handshakeToken ) ) {
+	  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
+			return;
+		}
+		
+		brokerOfVisibles.getClientByHandshakeToken(input.handshakeToken).then(function(client){
+			
+			if (client == null ){
+		  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + input.handshakeToken );	  		
+				return;
+			} 
+			
+			client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
+			client.currentChallenge = uuid.v4();		
+			var sHeaders = socket.handshake.headers;
+			console.info('[%s:%s] CONNECT', sHeaders['x-forwarded-for'], sHeaders['x-forwarded-port']);
+
+			var ip = sHeaders['x-forwarded-for'];
+			console.log('DEBUG ::: onLoginRequest ::: client\'s ip: ' + ip );
+			
+			var clientUpdate = [ 
+	             brokerOfVisibles.updateClientsLocation( client, ip ) ,
+			     brokerOfVisibles.updateClientsHandshake( client )
+			];
+			
+			var server2connect = postMan.getRightServer2connect();
+			//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
+			
+			// challenge forwarding to the Client
+			when.all ( clientUpdate ).then(function(){
+				
+				var answer = {
+					event : "LoginResponse",
+					data : {
+						index: client.indexOfCurrentKey , 
+						challenge :  postMan.encrypt( { challenge : client.currentChallenge} , client ),
+						server2connect : postMan.encrypt( server2connect , client )				
+					}										 
+				};				
+				socket.TLS.prepare( JSON.stringify(answer) );
+				
+			});	
+					
+		});	//END getClientByHandshakeToken	
+		
+	};//END onLoginRequest
+	
+	app.locals.onRegistryRequest = function (socket , input) {
+		console.log("DEBUG ::: app.locals.onRegistryRequest ::: do something..." + JSON.stringify(input));
+		
+		var clientPublicKey = forge.pki.publicKeyFromPem ( input.clientPEMpublicKey );
+		var modulusRSA = clientPublicKey.n.toString(32);
+		brokerOfVisibles.createNewClient( modulusRSA ).then(function (newClient){		
+					
+			var answer = {
+				event : "registration",
+				data : {
+					publicClientID : newClient.publicClientID , 
+					myArrayOfKeys : newClient.myArrayOfKeys,
+					handshakeToken : newClient.handshakeToken						
+				}										 
+			};				
+			socket.TLS.prepare( JSON.stringify(answer) );
+	
+		});
+	};//END onRegistryRequest
+	
+	app.locals.onRequestTLSConnection = function( input , socket){
+//TODO		
 //		if ( ! postMan.isPEM( input.clientPEM ) ){ return; }
 		
-  		var request = { 
-  	  			clientPEMcertificate : clientPEMcertificate
-  	  			clientPEMpublicKey : clientPEMpublicKey
-  	  		};
-		
 		var keys = postMan.createAsymetricKeys();
-		socket.TLS = postMan.createTLSConnection( 
-			keys, 
-			input.clientPEMcertificate, 
-			socket
-		);
-		// send serversPEM for client to establish TLS connection
+		
+		var options = {
+			keys : keys,
+			clientPEMcertificate : input.clientPEMcertificate,
+			socket : socket,
+			onTLSmsg : app.locals.onTLSmsg
+	  	};
+		socket.TLS = postMan.createTLSConnection( options );
+		// send serversPEM for the client to establish TLS connection
 		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
 		try{
 			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
 		}catch(e){
 			console.log("DEBUG ::: onRequestTLSConnection ::: send ::: exception"  + e);
 		}	
-	};
-}
+	};// END onRequestTLSConnection
+	
+	app.locals.onTLSmsg = function (socket , input) {
+		console.log("DEBUG ::: app.locals.onTLSmsg ::: do something..." + JSON.stringify(input)); 
+		//TODO to use parseNotEval.....
+		var obj = JSON.parse( input );
+		var event = obj.event;
+		switch (event) {
+			case "register":
+				app.locals.onRegistryRequest( socket , obj.data);
+				break;
+			case "login":
+				app.locals.onLoginRequest( socket , obj.data);
+				break;
+			default:
+				break;
+		}
+	};// END onTLSmsg
+	
+}// END IF conf.useTLS
 
 if ( conf.useTLS ){
 	
@@ -674,7 +621,8 @@ if ( conf.useTLS ){
 		});
 		
 		// base64-decode data received from client and process it
-		socket.on("data2Server", function (data){			
+		socket.on("data2Server", function (data){
+			console.log("DEBUG ::: data2Server ::: triggered" );
 			socket.TLS.process( forge.util.decode64( data ) );
 		});
 

@@ -26,7 +26,8 @@ function UserSettings( myUser ){
 	this.myTelephone = (typeof myUser.myTelephone == "undefined" ) ? "" :myUser.myTelephone;
 	this.myEmail = (typeof myUser.myEmail == "undefined" ) ? "" : myUser.myEmail;
 	this.visibility = (typeof myUser.visibility == "undefined" ) ? "on" : myUser.visibility;
-	this.privateKey = (typeof myUser.privateKey == "undefined" ) ? {} : myUser.privateKey;
+//	this.privateKey = (typeof myUser.privateKey == "undefined" ) ? {} : myUser.privateKey;
+	this.keys = (typeof myUser.keys == "undefined" ) ? {} : myUser.keys;
 };
 UserSettings.prototype.updateUserSettings = function() {
 	var transaction = db.transaction(["usersettings"],"readwrite");	
@@ -102,35 +103,10 @@ Postman.prototype._isUUID = function(uuid) {
 
 };
 
-Postman.prototype.generateKeyPair = function() {
-	
-	
-	var options = {};
-	options.bits = 2048;
-	options.e = 0x10001;
-	
-/*	if ( $.browser.chrome ){
-	    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
-	    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
-	    var blob = new Blob(array, {type: "text/javascript"});
-	    options.workerScript  = window.URL.createObjectURL(blob);
-	}else{
-		options.workerScript = "js/prime.worker.js";
-	}
-		
-	if( typeof Worker !== "undefined" ){		
-		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
-	}else{
-		var keyPair = forge.pki.rsa.generateKeyPair( options );
-		var err;
-		app.sendKeyPair( err, keyPair);
-	}
-*/
-	var cn = 'client';
-	console.log('DEBUG :::: generateKeyPair ::: key-pair and certificate');
-	var keys = forge.pki.rsa.generateKeyPair( options );
-	console.log('DEBUG :::: generateKeyPair ::: key-pair created.');
 
+Postman.prototype.createCertificate = function( keys ) {
+	
+	var cn = 'client';
 	var cert = forge.pki.createCertificate();
 	cert.serialNumber = '01';
 	cert.validity.notBefore = new Date();
@@ -181,17 +157,45 @@ Postman.prototype.generateKeyPair = function() {
 	// self-sign certificate
 	cert.sign(keys.privateKey);
 
-	keys.cert = cert;
-	console.log('DEBUG :::: createcertificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	log.debug('createcertificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( cert) );
 	
-	return keys;
+	return cert;
+	
 };
 
-Postman.prototype.createTLSConnection = function( keys, serverCertPEM, onConnected ) {
+Postman.prototype.generateKeyPair = function() {
+	
+	var deferred = $.Deferred();
+
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	
+	if ( $.browser.chrome ){
+	    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
+	    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
+	    var blob = new Blob(array, {type: "text/javascript"});
+	    options.workerScript  = window.URL.createObjectURL(blob);
+	}else{
+		options.workerScript = "js/prime.worker.js";
+	}
+		
+	if( typeof Worker !== "undefined" ){		
+		forge.pki.rsa.generateKeyPair( options , function ( err, keyPair){
+			deferred.resolve( keyPair );
+		});
+	}else{
+		var keyPair = forge.pki.rsa.generateKeyPair( options );
+		deferred.resolve( keyPair );
+	}
+	return deferred.promise(); 
+};
+
+Postman.prototype.createTLSConnection = function( options  ) {
 
 	var clientTLS = forge.tls.createConnection({
 	  server: false,
-	  caStore: [serverCertPEM],
+	  caStore: [ options.serversPEMcertificate ],
 	  sessionCache: {},
 	  // supported cipher suites in order of preference
 	  cipherSuites: [
@@ -199,51 +203,54 @@ Postman.prototype.createTLSConnection = function( keys, serverCertPEM, onConnect
 	    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
 	  virtualHost: 'authknetserver',
 	  verify: function(c, verified, depth, certs) {
-	    console.log(
+	    log.debug(
 	      'TLS Client verifying certificate w/CN: \"' +
 	      certs[0].subject.getField('CN').value +
 	      '\", verified: ' + verified + '...');
 	    return verified;
 	  },
 	  connected: function(c) {
-	    console.log('Client connected...');
+	    log.debug('Client connected...');
 
 	    // send message to server
 	    setTimeout(function() {
 	      c.prepareHeartbeatRequest('heartbeat');
-	      c.prepare('Hello Server');
 	    }, 1);
-	    
-	    onConnected;
+		log.debug("createTLSConnection ::: onConnected was trigerred");
+	    options.onConnected();
 	  },
 	  getCertificate: function(c, hint) {
-	    console.log('Client getting certificate ...');
-	    return forge.pki.certificateToPem( keys.cert );
+	    log.debug('Client getting certificate ...');
+	    //return forge.pki.certificateToPem( options.keys.certificate );
+	    return options.keys.certificate;
 	  },
 	  getPrivateKey: function(c, cert) {
-	    return forge.pki.privateKeyToPem( keys.privateKey );
+	    return forge.pki.privateKeyToPem( options.keys.privateKey );
 	  },
 	// send base64-encoded TLS data to server
 	  tlsDataReady: function(c) {	
-		  try{		
-			  app.authSocket.emit('data2Server', forge.util.encode64(c.tlsData.getBytes()) );			
+		  try{
+			  var data2send =  c.tlsData.getBytes();
+			  log.debug("authSocket.TLS.sendData ::: sending: "  +  data2send);
+			  app.authSocket.emit('data2Server', forge.util.encode64( data2send ) );			
 		  }catch(e){
-			  console.log("DEBUG ::: authSocket.TLS.sendData ::: exception"  + e);
+			  log.debug("authSocket.TLS.sendData ::: exception"  + e);
 		  }
 	  },
 	  // receive clear base64-encoded data from TLS from server
 	  dataReady: function(c) {
-		  console.log('Client received \"' + c.data.getBytes() + '\"');
-		  postman.onTLSmsg( c.data.getBytes() );
+		  var data2receive = c.data.getBytes();
+		  log.debug('Client received \"' + data2receive + '\"');
+		  options.onTLSmsg( data2receive );
 	  },
 	  heartbeatReceived: function(c, payload) {
-	    console.log('Client received heartbeat: ' + payload.getBytes());
+	    log.debug('Client received heartbeat: ' + payload.getBytes());
 	  },
 	  closed: function(c) {
-	    console.log('Client disconnected.');
+	    log.debug('Client disconnected.');
 	  },
 	  error: function(c, error) {
-	    console.log('Client error: ' + error.message);
+	    log.debug('Client error: ' + error.message);
 	  }
 	});
 	
@@ -680,39 +687,6 @@ Postman.prototype.onMsgFromClient = function ( input ){
 	}
 };
 
-Postman.prototype.onTLSmsg = function ( input ) {
-	var obj = JSON.parse( input );
-	var event = obj.event;
-	switch (event) {
-		case "registration":
-			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: registration...");
-		
-	 		if (typeof obj.data == "undefined" || obj.data == null || 
-	 	 		typeof obj.data.publicClientID == "undefined" || obj.data.publicClientID == null ||
-	 	 		typeof obj.data.handshakeToken == "undefined" || obj.data.handshakeToken == null ){
-	 			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: do something wrong...");
-	 		}else{
- 	 		
- 		 		user = new UserSettings( obj.data );			
- 		 		user.myCurrentNick = user.publicClientID;
- 		 		user.lastProfileUpdate = new Date().getTime();			
- 				user.privateKey = app.keys.privateKey;
- 		 		//update internal DB
- 				var transaction = db.transaction(["usersettings"],"readwrite");	
- 				var store = transaction.objectStore("usersettings");
- 				var request = store.add( user );
-
- 				$.mobile.loading('hide');
- 				app.events.userSettingsLoaded.resolve(); 		
- 		 	}			
-			break;
-		case "":
-			return null;
-			break;
-		default:
-			break;
-	}
-};
 
 
 Postman.prototype.send = function(event2trigger, data  ) {
@@ -2753,7 +2727,7 @@ function Application() {
 	this.isMobile = true;
 	this.msg2forward = null;
 	this.authSocket = null;
-	this.keys = null;
+	this.keys = {};
 };
 
 // Bind Event Listeners
@@ -2844,6 +2818,7 @@ Application.prototype.connect2server = function(result){
   	var options = { 
 		forceNew : false,
 		secure : true, 
+		reconnection : false,
 		query : 'token=' + app.tokenSigned	
 	};
   	socket = io.connect( url, options );
@@ -2866,7 +2841,8 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('disconnect', function () {
 		log.info("socket.on.disconnect"); 
-		app.connecting = false;					
+		app.connecting = false;
+		//app.sendLogin();
 	});
 	
 	socket.on('reconnect_attempt', function () {
@@ -2986,7 +2962,7 @@ Application.prototype.connect2server = function(result){
 	socket.on("locationFromServer", function(input) {
 		
 		var position = postman.getLocationFromServer(input);
-		log.info("DEBUG ::: locationFromServer ::: " + JSON.stringify(position) );
+		log.info("locationFromServer ::: " + JSON.stringify(position) );
 		if (position && position != null && app.myPosition.coords.latitude == ""){			
 			app.myPosition.coords.latitude = parseFloat( position.coords.latitude ); 
 			app.myPosition.coords.longitude = parseFloat( position.coords.longitude );				
@@ -3014,18 +2990,9 @@ Application.prototype.connect2server = function(result){
 					contactsHandler.setContactOnList( contact );
 					gui.showEntryOnMainPage ( contact, false );
 				}
-				if ( contact.decryptionKeys == null ){					
-					var privateKey = forge.pki.rsa.setPrivateKey(
-						new forge.jsbn.BigInteger(user.privateKey.n , 32) , 
-						new forge.jsbn.BigInteger(user.privateKey.e, 32) , 
-						new forge.jsbn.BigInteger(user.privateKey.d, 32) ,
-						new forge.jsbn.BigInteger(user.privateKey.p, 32) ,
-						new forge.jsbn.BigInteger(user.privateKey.q, 32) ,
-						new forge.jsbn.BigInteger(user.privateKey.dP, 32) ,
-						new forge.jsbn.BigInteger(user.privateKey.dQ, 32) ,
-						new forge.jsbn.BigInteger(user.privateKey.qInv, 32) 
-					); 
-		 			var masterKeydecrypted = privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
+				if ( contact.decryptionKeys == null ){	
+					
+		 			var masterKeydecrypted = app.keys.privateKey.decrypt( data.setOfKeys.masterKeyEncrypted , 'RSA-OAEP' );
 		 				
 					var decipher = forge.cipher.createDecipher('AES-CBC', masterKeydecrypted);
 					decipher.start({ iv: data.setOfKeys.symKeysEncrypted.iv2use });
@@ -3110,7 +3077,7 @@ Application.prototype.detectPosition = function(){
 	            app.sendRequest4Neighbours();
 	        }
 	        function fail(error) {
-	        	log.info("DEBUG ::: detectPosition ::: failed " + JSON.stringify(error) );	        	
+	        	log.info("detectPosition ::: failed " + JSON.stringify(error) );	        	
 	        }
 	        navigator.geolocation.getCurrentPosition(
 	        	success, 
@@ -3161,24 +3128,28 @@ Application.prototype.registrationProcess = function(){
 	
 	gui.showWelcomeMessage( dictionary.Literals.label_35 );
 	
-	var keys = postman.generateKeyPair();
-	app.keys = keys;
-	
-	app.establishTLS( keys ).done(function (){
-		var clientPEMpublicKey = forge.pki.publicKeyToPem( keys.publicKey );
-		var registryRequest = {
-			event : "register",
-			data : {
-				clientPEMpublicKey : clientPEMpublicKey
-			}
-		};
-		var data2send = JSON.stringify( registryRequest );
-		app.authSocket.TLS.prepare( data2send ); 
-	});
+	postman.generateKeyPair().done(function ( keys ){
+		 
+		var certificate = postman.createCertificate( keys );
+		keys.certificate = forge.pki.certificateToPem( certificate );
+		app.keys = keys;
+		
+		app.establishTLS( keys ).done(function (){
+			var clientPEMpublicKey = forge.pki.publicKeyToPem( keys.publicKey );
+			var registryRequest = {
+				event : "register",
+				data : {
+					clientPEMpublicKey : clientPEMpublicKey
+				}
+			};
+			var data2send = JSON.stringify( registryRequest );
+        	log.debug("registrationProcess ::: preparing" + data2send );
 
-};	
-
-
+			app.authSocket.TLS.prepare( data2send ); 
+		});
+				
+	});	
+};
 
 Application.prototype.init = function() {
 	
@@ -3296,8 +3267,13 @@ Application.prototype.loadUserSettings = function(){
 			
 			var cursor = e.target.result;
 	     	if (cursor && typeof cursor.value.publicClientID != "undefined") {     		
-	     		user = new UserSettings(cursor.value);	
-				app.events.userSettingsLoaded.resolve(); 
+	     		user = new UserSettings(cursor.value);
+	     		
+	     		app.keys.privateKey = forge.pki.privateKeyFromPem( user.keys.privateKey );
+	     		app.keys.publicKey = forge.pki.publicKeyFromPem( user.keys.publicKey );  
+	     		app.keys.certificate = user.keys.certificate;  
+				app.events.userSettingsLoaded.resolve();
+				
 	     		return;
 	     	}else{
 	     		app.registrationProcess();
@@ -3309,9 +3285,6 @@ Application.prototype.loadUserSettings = function(){
 		//TODO what if there is no way to open the DB
 	}
 };
-
-
-
 
 // deviceready Event Handler 
 Application.prototype.onDeviceReady = function() {
@@ -3396,89 +3369,74 @@ Application.prototype.onResumeCustom =  function() {
    	
 };
 
-
-Application.prototype.sendKeyPair = function (err, keypair ){
-
-	if (err) {
-		log.debug("Application.prototype.sendKeyPair", err);
-		//app.generateAsymetricKeys();
-		return;
+Application.prototype.onTLSmsg = function ( input ) {
+	var obj = JSON.parse( input );
+	var event = obj.event;
+	switch (event) {
+		case "registration":
+			app.userRegistration( obj.data );
+			break;
+		case "LoginResponse":
+			app.connect2server( obj.data );
+			gui.hideLoadingSpinner();
+			break;			
+		default:
+			log.debug("onTLSmsg ::: any other event...");
+			break;
 	}
+};
 
-	var publicKeyClient = { n : keypair.publicKey.n.toString(32) };		
+Application.prototype.userRegistration = function( data ){
+	log.debug("userRegistration ::: registration...");
 	
-	$.ajax({
-		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/register',
-		method : "POST",
-		data: publicKeyClient,
-		dataType: "json",
-		crossDomain: true,
-		xhrFields: {
-			withCredentials: false
-		}
-	})
- 	.done(function (answer) {
- 		
- 		if (typeof answer == "undefined" || answer == null || 
- 			typeof answer.publicClientID == "undefined" || answer.publicClientID == null ||
- 			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
- 			
-	 		log.info("Application.prototype.sendKeyPair - another attempt");  		
-	 		//app.generateAsymetricKeys();
-	 		
-	 	}else{
+	if (typeof data == "undefined" || data == null || 
+ 		typeof data.publicClientID == "undefined" || data.publicClientID == null ||
+ 		typeof data.handshakeToken == "undefined" || data.handshakeToken == null ){
+		log.debug("userRegistration ::: something went wrong...");
+	}else{
+	
+ 		user = new UserSettings( data );			
+ 		user.myCurrentNick = user.publicClientID;
+ 		user.lastProfileUpdate = new Date().getTime();			
+		user.keys.privateKey = forge.pki.privateKeyToPem( app.keys.privateKey );
+		user.keys.publicKey = forge.pki.publicKeyToPem( app.keys.publicKey );
+		user.keys.certificate = app.keys.certificate;
 		
-	 		var privateKey = {
-				n: keypair.privateKey.n.toString(32),
-			    e: keypair.privateKey.e.toString(32),
-			    d: keypair.privateKey.d.toString(32),
-			    p: keypair.privateKey.p.toString(32),
-			    q: keypair.privateKey.q.toString(32),
-			    dP: keypair.privateKey.dP.toString(32),
-			    dQ: keypair.privateKey.dQ.toString(32),
-			    qInv: keypair.privateKey.qInv.toString(32)
-			};
-					 		
-	 		user = new UserSettings(answer);			
-	 		user.myCurrentNick = user.publicClientID;
-	 		user.lastProfileUpdate = new Date().getTime();			
-			user.privateKey = privateKey;
-	 		//update internal DB
-			var transaction = db.transaction(["usersettings"],"readwrite");	
-			var store = transaction.objectStore("usersettings");
-			var request = store.add( user );
+		var transaction = db.transaction(["usersettings"],"readwrite");	
+		var store = transaction.objectStore("usersettings");
+		var request = store.add( user );
 
-			$.mobile.loading('hide');
-			app.events.userSettingsLoaded.resolve(); 		
-	 	}
- 		
- 	})
- 	.fail(function() {
-		//setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
- 	});// END HTTP POST
-};// END PKI generation
+		$.mobile.loading('hide');
+		app.events.userSettingsLoaded.resolve(); 		
+ 	}			
+};
 
 Application.prototype.sendLogin = function(){
-		
+	
+	log.debug("sendLogin ");
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
-		log.debug("Application.prototype.sendLogin", app );  
+		log.debug("sendLogin", app );  
 		return;
 	} 
 	app.connecting = true;
-	gui.showLoadingSpinner();	
+	gui.showLoadingSpinner();
 	
-	$.ajax({
-		url: 'http://' + config.ipServerAuth +  ":" + config.portServerAuth + '/login',
-		method : "POST",
-		data: { handshakeToken: user.handshakeToken  },
-		dataType: "json",
-		crossDomain: true,
-		xhrFields: {
-			withCredentials: false
-		}
-	})
+	app.establishTLS( app.keys ).done(function (){
+
+		var loginRequest = {
+			event : "login",
+			data : { handshakeToken: user.handshakeToken }
+		};
+		var data2send = JSON.stringify( loginRequest );
+    	log.debug("sendLogin ::: data2send" + data2send );
+
+		app.authSocket.TLS.prepare( data2send ); 
+	});
+
+//TODO timer to try again with TLS....
+	/*
 	 .done(function (result) { 
 		app.connect2server(result);
 	 })
@@ -3489,7 +3447,8 @@ Application.prototype.sendLogin = function(){
 	 })
 	 .always(function() {
 		gui.hideLoadingSpinner();
-	 });	
+	 });
+	 */	
 };
 
 Application.prototype.sendMultimediaMsg = function( options ) {
@@ -3554,47 +3513,45 @@ Application.prototype.sendRequest4Neighbours = function(){
 Application.prototype.establishTLS = function ( keys ){
 
 	var deferred = $.Deferred();
-			
-	var clientPEMcertificate = forge.pki.certificateToPem( keys.cert );
 	
-  	var onConnnected = function(){
+  	var onConnected = function(){
+		log.debug("establishTLS ::: onConnnected was trigerred");
   		deferred.resolve(); 
-  	};	
+  	};
+  	var options = { 
+		forceNew : true
+	};
 	var url = 'http://' + config.ipServerAuth +  ":" + config.portServerAuth ;
-  	app.authSocket = io.connect( url );
+  	app.authSocket = io.connect( url, options );
 	
   	app.authSocket.on('connect', function () {
-  		console.log("authSocket.on.connect"); 
+  		log.debug("authSocket.on.connect");
   		var request = { 
-  			clientPEMcertificate : clientPEMcertificate
+  			clientPEMcertificate : app.keys.certificate
   		};
   		app.authSocket.emit('RequestTLSConnection', request);
-	});
-  	
+	});  	
   	app.authSocket.on('ResponseTLSConnection', function (answer){
-  		app.authSocket.TLS = postman.createTLSConnection( 
-  			keys, 
-  			answer.serversPEM, 
-  			onConnnected
-  		);
+  		var options = {
+			keys : app.keys,
+			serversPEMcertificate : answer.serversPEM,
+			onConnected : onConnected,
+			onTLSmsg : app.onTLSmsg
+  		};
+  		app.authSocket.TLS = postman.createTLSConnection( options );
  		app.authSocket.TLS.handshake();
-	});
-  	
+	});  	
   	// base64-decode data and process it
   	app.authSocket.on('data2Client', function (data){		
   		app.authSocket.TLS.process( forge.util.decode64( data ) );
-	});
-	
+	});	
   	app.authSocket.on('disconnect', function () {
-  		console.log("authSocket.on.disconnect"); 
+  		log.debug("authSocket.on.disconnect"); 
 	});	
   	
   	return deferred.promise();
 
 };// END establishTLS
-
-
-
 
 Application.prototype.setLanguage = function(language) {
 
@@ -5082,7 +5039,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************
