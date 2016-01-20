@@ -104,20 +104,20 @@ if ( conf.useTLS ){
 		
 		if ( ! postMan.isRSAmodulus(req.body.n) ) return;
 		
-		var publicKeyClient = forge.pki.rsa.setPublicKey( 
-			new forge.jsbn.BigInteger(req.body.n , 32) , 
-			new forge.jsbn.BigInteger("2001" , 32) 
-		);
+//		var publicKeyClient = forge.pki.rsa.setPublicKey( 
+//			new forge.jsbn.BigInteger(req.body.n , 32) , 
+//			new forge.jsbn.BigInteger("2001" , 32) 
+//		);
 		
-		brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
+//		brokerOfVisibles.createNewClient(req.body.n).then(function (newClient){		
 					
-			var answer = {
-				publicClientID : newClient.publicClientID , 
-				myArrayOfKeys : newClient.myArrayOfKeys,
-				handshakeToken : newClient.handshakeToken					 
-			};
+//			var answer = {
+//				publicClientID : newClient.publicClientID , 
+//				myArrayOfKeys : newClient.myArrayOfKeys,
+//				handshakeToken : newClient.handshakeToken					 
+//			};
 			
-			res.json( answer );
+//			res.json( answer );
 	
 		});	
 		  
@@ -640,37 +640,22 @@ app.locals.onMessage2client = function( msg , socket){
 };
 
 if ( conf.useTLS ){
-	app.locals.onRequestTLSConnection = function( msg , socket){		
+	app.locals.onRequestTLSConnection = function( input , socket){
 		
-//		if ( ! postMan.isPEM( msg.clientPEM ) ){
-//			console.log('DEBUG ::: onRequestTLSConnection ::: something went wrong' + JSON.stringify(msg) );
-//			return;
-//		}
+//		if ( ! postMan.isPEM( input.clientPEM ) ){ return; }
+		
+  		var request = { 
+  	  			clientPEMcertificate : clientPEMcertificate
+  	  			clientPEMpublicKey : clientPEMpublicKey
+  	  		};
 		
 		var keys = postMan.createAsymetricKeys();
-		socket.TLS = postMan.createTLSConnection( keys, msg.clientPEM, socket, socket.TLS.receiveData, socket.TLS.sendData  );
-		socket.on("data2Server", function (data){
-			// base64-decode data and process it
-			socket.TLS.process( forge.util.decode64( data ) );
-		});
-		
-		socket.TLS.receiveData = function(c) {
-			console.log('Server received \"' + c.data.getBytes() + '\"');
-			// send response
-			//c.prepare('Hello Client');
-			//c.close();
-		};
-		
-		socket.TLS.sendData = function(c) {
-			// send base64-encoded TLS data to client
-			try{		
-				socket.emit('data2Client', forge.util.encode64(c.tlsData.getBytes())  );			
-			}catch(e){
-				console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
-			}
-		};
-		
-		
+		socket.TLS = postMan.createTLSConnection( 
+			keys, 
+			input.clientPEMcertificate, 
+			socket
+		);
+		// send serversPEM for client to establish TLS connection
 		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
 		try{
 			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
@@ -684,7 +669,14 @@ if ( conf.useTLS ){
 	
 	io.sockets.on("connection", function (socket) {
 		
-		socket.on("RequestTLSConnection", function (msg){ app.locals.onRequestTLSConnection ( msg , socket) } );
+		socket.on("RequestTLSConnection", function (msg){ 
+			app.locals.onRequestTLSConnection ( msg , socket) 
+		});
+		
+		// base64-decode data received from client and process it
+		socket.on("data2Server", function (data){			
+			socket.TLS.process( forge.util.decode64( data ) );
+		});
 
 		socket.on('disconnect',  function (msg){ } );	   
 

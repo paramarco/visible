@@ -55,7 +55,7 @@ function PostMan(_io) {
 	var lastServerAsigned = 0;
 
 	
-	this.createTLSConnection = function( keys, clientPEM, socket, receiveDataCallback, sendDataCallback) {
+	this.createTLSConnection = function( keys, clientPEM, socket ) {
 
 		var serverTLS = forge.tls.createConnection({
 		  server: true,
@@ -84,8 +84,22 @@ function PostMan(_io) {
 		  getPrivateKey: function(c, cert) {
 		    return forge.pki.privateKeyToPem(keys.privateKey);
 		  },
-		  tlsDataReady:  sendDataCallback ,
-		  dataReady: receiveDataCallback ,
+		  // send base64-encoded TLS data to client
+		  tlsDataReady:  function(c) {			
+			  try{		
+				  io.sockets.to(socket.id).emit('data2Client', forge.util.encode64(c.tlsData.getBytes()) );
+			  }catch(e){
+				  console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
+			  }
+		  } ,
+		 // receive clear base64-encoded data from TLS from client
+		  dataReady: function(c) {
+			  console.log('Server received \"' + c.data.getBytes() + '\"');
+				// send response
+				//c.prepare('Hello Client');
+				//c.close();
+				postMan.onTLSmsg( socket, c.data.getBytes() );
+		  } ,
 		  heartbeatReceived: function(c, payload) {
 		    console.log('Server received heartbeat: ' + payload.getBytes());
 		  },
@@ -865,6 +879,41 @@ PostMan.prototype.sanitize = function(html) {
 	} while (html !== oldHtml);
 	return html.replace(/</g, '&lt;').replace(/\'/g, "&#39");
 };
+
+
+
+PostMan.prototype.onTLSmsg = function (socket , input) {
+	var obj = JSON.parse( input );
+	var event = obj.event;
+	switch (event) {
+		case "register":
+			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: do something...");
+			
+			var clientPublicKey = forge.pki.publicKeyFromPem ( obj.data.clientPEMpublicKey );
+			var modulusRSA = clientPublicKey.n.toString(32);
+			brokerOfVisibles.createNewClient( modulusRSA ).then(function (newClient){		
+						
+				var answer = {
+					event : "registration",
+					data : {
+						publicClientID : newClient.publicClientID , 
+						myArrayOfKeys : newClient.myArrayOfKeys,
+						handshakeToken : newClient.handshakeToken						
+					}										 
+				};				
+				socket.TLS.prepare( JSON.stringify(answer) );
+		
+			});
+			break;
+		case "":
+			return null;
+			break;
+		default:
+			break;
+	}
+};
+
+
 
 PostMan.prototype.escape = function (str) {
     return str.replace(/[\0\x08\x09\x1a\n\r"'\\\%]/g, function (char) {

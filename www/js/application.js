@@ -102,12 +102,34 @@ Postman.prototype._isUUID = function(uuid) {
 
 };
 
-Postman.prototype.createAsymetricKeys = function() {
-
+Postman.prototype.generateKeyPair = function() {
+	
+	
+	var options = {};
+	options.bits = 2048;
+	options.e = 0x10001;
+	
+/*	if ( $.browser.chrome ){
+	    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
+	    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
+	    var blob = new Blob(array, {type: "text/javascript"});
+	    options.workerScript  = window.URL.createObjectURL(blob);
+	}else{
+		options.workerScript = "js/prime.worker.js";
+	}
+		
+	if( typeof Worker !== "undefined" ){		
+		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
+	}else{
+		var keyPair = forge.pki.rsa.generateKeyPair( options );
+		var err;
+		app.sendKeyPair( err, keyPair);
+	}
+*/
 	var cn = 'client';
-	console.log('DEBUG :::: createAsymetricKeys ::: key-pair and certificate');
-	var keys = forge.pki.rsa.generateKeyPair(512);
-	console.log('DEBUG :::: createAsymetricKeys ::: key-pair created.');
+	console.log('DEBUG :::: generateKeyPair ::: key-pair and certificate');
+	var keys = forge.pki.rsa.generateKeyPair( options );
+	console.log('DEBUG :::: generateKeyPair ::: key-pair created.');
 
 	var cert = forge.pki.createCertificate();
 	cert.serialNumber = '01';
@@ -160,12 +182,12 @@ Postman.prototype.createAsymetricKeys = function() {
 	cert.sign(keys.privateKey);
 
 	keys.cert = cert;
-	console.log('DEBUG :::: createAsymetricKeys ::: certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	console.log('DEBUG :::: createcertificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
 	
 	return keys;
 };
 
-Postman.prototype.createTLSConnection = function( keys, serverCertPEM, getDataCallback ) {
+Postman.prototype.createTLSConnection = function( keys, serverCertPEM, onConnected ) {
 
 	var clientTLS = forge.tls.createConnection({
 	  server: false,
@@ -191,6 +213,8 @@ Postman.prototype.createTLSConnection = function( keys, serverCertPEM, getDataCa
 	      c.prepareHeartbeatRequest('heartbeat');
 	      c.prepare('Hello Server');
 	    }, 1);
+	    
+	    onConnected;
 	  },
 	  getCertificate: function(c, hint) {
 	    console.log('Client getting certificate ...');
@@ -199,15 +223,19 @@ Postman.prototype.createTLSConnection = function( keys, serverCertPEM, getDataCa
 	  getPrivateKey: function(c, cert) {
 	    return forge.pki.privateKeyToPem( keys.privateKey );
 	  },
-	  tlsDataReady: function(c) {
-	  	// send base64-encoded TLS data to server
-		try{		
-			app.authSocket.emit('data2Server', forge.util.encode64(c.tlsData.getBytes())  );			
-		}catch(e){
-			console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
-		}
+	// send base64-encoded TLS data to server
+	  tlsDataReady: function(c) {	
+		  try{		
+			  app.authSocket.emit('data2Server', forge.util.encode64(c.tlsData.getBytes()) );			
+		  }catch(e){
+			  console.log("DEBUG ::: authSocket.TLS.sendData ::: exception"  + e);
+		  }
 	  },
-	  dataReady: getDataCallback ,
+	  // receive clear base64-encoded data from TLS from server
+	  dataReady: function(c) {
+		  console.log('Client received \"' + c.data.getBytes() + '\"');
+		  postman.onTLSmsg( c.data.getBytes() );
+	  },
 	  heartbeatReceived: function(c, payload) {
 	    console.log('Client received heartbeat: ' + payload.getBytes());
 	  },
@@ -651,6 +679,41 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		
 	}
 };
+
+Postman.prototype.onTLSmsg = function ( input ) {
+	var obj = JSON.parse( input );
+	var event = obj.event;
+	switch (event) {
+		case "registration":
+			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: registration...");
+		
+	 		if (typeof obj.data == "undefined" || obj.data == null || 
+	 	 		typeof obj.data.publicClientID == "undefined" || obj.data.publicClientID == null ||
+	 	 		typeof obj.data.handshakeToken == "undefined" || obj.data.handshakeToken == null ){
+	 			console.log("DEBUG ::: PostMan.prototype.onTLSmsg ::: do something wrong...");
+	 		}else{
+ 	 		
+ 		 		user = new UserSettings( obj.data );			
+ 		 		user.myCurrentNick = user.publicClientID;
+ 		 		user.lastProfileUpdate = new Date().getTime();			
+ 				user.privateKey = app.keys.privateKey;
+ 		 		//update internal DB
+ 				var transaction = db.transaction(["usersettings"],"readwrite");	
+ 				var store = transaction.objectStore("usersettings");
+ 				var request = store.add( user );
+
+ 				$.mobile.loading('hide');
+ 				app.events.userSettingsLoaded.resolve(); 		
+ 		 	}			
+			break;
+		case "":
+			return null;
+			break;
+		default:
+			break;
+	}
+};
+
 
 Postman.prototype.send = function(event2trigger, data  ) {
 	
@@ -2690,6 +2753,7 @@ function Application() {
 	this.isMobile = true;
 	this.msg2forward = null;
 	this.authSocket = null;
+	this.keys = null;
 };
 
 // Bind Event Listeners
@@ -2798,9 +2862,6 @@ Application.prototype.connect2server = function(result){
 			app.bindPushEvents();
 		}
 		
-		
-		app.sendRequest4TLS();
-
 	});
 	
 	socket.on('disconnect', function () {
@@ -3094,32 +3155,27 @@ Application.prototype.forwardMsg = function( message2send, receiver ) {
 	
 };
 
-Application.prototype.generateAsymetricKeys = function(){
+Application.prototype.registrationProcess = function(){
 	
 	gui.hideLoadingSpinner();
 	
-	var options = {};
-	options.bits = 2048;
-	options.e = 0x10001;
+	gui.showWelcomeMessage( dictionary.Literals.label_35 );
 	
-	gui.showWelcomeMessage( dictionary.Literals.label_35 );	
+	var keys = postman.generateKeyPair();
+	app.keys = keys;
 	
-	if ( $.browser.chrome ){
-	    var base_url = window.location.href.replace(/\\/g,'/').replace(/\/[^\/]*$/, '');
-	    var array = ['var base_url = "' + base_url + '";' + $('#worker_1').html()];
-	    var blob = new Blob(array, {type: "text/javascript"});
-	    options.workerScript  = window.URL.createObjectURL(blob);
-	}else{
-		options.workerScript = "js/prime.worker.js";
-	}
-		
-	if( typeof Worker !== "undefined" ){		
-		forge.pki.rsa.generateKeyPair( options , app.sendKeyPair );
-	}else{
-		var keyPair = forge.pki.rsa.generateKeyPair( options );
-		var err;
-		app.sendKeyPair( err, keyPair);
-	}
+	app.establishTLS( keys ).done(function (){
+		var clientPEMpublicKey = forge.pki.publicKeyToPem( keys.publicKey );
+		var registryRequest = {
+			event : "register",
+			data : {
+				clientPEMpublicKey : clientPEMpublicKey
+			}
+		};
+		var data2send = JSON.stringify( registryRequest );
+		app.authSocket.TLS.prepare( data2send ); 
+	});
+
 };	
 
 
@@ -3223,7 +3279,7 @@ Application.prototype.loadStoredData = function() {
 	
 	this.indexedDBHandler.onerror = function(e){		
 		log.debug("indexedDBHandler.onerror", e);
- 		app.generateAsymetricKeys();		
+ 		//TODO what if there is no way to open the DB		
 	};
 	this.indexedDBHandler.onblocked = function(){
 		log.debug("indexedDBHandler.onblocked");
@@ -3244,13 +3300,13 @@ Application.prototype.loadUserSettings = function(){
 				app.events.userSettingsLoaded.resolve(); 
 	     		return;
 	     	}else{
-	     		app.generateAsymetricKeys();
+	     		app.registrationProcess();
 	     	   	return;	     		
 	     	}
 		};		
 	}catch(e){
 		log.debug("Application.prototype.loadUserSettings", e);	   
-		app.generateAsymetricKeys();
+		//TODO what if there is no way to open the DB
 	}
 };
 
@@ -3345,7 +3401,7 @@ Application.prototype.sendKeyPair = function (err, keypair ){
 
 	if (err) {
 		log.debug("Application.prototype.sendKeyPair", err);
-		app.generateAsymetricKeys();
+		//app.generateAsymetricKeys();
 		return;
 	}
 
@@ -3368,7 +3424,7 @@ Application.prototype.sendKeyPair = function (err, keypair ){
  			typeof answer.handshakeToken == "undefined" || answer.handshakeToken == null ){
  			
 	 		log.info("Application.prototype.sendKeyPair - another attempt");  		
-	 		app.generateAsymetricKeys();
+	 		//app.generateAsymetricKeys();
 	 		
 	 	}else{
 		
@@ -3398,7 +3454,7 @@ Application.prototype.sendKeyPair = function (err, keypair ){
  		
  	})
  	.fail(function() {
-		setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
+		//setTimeout( app.generateAsymetricKeys , config.TIME_WAIT_HTTP_POST );
  	});// END HTTP POST
 };// END PKI generation
 
@@ -3494,47 +3550,48 @@ Application.prototype.sendRequest4Neighbours = function(){
 		
 };
 
-Application.prototype.sendRequest4TLS = function (){
 
-	var keys = postman.createAsymetricKeys();		
-	var clientPEM = forge.pki.certificateToPem( keys.cert );
-  		
+Application.prototype.establishTLS = function ( keys ){
+
+	var deferred = $.Deferred();
+			
+	var clientPEMcertificate = forge.pki.certificateToPem( keys.cert );
+	
+  	var onConnnected = function(){
+  		deferred.resolve(); 
+  	};	
 	var url = 'http://' + config.ipServerAuth +  ":" + config.portServerAuth ;
   	app.authSocket = io.connect( url );
 	
   	app.authSocket.on('connect', function () {
   		console.log("authSocket.on.connect"); 
-  		app.authSocket.emit('RequestTLSConnection',{ clientPEM : clientPEM });
+  		var request = { 
+  			clientPEMcertificate : clientPEMcertificate
+  		};
+  		app.authSocket.emit('RequestTLSConnection', request);
 	});
   	
   	app.authSocket.on('ResponseTLSConnection', function (answer){
-  		app.authSocket.TLS = postman.createTLSConnection( keys, answer.serversPEM, app.authSocket.getData );
+  		app.authSocket.TLS = postman.createTLSConnection( 
+  			keys, 
+  			answer.serversPEM, 
+  			onConnnected
+  		);
  		app.authSocket.TLS.handshake();
 	});
   	
-  	app.authSocket.on('data2Client', function (data){
-		// base64-decode data and process it
+  	// base64-decode data and process it
+  	app.authSocket.on('data2Client', function (data){		
   		app.authSocket.TLS.process( forge.util.decode64( data ) );
 	});
 	
   	app.authSocket.on('disconnect', function () {
   		console.log("authSocket.on.disconnect"); 
-	}); 
+	});	
   	
-  	app.authSocket.getData = function(c) {
-		var response = c.data.getBytes();
-		console.log('Client received \"' + response + '\"');
-		if (response === 'Hello Client'){
-		  console.log('PASS');
-		} else {
-		  console.log('FAIL');
-		}
-		//c.close();
-	};
-	
-	
+  	return deferred.promise();
 
-};// END sendRequest4TLS
+};// END establishTLS
 
 
 
