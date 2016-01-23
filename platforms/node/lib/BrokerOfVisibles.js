@@ -76,7 +76,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('getListOfPeopleAround ::: upss nobody around');
+			    	logger.error('getListOfPeopleAround ::: upss nobody around');
 			    	return  d.resolve([]);
 			    }			    
 			    
@@ -99,7 +99,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    return  d.resolve(listOfVisibles);
 			    
 		    }catch (ex) {
-				console.log("getListOfPeopleAround  :::  exceptrion thrown " + ex  );
+				logger.error("getListOfPeopleAround  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -141,7 +141,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('getClientById ::: publicClientID not found');
+			    	logger.error('getClientById ::: publicClientID not found');
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -183,7 +183,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("getClientById  :::  exception thrown " + ex  );
+				logger.error("getClientById  :::  exception thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -225,7 +225,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('getClientByHandshakeToken ::: I dont know any publicClientID like this');
+			    	logger.error('getClientByHandshakeToken ::: I dont know any publicClientID like this');
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -267,7 +267,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("getClientByHandshakeToken  :::  exceptrion thrown " + ex  );
+				logger.error("getClientByHandshakeToken  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -301,7 +301,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('getProfileByID ::: I dont know any publicClientID like this');
+			    	logger.error('getProfileByID ::: I dont know any publicClientID like this');
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -328,7 +328,7 @@ function BrokerOfVisibles(_io, _logger) {
 					}
 					
 					if (typeof result.rows[0] == "undefined"){
-				    	console.log('getProfileByID ::: I dont know any publicClientID like this');
+				    	logger.error('getProfileByID ::: I dont know any publicClientID like this');
 				    	return  d.resolve(null);
 				    }
 		    		    
@@ -340,7 +340,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    
 			    
 		    }catch (ex) {
-				console.log("getProfileByID  :::  exceptrion thrown " + ex  );
+				logger.error("getProfileByID  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -370,7 +370,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"){
-			    	console.log('getPushRegistryByID ::: publicClientID not found');
+			    	logger.error('getPushRegistryByID ::: publicClientID not found');
 			    	return  d.resolve( null );
 			    }
 		    		    
@@ -381,7 +381,7 @@ function BrokerOfVisibles(_io, _logger) {
 				return d.resolve( pushRegistry );	    
 			    
 		    }catch (ex) {
-				console.log("getPushRegistryByID ::: exception " + ex  );
+				logger.error("getPushRegistryByID ::: exception " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -496,7 +496,7 @@ function BrokerOfVisibles(_io, _logger) {
 				logger.error('updateClientsLocation :::error running query', err);	
 						
 		    if (typeof result == "undefined"){
-				console.log('updateClientsLocation ::: could not resolve location by IP');
+				logger.error('updateClientsLocation ::: could not resolve location by IP');
 				return  d.resolve(false);
 			}
 				    
@@ -626,7 +626,7 @@ function BrokerOfVisibles(_io, _logger) {
 			});		
 		}
 		catch(e){
-			console.log("evaluateResponseToTheChanllenge ::: joinServerParameters probably null");
+			logger.error("evaluateResponseToTheChanllenge ::: joinServerParameters probably null");
 		}
 	
 		return client;
@@ -663,7 +663,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    	
 			    if (typeof result.rows[0] == "undefined" || 
 			    	result.rows[0].socketid == null ){
-			    	//console.log('isClientOnline ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
+			    	//logger.error('isClientOnline ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -702,7 +702,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    return  d.resolve(client);
 			    
 		    }catch (ex) {
-				console.log("isClientOnline  :::  exceptrion thrown " + ex  );
+				logger.error("isClientOnline  :::  exceptrion thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -721,14 +721,14 @@ BrokerOfVisibles.prototype.isLocationWellFormatted = function( location ) {
 				location.lon == '' ||
 			 	Object.keys(location).length != 2 ) {
 			
-			console.log("isLocationWellFormatted ::: didnt pass the format check 1 :" + JSON.stringify( location ) );
+			console.error("isLocationWellFormatted ::: didnt pass the format check 1 :" + JSON.stringify( location ) );
 			return false;
 		}
 		
 		return true; 
 	}
 	catch (ex) {
-		console.log("isLocationWellFormatted ::: didnt pass the format check ex: " + ex  + ex.stack );
+		console.error("isLocationWellFormatted ::: didnt pass the format check ex: " + ex  + ex.stack );
 		return false;
 	}	
 };

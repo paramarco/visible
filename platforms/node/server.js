@@ -37,7 +37,7 @@ log4js.configure({
 });
 var logger = log4js.getLogger('LOG');
 logger.setLevel('DEBUG');
-logger.debug('starting instance: ' + argv.instanceNumber);
+logger.info('starting instance: ' + argv.instanceNumber);
 
 var app = express();
 var server;
@@ -528,8 +528,6 @@ if ( conf.useTLS ){
 			client.indexOfCurrentKey = Math.floor((Math.random() * 7) + 0);
 			client.currentChallenge = uuid.v4();		
 			var sHeaders = socket.handshake.headers;
-			console.info('[%s:%s] CONNECT', sHeaders['x-forwarded-for'], sHeaders['x-forwarded-port']);
-
 			var ip = sHeaders['x-forwarded-for'];
 			logger.info('onLoginRequest ::: client\'s ip: ' + ip );
 			
@@ -603,7 +601,6 @@ if ( conf.useTLS ){
 	};// END onRequestTLSConnection
 	
 	app.locals.onTLSmsg = function (socket , input) {
-		logger.info("app.locals.onTLSmsg ::: do something..." + JSON.stringify(input)); 
 		//TODO to use parseNotEval.....
 		var obj = JSON.parse( input );
 		var event = obj.event;
@@ -631,7 +628,6 @@ if ( conf.useTLS ){
 		
 		// base64-decode data received from client and process it
 		socket.on("data2Server", function (data){
-			logger.info("data2Server ::: triggered" );
 			socket.TLS.process( forge.util.decode64( data ) );
 		});
 

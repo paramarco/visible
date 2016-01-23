@@ -3422,7 +3422,7 @@ Application.prototype.sendLogin = function(){
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
-		log.debug("sendLogin", app );  
+		log.debug("sendLogin");  
 		return;
 	} 
 	app.connecting = true;
@@ -3443,8 +3443,9 @@ Application.prototype.sendLogin = function(){
 		},
 		onClosed : function(){} ,
 		onDisconnected : function(){
-			app.authSocket.TLS.close();
-			
+			if ( typeof app.authSocket.TLS != "undefined" ){
+				app.authSocket.TLS.close();
+			}			
 		} ,
 		onError : function(){
 			app.connecting = false; 
@@ -3453,8 +3454,10 @@ Application.prototype.sendLogin = function(){
 			
 		},
 		onReconnect : function(){
-			app.authSocket.TLS.close();
-			app.authSocket.disconnect();
+			if ( typeof app.authSocket.TLS != "undefined" ){
+				app.authSocket.TLS.close();
+				app.authSocket.disconnect();
+			}
 			app.sendLogin();
 		},
 		onConnect_error :function(){

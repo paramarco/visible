@@ -67,19 +67,19 @@ function PostMan(_io, _logger) {
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
 		  connected: function(c) {
-		    logger.debug('Server connected');
+		    logger.info('Server connected');
 		    c.prepareHeartbeatRequest('heartbeat');
 		  },
 		  verifyClient: true,
 		  verify: function(c, verified, depth, certs) {
-		    logger.debug(
+		    logger.info(
 		      'Server verifying certificate w/CN: \"' +
 		      certs[0].subject.getField('CN').value +
 		      '\", verified: ' + verified + '...');
 		    return verified;
 		  },
 		  getCertificate: function(c, hint) {
-		    logger.debug('Server getting certificate for \"' + hint[0] + '\"...');
+		    logger.info('Server getting certificate for \"' + hint[0] + '\"...');
 		    return forge.pki.certificateToPem(options.keys.cert);
 		  },
 		  getPrivateKey: function(c, cert) {
@@ -91,23 +91,20 @@ function PostMan(_io, _logger) {
 				  var data2send = c.tlsData.getBytes();
 				  io.sockets.to(options.socket.id).emit('data2Client', forge.util.encode64( data2send ) );
 			  }catch(e){
-				  logger.debug("createTLSConnection ::: exception"  + e);
+				  logger.erro("createTLSConnection ::: exception"  + e);
 			  }
 		  } ,
 		 // receive clear base64-encoded data from TLS from client
 		  dataReady: function(c) {
 			  var data2receive = c.data.getBytes();
-			  logger.debug('Server received \"' + data2receive + '\"');
-				// send response
-				//c.prepare('Hello Client');
-				//c.close();
+			  //logger.debug('Server received \"' + data2receive + '\"');
 			  options.onTLSmsg( options.socket, data2receive );
 		  } ,
 		  heartbeatReceived: function(c, payload) {
-		    logger.debug('Server received heartbeat: ' + payload.getBytes());
+		    //logger.debug('Server received heartbeat: ' + payload.getBytes());
 		  },
 		  closed: function(c) {
-		    logger.debug('Server disconnected.');
+		    //logger.debug('Server disconnected.');
 		  },
 		  error: function(c, error) {
 		    logger.debug('Server error: ' + error.message);
@@ -634,7 +631,7 @@ PostMan.prototype.createAsymetricKeys = function() {
 	options.bits = 2048;
 	options.e = 0x10001;
 	var keys = forge.pki.rsa.generateKeyPair( options );
-	logger.debug('DEBUG :::: createAsymetricKeys ::: key-pair created.');
+	console.error('createAsymetricKeys ::: key-pair created.');
 
 	var cn = 'authknetserver';
 	var cert = forge.pki.createCertificate();
@@ -688,7 +685,7 @@ PostMan.prototype.createAsymetricKeys = function() {
 	cert.sign(keys.privateKey);
 
 	keys.cert = cert;
-	logger.debug('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	//console.info('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
 	
 	return keys;
 };
@@ -710,17 +707,17 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge ) , client );
 		
 		if (decryptedChallenge == null || client == null){
-			logger.debug("verifyHandshake  :::  decryptedChallenge : " + JSON.stringify(decryptedChallenge) +  " client : " + JSON.stringify(client)  );
+			console.error("verifyHandshake  :::  decryptedChallenge : " + JSON.stringify(decryptedChallenge) +  " client : " + JSON.stringify(client)  );
 			return false; 
 		}
 		
 		if (decryptedChallenge.challengeClear != client.currentChallenge){
 			verified = false;
-			logger.debug("verifyHandshake  :::  challenge different than current challenge "  );
+			console.error("verifyHandshake  :::  challenge different than current challenge "  );
 		}
 	} 
 	catch (ex) {	
-		logger.debug("verifyHandshake  :::  exception thrown "  + ex); 
+		console.error("verifyHandshake  :::  exception thrown "  + ex); 
 	}
 
 	return verified; 	
@@ -738,7 +735,7 @@ PostMan.prototype.decodeHandshake = function(sJWS) {
 		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 	} 
 	catch (ex) {	
-		logger.debug("decodeHandshake  :::  exception thrown "  + ex.toString() ); 
+		console.error("decodeHandshake  :::  exception thrown "  + ex.toString() ); 
 	}
 
 	return decodedHandshake; 	
@@ -756,12 +753,12 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 			typeof joinParameters.challenge !== 'string'  ||
 			joinParameters.challenge.length > config.MAX_SIZE_CHALLENGE ||
 			Object.keys(joinParameters).length != 2 ) {	
-				logger.debug("getJoinServerParameters  ::: didnt pass the typechecking " ); 
+				console.error("getJoinServerParameters  ::: didnt pass the typechecking " ); 
 				joinParameters = null;				
 		}	
 	} 
 	catch (ex) {	
-		logger.debug("getJoinServerParameters  :::  exceptrion thrown :"  + ex); 
+		console.error("getJoinServerParameters  :::  exceptrion thrown :"  + ex); 
 		joinParameters = null;	
 	}
 
@@ -779,11 +776,11 @@ PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 			Object.keys(parameters).length != 1 ||
 			Object.keys(parameters.location).length != 2) {	
 				parameters = null;
-				logger.debug("getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
+				console.error("getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
 		}	
 	} 
 	catch (ex) {	
-		logger.debug("getRequestWhoIsaround  :::  exceptrion thrown :"  + ex); 
+		console.error("getRequestWhoIsaround  :::  exceptrion thrown :"  + ex); 
 		parameters = null;	
 	}
 
@@ -802,13 +799,13 @@ PostMan.prototype.getMessageRetrieval = function(encryptedInput , client) {
 			PostMan.prototype.isUUID(retrievalParameters.msgID) == false ||
 			Object.keys(retrievalParameters).length != 1 ) {
 			
-			logger.debug("getMessageRetrieval  :::  didn't pass the format check "   );
+			console.error("getMessageRetrieval  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
 		return retrievalParameters;
 	} 
 	catch (ex) {
-		logger.debug("getMessageRetrieval  :::  exceptrion thrown " + ex  );
+		console.error("getMessageRetrieval  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -829,13 +826,13 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ||
 			!(parameters.visibility == "on" || parameters.visibility == "off" )   ) {
 			
-			logger.debug("getProfileResponseParameters  :::  didn't pass the format check "   );
+			console.error("getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
 		return parameters;
 	} 
 	catch (ex) {
-		logger.debug("getProfileResponseParameters  :::  exceptrion thrown " + ex  );
+		console.error("getProfileResponseParameters  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -852,13 +849,13 @@ PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , clie
 			! (typeof parameters.lastProfileUpdate == 'number' ||  parameters.lastProfileUpdate == null ) || 	 
 			Object.keys(parameters).length != 3) {
 			
-			logger.debug("getProfileRetrievalParameters  :::  didn't pass the format check "  + JSON.stringify(parameters) );
+			console.error("getProfileRetrievalParameters  :::  didn't pass the format check "  + JSON.stringify(parameters) );
 			retrievalParameters = null; 
 		}
 		return parameters;
 	} 
 	catch (ex) {
-		logger.debug("getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
+		console.error("getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -936,7 +933,7 @@ PostMan.prototype.encrypt = function(message , client) {
 
 	}
 	catch (ex) {	
-		logger.debug("encrypt  :::  " + ex);
+		console.error("encrypt  :::  " + ex);
 		return null;
 	}	
 };
@@ -944,7 +941,7 @@ PostMan.prototype.encrypt = function(message , client) {
 PostMan.prototype.decrypt = function(encrypted, client) {
 	
 	if (encrypted.length > config.MAX_SIZE_SMS){
-		logger.debug("decrypt :::  size of SMS:" + encrypted.length );
+		console.error("decrypt :::  size of SMS:" + encrypted.length );
 		return null;
 	} 
 	
@@ -990,7 +987,7 @@ PostMan.prototype.encryptHandshake = function(message , client) {
 
 	}
 	catch (ex) {	
-		logger.debug("encryptHandshake  :::  " + ex);
+		console.error("encryptHandshake  :::  " + ex);
 		return null;
 	}	
 };
@@ -1017,7 +1014,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 			typeof inputMessage.ACKfromAddressee !== 'boolean' ||
 			Object.keys(inputMessage).length != 10	) 	{	
 			
-			logger.debug("getMessage  ::: didn't pass the format check 1" );
+			console.error("getMessage  ::: didn't pass the format check 1" );
 			
 			return null;
 		}	
@@ -1025,7 +1022,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 		if ( inputMessage.size > config.MAX_SIZE_IMG ||
 			PostMan.prototype.lengthTest(inputMessage.messageBody , config.MAX_SIZE_IMG ) == false 	) 	{	
 			
-			logger.debug("getMessage  ::: didn't pass the format check 2" );
+			console.error("getMessage  ::: didn't pass the format check 2" );
 			return null;
 		}
 		
@@ -1035,7 +1032,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 		return message;
 	}
 	catch (ex) {	
-		logger.debug("getMessage  ::: didnt pass the format check ex:" + ex  + ex.stack ); 	
+		console.error("getMessage  ::: didnt pass the format check ex:" + ex  + ex.stack ); 	
 		return null;	
 	} 	
 };
@@ -1051,14 +1048,14 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 			PostMan.prototype.isACKtype(deliveryACK.typeOfACK) == false ||
 			Object.keys(deliveryACK).length != 4  ) {	
 				
-			logger.debug("getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
+			console.error("getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
 			return null;
 		}
 		
 		return deliveryACK; 
 	}
 	catch (ex) {
-		logger.debug("getDeliveryACK ::: didnt pass the format check ex:" + ex  + ex.stack );
+		console.error("getDeliveryACK ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1071,14 +1068,14 @@ PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {
 		if (input == null ||
 			typeof input.publicClientID !== 'string' ||
 			Object.keys(input).length != 1 ) {	
-			logger.debug("getpublicClientIDOfRequest ::: didnt pass the format check 1 :" + input );
+			console.error("getpublicClientIDOfRequest ::: didnt pass the format check 1 :" + input );
 			return null;
 		}
 		
 		return input.publicClientID; 
 	}
 	catch (ex) {
-		logger.debug("getpublicClientIDOfRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		console.error("getpublicClientIDOfRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1093,14 +1090,14 @@ PostMan.prototype.getKeysDelivery = function(encrypted, client) {
 			PostMan.prototype.isUUID(input.from) == false  ||
 			typeof input.setOfKeys != 'object' ||
 			Object.keys(input).length != 3 ) {	
-			logger.debug("getKeysDelivery ::: didnt pass the format check 1 :" + input );
+			console.error("getKeysDelivery ::: didnt pass the format check 1 :" + input );
 			return null;
 		}
 		
 		return input; 
 	}
 	catch (ex) {
-		logger.debug("getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
+		console.error("getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1114,13 +1111,13 @@ PostMan.prototype.getKeysRequest = function(encrypted, client) {
 			PostMan.prototype.isUUID(input.to) == false  ||
 			PostMan.prototype.isUUID(input.from) == false  ||
 			Object.keys(input).length != 2 ) {	
-			logger.debug("getKeysRequest ::: didnt pass the format check 1 :" + input );
+			console.error("getKeysRequest ::: didnt pass the format check 1 :" + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		logger.debug("getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		console.error("getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1133,13 +1130,13 @@ PostMan.prototype.getPushRegistration = function( encrypted, client) {
 			PostMan.prototype.isUUID( input.publicClientID ) == false ||
 			typeof input.token != 'string' ||
 			Object.keys(input).length != 2 ) {	
-			logger.debug("getPushRegistration ::: format check failed: " + input );
+			console.error("getPushRegistration ::: format check failed: " + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		logger.debug("getPushRegistration ::: format check failed, ex: " + ex );
+		console.error("getPushRegistration ::: format check failed, ex: " + ex );
 		return null;
 	}	
 };
@@ -1152,13 +1149,13 @@ PostMan.prototype.getReconnectNotification = function( encrypted, client) {
 		if (input == null ||
 			PostMan.prototype.isUUID( input.publicClientID ) == false ||
 			Object.keys(input).length != 1 ) {	
-			logger.debug("getReconnectNotification ::: format check failed: " + input );
+			console.error("getReconnectNotification ::: format check failed: " + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		logger.debug("getReconnectNotification ::: format check failed, ex: " + ex );
+		console.error("getReconnectNotification ::: format check failed, ex: " + ex );
 		return null;
 	}	
 };
@@ -1199,7 +1196,7 @@ PostMan.prototype.isRSAmodulus = function(modulus) {
 	if (typeof modulus == 'string' && modulus.length < config.MAX_SIZE_MODULUS ){
 		return true;	
 	}else{		
-		logger.debug("isRSAmodulus ::: didnt pass the format check ...." );
+		console.error("isRSAmodulus ::: didnt pass the format check ...." );
 		return false;		
 	}
 
@@ -1212,7 +1209,7 @@ PostMan.prototype.isACKtype = function(typeOfACK) {
 			typeOfACK == 'ReadfromAddressee'	) ) {			
 		return true;
 	}else{
-		logger.debug("isACKtype ::: didnt pass the format check ");
+		console.error("isACKtype ::: didnt pass the format check ");
 		return false;		
 	}
 };
@@ -1222,11 +1219,11 @@ PostMan.prototype.lengthTest = function( obj , sizeLimit ) {
 		if ( typeof obj == 'string' && obj.length < sizeLimit ){
 			return true;
 		}else{
-			logger.debug("lengthTest ::: is too big ");
+			console.error("lengthTest ::: is too big ");
 			return false;
 		}
 	}catch (ex) {
-		logger.debug("lengthTest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		console.error("lengthTest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return false;
 	}
 };
