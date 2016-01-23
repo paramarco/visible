@@ -32,7 +32,8 @@ config.instance[0] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useTLS : false
+	useTLS : false,
+	logFile : '/path/instance_0.log'
 };
 config.instance[1] = {
 	db : {
@@ -43,7 +44,8 @@ config.instance[1] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useTLS : false
+	useTLS : false,
+	logFile : '/path/instance_1.log'
 };
 config.instance[2] = {
 	db : {
@@ -54,7 +56,8 @@ config.instance[2] = {
 	},
 	ipAddress : "",
 	portNumber : "",
-	useTLS : false	
+	useTLS : false,
+	logFile : '/path/instance_2.log'	
 };
 config.paypal = {
 	username : "",

@@ -221,11 +221,10 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	  },
 	  getCertificate: function(c, hint) {
 	    log.debug('Client getting certificate ...');
-	    //return forge.pki.certificateToPem( options.keys.certificate );
-	    return options.keys.certificate;
+	    return app.keys.certificate;
 	  },
 	  getPrivateKey: function(c, cert) {
-	    return forge.pki.privateKeyToPem( options.keys.privateKey );
+	    return forge.pki.privateKeyToPem( app.keys.privateKey );
 	  },
 	// send base64-encoded TLS data to server
 	  tlsDataReady: function(c) {	
@@ -248,9 +247,11 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	  },
 	  closed: function(c) {
 	    log.debug('Client disconnected.');
+	    options.onDisconnected();
 	  },
 	  error: function(c, error) {
 	    log.debug('Client error: ' + error.message);
+	    options.onError();
 	  }
 	});
 	
@@ -2796,9 +2797,6 @@ Application.prototype.connect2paypal = function(myPurchase) {
 
 Application.prototype.connect2server = function(result){
 	
-	if ( typeof socket != "undefined" ){
-		socket.disconnect(); 
-	}	
 	app.symetricKey2use = user.myArrayOfKeys[result.index];
 	
 	var challengeClear = postman.decrypt(result.challenge).challenge;	
@@ -2816,7 +2814,7 @@ Application.prototype.connect2server = function(result){
 
   	var url = 'http://' + config.ipServerSockets +  ":" + config.portServerSockets ;
   	var options = { 
-		forceNew : false,
+		forceNew : true,
 		secure : true, 
 		reconnection : false,
 		query : 'token=' + app.tokenSigned	
@@ -3129,24 +3127,31 @@ Application.prototype.registrationProcess = function(){
 	gui.showWelcomeMessage( dictionary.Literals.label_35 );
 	
 	postman.generateKeyPair().done(function ( keys ){
-		 
-		var certificate = postman.createCertificate( keys );
-		keys.certificate = forge.pki.certificateToPem( certificate );
-		app.keys = keys;
 		
-		app.establishTLS( keys ).done(function (){
-			var clientPEMpublicKey = forge.pki.publicKeyToPem( keys.publicKey );
-			var registryRequest = {
-				event : "register",
-				data : {
-					clientPEMpublicKey : clientPEMpublicKey
-				}
-			};
-			var data2send = JSON.stringify( registryRequest );
-        	log.debug("registrationProcess ::: preparing" + data2send );
-
-			app.authSocket.TLS.prepare( data2send ); 
-		});
+		app.keys = keys;
+		var certificate = postman.createCertificate( app.keys );
+		app.keys.certificate = forge.pki.certificateToPem( certificate );		
+		
+  		var params = {
+			onConnected : function (){
+				var clientPEMpublicKey = forge.pki.publicKeyToPem( app.keys.publicKey );
+				var registryRequest = {
+					event : "register",
+					data : {
+						clientPEMpublicKey : clientPEMpublicKey
+					}
+				};
+				var data2send = JSON.stringify( registryRequest );
+	        	log.debug("registrationProcess ::: preparing" + data2send );
+				app.authSocket.TLS.prepare( data2send ); 
+			},
+			onClosed : function(){} ,
+			onDisconnected : function(){} ,
+			onError : function(){} ,
+			onReconnect : function(){}
+  		};
+			
+		app.establishTLS( params );
 				
 	});	
 };
@@ -3413,7 +3418,7 @@ Application.prototype.userRegistration = function( data ){
 
 Application.prototype.sendLogin = function(){
 	
-	log.debug("sendLogin ");
+	log.info("sendLogin");
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
@@ -3423,32 +3428,44 @@ Application.prototype.sendLogin = function(){
 	app.connecting = true;
 	gui.showLoadingSpinner();
 	
-	app.establishTLS( app.keys ).done(function (){
+	var params = {
+		onConnected : function (){
 
-		var loginRequest = {
-			event : "login",
-			data : { handshakeToken: user.handshakeToken }
-		};
-		var data2send = JSON.stringify( loginRequest );
-    	log.debug("sendLogin ::: data2send" + data2send );
+			var loginRequest = {
+				event : "login",
+				data : { handshakeToken: user.handshakeToken }
+			};
+			var data2send = JSON.stringify( loginRequest );
+	    	log.debug("sendLogin ::: data2send" + data2send );
 
-		app.authSocket.TLS.prepare( data2send ); 
-	});
-
-//TODO timer to try again with TLS....
-	/*
-	 .done(function (result) { 
-		app.connect2server(result);
-	 })
-	 .fail(function() {
-		app.connecting = false; 
-		log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
-		setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
-	 })
-	 .always(function() {
-		gui.hideLoadingSpinner();
-	 });
-	 */	
+			app.authSocket.TLS.prepare( data2send );
+			gui.hideLoadingSpinner();
+		},
+		onClosed : function(){} ,
+		onDisconnected : function(){
+			app.authSocket.TLS.close();
+			
+		} ,
+		onError : function(){
+			app.connecting = false; 
+			log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
+			setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
+			
+		},
+		onReconnect : function(){
+			app.authSocket.TLS.close();
+			app.authSocket.disconnect();
+			app.sendLogin();
+		},
+		onConnect_error :function(){
+			app.connecting = false; 
+			log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
+			setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
+		}
+	};
+			
+	app.establishTLS( params );
+	
 };
 
 Application.prototype.sendMultimediaMsg = function( options ) {
@@ -3510,14 +3527,8 @@ Application.prototype.sendRequest4Neighbours = function(){
 };
 
 
-Application.prototype.establishTLS = function ( keys ){
+Application.prototype.establishTLS = function ( params ){
 
-	var deferred = $.Deferred();
-	
-  	var onConnected = function(){
-		log.debug("establishTLS ::: onConnnected was trigerred");
-  		deferred.resolve(); 
-  	};
   	var options = { 
 		forceNew : true
 	};
@@ -3530,13 +3541,21 @@ Application.prototype.establishTLS = function ( keys ){
   			clientPEMcertificate : app.keys.certificate
   		};
   		app.authSocket.emit('RequestTLSConnection', request);
-	});  	
+	}); 
+  	
+  	app.authSocket.on('reconnect', function () {
+  		log.debug("authSocket.on.reconnect");
+  		params.onReconnect();
+	}); 	
+  	
   	app.authSocket.on('ResponseTLSConnection', function (answer){
   		var options = {
-			keys : app.keys,
 			serversPEMcertificate : answer.serversPEM,
-			onConnected : onConnected,
-			onTLSmsg : app.onTLSmsg
+			onConnected : params.onConnected,
+			onClosed : params.onClosed,
+			onTLSmsg : app.onTLSmsg,
+			onDisconnected : params.onDisconnected ,
+			onError : params.onError 
   		};
   		app.authSocket.TLS = postman.createTLSConnection( options );
  		app.authSocket.TLS.handshake();
@@ -3548,9 +3567,7 @@ Application.prototype.establishTLS = function ( keys ){
   	app.authSocket.on('disconnect', function () {
   		log.debug("authSocket.on.disconnect"); 
 	});	
-  	
-  	return deferred.promise();
-
+    
 };// END establishTLS
 
 Application.prototype.setLanguage = function(language) {

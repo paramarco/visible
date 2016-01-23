@@ -3,6 +3,7 @@
 
 //$ sudo node server.js --instanceNumber=[number] &
 var fs = require('fs');
+var log4js = require('log4js');
 var express = require('express');
 var cors = require('cors');
 var bodyParser = require('body-parser');
@@ -22,21 +23,35 @@ var Message			= require('./lib/Message.js');
 var paypal 			= require('./lib/Paypal.js');
 
 var conf = config.instance[ parseInt(argv.instanceNumber) ];
-console.log('INFO ::: Server ::: starting instance: ' + argv.instanceNumber);
+log4js.configure({
+  appenders: [
+	  {
+	      type: 'file',
+	      filename: conf.logFile,
+	      maxLogSize: 1024*40,
+	      backups: 10,
+	      category: 'LOG',
+	      reloadSecs: 86400
+	  }
+  ]
+});
+var logger = log4js.getLogger('LOG');
+logger.setLevel('DEBUG');
+logger.debug('starting instance: ' + argv.instanceNumber);
 
 var app = express();
 var server;
 
 if ( conf.useTLS ){
-	console.log('INFO ::: Server ::: HTTP + TLS ');	
+	logger.info('Server ::: HTTP + TLS ');	
 }else{
-	console.log('INFO ::: Server ::: HTTP ');
+	logger.info('Server ::: HTTP ');
 }
 server = http.createServer(app);
 
 var	io = require("socket.io")(server);
-var	brokerOfVisibles = new BrokerOfVisibles(io);
-var	postMan = new PostMan(io);
+var	brokerOfVisibles = new BrokerOfVisibles(io, logger);
+var	postMan = new PostMan(io, logger);
  
 
 app.use(cors());
@@ -48,7 +63,6 @@ app.use(express.static('public'));
 app.post('/payment', function (req, res) {
 	
 	try {
-
 		if ( ! postMan.isPurchase (req.body.purchase) ) return;
 		if ( ! postMan.isUUID(req.body.handshakeToken) ) return;
 		
@@ -80,7 +94,7 @@ app.post('/payment', function (req, res) {
 		payment.pay( invoiceNumber ,  amount, 'Knet', 'EUR', function(err, url) {
 			
 		    if (err) {
-		        console.log(err);
+		        logger.error(err);
 		        answer.OK = false;
 		        res.json( answer );
 		    }else{
@@ -94,10 +108,8 @@ app.post('/payment', function (req, res) {
 		
 		
 	}catch (ex) {
-		console.log("DEBUG ::: post/payment  :::  exceptrion thrown " + ex  );						
-	}
-	
-		  
+		logger.error("post/payment  :::  exceptrion thrown " + ex  );						
+	}		  
 });
 
 app.get('/successPayment', function (req, res) {
@@ -118,7 +130,7 @@ app.get('/successPayment', function (req, res) {
 	
 	res.sendFile(fileName, options, function (err) {
 	    if (err) {
-	      console.log(err);
+	      logger.error(err);
 	      res.status(err.status).end();
 	    }
 	});
@@ -135,7 +147,7 @@ app.get('/successPayment', function (req, res) {
 	payment.detail(req.query.token, req.query.PayerID, function(err, data, invoiceNumber, price) {
 
 	    if (err) {
-	        console.log(err);
+	        logger.error(err);
 	        return;
 	    }
 
@@ -152,7 +164,7 @@ app.get('/cancelPayment', function (req, res) {
 	
 	res.sendFile(fileName, options, function (err) {
 	    if (err) {
-	      console.log(err);
+	      logger.error(err);
 	      res.status(err.status).end();
 	    }
 	});
@@ -193,7 +205,7 @@ app.locals.onClientAlive = function ( publicClientID , socket ){
 		
 		if (client == null ||
 			publicClientID != socket.visibleClient.publicClientID ){
-	  		console.log('DEBUG ::: onClientAlive ::: publicClientID != publicClientID');	  		
+	  		logger.info('onClientAlive ::: publicClientID != publicClientID');	  		
 			return;
 		}
 		
@@ -208,8 +220,8 @@ app.locals.onClientAlive = function ( publicClientID , socket ){
 
 app.locals.onConnection = function ( client ){
 	
-	console.log("DEBUG ::: connection ::: client: " + client.publicClientID );
-	console.log('DEBUG ::: connection ::: socket: ' + client.socketid );
+	logger.info("connection ::: client: " + client.publicClientID );
+	logger.info('connection ::: socket: ' + client.socketid );
 	
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
 	postMan.sendKeysDeliveries( client ); 
@@ -225,13 +237,11 @@ app.locals.onConnection = function ( client ){
 	
 };
 
-
-
 app.locals.onDisconnect = function(socket) {
 	
 	socket.visibleClient.socketid = null ;	
 	brokerOfVisibles.updateClientsProfile(socket.visibleClient);	
-	console.log('DEBUG ::: onDisconnect ::: ' + socket.visibleClient.publicClientID);
+	logger.info('onDisconnect ::: ' + socket.visibleClient.publicClientID);
 	
 };
 
@@ -240,13 +250,13 @@ app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 	var client = socket.visibleClient;
 	
 	if (client.nickName == null){
-		console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: slowly....");
+		logger.info("onRequestOfListOfPeopleAround  ::: slowly....");
 		return;
 	} 
 		
 	var parameters = postMan.getRequestWhoIsaround(input, client);
 	if (parameters == null) {
-		console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: upsss let's send the people around ... anyway");
+		logger.info("onRequestOfListOfPeopleAround  ::: upsss let's send the people around ... anyway");
 	}
 	
 	if ( brokerOfVisibles.isLocationWellFormatted( parameters.location ) ) {	  			
@@ -256,13 +266,12 @@ app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 		brokerOfVisibles.updateClientsProfile(client);		  				  			
 	}
 	
-	if (client == null ) console.log("DEBUG ::: onRequestOfListOfPeopleAround  ::: upsss client es null");
+	if (client == null ) logger.error("onRequestOfListOfPeopleAround  ::: upsss client es null");
 	var online = true;
 	app.locals.notifyNeighbours(client, online);
 	online = false;
 	app.locals.notifyNeighbours(client, online);
 };
-
 
 app.locals.onProfileRetrieval = function(input , socket) {
 	
@@ -302,7 +311,7 @@ app.locals.onProfileUpdate = function(input , socket) {
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
 	
-	if (client == null ) console.log("DEBUG ::: onProfileUpdate  ::: upsss client es null");
+	if (client == null ) logger.error("onProfileUpdate  ::: upsss client es null");
 	var online = true;
 	app.locals.notifyNeighbours(client, online);
 	online = false;
@@ -312,12 +321,12 @@ app.locals.onProfileUpdate = function(input , socket) {
 
 app.locals.onPushRegistration = function( input , socket) {	
 	
-	console.log('DEBUG ::: onPushRegistration ::: ');	
+	logger.info('onPushRegistration');	
 	var client = socket.visibleClient;		
 	//TODO
 	var registration = postMan.getPushRegistration( input , client);		
 	if ( registration == null ){
-		console.log('DEBUG ::: onPushRegistration ::: upss');
+		logger.error('onPushRegistration ::: upss');
 		return;
 	}
 	
@@ -325,7 +334,7 @@ app.locals.onPushRegistration = function( input , socket) {
 		
 		if (client == null ||
 			registration.publicClientID != socket.visibleClient.publicClientID ){
-	  		console.log('DEBUG ::: onPushRegistration ::: publicClientID != publicClientID');	  		
+	  		logger.info('onPushRegistration ::: publicClientID != publicClientID');	  		
 			return;
 		}
 
@@ -346,7 +355,7 @@ app.locals.onMessageDeliveryACK = function(input, socket) {
 	
 	//check if sender of MessageDeliveryACK is actually the receiver
 	if (messageACKparameters.to != client.publicClientID) {
-		console.log('DEBUG ::: onMessageDeliveryACK ::: something went wrong on onMessageDeliveryACK ' );
+		logger.info('onMessageDeliveryACK ::: something went wrong on onMessageDeliveryACK ' );
 		return;
 	}
 				
@@ -388,12 +397,12 @@ app.locals.onMessageRetrieval = function( input, socket) {
 //XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 app.locals.onReconnectNotification = function( input, socket ) {
 	
-	console.log('DEBUG ::: onReconnectNotification::: ');	
+	logger.info('onReconnectNotification::: ');	
 	var client = socket.visibleClient;		
 	
 	var notification = postMan.getReconnectNotification( input , client);		
 	if ( notification == null ){
-		console.log('DEBUG ::: onReconnectNotification::: upss');
+		logger.info('onReconnectNotification::: upss');
 		return;
 	}
 	
@@ -408,10 +417,10 @@ app.locals.onKeysDelivery = function( input, socket){
 	var keysDelivery = postMan.getKeysDelivery(input , client);		
 	if ( keysDelivery == null ) return;
 	
-	console.log('DEBUG ::: onKeysDelivery ::: input ' + JSON.stringify(keysDelivery) );
+	logger.info('onKeysDelivery ::: input ' + JSON.stringify(keysDelivery) );
 	
 	if ( keysDelivery.from != client.publicClientID ){
-		console.log('DEBUG ::: onKeysDelivery ::: something went wrong on onKeysDelivery ' );
+		logger.info('onKeysDelivery ::: something went wrong on onKeysDelivery ' );
 		return;
 	}
 				
@@ -438,10 +447,10 @@ app.locals.onKeysRequest = function( input, socket){
 	var KeysRequest = postMan.getKeysRequest( input , client);		
 	if ( KeysRequest == null ) return;
 	
-	console.log('DEBUG ::: onKeysRequest ::: KeysRequest: ' + JSON.stringify(KeysRequest) );
+	logger.info('onKeysRequest ::: KeysRequest: ' + JSON.stringify(KeysRequest) );
 	
 	if ( KeysRequest.from != client.publicClientID ){
-		console.log('DEBUG ::: onKeysRequest ::: something went wrong on KeysRequest ' );
+		logger.info('onKeysRequest ::: something went wrong on KeysRequest ' );
 		return;
 	}
 				
@@ -467,7 +476,7 @@ app.locals.onMessage2client = function( msg , socket){
 		 postMan.lengthTest(msg.messageBody.encryptedMsg , config.MAX_SIZE_SMS ) == false ||		  
 		 msg.from != client.publicClientID ||
 		 postMan.isPostBoxFull(msg) == true  ){
-		console.log('DEBUG ::: onMessage2client ::: something went wrong' + JSON.stringify(msg) );
+		logger.info('onMessage2client ::: something went wrong' + JSON.stringify(msg) );
 		return;
 	}
 	
@@ -484,10 +493,10 @@ app.locals.onMessage2client = function( msg , socket){
 	
 	brokerOfVisibles.isClientOnline( msg.to ).then(function(clientReceiver){				
 		if ( clientReceiver != null ){
-			//console.log('DEBUG ::: onMessage2client ::: client is online' + JSON.stringify( msg ) );
+			//logger.info('onMessage2client ::: client is online' + JSON.stringify( msg ) );
 			postMan.sendMsg( msg , clientReceiver ); 					
  		}else {
- 			//console.log('DEBUG ::: onMessage2client ::: client is offline' + JSON.stringify( msg ) ); 			
+ 			//logger.info('onMessage2client ::: client is offline' + JSON.stringify( msg ) ); 			
  			postMan.archiveMessage( msg );
  			
  			brokerOfVisibles.getPushRegistryByID( msg.to ).then(function( pushRegistry ){				
@@ -505,14 +514,14 @@ if ( conf.useTLS ){
 	app.locals.onLoginRequest = function (socket , input) {
 		
 		if ( ! postMan.isUUID( input.handshakeToken ) ) {
-	  		console.log('DEBUG ::: login ::: ! postMan.isUUID(req.body.handshakeToken)');
+	  		logger.info('login ::: ! postMan.isUUID(req.body.handshakeToken)');
 			return;
 		}
 		
 		brokerOfVisibles.getClientByHandshakeToken(input.handshakeToken).then(function(client){
 			
 			if (client == null ){
-		  		console.log('DEBUG ::: login ::: unknown client with this handshakeToken' + input.handshakeToken );	  		
+		  		logger.info('login ::: unknown client with this handshakeToken' + input.handshakeToken );	  		
 				return;
 			} 
 			
@@ -522,7 +531,7 @@ if ( conf.useTLS ){
 			console.info('[%s:%s] CONNECT', sHeaders['x-forwarded-for'], sHeaders['x-forwarded-port']);
 
 			var ip = sHeaders['x-forwarded-for'];
-			console.log('DEBUG ::: onLoginRequest ::: client\'s ip: ' + ip );
+			logger.info('onLoginRequest ::: client\'s ip: ' + ip );
 			
 			var clientUpdate = [ 
 	             brokerOfVisibles.updateClientsLocation( client, ip ) ,
@@ -530,7 +539,7 @@ if ( conf.useTLS ){
 			];
 			
 			var server2connect = postMan.getRightServer2connect();
-			//console.log("DEBUG ::: login ::: server2connect ::: " + JSON.stringify(server2connect) );
+			//logger.info("login ::: server2connect ::: " + JSON.stringify(server2connect) );
 			
 			// challenge forwarding to the Client
 			when.all ( clientUpdate ).then(function(){
@@ -552,7 +561,7 @@ if ( conf.useTLS ){
 	};//END onLoginRequest
 	
 	app.locals.onRegistryRequest = function (socket , input) {
-		console.log("DEBUG ::: app.locals.onRegistryRequest ::: do something..." + JSON.stringify(input));
+		logger.info("app.locals.onRegistryRequest ::: do something..." + JSON.stringify(input));
 		
 		var clientPublicKey = forge.pki.publicKeyFromPem ( input.clientPEMpublicKey );
 		var modulusRSA = clientPublicKey.n.toString(32);
@@ -589,12 +598,12 @@ if ( conf.useTLS ){
 		try{
 			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
 		}catch(e){
-			console.log("DEBUG ::: onRequestTLSConnection ::: send ::: exception"  + e);
+			logger.info("onRequestTLSConnection ::: send ::: exception"  + e);
 		}	
 	};// END onRequestTLSConnection
 	
 	app.locals.onTLSmsg = function (socket , input) {
-		console.log("DEBUG ::: app.locals.onTLSmsg ::: do something..." + JSON.stringify(input)); 
+		logger.info("app.locals.onTLSmsg ::: do something..." + JSON.stringify(input)); 
 		//TODO to use parseNotEval.....
 		var obj = JSON.parse( input );
 		var event = obj.event;
@@ -622,7 +631,7 @@ if ( conf.useTLS ){
 		
 		// base64-decode data received from client and process it
 		socket.on("data2Server", function (data){
-			console.log("DEBUG ::: data2Server ::: triggered" );
+			logger.info("data2Server ::: triggered" );
 			socket.TLS.process( forge.util.decode64( data ) );
 		});
 
@@ -635,7 +644,7 @@ if ( conf.useTLS ){
 
 	io.use(function(socket, next){
 		
-		console.log('DEBUG ::: io.use ::: ');
+		logger.info('io.use ::: ');
 		
 		var token = socket.handshake.query.token;
 		
@@ -647,7 +656,7 @@ if ( conf.useTLS ){
 		brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
 
 			if (client == null){
-				console.log('DEBUG ::: io.use ::: I dont find this freaking client in the DB');
+				logger.info('io.use ::: I dont find this freaking client in the DB');
 				return null;
 			}			
 			var verified = postMan.verifyHandshake ( token , client );		
@@ -658,11 +667,11 @@ if ( conf.useTLS ){
 		  		//attaches the client to the socket
 		  		socket.visibleClient = client;	  		
 				if(client.socketid == ""){
-					console.log('DEBUG ::: io.use :::  WARNING client already connected warning!!!!');				  			
+					logger.info('io.use :::  WARNING client already connected warning!!!!');				  			
 				}
 				next();			
 		  	}else{
-		  		console.log('DEBUG ::: io.use ::: Got disconnect in auth..! wrong handshake');  		
+		  		logger.info('io.use ::: Got disconnect in auth..! wrong handshake');  		
 		  	}
 		  	return;
 		  	
@@ -672,7 +681,7 @@ if ( conf.useTLS ){
 	io.sockets.on("connection", function (socket) {
 		
 		if ( typeof socket.visibleClient == 'undefined'){
-			console.log("DEBUG ::: ERROR ::: 404 " );
+			logger.info("ERROR ::: 404 " );
 			socket.disconnect(); 
 		}
 		var client = socket.visibleClient;
@@ -731,7 +740,7 @@ when.all ( DBConnectionEstablished ).then(function(){
 		app.get('port'),
 		app.get('ipaddr'), 
 		function(){	
-			console.log('INFO ::: Server ::: listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
+			logger.info('Server ::: listening on IP ' + app.get('ipaddr') + ' & port ' + app.get('port'));
 		}
 	);	
 	

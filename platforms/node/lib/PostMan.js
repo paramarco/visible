@@ -46,13 +46,14 @@ var when = require('when');
 var squel = require("squel");
 var config = require('./Config.js');
 
-function PostMan(_io) {
+function PostMan(_io, _logger) {
 	var io = _io; //pointer to io.sockets
 	var listOfMessages = []; //array of Message.js (DB)
 	var listOfACKs = []; //array of {msgID ,to ,from } (DB)	
 	var clientOfDB = null;
 	var self = this;
 	var lastServerAsigned = 0;
+	var logger = _logger;
 
 	
 	this.createTLSConnection = function( options ) {
@@ -66,19 +67,19 @@ function PostMan(_io) {
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
 		  connected: function(c) {
-		    console.log('Server connected');
+		    logger.debug('Server connected');
 		    c.prepareHeartbeatRequest('heartbeat');
 		  },
 		  verifyClient: true,
 		  verify: function(c, verified, depth, certs) {
-		    console.log(
+		    logger.debug(
 		      'Server verifying certificate w/CN: \"' +
 		      certs[0].subject.getField('CN').value +
 		      '\", verified: ' + verified + '...');
 		    return verified;
 		  },
 		  getCertificate: function(c, hint) {
-		    console.log('Server getting certificate for \"' + hint[0] + '\"...');
+		    logger.debug('Server getting certificate for \"' + hint[0] + '\"...');
 		    return forge.pki.certificateToPem(options.keys.cert);
 		  },
 		  getPrivateKey: function(c, cert) {
@@ -90,26 +91,26 @@ function PostMan(_io) {
 				  var data2send = c.tlsData.getBytes();
 				  io.sockets.to(options.socket.id).emit('data2Client', forge.util.encode64( data2send ) );
 			  }catch(e){
-				  console.log("DEBUG ::: createTLSConnection ::: exception"  + e);
+				  logger.debug("createTLSConnection ::: exception"  + e);
 			  }
 		  } ,
 		 // receive clear base64-encoded data from TLS from client
 		  dataReady: function(c) {
 			  var data2receive = c.data.getBytes();
-			  console.log('Server received \"' + data2receive + '\"');
+			  logger.debug('Server received \"' + data2receive + '\"');
 				// send response
 				//c.prepare('Hello Client');
 				//c.close();
 			  options.onTLSmsg( options.socket, data2receive );
 		  } ,
 		  heartbeatReceived: function(c, payload) {
-		    console.log('Server received heartbeat: ' + payload.getBytes());
+		    logger.debug('Server received heartbeat: ' + payload.getBytes());
 		  },
 		  closed: function(c) {
-		    console.log('Server disconnected.');
+		    logger.debug('Server disconnected.');
 		  },
 		  error: function(c, error) {
-		    console.log('Server error: ' + error.message);
+		    logger.debug('Server error: ' + error.message);
 		  }
 		});
 		
@@ -126,9 +127,9 @@ function PostMan(_io) {
 		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/" + name;
 		pg.connect(conString, function(err, client, done) {
 			if(err) {
-				return console.error('DEBUG ::: PostMan  ::: ERROR connecting to the Database', err);
+				return logger.error('PostMan  ::: ERROR connecting to the Database', err);
 			}
-			console.error('INFO ::: PostMan ::: correctly connected to the Database');
+			logger.info('PostMan ::: correctly connected to the Database');
 			clientOfDB = client;
 			return d.resolve(true);
 		});	
@@ -155,7 +156,7 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 		
 			if(err) {
-				console.error('DEBUG ::: sendMessageHeaders ::: error running query', err);	
+				logger.error('sendMessageHeaders ::: error running query', err);	
 			}
 			
 			try {
@@ -177,7 +178,7 @@ function PostMan(_io) {
 				io.sockets.to(client.socketid).emit("ServerReplytoDiscoveryHeaders", PostMan.prototype.encrypt( message , client ));
 				
 			}catch (ex) {
-				console.log("DEBUG ::: sendMessageHeaders  :::  exceptrion thrown " + ex  );						
+				logger.debug("sendMessageHeaders  :::  exceptrion thrown " + ex  );						
 			}
 		
 		});	 
@@ -197,14 +198,14 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 		    
 		    if(err) {
-		    	console.error('DEBUG ::: getMessageFromArchive ::: error running query', err);	
+		    	logger.error('getMessageFromArchive ::: error running query', err);	
 		    	return d.resolve(err);
 		    }
 		    
 		    try {
 		    	
 			    if (typeof result.rows[0] == "undefined"  ){
-			    	//console.log('DEBUG ::: getMessageFromArchive ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
+			    	//logger.debug('getMessageFromArchive ::: publicClientID not registered or socket is set to null --> offline for client:' + publicClientID );
 			    	return  d.resolve(null);
 			    }
 		    		    
@@ -223,7 +224,7 @@ function PostMan(_io) {
 			    return  d.resolve(message);
 			    
 		    }catch (ex) {
-				console.log("DEBUG ::: getMessageFromArchive  :::  exception thrown " + ex  );
+				logger.debug("getMessageFromArchive  :::  exception thrown " + ex  );
 				return  d.resolve(null);	
 			}
 		    
@@ -251,8 +252,8 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {		     
 			//clientOfDB.done();		    
 			if(err) {
-		    	console.error('DEBUG ::: archiveMessage :::error running query', err);	
-		    	console.error('DEBUG ::: archiveMessage ::: query error: ', query2send);
+		    	logger.error('archiveMessage :::error running query', err);	
+		    	logger.error('archiveMessage ::: query error: ', query2send);
 		    }	    
 		});
 	};
@@ -274,8 +275,8 @@ function PostMan(_io) {
 			//clientOfDB.done();
 			
 			if(err) {
-				console.error('DEBUG ::: archiveMessage :::error running query', err);	
-				console.error('DEBUG ::: archiveMessage ::: query error: ', query2send);
+				logger.error('archiveMessage :::error running query', err);	
+				logger.error('archiveMessage ::: query error: ', query2send);
 			}		    
 		
 		});
@@ -305,8 +306,8 @@ function PostMan(_io) {
 		
 		clientOfDB.query(query2send, function(err, result) {	
 			if(err) {
-				console.error('DEBUG ::: archiveKeysDelivery :::error running query', err);	
-				console.error('DEBUG ::: archiveKeysDelivery ::: query error: ', query2send);
+				logger.error('archiveKeysDelivery :::error running query', err);	
+				logger.error('archiveKeysDelivery ::: query error: ', query2send);
 			}		
 		});
 				
@@ -322,8 +323,8 @@ function PostMan(_io) {
 		
 		clientOfDB.query(query2send, function(err, result) {	
 			if(err) {
-				console.error('DEBUG ::: archiveKeysRequest :::error running query', err);	
-				console.error('DEBUG ::: archiveKeysRequest ::: query error: ', query2send);
+				logger.error('archiveKeysRequest :::error running query', err);	
+				logger.error('archiveKeysRequest ::: query error: ', query2send);
 			}		
 		});
 		
@@ -342,7 +343,7 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 		
 			if(err) {
-				console.error('DEBUG ::: sendMessageACKs ::: error running query', err);	
+				logger.error('sendMessageACKs ::: error running query', err);	
 			}			
 			try {			
 				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
@@ -362,7 +363,7 @@ function PostMan(_io) {
 					);
 				});
 			}catch (ex) {
-				console.log("DEBUG ::: sendMessageACKs  :::  exceptrion thrown " + ex  );						
+				logger.debug("sendMessageACKs  :::  exceptrion thrown " + ex  );						
 			}		
 		});		
 	};
@@ -393,12 +394,12 @@ function PostMan(_io) {
 			 
 			// Now the sender can be used to send messages 
 			sender.send(message, { registrationTokens: regTokens }, function (err, response) {
-			    if(err) console.log("DEBUG ::: sendPushNotification :::  err " + err  );
-			    else    console.log("DEBUG ::: sendPushNotification :::  response " + response );
+			    if(err) logger.debug("sendPushNotification :::  err " + err  );
+			    else    logger.debug("sendPushNotification :::  response " + response );
 			});		
 			
 		}catch (ex) {
-			console.log("DEBUG ::: sendPushNotification :::  exception " + ex  );						
+			logger.debug("sendPushNotification :::  exception " + ex  );						
 		}		
 	};
 	
@@ -414,7 +415,7 @@ function PostMan(_io) {
 			
 		clientOfDB.query(query2send, function(err, result) {
 		
-			if(err) console.error('DEBUG ::: sendKeysRequests ::: error running query', err);
+			if(err) logger.error('sendKeysRequests ::: error running query', err);
 			try {			
 				if ( typeof result.rows == "undefined" || result.rows.length == 0 )					
 					return;				
@@ -432,7 +433,7 @@ function PostMan(_io) {
 				});				
 			
 			}catch (ex) {
-				console.log("DEBUG ::: sendMessageACKs  :::  exceptrion thrown " + ex  );						
+				logger.debug("sendMessageACKs  :::  exceptrion thrown " + ex  );						
 			}		
 		});		
 	}; // END sendKeysRequests
@@ -449,7 +450,7 @@ function PostMan(_io) {
 			
 		clientOfDB.query(query2send, function(err, result) {
 			try {
-				if(err) console.error('DEBUG ::: sendKeysDeliveries ::: error running query', err);						
+				if(err) logger.error('sendKeysDeliveries ::: error running query', err);						
 				if ( typeof result.rows == "undefined" || result.rows.length == 0 )	 return;				
 				
 				result.rows.map(function(r){
@@ -472,7 +473,7 @@ function PostMan(_io) {
 					);
 				});			
 			}catch (ex) {
-				console.log("DEBUG ::: sendKeysDeliveries  :::  exceptrion thrown " + ex  );						
+				logger.debug("sendKeysDeliveries  :::  exceptrion thrown " + ex  );						
 			}		
 		});		
 	}; // END sendKeysDeliveries		
@@ -490,7 +491,7 @@ function PostMan(_io) {
 			io.sockets.to(client.socketid).emit("locationFromServer", PostMan.prototype.encrypt( position, client )  );
 		
 		}catch (ex) {
-			console.log("DEBUG ::: sendDetectedLocation  :::  exception thrown " + ex  );						
+			logger.debug("sendDetectedLocation  :::  exception thrown " + ex  );						
 		}
 		
 	};
@@ -513,11 +514,11 @@ function PostMan(_io) {
 			try {
 		
 				if(err) {
-					console.error('DEBUG ::: deleteMessageAndACK ::: error running query', err);	
+					logger.error('deleteMessageAndACK ::: error running query', err);	
 				}						
 			
 			}catch (ex) {
-				console.log("DEBUG ::: deleteMessageAndACK  :::  exception thrown " + ex  );						
+				logger.debug("deleteMessageAndACK  :::  exception thrown " + ex  );						
 			}
 		
 		});	
@@ -535,10 +536,10 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 			try {		
 				if(err) {
-					console.error('DEBUG ::: deleteMessage ::: error running query', err);	
+					logger.error('deleteMessage ::: error running query', err);	
 				}			
 			}catch (ex) {
-				console.log("DEBUG ::: deleteMessage  :::  exception thrown " + ex  );						
+				logger.debug("deleteMessage  :::  exception thrown " + ex  );						
 			}		
 		});	
 	
@@ -555,10 +556,10 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 			try {		
 				if(err) {
-					console.error('DEBUG ::: deleteKeysRequest ::: error running query', err);	
+					logger.error('deleteKeysRequest ::: error running query', err);	
 				}		
 			}catch (ex) {
-				console.log("DEBUG ::: deleteKeysRequest  :::  exception thrown " + ex  );						
+				logger.debug("deleteKeysRequest  :::  exception thrown " + ex  );						
 			}
 		});	
 	};
@@ -574,10 +575,10 @@ function PostMan(_io) {
 		clientOfDB.query(query2send, function(err, result) {
 			try {		
 				if(err) {
-					console.error('DEBUG ::: deleteKeysDelivery ::: error running query', err);	
+					logger.error('deleteKeysDelivery ::: error running query', err);	
 				}		
 			}catch (ex) {
-				console.log("DEBUG ::: deleteKeysDelivery  :::  exception thrown " + ex  );						
+				logger.debug("deleteKeysDelivery  :::  exception thrown " + ex  );						
 			}
 		});	
 	};	
@@ -599,7 +600,7 @@ function PostMan(_io) {
 			typeof data !== 'object' || data == null || 
 			typeof client !== 'object' || client == null || client.socketid == null	) 	{	
 			
-			console.log("DEBUG ::: postman ::: send ::: can't send " );			
+			logger.debug("postman ::: send ::: can't send " );			
 			return null;
 		}	
 		
@@ -607,7 +608,7 @@ function PostMan(_io) {
 			io.sockets.to(client.socketid).emit(event2trigger, PostMan.prototype.encrypt( data, client ) );
 						
 		}catch(e){
-			console.log("DEBUG ::: postman ::: send ::: exception"  + e);
+			logger.debug("postman ::: send ::: exception"  + e);
 		}		
 			
 	};
@@ -618,7 +619,7 @@ function PostMan(_io) {
 			io.sockets.to(client.socketid).emit("MessageFromClient", msg );
 						
 		}catch(e){
-			console.log("DEBUG ::: postman ::: send ::: exception"  + e);
+			logger.debug("postman ::: send ::: exception"  + e);
 		}		
 			
 	};	
@@ -633,7 +634,7 @@ PostMan.prototype.createAsymetricKeys = function() {
 	options.bits = 2048;
 	options.e = 0x10001;
 	var keys = forge.pki.rsa.generateKeyPair( options );
-	console.log('DEBUG :::: createAsymetricKeys ::: key-pair created.');
+	logger.debug('DEBUG :::: createAsymetricKeys ::: key-pair created.');
 
 	var cn = 'authknetserver';
 	var cert = forge.pki.createCertificate();
@@ -687,7 +688,7 @@ PostMan.prototype.createAsymetricKeys = function() {
 	cert.sign(keys.privateKey);
 
 	keys.cert = cert;
-	console.log('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+	logger.debug('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
 	
 	return keys;
 };
@@ -709,17 +710,17 @@ PostMan.prototype.verifyHandshake = function(tokenHandshake, client) {
 		var decryptedChallenge = PostMan.prototype.decrypt( decodeURI( decodedHandshake.challenge ) , client );
 		
 		if (decryptedChallenge == null || client == null){
-			console.log("DEBUG ::: verifyHandshake  :::  decryptedChallenge : " + JSON.stringify(decryptedChallenge) +  " client : " + JSON.stringify(client)  );
+			logger.debug("verifyHandshake  :::  decryptedChallenge : " + JSON.stringify(decryptedChallenge) +  " client : " + JSON.stringify(client)  );
 			return false; 
 		}
 		
 		if (decryptedChallenge.challengeClear != client.currentChallenge){
 			verified = false;
-			console.log("DEBUG ::: verifyHandshake  :::  challenge different than current challenge "  );
+			logger.debug("verifyHandshake  :::  challenge different than current challenge "  );
 		}
 	} 
 	catch (ex) {	
-		console.log("DEBUG ::: verifyHandshake  :::  exception thrown "  + ex); 
+		logger.debug("verifyHandshake  :::  exception thrown "  + ex); 
 	}
 
 	return verified; 	
@@ -737,7 +738,7 @@ PostMan.prototype.decodeHandshake = function(sJWS) {
 		var decodedHandshake = crypto.jws.JWS.readSafeJSONString(uClaim);
 	} 
 	catch (ex) {	
-		console.log("DEBUG ::: decodeHandshake  :::  exception thrown "  + ex.toString() ); 
+		logger.debug("decodeHandshake  :::  exception thrown "  + ex.toString() ); 
 	}
 
 	return decodedHandshake; 	
@@ -755,12 +756,12 @@ PostMan.prototype.getJoinServerParameters = function(joinParameters) {
 			typeof joinParameters.challenge !== 'string'  ||
 			joinParameters.challenge.length > config.MAX_SIZE_CHALLENGE ||
 			Object.keys(joinParameters).length != 2 ) {	
-				console.log("DEBUG ::: getJoinServerParameters  ::: didnt pass the typechecking " ); 
+				logger.debug("getJoinServerParameters  ::: didnt pass the typechecking " ); 
 				joinParameters = null;				
 		}	
 	} 
 	catch (ex) {	
-		console.log("DEBUG ::: getJoinServerParameters  :::  exceptrion thrown :"  + ex); 
+		logger.debug("getJoinServerParameters  :::  exceptrion thrown :"  + ex); 
 		joinParameters = null;	
 	}
 
@@ -778,11 +779,11 @@ PostMan.prototype.getRequestWhoIsaround = function(encryptedInput, client) {
 			Object.keys(parameters).length != 1 ||
 			Object.keys(parameters.location).length != 2) {	
 				parameters = null;
-				console.log("DEBUG ::: getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
+				logger.debug("getRequestWhoIsaround  ::: didnt pass the typechecking " + JSON.stringify(parameters) ); 
 		}	
 	} 
 	catch (ex) {	
-		console.log("DEBUG ::: getRequestWhoIsaround  :::  exceptrion thrown :"  + ex); 
+		logger.debug("getRequestWhoIsaround  :::  exceptrion thrown :"  + ex); 
 		parameters = null;	
 	}
 
@@ -801,13 +802,13 @@ PostMan.prototype.getMessageRetrieval = function(encryptedInput , client) {
 			PostMan.prototype.isUUID(retrievalParameters.msgID) == false ||
 			Object.keys(retrievalParameters).length != 1 ) {
 			
-			console.log("DEBUG ::: getMessageRetrieval  :::  didn't pass the format check "   );
+			logger.debug("getMessageRetrieval  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
 		return retrievalParameters;
 	} 
 	catch (ex) {
-		console.log("DEBUG ::: getMessageRetrieval  :::  exceptrion thrown " + ex  );
+		logger.debug("getMessageRetrieval  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -828,13 +829,13 @@ PostMan.prototype.getProfileResponseParameters = function(encryptedInput , clien
 			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ||
 			!(parameters.visibility == "on" || parameters.visibility == "off" )   ) {
 			
-			console.log("DEBUG ::: getProfileResponseParameters  :::  didn't pass the format check "   );
+			logger.debug("getProfileResponseParameters  :::  didn't pass the format check "   );
 			retrievalParameters = null; 
 		}
 		return parameters;
 	} 
 	catch (ex) {
-		console.log("DEBUG ::: getProfileResponseParameters  :::  exceptrion thrown " + ex  );
+		logger.debug("getProfileResponseParameters  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -851,13 +852,13 @@ PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , clie
 			! (typeof parameters.lastProfileUpdate == 'number' ||  parameters.lastProfileUpdate == null ) || 	 
 			Object.keys(parameters).length != 3) {
 			
-			console.log("DEBUG ::: getProfileRetrievalParameters  :::  didn't pass the format check "  + JSON.stringify(parameters) );
+			logger.debug("getProfileRetrievalParameters  :::  didn't pass the format check "  + JSON.stringify(parameters) );
 			retrievalParameters = null; 
 		}
 		return parameters;
 	} 
 	catch (ex) {
-		console.log("DEBUG ::: getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
+		logger.debug("getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };
@@ -935,7 +936,7 @@ PostMan.prototype.encrypt = function(message , client) {
 
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: encrypt  :::  " + ex);
+		logger.debug("encrypt  :::  " + ex);
 		return null;
 	}	
 };
@@ -943,7 +944,7 @@ PostMan.prototype.encrypt = function(message , client) {
 PostMan.prototype.decrypt = function(encrypted, client) {
 	
 	if (encrypted.length > config.MAX_SIZE_SMS){
-		console.log("DEBUG ::: decrypt :::  size of SMS:" + encrypted.length );
+		logger.debug("decrypt :::  size of SMS:" + encrypted.length );
 		return null;
 	} 
 	
@@ -989,7 +990,7 @@ PostMan.prototype.encryptHandshake = function(message , client) {
 
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: encryptHandshake  :::  " + ex);
+		logger.debug("encryptHandshake  :::  " + ex);
 		return null;
 	}	
 };
@@ -1016,7 +1017,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 			typeof inputMessage.ACKfromAddressee !== 'boolean' ||
 			Object.keys(inputMessage).length != 10	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didn't pass the format check 1" );
+			logger.debug("getMessage  ::: didn't pass the format check 1" );
 			
 			return null;
 		}	
@@ -1024,7 +1025,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 		if ( inputMessage.size > config.MAX_SIZE_IMG ||
 			PostMan.prototype.lengthTest(inputMessage.messageBody , config.MAX_SIZE_IMG ) == false 	) 	{	
 			
-			console.log("DEBUG ::: getMessage  ::: didn't pass the format check 2" );
+			logger.debug("getMessage  ::: didn't pass the format check 2" );
 			return null;
 		}
 		
@@ -1034,7 +1035,7 @@ PostMan.prototype.getMessage = function(encrypted, client) {
 		return message;
 	}
 	catch (ex) {	
-		console.log("DEBUG ::: getMessage  ::: didnt pass the format check ex:" + ex  + ex.stack ); 	
+		logger.debug("getMessage  ::: didnt pass the format check ex:" + ex  + ex.stack ); 	
 		return null;	
 	} 	
 };
@@ -1050,14 +1051,14 @@ PostMan.prototype.getDeliveryACK = function(encrypted, client) {
 			PostMan.prototype.isACKtype(deliveryACK.typeOfACK) == false ||
 			Object.keys(deliveryACK).length != 4  ) {	
 				
-			console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
+			logger.debug("getDeliveryACK ::: didnt pass the format check 1 " + JSON.stringify( deliveryACK )  );
 			return null;
 		}
 		
 		return deliveryACK; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getDeliveryACK ::: didnt pass the format check ex:" + ex  + ex.stack );
+		logger.debug("getDeliveryACK ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1070,14 +1071,14 @@ PostMan.prototype.getpublicClientIDOfRequest = function(encrypted, client) {
 		if (input == null ||
 			typeof input.publicClientID !== 'string' ||
 			Object.keys(input).length != 1 ) {	
-			console.log("DEBUG ::: getpublicClientIDOfRequest ::: didnt pass the format check 1 :" + input );
+			logger.debug("getpublicClientIDOfRequest ::: didnt pass the format check 1 :" + input );
 			return null;
 		}
 		
 		return input.publicClientID; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getpublicClientIDOfRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		logger.debug("getpublicClientIDOfRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1092,14 +1093,14 @@ PostMan.prototype.getKeysDelivery = function(encrypted, client) {
 			PostMan.prototype.isUUID(input.from) == false  ||
 			typeof input.setOfKeys != 'object' ||
 			Object.keys(input).length != 3 ) {	
-			console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check 1 :" + input );
+			logger.debug("getKeysDelivery ::: didnt pass the format check 1 :" + input );
 			return null;
 		}
 		
 		return input; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
+		logger.debug("getKeysDelivery ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1113,13 +1114,13 @@ PostMan.prototype.getKeysRequest = function(encrypted, client) {
 			PostMan.prototype.isUUID(input.to) == false  ||
 			PostMan.prototype.isUUID(input.from) == false  ||
 			Object.keys(input).length != 2 ) {	
-			console.log("DEBUG ::: getKeysRequest ::: didnt pass the format check 1 :" + input );
+			logger.debug("getKeysRequest ::: didnt pass the format check 1 :" + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		logger.debug("getKeysRequest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return null;
 	}	
 };
@@ -1132,13 +1133,13 @@ PostMan.prototype.getPushRegistration = function( encrypted, client) {
 			PostMan.prototype.isUUID( input.publicClientID ) == false ||
 			typeof input.token != 'string' ||
 			Object.keys(input).length != 2 ) {	
-			console.log("DEBUG ::: getPushRegistration ::: format check failed: " + input );
+			logger.debug("getPushRegistration ::: format check failed: " + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getPushRegistration ::: format check failed, ex: " + ex );
+		logger.debug("getPushRegistration ::: format check failed, ex: " + ex );
 		return null;
 	}	
 };
@@ -1151,13 +1152,13 @@ PostMan.prototype.getReconnectNotification = function( encrypted, client) {
 		if (input == null ||
 			PostMan.prototype.isUUID( input.publicClientID ) == false ||
 			Object.keys(input).length != 1 ) {	
-			console.log("DEBUG ::: getReconnectNotification ::: format check failed: " + input );
+			logger.debug("getReconnectNotification ::: format check failed: " + input );
 			return null;
 		}		
 		return input; 
 	}
 	catch (ex) {
-		console.log("DEBUG ::: getReconnectNotification ::: format check failed, ex: " + ex );
+		logger.debug("getReconnectNotification ::: format check failed, ex: " + ex );
 		return null;
 	}	
 };
@@ -1198,7 +1199,7 @@ PostMan.prototype.isRSAmodulus = function(modulus) {
 	if (typeof modulus == 'string' && modulus.length < config.MAX_SIZE_MODULUS ){
 		return true;	
 	}else{		
-		console.log("DEBUG ::: isRSAmodulus ::: didnt pass the format check ...." );
+		logger.debug("isRSAmodulus ::: didnt pass the format check ...." );
 		return false;		
 	}
 
@@ -1211,7 +1212,7 @@ PostMan.prototype.isACKtype = function(typeOfACK) {
 			typeOfACK == 'ReadfromAddressee'	) ) {			
 		return true;
 	}else{
-		console.log("DEBUG ::: isACKtype ::: didnt pass the format check ");
+		logger.debug("isACKtype ::: didnt pass the format check ");
 		return false;		
 	}
 };
@@ -1221,11 +1222,11 @@ PostMan.prototype.lengthTest = function( obj , sizeLimit ) {
 		if ( typeof obj == 'string' && obj.length < sizeLimit ){
 			return true;
 		}else{
-			console.log("DEBUG ::: lengthTest ::: is too big ");
+			logger.debug("lengthTest ::: is too big ");
 			return false;
 		}
 	}catch (ex) {
-		console.log("DEBUG ::: lengthTest ::: didnt pass the format check ex:" + ex  + ex.stack );
+		logger.debug("lengthTest ::: didnt pass the format check ex:" + ex  + ex.stack );
 		return false;
 	}
 };
