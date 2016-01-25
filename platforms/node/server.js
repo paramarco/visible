@@ -220,9 +220,6 @@ app.locals.onClientAlive = function ( publicClientID , socket ){
 
 app.locals.onConnection = function ( client ){
 	
-	logger.info("connection ::: client: " + client.publicClientID );
-	logger.info('connection ::: socket: ' + client.socketid );
-	
 	//XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers
 	postMan.sendKeysDeliveries( client ); 
 	postMan.sendMessageACKs( client );
@@ -321,8 +318,8 @@ app.locals.onProfileUpdate = function(input , socket) {
 
 app.locals.onPushRegistration = function( input , socket) {	
 	
-	logger.info('onPushRegistration');	
-	var client = socket.visibleClient;		
+	var client = socket.visibleClient;
+	logger.info("onPushRegistration ::: client: " + client.publicClientID + " socket: " + client.socketid);
 	//TODO
 	var registration = postMan.getPushRegistration( input , client);		
 	if ( registration == null ){
@@ -334,7 +331,7 @@ app.locals.onPushRegistration = function( input , socket) {
 		
 		if (client == null ||
 			registration.publicClientID != socket.visibleClient.publicClientID ){
-	  		logger.info('onPushRegistration ::: publicClientID != publicClientID');	  		
+	  		logger.error('onPushRegistration ::: publicClientID != publicClientID');	  		
 			return;
 		}
 
@@ -397,8 +394,8 @@ app.locals.onMessageRetrieval = function( input, socket) {
 //XEP-0013: Flexible Offline Message Retrieval,2.3 Requesting Message Headers 
 app.locals.onReconnectNotification = function( input, socket ) {
 	
-	logger.info('onReconnectNotification::: ');	
-	var client = socket.visibleClient;		
+	var client = socket.visibleClient;	
+	logger.info("onReconnectNotification ::: client: " + client.publicClientID + " socket: " + client.socketid);
 	
 	var notification = postMan.getReconnectNotification( input , client);		
 	if ( notification == null ){
@@ -417,7 +414,7 @@ app.locals.onKeysDelivery = function( input, socket){
 	var keysDelivery = postMan.getKeysDelivery(input , client);		
 	if ( keysDelivery == null ) return;
 	
-	logger.info('onKeysDelivery ::: input ' + JSON.stringify(keysDelivery) );
+	logger.debug('onKeysDelivery ::: input ' + JSON.stringify(keysDelivery) );
 	
 	if ( keysDelivery.from != client.publicClientID ){
 		logger.info('onKeysDelivery ::: something went wrong on onKeysDelivery ' );
@@ -514,14 +511,14 @@ if ( conf.useTLS ){
 	app.locals.onLoginRequest = function (socket , input) {
 		
 		if ( ! postMan.isUUID( input.handshakeToken ) ) {
-	  		logger.info('login ::: ! postMan.isUUID(req.body.handshakeToken)');
+	  		logger.error('login ::: ! postMan.isUUID(req.body.handshakeToken)');
 			return;
 		}
 		
 		brokerOfVisibles.getClientByHandshakeToken(input.handshakeToken).then(function(client){
 			
 			if (client == null ){
-		  		logger.info('login ::: unknown client with this handshakeToken' + input.handshakeToken );	  		
+		  		logger.error('login ::: unknown client with this handshakeToken' + input.handshakeToken );	  		
 				return;
 			} 
 			
@@ -529,7 +526,7 @@ if ( conf.useTLS ){
 			client.currentChallenge = uuid.v4();		
 			var sHeaders = socket.handshake.headers;
 			var ip = sHeaders['x-forwarded-for'];
-			logger.info('onLoginRequest ::: client\'s ip: ' + ip );
+			logger.info('onLoginRequest ::: client ' + client.publicClientID + ' ip ' + ip );
 			
 			var clientUpdate = [ 
 	             brokerOfVisibles.updateClientsLocation( client, ip ) ,
@@ -640,8 +637,6 @@ if ( conf.useTLS ){
 
 	io.use(function(socket, next){
 		
-		logger.info('io.use ::: ');
-		
 		var token = socket.handshake.query.token;
 		
 		var decodedToken = postMan.decodeHandshake(token);
@@ -663,11 +658,11 @@ if ( conf.useTLS ){
 		  		//attaches the client to the socket
 		  		socket.visibleClient = client;	  		
 				if(client.socketid == ""){
-					logger.info('io.use :::  WARNING client already connected warning!!!!');				  			
+					logger.debug('io.use :::  WARNING client already connected warning!!!!');				  			
 				}
 				next();			
 		  	}else{
-		  		logger.info('io.use ::: Got disconnect in auth..! wrong handshake');  		
+		  		logger.error('io.use ::: Got disconnect in auth..! wrong handshake');  		
 		  	}
 		  	return;
 		  	
@@ -681,6 +676,7 @@ if ( conf.useTLS ){
 			socket.disconnect(); 
 		}
 		var client = socket.visibleClient;
+		logger.info("connection ::: client: " + client.publicClientID + " socket: " + client.socketid);
 		
 		//XEP-0305: XMPP Quickstart
 		app.locals.onConnection( client );

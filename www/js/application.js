@@ -210,17 +210,17 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	    return verified;
 	  },
 	  connected: function(c) {
-	    log.debug('Client connected...');
+	    log.info('Client connected...');
 
 	    // send message to server
 	    setTimeout(function() {
 	      c.prepareHeartbeatRequest('heartbeat');
 	    }, 1);
-		log.debug("createTLSConnection ::: onConnected was trigerred");
+		log.info("createTLSConnection ::: onConnected was trigerred");
 	    options.onConnected();
 	  },
 	  getCertificate: function(c, hint) {
-	    log.debug('Client getting certificate ...');
+	    log.info('Client getting certificate ...');
 	    return app.keys.certificate;
 	  },
 	  getPrivateKey: function(c, cert) {
@@ -230,7 +230,6 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	  tlsDataReady: function(c) {	
 		  try{
 			  var data2send =  c.tlsData.getBytes();
-			  log.debug("authSocket.TLS.sendData ::: sending: "  +  data2send);
 			  app.authSocket.emit('data2Server', forge.util.encode64( data2send ) );			
 		  }catch(e){
 			  log.debug("authSocket.TLS.sendData ::: exception"  + e);
@@ -239,18 +238,18 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	  // receive clear base64-encoded data from TLS from server
 	  dataReady: function(c) {
 		  var data2receive = c.data.getBytes();
-		  log.debug('Client received \"' + data2receive + '\"');
+		  log.info('Client received', data2receive );
 		  options.onTLSmsg( data2receive );
 	  },
 	  heartbeatReceived: function(c, payload) {
 	    log.debug('Client received heartbeat: ' + payload.getBytes());
 	  },
 	  closed: function(c) {
-	    log.debug('Client disconnected.');
+	    log.info('Client disconnected.');
 	    options.onDisconnected();
 	  },
 	  error: function(c, error) {
-	    log.debug('Client error: ' + error.message);
+	    log.error('Client error: ' + error.message);
 	    options.onError();
 	  }
 	});
@@ -2324,7 +2323,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		htmlOfContent = 
 		'<div class="image-preview"> ' + 
 		' <a>' + 
-		'  <img class="image-embed" src="' + message.messageBody.src +'">' +
+		'  <img class="image-embed" src="' + message.messageBody.src +'" data-index="'+gui.indexOfImages4Gallery+'">' +
 //		'  <img class="lazy"  data-src="' + message.messageBody.src +'">' +		
 		' </a>' +			 
 		' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
@@ -2355,8 +2354,8 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		app.msg2forward = message.msgID;
 		$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
 	});
-	$newMsg.find(".image-embed").unbind("click").on("click", function(){
-		gui.showGallery( gui.indexOfImages4Gallery - 1 );
+	$newMsg.find(".image-embed").unbind("click").on("click", function(evt){
+		gui.showGallery( $(evt.target).data('index') );
 	});
 	
 	if (message.from != user.publicClientID){
@@ -3422,7 +3421,7 @@ Application.prototype.sendLogin = function(){
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
-		log.debug("sendLogin");  
+		log.info("sendLogin returned");  
 		return;
 	} 
 	app.connecting = true;
@@ -3602,9 +3601,9 @@ Application.prototype.setLanguage = function(language) {
 	}
 	
 	if ( dictionary.AvailableLiterals.hasOwnProperty( language.value ) ){
-		log.info("Application.prototype.setLanguage ", language);
+		//log.debug("app.setLanguage ", language);
 	}else{
-		log.info("Application.prototype.setLanguage - NOT FOUND", language);	
+		log.debug("app.setLanguage - NOT FOUND", language);	
 		language.value = "en" ;
 	}
 	dictionary.Literals = dictionary.AvailableLiterals[language.value].value;

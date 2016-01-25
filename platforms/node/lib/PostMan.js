@@ -67,19 +67,19 @@ function PostMan(_io, _logger) {
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_128_CBC_SHA,
 		    forge.tls.CipherSuites.TLS_RSA_WITH_AES_256_CBC_SHA],
 		  connected: function(c) {
-		    logger.info('Server connected');
+		    //logger.debug('Server connected');
 		    c.prepareHeartbeatRequest('heartbeat');
 		  },
 		  verifyClient: true,
 		  verify: function(c, verified, depth, certs) {
-		    logger.info(
+		    logger.debug(
 		      'Server verifying certificate w/CN: \"' +
 		      certs[0].subject.getField('CN').value +
 		      '\", verified: ' + verified + '...');
 		    return verified;
 		  },
 		  getCertificate: function(c, hint) {
-		    logger.info('Server getting certificate for \"' + hint[0] + '\"...');
+		    //logger.debug('Server getting certificate for \"' + hint[0] + '\"...');
 		    return forge.pki.certificateToPem(options.keys.cert);
 		  },
 		  getPrivateKey: function(c, cert) {
@@ -107,7 +107,7 @@ function PostMan(_io, _logger) {
 		    //logger.debug('Server disconnected.');
 		  },
 		  error: function(c, error) {
-		    logger.debug('Server error: ' + error.message);
+		    logger.error('Server error: ' + error.message);
 		  }
 		});
 		
