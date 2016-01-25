@@ -246,7 +246,7 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	  },
 	  closed: function(c) {
 	    log.info('Client disconnected.');
-	    options.onDisconnected();
+	    //options.onDisconnected();
 	  },
 	  error: function(c, error) {
 	    log.error('Client error: ' + error.message);
@@ -606,7 +606,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 			Postman.prototype._isUUID( input.from ) == false  ||
 			Postman.prototype._isUUID( input.msgID ) == false ){
 				
-		log.debug("Postman.prototype.getMessageFromClient - type check", input); 
+		log.error("Postman.prototype.getMessageFromClient - type check", input); 
 			return null;
 		}
 		
@@ -617,7 +617,7 @@ Postman.prototype.getMessageFromClient = function( input ) {
 		return message; 	
 	} 
 	catch (ex) {	
-		log.debug("Postman.prototype.getMessageFromClient - type check", ex);
+		log.error("Postman.prototype.getMessageFromClient - type check", ex);
 		return null;
 	}
 };
@@ -701,6 +701,8 @@ Postman.prototype.send = function(event2trigger, data  ) {
 	try{
 		if (typeof socket != "undefined" && socket.connected == true){
 			socket.emit(event2trigger, Postman.prototype.encrypt( data ) );
+		}else{
+			app.sendLogin();
 		}	
 					
 	}catch(e){
@@ -1681,7 +1683,7 @@ GUI.prototype.onAppBrowserLoad = function(event) {
 		app.isNGOdonationChecked = decodeURI(postman.getParameterByName("isNGOdonationChecked",event.url));
 		app.isFSIdonationChecked = decodeURI(postman.getParameterByName("isFSIdonationChecked",event.url));
 		                
-		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
+		setTimeout( function(){ gui.inAppBrowser.close } , config.TIME_WAIT_HTTP_POST );
     }    
     if (event.url.match("cancelPayment") !== null) {
     	
@@ -1690,7 +1692,7 @@ GUI.prototype.onAppBrowserLoad = function(event) {
     	
     	navigator.notification.alert("the Payment was cancelled :-(", null, 'Uh oh!');	
     	
-		setTimeout( gui.inAppBrowser.close , config.TIME_WAIT_HTTP_POST );
+		setTimeout( function(){  gui.inAppBrowser.close } , config.TIME_WAIT_HTTP_POST );
 
     }        
 };
@@ -2838,8 +2840,7 @@ Application.prototype.connect2server = function(result){
 	
 	socket.on('disconnect', function () {
 		log.info("socket.on.disconnect"); 
-		app.connecting = false;
-		//app.sendLogin();
+		app.sendLogin();
 	});
 	
 	socket.on('reconnect_attempt', function () {
@@ -2850,7 +2851,6 @@ Application.prototype.connect2server = function(result){
 	socket.on('reconnect_failed', function () {
 		log.info("socket.on.reconnect_failed"); 
 		app.connecting = false;
-		app.sendLogin();					
 	});
 	
 	socket.on('reconnect', function () {
@@ -3344,7 +3344,7 @@ Application.prototype.onOnlineCustom =  function() {
 			app.events.contactsLoaded , 
 			app.events.userSettingsLoaded , 
 			app.events.deviceReady	).done(function(){	
-		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 
+		setTimeout( function(){ app.sendLogin(); } , config.TIME_WAIT_WAKEUP * 2); 
 	});
 	
 };
@@ -3364,7 +3364,7 @@ Application.prototype.onResumeCustom =  function() {
 	
    	if	( app.multimediaWasOpened == false ){
    		gui.hideLocalNotifications();
-		setTimeout( app.sendLogin , config.TIME_WAIT_WAKEUP ); 		
+   		setTimeout( function(){ app.sendLogin(); }, config.TIME_WAIT_WAKEUP * 4 ); 		
 	}	    	
 	app.inBackground = false; 
 	app.multimediaWasOpened = false;
@@ -3440,19 +3440,23 @@ Application.prototype.sendLogin = function(){
 			app.authSocket.TLS.prepare( data2send );
 			gui.hideLoadingSpinner();
 		},
-		onClosed : function(){} ,
+		onClosed : function(){
+			log.info("sendLogin ::: onClosed"); 
+		} ,
 		onDisconnected : function(){
+			
 			if ( typeof app.authSocket.TLS != "undefined" ){
 				app.authSocket.TLS.close();
-			}			
+			}
+			log.info("sendLogin ::: onDisconnected"); 
+			setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST );
 		} ,
 		onError : function(){
-			app.connecting = false; 
-			log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
-			setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
-			
+			log.info("sendLogin ::: onError"); 
+			/*setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST );	*/		
 		},
 		onReconnect : function(){
+			log.info("sendLogin ::: onReconnect"); 
 			if ( typeof app.authSocket.TLS != "undefined" ){
 				app.authSocket.TLS.close();
 				app.authSocket.disconnect();
@@ -3460,9 +3464,8 @@ Application.prototype.sendLogin = function(){
 			app.sendLogin();
 		},
 		onConnect_error :function(){
-			app.connecting = false; 
-			log.info("Application.prototype.sendLogin - (fail) ... reconnecting "); 
-			setTimeout( app.sendLogin , config.TIME_WAIT_HTTP_POST );
+			log.info("sendLogin :::onConnect_error"); 
+			setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST * 2);
 		}
 	};
 			
@@ -3532,9 +3535,11 @@ Application.prototype.sendRequest4Neighbours = function(){
 Application.prototype.establishTLS = function ( params ){
 
   	var options = { 
-		forceNew : true
+		forceNew : true,
+		reconnection : true,
 	};
 	var url = 'http://' + config.ipServerAuth +  ":" + config.portServerAuth ;
+	app.authSocket = null;
   	app.authSocket = io.connect( url, options );
 	
   	app.authSocket.on('connect', function () {

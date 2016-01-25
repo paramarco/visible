@@ -56,6 +56,71 @@ function PostMan(_io, _logger) {
 	var logger = _logger;
 
 	
+	this.createAsymetricKeys = function() {
+		
+		var options = {};
+		options.bits = 2048;
+		options.e = 0x10001;
+		var keys = forge.pki.rsa.generateKeyPair( options );
+		logger.debug('createAsymetricKeys ::: key-pair created.');
+
+		var cn = 'authknetserver';
+		var cert = forge.pki.createCertificate();
+		cert.serialNumber = '01';
+		cert.validity.notBefore = new Date();
+		cert.validity.notBefore.setFullYear( cert.validity.notBefore.getFullYear() - 1);
+		cert.validity.notAfter = new Date();
+		cert.validity.notAfter.setFullYear( cert.validity.notAfter.getFullYear() + 1);
+		var attrs = [{
+			name: 'commonName',
+		    value: cn
+		}, {
+			name: 'countryName',
+			value: 'ES'
+		}, {
+			shortName: 'ST',
+			value: 'Madrid'
+		}, {
+			name: 'localityName',
+			value: 'Madrid'
+		}, {
+			name: 'organizationName',
+		    value: 'instaltic'
+		}, {
+		    shortName: 'OU',
+		    value: 'instaltic'
+		}];
+		cert.setSubject(attrs);
+		cert.setIssuer(attrs);
+		cert.setExtensions([{
+			name: 'basicConstraints',
+		    cA: true
+		}, {
+			name: 'keyUsage',
+		    keyCertSign: true,
+		    digitalSignature: true,
+		    nonRepudiation: true,
+		    keyEncipherment: true,
+		    dataEncipherment: true
+		}, {
+			name: 'subjectAltName',
+			altNames: [{
+				type: 7, // IP
+				ip: '217.127.199.47'
+			}]
+		}]);
+
+		cert.publicKey = keys.publicKey;
+
+		// self-sign certificate
+		cert.sign(keys.privateKey);
+
+		keys.cert = cert;
+		//console.info('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
+		
+		return keys;
+	};
+	
 	this.createTLSConnection = function( options ) {
 
 		var serverTLS = forge.tls.createConnection({
@@ -91,7 +156,7 @@ function PostMan(_io, _logger) {
 				  var data2send = c.tlsData.getBytes();
 				  io.sockets.to(options.socket.id).emit('data2Client', forge.util.encode64( data2send ) );
 			  }catch(e){
-				  logger.erro("createTLSConnection ::: exception"  + e);
+				  logger.error("createTLSConnection ::: exception"  + e);
 			  }
 		  } ,
 		 // receive clear base64-encoded data from TLS from client
@@ -104,10 +169,12 @@ function PostMan(_io, _logger) {
 		    //logger.debug('Server received heartbeat: ' + payload.getBytes());
 		  },
 		  closed: function(c) {
-		    //logger.debug('Server disconnected.');
+		    logger.debug('Server disconnected.');
+		    //options.onClose();
 		  },
 		  error: function(c, error) {
 		    logger.error('Server error: ' + error.message);
+		    //c.close();		    
 		  }
 		});
 		
@@ -622,73 +689,6 @@ function PostMan(_io, _logger) {
 	};	
 	
 };	
-
-
-PostMan.prototype.createAsymetricKeys = function() {
-
-	
-	var options = {};
-	options.bits = 2048;
-	options.e = 0x10001;
-	var keys = forge.pki.rsa.generateKeyPair( options );
-	console.error('createAsymetricKeys ::: key-pair created.');
-
-	var cn = 'authknetserver';
-	var cert = forge.pki.createCertificate();
-	cert.serialNumber = '01';
-	cert.validity.notBefore = new Date();
-	cert.validity.notBefore.setFullYear( cert.validity.notBefore.getFullYear() - 1);
-	cert.validity.notAfter = new Date();
-	cert.validity.notAfter.setFullYear( cert.validity.notAfter.getFullYear() + 1);
-	var attrs = [{
-		name: 'commonName',
-	    value: cn
-	}, {
-		name: 'countryName',
-		value: 'ES'
-	}, {
-		shortName: 'ST',
-		value: 'Madrid'
-	}, {
-		name: 'localityName',
-		value: 'Madrid'
-	}, {
-		name: 'organizationName',
-	    value: 'instaltic'
-	}, {
-	    shortName: 'OU',
-	    value: 'instaltic'
-	}];
-	cert.setSubject(attrs);
-	cert.setIssuer(attrs);
-	cert.setExtensions([{
-		name: 'basicConstraints',
-	    cA: true
-	}, {
-		name: 'keyUsage',
-	    keyCertSign: true,
-	    digitalSignature: true,
-	    nonRepudiation: true,
-	    keyEncipherment: true,
-	    dataEncipherment: true
-	}, {
-		name: 'subjectAltName',
-		altNames: [{
-			type: 7, // IP
-			ip: '217.127.199.47'
-		}]
-	}]);
-
-	cert.publicKey = keys.publicKey;
-
-	// self-sign certificate
-	cert.sign(keys.privateKey);
-
-	keys.cert = cert;
-	//console.info('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
-	
-	return keys;
-};
 
 
 //verifies if it was signed with the current symmetric key of the client (number of the challenge)

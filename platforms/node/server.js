@@ -556,7 +556,7 @@ if ( conf.useTLS ){
 	};//END onLoginRequest
 	
 	app.locals.onRegistryRequest = function (socket , input) {
-		logger.info("app.locals.onRegistryRequest ::: do something..." + JSON.stringify(input));
+		logger.debug("app.locals.onRegistryRequest ::: do something...", input);
 		
 		var clientPublicKey = forge.pki.publicKeyFromPem ( input.clientPEMpublicKey );
 		var modulusRSA = clientPublicKey.n.toString(32);
@@ -585,7 +585,8 @@ if ( conf.useTLS ){
 			keys : keys,
 			clientPEMcertificate : input.clientPEMcertificate,
 			socket : socket,
-			onTLSmsg : app.locals.onTLSmsg
+			onTLSmsg : app.locals.onTLSmsg,
+			onClose : function(){ socket.disconnect(); }
 	  	};
 		socket.TLS = postMan.createTLSConnection( options );
 		// send serversPEM for the client to establish TLS connection
