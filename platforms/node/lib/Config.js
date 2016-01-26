@@ -8,6 +8,8 @@ config.MAX_SIZE_MODULUS = 417;
 config.MAX_SIZE_CHALLENGE = 360;
 config.MAX_PROFILES_QUERY = 7;
 config.MAX_PROFILES_QUERY_ONLINE = 7;
+config.MAX_SIZE_ASIM_KEYS_BUFFER = 100;
+
 config.listOfServerSockets = [
 	{
 		ipServerSockets	: "",

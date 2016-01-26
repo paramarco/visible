@@ -238,7 +238,7 @@ app.locals.onDisconnect = function(socket) {
 	
 	socket.visibleClient.socketid = null ;	
 	brokerOfVisibles.updateClientsProfile(socket.visibleClient);	
-	logger.info('onDisconnect ::: ' + socket.visibleClient.publicClientID);
+	logger.info("onDisconnect ::: client: " + socket.visibleClient.publicClientID + " socket: " + socket.socketid);
 	
 };
 
@@ -534,8 +534,7 @@ if ( conf.useTLS ){
 			];
 			
 			var server2connect = postMan.getRightServer2connect();
-			//logger.info("login ::: server2connect ::: " + JSON.stringify(server2connect) );
-			
+		
 			// challenge forwarding to the Client
 			when.all ( clientUpdate ).then(function(){
 				
@@ -579,7 +578,8 @@ if ( conf.useTLS ){
 //TODO		
 //		if ( ! postMan.isPEM( input.clientPEM ) ){ return; }
 		
-		var keys = postMan.createAsymetricKeys();
+		//var keys = postMan.createAsymetricKeys();
+		var keys = postMan.getAsymetricKeyFromList();
 		
 		var options = {
 			keys : keys,
@@ -595,7 +595,10 @@ if ( conf.useTLS ){
 			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
 		}catch(e){
 			logger.info("onRequestTLSConnection ::: send ::: exception"  + e);
-		}	
+		}
+		
+		//postMan.setAsymetricKey2List( postMan.createAsymetricKeys() );
+		
 	};// END onRequestTLSConnection
 	
 	app.locals.onTLSmsg = function (socket , input) {

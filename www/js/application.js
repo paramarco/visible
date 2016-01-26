@@ -210,17 +210,15 @@ Postman.prototype.createTLSConnection = function( options  ) {
 	    return verified;
 	  },
 	  connected: function(c) {
-	    log.info('Client connected...');
-
+	    log.info('TLS Client connected...');
 	    // send message to server
 	    setTimeout(function() {
 	      c.prepareHeartbeatRequest('heartbeat');
 	    }, 1);
-		log.info("createTLSConnection ::: onConnected was trigerred");
 	    options.onConnected();
 	  },
 	  getCertificate: function(c, hint) {
-	    log.info('Client getting certificate ...');
+	    log.info('TLS Client getting certificate ...');
 	    return app.keys.certificate;
 	  },
 	  getPrivateKey: function(c, cert) {
@@ -232,24 +230,24 @@ Postman.prototype.createTLSConnection = function( options  ) {
 			  var data2send =  c.tlsData.getBytes();
 			  app.authSocket.emit('data2Server', forge.util.encode64( data2send ) );			
 		  }catch(e){
-			  log.debug("authSocket.TLS.sendData ::: exception"  + e);
+			  log.debug("TLS Client data2Server ::: exception"  + e);
 		  }
 	  },
 	  // receive clear base64-encoded data from TLS from server
 	  dataReady: function(c) {
 		  var data2receive = c.data.getBytes();
-		  log.info('Client received', data2receive );
+		  log.info('TLS Client received', data2receive );
 		  options.onTLSmsg( data2receive );
 	  },
 	  heartbeatReceived: function(c, payload) {
-	    log.debug('Client received heartbeat: ' + payload.getBytes());
+	    log.debug('TLS Client received heartbeat: ' + payload.getBytes());
 	  },
 	  closed: function(c) {
-	    log.info('Client disconnected.');
-	    //options.onDisconnected();
+	    log.debug('TLS Client connection closed.');
+	    options.onClosed();
 	  },
 	  error: function(c, error) {
-	    log.error('Client error: ' + error.message);
+	    log.error('TLS Client error: ' + error.message);
 	    options.onError();
 	  }
 	});
@@ -701,8 +699,6 @@ Postman.prototype.send = function(event2trigger, data  ) {
 	try{
 		if (typeof socket != "undefined" && socket.connected == true){
 			socket.emit(event2trigger, Postman.prototype.encrypt( data ) );
-		}else{
-			app.sendLogin();
 		}	
 					
 	}catch(e){
@@ -714,7 +710,8 @@ Postman.prototype.send = function(event2trigger, data  ) {
 Postman.prototype.sendMsg = function( msg ) {	
 	try{
 		if (msg.messageBody == null){
-		log.debug("Postman.prototype.sendMsg - type check", msg);
+			log.debug("Postman.prototype.sendMsg ::: type check failed");
+			mailBox.removeMessage( msg );
 			return;
 		}
 		
@@ -2685,6 +2682,21 @@ MailBox.prototype.storeMessage = function( msg2Store ) {
  		
 };
 
+MailBox.prototype.removeMessage = function( msg2remove ) {
+
+	try {
+		var transaction = db.transaction(["messages"],"readwrite");	
+		var store = transaction.objectStore("messages");
+		store.delete( msg2remove.msgID ).onsuccess = function(e) {
+			log.debug("removeMessage ::: succesfully removed");
+		};	
+	}
+	catch(e){
+		log.debug("MailBox.prototype.storeMessage", e);
+	}
+ 		
+};
+
 MailBox.prototype.unwrapMessagesOf = function( contact ) {
 
 	try {
@@ -2812,6 +2824,10 @@ Application.prototype.connect2server = function(result){
   		config.ipServerSockets = remoteServer.ipServerSockets;
   		config.portServerSockets = remoteServer.portServerSockets;
   	} 
+  	
+  	if ( typeof socket != "undefined"){
+  		socket.disconnect();  		
+  	}
 
   	var url = 'http://' + config.ipServerSockets +  ":" + config.portServerSockets ;
   	var options = { 
@@ -2839,8 +2855,8 @@ Application.prototype.connect2server = function(result){
 	});
 	
 	socket.on('disconnect', function () {
-		log.info("socket.on.disconnect"); 
-		app.sendLogin();
+		log.info("socket.on.disconnect, sendLogin in ", config.TIME_WAIT_WAKEUP); 		
+		setTimeout( function(){ app.sendLogin(); } , config.TIME_WAIT_WAKEUP); 
 	});
 	
 	socket.on('reconnect_attempt', function () {
@@ -2851,6 +2867,7 @@ Application.prototype.connect2server = function(result){
 	socket.on('reconnect_failed', function () {
 		log.info("socket.on.reconnect_failed"); 
 		app.connecting = false;
+		app.sendLogin();					
 	});
 	
 	socket.on('reconnect', function () {
@@ -3364,7 +3381,7 @@ Application.prototype.onResumeCustom =  function() {
 	
    	if	( app.multimediaWasOpened == false ){
    		gui.hideLocalNotifications();
-   		setTimeout( function(){ app.sendLogin(); }, config.TIME_WAIT_WAKEUP * 4 ); 		
+   		setTimeout( function(){ app.sendLogin(); }, config.TIME_WAIT_WAKEUP ); 		
 	}	    	
 	app.inBackground = false; 
 	app.multimediaWasOpened = false;
@@ -3417,13 +3434,15 @@ Application.prototype.userRegistration = function( data ){
 
 Application.prototype.sendLogin = function(){
 	
-	log.info("sendLogin");
+	
 	if (app.connecting == true || 
 		app.initialized == false || 
 		( typeof socket != "undefined" && socket.connected == true)){
 		log.info("sendLogin returned");  
 		return;
-	} 
+	}else {
+		log.info("sendLogin");
+	}
 	app.connecting = true;
 	gui.showLoadingSpinner();
 	
@@ -3435,37 +3454,32 @@ Application.prototype.sendLogin = function(){
 				data : { handshakeToken: user.handshakeToken }
 			};
 			var data2send = JSON.stringify( loginRequest );
-	    	log.debug("sendLogin ::: data2send" + data2send );
+	    	log.debug("callback ::: establishTLS ::: onConnected : " + data2send );
 
 			app.authSocket.TLS.prepare( data2send );
 			gui.hideLoadingSpinner();
 		},
 		onClosed : function(){
-			log.info("sendLogin ::: onClosed"); 
+			log.info("callback ::: establishTLS ::: onClosed");
+			if ( typeof app.authSocket.TLS != "undefined" ){
+				app.authSocket.TLS.close();
+			}
 		} ,
 		onDisconnected : function(){
-			
-			if ( typeof app.authSocket.TLS != "undefined" ){
-				app.authSocket.TLS.close();
-			}
-			log.info("sendLogin ::: onDisconnected"); 
-			setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST );
-		} ,
-		onError : function(){
-			log.info("sendLogin ::: onError"); 
-			/*setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST );	*/		
-		},
+			log.info("callback ::: establishTLS ::: onDisconnected");
+		},		
 		onReconnect : function(){
-			log.info("sendLogin ::: onReconnect"); 
-			if ( typeof app.authSocket.TLS != "undefined" ){
-				app.authSocket.TLS.close();
-				app.authSocket.disconnect();
-			}
-			app.sendLogin();
+			log.info("callback ::: establishTLS ::: onReconnect");
+		},
+		onError : function(){
+			app.connecting = false; 
+			log.info("callback ::: establishTLS ::: onError"); 
+			setTimeout(function(){ app.sendLogin(); } , config.TIME_WAIT_HTTP_POST * 2);			
 		},
 		onConnect_error :function(){
-			log.info("sendLogin :::onConnect_error"); 
-			setTimeout( function() { app.sendLogin(); }, config.TIME_WAIT_HTTP_POST * 2);
+			app.connecting = false; 
+			log.info("callback ::: establishTLS ::: onConnect_error "); 
+			setTimeout(function(){ app.sendLogin(); }, config.TIME_WAIT_HTTP_POST * 3);
 		}
 	};
 			
@@ -3533,17 +3547,20 @@ Application.prototype.sendRequest4Neighbours = function(){
 
 
 Application.prototype.establishTLS = function ( params ){
-
-  	var options = { 
-		forceNew : true,
-		reconnection : true,
-	};
+	
+	log.debug("starting establishment of TLS ");
+	if ( app.authSocket != null ){
+		app.authSocket.disconnect();
+	}
+	if ( app.authSocket != null && typeof app.authSocket.TLS != "undefined" ){
+		app.authSocket.TLS.close();		
+	}
+  	var options = { forceNew : true	};
 	var url = 'http://' + config.ipServerAuth +  ":" + config.portServerAuth ;
-	app.authSocket = null;
   	app.authSocket = io.connect( url, options );
 	
   	app.authSocket.on('connect', function () {
-  		log.debug("authSocket.on.connect");
+  		log.debug("authSocket.on.connect ::: emitting RequestTLSConnection");
   		var request = { 
   			clientPEMcertificate : app.keys.certificate
   		};
@@ -3573,6 +3590,7 @@ Application.prototype.establishTLS = function ( params ){
 	});	
   	app.authSocket.on('disconnect', function () {
   		log.debug("authSocket.on.disconnect"); 
+  		params.onDisconnected();
 	});	
     
 };// END establishTLS

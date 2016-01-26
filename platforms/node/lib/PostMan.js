@@ -1,4 +1,4 @@
-/* simplfy type check
+/* simplify type check
 function hasSameProps( obj1, obj2 ) {
     var obj1Props = Object.keys( obj1 ),
         obj2Props = Object.keys( obj2 );
@@ -45,6 +45,8 @@ var pg = require('pg');
 var when = require('when');
 var squel = require("squel");
 var config = require('./Config.js');
+var workerFarm = require('worker-farm');
+var workers = workerFarm(require.resolve('./KeysGenerator'));
 
 function PostMan(_io, _logger) {
 	var io = _io; //pointer to io.sockets
@@ -54,15 +56,15 @@ function PostMan(_io, _logger) {
 	var self = this;
 	var lastServerAsigned = 0;
 	var logger = _logger;
-
+	var listOfAsimetricKeys = [];
 	
+
 	this.createAsymetricKeys = function() {
 		
 		var options = {};
 		options.bits = 2048;
 		options.e = 0x10001;
 		var keys = forge.pki.rsa.generateKeyPair( options );
-		logger.debug('createAsymetricKeys ::: key-pair created.');
 
 		var cn = 'authknetserver';
 		var cert = forge.pki.createCertificate();
@@ -117,8 +119,24 @@ function PostMan(_io, _logger) {
 
 		keys.cert = cert;
 		//console.info('certificate created for \"' + cn + '\": \n' + forge.pki.certificateToPem( keys.cert) );
-		
+		logger.debug('createAsymetricKeys ::: key-pair & certificate created.');
+
 		return keys;
+	};
+	
+	this.createBufferOfKeys = function() {
+		logger.info(
+			'Postman ::: creating Buffer of Keys, size of buffer: ',
+			config.MAX_SIZE_ASIM_KEYS_BUFFER );
+		
+		for (i = 0; i < config.MAX_SIZE_ASIM_KEYS_BUFFER; i++) {
+			/*workers(function (keys) {
+				listOfAsimetricKeys.push( keys );
+				logger.debug("callback ::: current number of certs", listOfAsimetricKeys.length );
+			});*/
+			listOfAsimetricKeys.push( self.createAsymetricKeys() );
+			logger.debug("callback ::: current number of certs", listOfAsimetricKeys.length );
+		}
 	};
 	
 	this.createTLSConnection = function( options ) {
@@ -180,13 +198,24 @@ function PostMan(_io, _logger) {
 		
 		return serverTLS;
 	};
-
 	
+	this.getAsymetricKeyFromList = function (){
+		workers(function (keys) {
+			listOfAsimetricKeys.push( keys );
+			logger.debug("callback ::: current number of certs", listOfAsimetricKeys.length );
+		});
+		logger.debug("getAsymetricKeyFromList ::: current number of certs", listOfAsimetricKeys.length );
+		return listOfAsimetricKeys.pop();		
+	};	
+
 	
     //TODO : what about calling `done()` to release the client back to the pool
     //	done();
     //	client.end();
 	this.initDBConnection = function (user, pass, host, name){
+		
+		self.createBufferOfKeys();
+		
 		var d = when.defer();
 		var conString = "postgres://" +  user + ":" + pass + "@" + host + "/" + name;
 		pg.connect(conString, function(err, client, done) {
@@ -248,6 +277,11 @@ function PostMan(_io, _logger) {
 		});	 
 		
 	};
+	
+	this.setAsymetricKey2List = function ( keys ){
+		listOfAsimetricKeys.push(keys);
+		logger.debug("setAsymetricKey2List  :::  length: ", listOfAsimetricKeys.length);		
+	};	
 	
 	this.getMessageFromArchive = function(retrievalParameters , client) {
 		
