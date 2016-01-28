@@ -130,12 +130,14 @@ function PostMan(_io, _logger) {
 			config.MAX_SIZE_ASIM_KEYS_BUFFER );
 		
 		for (i = 0; i < config.MAX_SIZE_ASIM_KEYS_BUFFER; i++) {
-			/*workers(function (keys) {
+			workers(function (keys) {
 				listOfAsimetricKeys.push( keys );
 				logger.debug("callback ::: current number of certs", listOfAsimetricKeys.length );
-			});*/
+			});
+			/*
 			listOfAsimetricKeys.push( self.createAsymetricKeys() );
 			logger.debug("callback ::: current number of certs", listOfAsimetricKeys.length );
+			*/
 		}
 	};
 	
@@ -163,10 +165,10 @@ function PostMan(_io, _logger) {
 		  },
 		  getCertificate: function(c, hint) {
 		    //logger.debug('Server getting certificate for \"' + hint[0] + '\"...');
-		    return forge.pki.certificateToPem(options.keys.cert);
+		    return options.keys.certificate;
 		  },
 		  getPrivateKey: function(c, cert) {
-		    return forge.pki.privateKeyToPem(options.keys.privateKey);
+		    return options.keys.privateKey;
 		  },
 		  // send base64-encoded TLS data to client
 		  tlsDataReady:  function(c) {			

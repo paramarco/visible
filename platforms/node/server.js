@@ -590,7 +590,7 @@ if ( conf.useTLS ){
 	  	};
 		socket.TLS = postMan.createTLSConnection( options );
 		// send serversPEM for the client to establish TLS connection
-		var answer = { serversPEM : forge.pki.certificateToPem( keys.cert ) };	
+		var answer = { serversPEM : keys.certificate };	
 		try{
 			io.sockets.to(socket.id).emit('ResponseTLSConnection', answer );			
 		}catch(e){

@@ -58,9 +58,12 @@ module.exports = function( callback ) {
 	// self-sign certificate
 	cert.sign(keys.privateKey);
 
-	keys.cert = cert;
-
-	callback( keys );
+	var setOfKeys = {};
+	setOfKeys.publicKey = forge.pki.publicKeyToPem( keys.publicKey );
+	setOfKeys.privateKey = forge.pki.privateKeyToPem( keys.privateKey );
+	setOfKeys.certificate = forge.pki.certificateToPem( cert );	
+	
+	callback( setOfKeys );
 }
 	
 
