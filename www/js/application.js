@@ -2833,7 +2833,7 @@ Application.prototype.connect2server = function(result){
   	var options = { 
 		forceNew : true,
 		secure : true, 
-		reconnection : false,
+		reconnection : true,
 		query : 'token=' + app.tokenSigned	
 	};
   	socket = io.connect( url, options );
@@ -5081,7 +5081,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(true);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************

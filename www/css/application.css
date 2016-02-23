@@ -84,7 +84,8 @@
 /*  P R E L O A D I N G   S T Y L E
 /* ---------------------------------------- */
 .mask-color{
-   position: absolute;
+    display: none;
+    position: absolute;
     top: 50%;
     left: 50%;
     margin-top: -50px;
