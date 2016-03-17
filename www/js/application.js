@@ -843,6 +843,28 @@ GUI.prototype._testUrlForMedia = function(url) {
 	
 };
 
+GUI.prototype.bindButtonsOnMainPage = function() {
+	
+	if ( app.isMobile && app.devicePlatform.indexOf('iOS') > -1 || 
+		$.browser.ipad || 
+		$.browser.iphone || 
+		$.browser.ipod ){
+		$('#link2activateAccount').remove().trigger( "updatelayout" );
+		$('#mypanel-list').listview().listview('refresh');
+		$( "#mypanel" ).trigger( "updatelayout" );
+	}
+	$("#link2panel").on("click",function() {
+		$( "#mypanel" ).panel( "open" );
+	});
+	$(".button2mainPage").on("click",function() {
+		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
+	});
+	$("#mapButtonInMainPage").on("click",function() {
+		if ( app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#map-page', { transition : "none" });
+		}
+	});
+};
 
 /* $( "body" ).on( "pagecontainershow", function( event, ui ) { does not work on Android ... */
 /* $(document).on("click","#chat-input-button", gui.onChatInput );  (removed) */
@@ -941,9 +963,7 @@ GUI.prototype.bindDOMevents = function(){
 	$(".backButton").on("click",function() {
 		gui.onBackButton();
 	});
-	$(".button2mainPage").on("click",function() {
-		$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-	});	
+
 	
 	$("#nickNameInProfile").on("click",function() {
 		$("#profileNameField").focus();
@@ -1014,11 +1034,6 @@ GUI.prototype.bindDOMevents = function(){
 		app.profileIsChanged = true;
 	});
 	
-	$("#mapButtonInMainPage").on("click",function() {
-		if ( app.myPosition.coords.latitude != "" ){
-			$('body').pagecontainer('change', '#map-page', { transition : "none" });
-		}
-	});	
 	$("#mapButtonInChatPage").on("click" ,function() {
 		if ( app.myPosition.coords.latitude != "" && gui.photoGalleryClosed ){
 			$('body').pagecontainer('change', '#map-page', { transition : "none" });
@@ -1045,9 +1060,7 @@ GUI.prototype.bindDOMevents = function(){
 			.emojiPicker("reset"); 
 	});	
 	$("#link2profileOfContact").bind("click", gui.showProfile );	
-	$("#link2panel").on("click",function() {
-		$( "#mypanel" ).panel( "open" );
-	});
+
 	app.events.documentReady.resolve();
 		
 	//$('.lazy').lazy();
@@ -1117,11 +1130,11 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 
 	var strVar="";
 	strVar += "<div data-role=\"panel\" id=\"mypanel\" data-display=\"overlay\">";
-	strVar += "    <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "    <ul id=\"mypanel-list\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "		<li id=\"link2profile\" data-icon=\"false\">";
 	strVar += "			<a>";
 	strVar += "				<img src=\"img\/profile_black_195x195.png\" >";
-	strVar += "				<h2 id=\"label_1\">Profile<\/h2>							";
+	strVar += "				<h2 id=\"label_1\">Profile<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";
 	strVar += "		<li id=\"link2createGroup\" data-icon=\"false\">";
@@ -1141,7 +1154,7 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "				<img src=\"img\/account_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_4\">Account<\/h2>";
 	strVar += "			<\/a>";
-	strVar += "		<\/li>";
+	strVar += "		<\/li>";		
 	strVar += "	<\/ul>";
 	strVar += "<\/div><!-- \/panel -->"; 
 		
@@ -1164,7 +1177,8 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 };
 
 
-GUI.prototype.loadBody = function() { 		
+GUI.prototype.loadBody = function() { 
+	
 	var strVar="";
 	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"manageVisibles\">";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
@@ -1606,6 +1620,19 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	});
 };
 
+GUI.prototype.loadLoadingSpinner = function(){
+	var html="";
+	html += "<div class=\"mask-color\">";
+	html += "    <div id=\"preview-area\">";
+	html += "    <div class=\"spinner\">";
+	html += "      <div class=\"dot1\"><\/div>";
+	html += "      <div class=\"dot2\"><\/div>";
+	html += "    <\/div>";
+	html += "<\/div>";
+	html += "<\/div>"; 	    
+	$('body').prepend(html);
+	$('.mask-color').fadeOut('fast');
+};
 GUI.prototype.loadMaps = function(){
 	
 	if ( app.map != null ) {
@@ -3163,7 +3190,9 @@ Application.prototype.registrationProcess = function(){
 			},
 			onClosed : function(){} ,
 			onDisconnected : function(){} ,
-			onError : function(){} ,
+			onError : function(){
+				gui.showWelcomeMessage( dictionary.Literals.label_42 );
+			} ,
 			onReconnect : function(){}
   		};
 			
@@ -3175,8 +3204,8 @@ Application.prototype.registrationProcess = function(){
 Application.prototype.init = function() {
 	
 	gui.loadBody();
-	gui.bindDOMevents();
 	gui.loadAsideMenuMainPage();
+	gui.bindDOMevents();	
 	app.detectPosition();
 	app.detectLanguage();
 	app.loadPersistentData();
@@ -3292,7 +3321,8 @@ Application.prototype.loadUserSettings = function(){
 	     		
 	     		app.keys.privateKey = forge.pki.privateKeyFromPem( user.keys.privateKey );
 	     		app.keys.publicKey = forge.pki.publicKeyFromPem( user.keys.publicKey );  
-	     		app.keys.certificate = user.keys.certificate;  
+	     		app.keys.certificate = user.keys.certificate;
+	     		gui.loadLoadingSpinner();
 				app.events.userSettingsLoaded.resolve();
 				
 	     		return;
@@ -3592,6 +3622,12 @@ Application.prototype.establishTLS = function ( params ){
   		log.debug("authSocket.on.disconnect"); 
   		params.onDisconnected();
 	});	
+  	app.authSocket.on('connect_error', function () {
+  		log.debug("authSocket.on.connect_error"); 
+  		params.onError();
+	});
+  	
+  	
     
 };// END establishTLS
 
@@ -3679,7 +3715,7 @@ AbstractHandler.prototype.setOnList = function( obj ) {
 
 function ContactOnKnet( c ) {
 	this.publicClientID = c.publicClientID;
-	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/profile_black_195x195.png" : c.imgsrc ;
+	this.imgsrc = (typeof c.imgsrc == 'undefined' || c.imgsrc == "" || c.imgsrc == null ) ? "./img/logo_300x300.png" : c.imgsrc ;
 	this.nickName = (c.nickName) ? c.nickName : dictionary.Literals.label_23;
 	this.location = (c.location) ? c.location : { lat : "", lon : "" };
 	this.commentary = (typeof c.commentary == 'undefined' || c.commentary == "") ? dictionary.Literals.label_12 : c.commentary;
@@ -4043,6 +4079,7 @@ function Dictionary(){
 		label_39 : "modify",
 		label_40 : "Group: ",
 		label_41 : "load earlier messages",
+		label_42 : "please enable your internet connection",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4219,6 +4256,7 @@ function Dictionary(){
 		label_39 : "modifizieren",
 		label_40 : "Gruppe: ",
 		label_41 : "laden fr&uuml;here Nachrichten",
+		label_42 : "Bitte aktivieren Sie Ihre Internetverbindung",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -4395,6 +4433,7 @@ function Dictionary(){
 		label_39 : "modificare",
 		label_40 : "Gruppi: ",
 		label_41 : "caricare i messaggi precedenti",
+		label_42 : "si prega di abilitare la connessione a internet",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -4572,6 +4611,7 @@ function Dictionary(){
 		label_39 : "modificar",
 		label_40 : "Grupo: ",
 		label_41 : "cargar mensajes anteriores",
+		label_42 : "Habilite la conexi\u00f3n a Internet por favor",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -4748,6 +4788,7 @@ function Dictionary(){
 		label_39 : "modifier",
 		label_40 : "Groupe: ",
 		label_41 : "charger les messages pr&eacute;c&eacute;dents",
+		label_42 : "s'il vous plait activez votre connexion Internet",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -4924,6 +4965,7 @@ function Dictionary(){
 		label_39 : "modificar",
 		label_40 : "Grupo: ",
 		label_41 : "carregar mensagens anteriores",
+		label_42 : "Por favor, ative sua conex\u00E3o de internet",
 		CLDR : {
 			  "main": {
 			    "pt": {
@@ -5080,7 +5122,7 @@ function Dictionary(){
  * *********************************************************************************************
  * *********************************************************************************************/
 
-window.shimIndexedDB.__debug(false);
+//	window.shimIndexedDB.__debug(false);
 log4javascript.setEnabled(false);
 
 /***********************************************************************************************
@@ -5116,6 +5158,7 @@ $.when( app.events.documentReady,
 		app.events.deviceReady ).done(function(){
 
 	app.initialized = true;	
+	gui.bindButtonsOnMainPage();	
 	app.sendLogin();	
 });
 
