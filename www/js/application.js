@@ -642,12 +642,15 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		}else{
 			publicClientID = msg.from;
 		}
-		msg.setChatWith( publicClientID );
-		mailBox.storeMessage( msg );
 		
 		var obj = abstractHandler.getObjById( publicClientID ); 
 		if (typeof obj == "undefined") return;
-		 		 		
+		
+		if( obj.isBlocked ) return; 
+		
+		msg.setChatWith( publicClientID );
+		mailBox.storeMessage( msg );
+				 		 		
 		if ( app.currentChatWith == publicClientID ){
 			gui.showMsgInConversation( msg, { isReverse : false, withFX : true } );
 		}else{
@@ -850,6 +853,7 @@ GUI.prototype.bindButtonsOnMainPage = function() {
 		$.browser.iphone || 
 		$.browser.ipod ){
 		$('#link2activateAccount').remove().trigger( "updatelayout" );
+		$('#link2manageVisibles').remove().trigger( "updatelayout" );		
 		$('#mypanel-list').listview().listview('refresh');
 		$( "#mypanel" ).trigger( "updatelayout" );
 	}
@@ -888,8 +892,8 @@ GUI.prototype.bindDOMevents = function(){
 	    if (ui.options.target == "#ProfileOfContact-page"){		
 			gui.loadMapOnProfileOfContact();				 
 	    }
-	    if (ui.options.target == "#chat-page"){		
-			$("#ProfileOfContact-page").remove();					 
+	    if (ui.options.target == "#chat-page"){	
+			$("#ProfileOfContact-page").remove();			
 	    }	    
 	    if (ui.options.target == "#profile"){		
 			gui.loadProfile(); 					 
@@ -1273,8 +1277,10 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<ul id=\"contacts4Group\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
 	strVar += "													<h1 id=\"label_37\">My Groups<\/h1>";
 	strVar += "													<ul id=\"listOfGroups\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";	
+	strVar += "													<h1 id=\"label_52\">Blocked people<\/h1>";
+	strVar += "													<ul id=\"listOfBlocked\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
 	strVar += "												<\/div>";	
-	strVar += "											<\/div>";	
+	strVar += "											<\/div>";
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -1600,6 +1606,7 @@ GUI.prototype.loadGroupMenu = function( group ) {
 	
 	gui.showContactsOnGroupMenu();		
 	gui.showGroupsOnGroupMenu();
+	gui.showListOfBlocked();
 	
 	var html = 
 	"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"imageGroup\" class=\"picedit_box\">";
@@ -1753,11 +1760,16 @@ GUI.prototype.onBackButton = function() {
 			}
 			break;
 		case /chat-page/.test(page):
+			
+			
+		
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
 			}else {				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			}
+			
+						
 			break;
 		case /emoticons/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
@@ -1802,8 +1814,22 @@ GUI.prototype.onChatInput = function() {
 	$("#chat-multimedia-button").unbind( "click",  gui.showEmojis);
 	$("#chat-multimedia-button").bind( "click", gui.showImagePic );
 	
-	
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+	if ( ! obj.isAccepted ) gui.onConsentButton();
 };
+
+
+GUI.prototype.onConsentButton = function() {
+	$('#consent-menu').remove();
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+	if (typeof obj == "undefined") return;
+	obj.isAccepted = true;
+	obj.isBlocked = false;
+	abstractHandler.setOnList( obj );
+	abstractHandler.setOnDB( obj );
+};
+
+
 
 GUI.prototype.onGroupsButton = function() {
 
@@ -1811,11 +1837,14 @@ GUI.prototype.onGroupsButton = function() {
 	var action = $("#groupsButton").data( 'action' );
 	var inputNickName = $("#nickNameGroupField").val();
 	if ( inputNickName == "" || inputNickName == dictionary.Literals.label_23 ){
-		var html = '<div data-role="header" data-theme="a"><h1>oops!</h1></div>';
+		var html = '';
 		html += '<div role="main" class="ui-content">';
-		html += '	<h3 class="ui-title"> remember to set a name for the Group</h3>';
+		html += ' <h1 class="ui-title" role="heading" aria-level="1"> oops!</h1><p> </p>';	
+		html += '	<h1> </h1><h2> remember to set a name for the Group</h2><h1> </h1>';
 		html += '</div>';
-		gui.showDialog( html );		
+		
+		gui.showDialog( html );
+		gui.loadGroupMenu();
 		return;
 	} 
 	if ( action == "create" ){
@@ -1854,6 +1883,32 @@ GUI.prototype.onRemoveContactFromGroup = function( contact ) {
 	gui.groupOnMenu.removeMember( contact );
 	
 };
+
+GUI.prototype.onReportAbuse = function() {
+	$('#consent-menu').remove();
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+	if (typeof obj == "undefined") return;
+	obj.isAccepted = false;
+	obj.isBlocked = true;
+	abstractHandler.setOnList( obj );
+	abstractHandler.setOnDB( obj );
+	gui.showReportAbuse();
+	
+};
+
+GUI.prototype.onReportBlock = function() {
+	$('#consent-menu').remove();
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+	if (typeof obj == "undefined") return;
+	obj.isAccepted = false;
+	obj.isBlocked = true;
+	abstractHandler.setOnList( obj );
+	abstractHandler.setOnDB( obj );	
+	
+	$('#'+obj.publicClientID).remove();
+	
+};
+
 
 //stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
 GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
@@ -1951,6 +2006,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("buyButton").innerHTML = dictionary.Literals.label_34;
 	document.getElementById("label_37").innerHTML = dictionary.Literals.label_37;
 	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
+	document.getElementById("label_52").innerHTML = dictionary.Literals.label_52;
 
 };
 
@@ -1975,6 +2031,60 @@ GUI.prototype.showAddContact2Group = function( contact ) {
 	$('#contacts4Group').listview().listview('refresh');			
 };
 
+GUI.prototype.showBlockSomebodyPrompt = function() {
+	
+	var obj = abstractHandler.getObjById( app.currentChatWith ); 
+
+	var html = '';
+	html += '<div id="block-confirm" role="main" class="ui-content">';
+	html += ' <h1 id="label_51" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_51+'</h1><p> </p>';	
+	html += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
+			'  <li>'+
+			' 	<a data-role=\"none\" class="ui-btn">'+ 
+			'  	 <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+			'  	 <h2>'+ obj.nickName   + '</h2> '+
+			'   </a>'+
+			'  </li>';
+	html += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+	html += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+	html += '</div>';
+	gui.showDialog( html );
+	
+	$("#label_56").unbind("click").on("click", function(){ 
+		gui.onReportBlock();
+		$("#popupDiv").remove();
+	});
+	$("#label_57").unbind("click").on("click", function(){ 
+		$("#popupDiv").remove();
+	});
+	
+};
+
+GUI.prototype.showConsentMenu = function() {
+
+	var prompt2show="";
+	prompt2show += "<div data-role=\"none\" id=\"consent-menu\" class=\"ui-dialog-contain\" > ";
+	prompt2show += " <h3><\/h3>";
+	prompt2show += " <a id=\"label_43\" class=\"ui-btn ui-shadow ui-corner-all ui-btn-b\">"+dictionary.Literals.label_43+"<\/a>";
+	prompt2show += " <a id=\"label_44\" class=\"ui-btn ui-shadow ui-corner-all ui-btn-b\">"+dictionary.Literals.label_44+"<\/a>";
+	prompt2show += " <a id=\"label_45\" class=\"ui-btn ui-shadow ui-corner-all ui-btn-a\">"+dictionary.Literals.label_45+"<\/a>";
+	prompt2show += "<\/div>";
+	
+	
+	$("#chat-page-content").append( prompt2show );
+	
+	$("#label_43").unbind( "click" ).bind("click", function(){	
+		gui.showBlockSomebodyPrompt();
+	});
+	$("#label_44").unbind( "click" ).bind("click", function(){			 
+		gui.onReportAbuse();
+	});
+	$("#label_45").unbind( "click" ).bind("click", function(){			 
+		gui.onConsentButton();
+	});
+	
+};
+
 /**
  * @param obj := ContactOnKnet | Group
  */
@@ -1986,12 +2096,9 @@ GUI.prototype.showConversation = function( obj ) {
 	app.currentChatWith = obj.publicClientID;
     $("body").pagecontainer("change", "#chat-page");
     gui.showLoadingSpinner();			
-
+    
 	$("#imgOfChat-page-header").attr("src", obj.imgsrc );
 	
-	//var newerDate = new Date().getTime();	
-	//var olderDate = new Date(newerDate - config.TIME_UNIX_MONTH).getTime();
-	//gui.printMessagesOf( obj.publicClientID, olderDate, newerDate,[]);
 	mailBox.retrieveMessages( obj.publicClientID ).done(function(list){
 		if ( list.length == config.MAX_SMS_RETRIEVAL ){
 			gui.bindPagination( list[0].timestamp );	
@@ -1999,7 +2106,11 @@ GUI.prototype.showConversation = function( obj ) {
 		list.reverse().map(function( message ){			
 			gui.showMsgInConversation( message, { isReverse : false, withFX : true } );
 		});	
-		gui.hideLoadingSpinner();		
+		gui.hideLoadingSpinner();
+		
+		if( ! obj.isAccepted ){
+			gui.showConsentMenu();	
+		}
 	});
 	
 	if ( obj.counterOfUnreadSMS > 0 ){
@@ -2111,6 +2222,8 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 		gui.refreshProfileInfo(obj);
 		return;
 	} 
+	
+	if( obj.isBlocked ) return;	
 	
 	var attributesOfLink = "" ;		
 	if (isNewContact){
@@ -2237,6 +2350,43 @@ GUI.prototype.showImagePic = function() {
 	$("#popupDivMultimedia").popup("open");
 	
 };
+
+GUI.prototype.showListOfBlocked = function() {
+	
+	$('#listOfBlocked').empty();
+	var listOfBlocked = [];
+	
+	groupsHandler.list.map( function( group ){
+		if ( group.isBlocked ){	listOfBlocked.push(group); }		
+	});	
+	contactsHandler.listOfContacts.map( function( obj ){
+		if ( obj.isBlocked ){ listOfBlocked.push(obj); }
+	});	
+	
+	listOfBlocked.map( function( obj ){
+		var html2insert = 	
+			'<li id="divBlockedPeople'+obj.publicClientID + '">'+
+			' <a>'+ 
+			'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+			'  <h2>'+ obj.nickName   + '</h2> '+
+			' </a>'+
+			' <a id="buttonUnblock'+obj.publicClientID + '" data-role="button" class="icon-list ui-icon-forbidden" data-inline="true">'+
+			' </a>' +
+			'</li>';
+						
+		$("#listOfBlocked")
+		 .append( html2insert)
+		 .listview().listview('refresh')
+		 .find("#divBlockedPeople"+obj.publicClientID)		 
+		 .unbind("click")		 
+		 .on("click", function(){ 
+		 	gui.showUnblockSomebodyPrompt( obj );		 		 	
+		 });
+	});
+};
+
+
+
 
 GUI.prototype.showLoadingSpinner = function(text2show){
 
@@ -2473,10 +2623,17 @@ GUI.prototype.showProfile = function() {
 	strVar += "					          				<div id=\"mapProfile\">";
 	strVar += "					          				<\/div>";
 	strVar += "					          			<\/div>";
-	strVar += "					    	      	<\/div>";	
+
+	strVar += "										<div class=\"col-md-12\">";
+	strVar += "					          			<h1 id=\"label_49\">"+dictionary.Literals.label_49+"<\/h1>";
+	strVar += "					          			<h1><\/h1>";
+	strVar += "											<button id=\"label_54\">"+dictionary.Literals.label_43+"<\/button>";
+	strVar += "											<button id=\"label_55\">"+dictionary.Literals.label_48+"<\/button>";
+	strVar += "										<\/div>";
+	strVar += "					    	      	<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";
-	strVar += "						<\/div>";
+	strVar += "						<\/div>";	
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";	
 	strVar += "			<\/div><!-- \/content -->";
@@ -2487,6 +2644,12 @@ GUI.prototype.showProfile = function() {
 	$(".backButton").unbind("click").bind("click",function() {
 		gui.onBackButton();
 	});	
+	$("#label_54").unbind( "click" ).bind("click", function(){			 
+		gui.showBlockSomebodyPrompt();
+	});
+	$("#label_55").unbind( "click" ).bind("click", function(){			 
+		gui.onReportAbuse();
+	});
 
 };
 
@@ -2501,6 +2664,50 @@ GUI.prototype.showRemoveContactFromGroup = function( contact ) {
 		.on("click", function(){ gui.onAddContact2Group( contact );  } );
 	
 	$('#contacts4Group').listview().listview('refresh');			
+};
+
+GUI.prototype.showReportAbuse = function() {
+	
+	var html = '';
+	html += '<div id="block-confirm" role="main" class="ui-content">';
+	html += ' <h1 id="label_58" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_58+'</h1><p> </p>';	
+	html += '</div>';
+	gui.showDialog( html );
+	
+};
+
+GUI.prototype.showUnblockSomebodyPrompt = function( obj) {
+	
+	var html = '';
+	html += '<div role="main" class="ui-content">';
+	html += ' <h1 id="label_50" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_50+'</h1><p> </p>';	
+	html += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
+			'  <li>'+
+			' 	<a data-role=\"none\" class="ui-btn">'+ 
+			'  	 <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+			'  	 <h2>'+ obj.nickName   + '</h2> '+
+			'   </a>'+
+			'  </li>';
+	html += ' <a id="label_46" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+	html += ' <a id="label_47" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+	html += '</div>';
+	gui.showDialog( html );
+	gui.loadGroupMenu();
+	
+	$("#label_46").unbind("click").on("click", function(){ 
+		obj.isBlocked = false;		
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );
+				
+		$("#popupDiv").remove();
+		
+		gui.loadGroupMenu();
+		gui.showEntryOnMainPage( obj );
+	});
+	$("#label_47").unbind("click").on("click", function(){ 
+		$("#popupDiv").remove();
+	});
+	
 };
 
 
@@ -2570,6 +2777,9 @@ GUI.prototype.refreshPurchasePrice = function() {
 	$("#price").html(price + "\u20AC");
 	
 };
+
+
+
 
 
 
@@ -3727,6 +3937,8 @@ function ContactOnKnet( c ) {
 	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
 	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
+	this.isAccepted = (c.isAccepted) ? c.isAccepted : false;
+	this.isBlocked = (c.isBlocked) ? c.isBlocked : false;
 };
 
 ContactOnKnet.prototype.set = function( c ) {
@@ -3924,6 +4136,8 @@ function Group( g ) {
 	this.telephone = (g.telephone) ? g.telephone : "";
 	this.email = (g.email) ? g.email : "";
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : [] ;
+	this.isAccepted = (g.isAccepted) ? g.isAccepted : false;
+	this.isBlocked = (g.isBlocked) ? g.isBlocked : false;
 };
 
 Group.prototype.addMember = function( contact  ) {
@@ -4080,6 +4294,17 @@ function Dictionary(){
 		label_40 : "Group: ",
 		label_41 : "load earlier messages",
 		label_42 : "please enable your internet connection",
+		label_43 : "block",
+		label_44 : "report abuse",
+		label_45 : "add contact",
+		label_46 : "yes",
+		label_47 : "no",
+		label_48 : "report abuse",
+		label_49 : "Consent",
+		label_50 : "unblock contact?", 
+		label_51 : "Do you want to block this person?",
+		label_52 : "Blocked people",
+		label_58 : "reported",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4186,7 +4411,7 @@ function Dictionary(){
 			              "insertBetween": " "
 			            }
 			          },
-			          "standard": "¤#,##0.00"
+			          "standard": "#,##0.00"
 			        }
 			      }
 			    }
@@ -4228,7 +4453,7 @@ function Dictionary(){
 		label_9: "Alle",
 		label_10: "sollten Sie dies abschalten, dann werden nur Ihre Kontakte Sie online sehen, ist das nicht langweilig?",
 		label_11: "Hier sind Sie",
-		label_12: "Denkt immer noch an einen sch&ouml;nen Kommentar",
+		label_12: "Denkt immer noch an einen sch\xF6nen Kommentar",
 		label_13: "Ich bin neu auf Visible!",
 		label_14: "Drag & Drop",
 		label_15: "Neuer Kontakt gespeichert! <br> ;-)",
@@ -4249,7 +4474,7 @@ function Dictionary(){
 		label_32: "Spende f&uuml;r unsere Open Source Initiative",
 		label_33: "Gesamtsumme: ",
 		label_34: "Kaufen",
-		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess könnte ein paar Minuten dauern, bitte et was Geduld",
+		label_35 : "Willkommen! Wir machen Ihrer Sicherheitsprotokoll, Dieser Prozess k\xF6nnte ein paar Minuten dauern, bitte et was Geduld",
 		label_36 : "neue Gruppe",
 		label_37 : "meine Gruppen",
 		label_38 : "kreieren",
@@ -4257,6 +4482,17 @@ function Dictionary(){
 		label_40 : "Gruppe: ",
 		label_41 : "laden fr&uuml;here Nachrichten",
 		label_42 : "Bitte aktivieren Sie Ihre Internetverbindung",
+		label_43 : "blockieren",
+		label_44 : "missbrauch melden",
+		label_45 : "Kontakt hinzuf&uuml;gen",
+		label_46 : "ja",
+		label_47 : "nein",
+		label_48 : "missbrauch melden",
+		label_49 : "Zustimmung",
+		label_50 : "entsperren Kontakt?", 
+		label_51 : "Wollen Sie diesen Benutzer blockieren?",
+		label_52 : "Blockierte Personen",
+		label_58 : "berichtet",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -4363,7 +4599,7 @@ function Dictionary(){
 		              "insertBetween": " "
 		            }
 		          },
-		          "standard": "¤#,##0.00"
+		          "standard": "#,##0.00"
 		        }
 		      }
 		    }
@@ -4405,7 +4641,7 @@ function Dictionary(){
 		label_9: "Chiunque",
 		label_10: "si dovrebbe passare questa via, allora solo i contatti avrebbero visto voi on-line, non &egrave; che noioso?",
 		label_11: "Ecco a voi",
-		label_12: "&egrave; ancora pensando a un bel commento",
+		label_12: "\u00C8 ancora pensando a un bel commento",
 		label_13: "Sono nuovo su Visible!",
 		label_14: "trascinare l'immagine",
 		label_15: "novo contacto guardado! <br>;-)",
@@ -4434,6 +4670,17 @@ function Dictionary(){
 		label_40 : "Gruppi: ",
 		label_41 : "caricare i messaggi precedenti",
 		label_42 : "si prega di abilitare la connessione a internet",
+		label_43 : "bloccare",
+		label_44 : "notifica di abuso",
+		label_45 : "Aggiungi contatto",
+		label_46 : "certo",
+		label_47 : "no",
+		label_48 : "notifica di abuso",
+		label_49 : "Consenso",
+		label_50 : "sbloccare i contatti?", 
+		label_51 : "Vuoi bloccare questa persona?",
+		label_52 : "persone bloccate",
+		label_58 : "segnalati",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -4540,7 +4787,7 @@ function Dictionary(){
 			              "insertBetween": " "
 			            }
 			          },
-			          "standard": "¤#,##0.00"
+			          "standard": "#,##0.00"
 			        }
 			      }
 			    }
@@ -4604,7 +4851,7 @@ function Dictionary(){
 		label_32: "Donaci&oacute;n para nuestra Iniciativa Open Source",
 		label_33: "Total: ",
 		label_34: "Comprar"	,
-		label_35 : "¡Bienvenido! generando su canal de seguridad, este proceso podría tardar unos minutos, por favor sea paciente",
+		label_35 : "\u00A1Bienvenido! generando su canal de seguridad, este proceso podría tardar unos minutos, por favor sea paciente",
 		label_36 : "nuevo grupo",
 		label_37 : "mis Grupos",
 		label_38 : "crear",
@@ -4612,6 +4859,17 @@ function Dictionary(){
 		label_40 : "Grupo: ",
 		label_41 : "cargar mensajes anteriores",
 		label_42 : "Habilite la conexi\u00f3n a Internet por favor",
+		label_43 : "bloquear",
+		label_44 : "Denunciar abuso",
+		label_45 : "guardar contacto",
+		label_46 : "si",
+		label_47 : "no",
+		label_48 : "Denunciar abuso",
+		label_49 : "Consentimiento",
+		label_50 : "\u00BFdesbloquear contacto?", 
+		label_51 : "\u00BFQuieres bloquear a esta persona?",
+		label_52 : "personas bloqueadas",
+		label_58 : "reportado",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -4718,7 +4976,7 @@ function Dictionary(){
 			              "insertBetween": " "
 			            }
 			          },
-			          "standard": "¤#,##0.00"
+			          "standard": "#,##0.00"
 			        }
 			      }
 			    }
@@ -4760,7 +5018,7 @@ function Dictionary(){
 		label_9: "Tout le monde",
 		label_10: "vous devez d&eacute;sactiver cette fonctionnalit&eacute;, seuls vos contacts verriez-vous en ligne, est pas ennuyeux?",
 		label_11: "Ici, vous &ecirc;tes",
-		label_12: "est encore la r&eacute;flexion sur une belle commentaires",
+		label_12: "pens\u00e9e sur une belle commentaires",
 		label_13: "Je suis nouveau sur Visible!",
 		label_14: "glissez-d&eacute;posez",
 		label_15: "nouveau contact sauvegard&eacute;! <br>;-)",
@@ -4781,14 +5039,25 @@ function Dictionary(){
 		label_32: "Don pour notre Open Source Initiative",
 		label_33: "Total: ",
 		label_34: "Acheter",
-		label_35 : "Bienvenue! génération de votre protocole de sécurité, ce processus peut prendre quelques minutes, soyez patient svp",
+		label_35 : "Bienvenue! g&eacute;n&eacute;ration de votre protocole de s&eacute;curit&eacute;, ce processus peut prendre quelques minutes, soyez patient svp",
 		label_36 : "nouveau groupe",
 		label_37 : "mes Groupes",
-		label_38 : "cr&eacute;er",
+		label_38 : "cr\u00e9er",
 		label_39 : "modifier",
 		label_40 : "Groupe: ",
 		label_41 : "charger les messages pr&eacute;c&eacute;dents",
 		label_42 : "s'il vous plait activez votre connexion Internet",
+		label_43 : "bloquer",
+		label_44 : "signaler un abus",
+		label_45 : "ajouter le contact",
+		label_46 : "Oui",
+		label_47 : "non",
+		label_48 : "signaler un abus",
+		label_49 : "Consentement",
+		label_50 : "d&eacute;bloquer le contact?", 
+		label_51 : "Voulez-vous bloquer cette personne?",
+		label_52 : "personnes bloqu&eacute;es",
+		label_58 : "signal\u00e9",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -4895,7 +5164,7 @@ function Dictionary(){
 			              "insertBetween": " "
 			            }
 			          },
-			          "standard": "¤#,##0.00"
+			          "standard": "#,##0.00"
 			        }
 			      }
 			    }
@@ -4966,6 +5235,17 @@ function Dictionary(){
 		label_40 : "Grupo: ",
 		label_41 : "carregar mensagens anteriores",
 		label_42 : "Por favor, ative sua conex\u00E3o de internet",
+		label_43 : "bloquear",
+		label_44 : "Denunciar abuso",
+		label_45 : "adicionar contato",
+		label_46 : "sim",
+		label_47 : "n&atilde;o",
+		label_48 : "Denunciar abuso",
+		label_49 : "Consentimento",
+		label_50 : "desbloquear o contato?", 
+		label_51 : "Voc&ecirc; deseja bloquear esta pessoa?",
+		label_52 : "pessoas bloqueadas",
+		label_58 : "relatado",
 		CLDR : {
 			  "main": {
 			    "pt": {
@@ -5072,7 +5352,7 @@ function Dictionary(){
 			              "insertBetween": " "
 			            }
 			          },
-			          "standard": "¤#,##0.00"
+			          "standard": "#,##0.00"
 			        }
 			      }
 			    }

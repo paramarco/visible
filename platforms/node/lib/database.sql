@@ -10,13 +10,13 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 
 --
--- Name: tiger; Type: SCHEMA; Schema: -; Owner: visible
+-- Name: tiger; Type: SCHEMA; Schema: -; Owner: knet
 --
 
 CREATE SCHEMA tiger;
 
 
-ALTER SCHEMA tiger OWNER TO visible;
+ALTER SCHEMA tiger OWNER TO knet;
 
 --
 -- Name: fuzzystrmatch; Type: EXTENSION; Schema: -; Owner: 
@@ -61,13 +61,13 @@ COMMENT ON EXTENSION postgis_tiger_geocoder IS 'PostGIS tiger geocoder and rever
 
 
 --
--- Name: topology; Type: SCHEMA; Schema: -; Owner: visible
+-- Name: topology; Type: SCHEMA; Schema: -; Owner: knet
 --
 
 CREATE SCHEMA topology;
 
 
-ALTER SCHEMA topology OWNER TO visible;
+ALTER SCHEMA topology OWNER TO knet;
 
 --
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
@@ -104,7 +104,7 @@ SET default_tablespace = '';
 SET default_with_oids = false;
 
 --
--- Name: client; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+-- Name: client; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
 --
 
 CREATE TABLE public.client
@@ -129,8 +129,8 @@ CREATE TABLE public.client
 
 )
 WITH ( OIDS=FALSE );
-ALTER TABLE public.client OWNER TO visible;
-GRANT ALL ON TABLE public.client TO visible;
+ALTER TABLE public.client OWNER TO knet;
+GRANT ALL ON TABLE public.client TO knet;
 
 -- Index: public."publicClientID"
 
@@ -139,7 +139,7 @@ GRANT ALL ON TABLE public.client TO visible;
 CREATE UNIQUE INDEX "publicClientID" ON public.client USING btree (publicclientid);
 
 --
--- Name: message; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+-- Name: message; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
 --
 
 
@@ -150,16 +150,14 @@ CREATE TABLE public.message
   sender uuid,
   "timestamp" bigint,
   messagebody json,
-  chatwith uuid,
+  chatwith uuid
 )
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE public.message  OWNER TO visible;
+WITH ( OIDS=FALSE );
+ALTER TABLE public.message  OWNER TO knet;
 
 
 --
--- Name: messageack; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+-- Name: messageack; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
 --
 
 -- Table: public.messageack
@@ -173,10 +171,8 @@ CREATE TABLE public.messageack
   sender uuid,
   type text
 )
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE public.messageack  OWNER TO visible;
+WITH ( OIDS=FALSE );
+ALTER TABLE public.messageack  OWNER TO knet;
 
 
 --
@@ -190,12 +186,12 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
--- Name: client; Type: ACL; Schema: public; Owner: visible
+-- Name: client; Type: ACL; Schema: public; Owner: knet
 --
 
 REVOKE ALL ON TABLE client FROM PUBLIC;
-REVOKE ALL ON TABLE client FROM visible;
-GRANT ALL ON TABLE client TO visible;
+REVOKE ALL ON TABLE client FROM knet;
+GRANT ALL ON TABLE client TO knet;
 
 
 --
@@ -219,11 +215,9 @@ CREATE TABLE public.dbip_lookup
   timezone_offset double precision,
   timezone_name character varying(64)
 )
-WITH (
-  OIDS=FALSE
-);
+WITH ( OIDS=FALSE );
 ALTER TABLE public.dbip_lookup
-  OWNER TO visible;
+  OWNER TO knet;
 
 -- Index: public.ip_start
 
@@ -245,14 +239,12 @@ CREATE TABLE public.profilesphoto
   photo text,
   CONSTRAINT profilesphoto_pkey PRIMARY KEY (publicclientid)
 )
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE public.profilesphoto OWNER TO visible;
+WITH ( OIDS=FALSE );
+ALTER TABLE public.profilesphoto OWNER TO knet;
 
 
 --
--- Name: keysdelivery; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+-- Name: keysdelivery; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
 --
 
 -- Table: public.keysdelivery
@@ -265,13 +257,11 @@ CREATE TABLE public.keysdelivery
   receiver uuid,
   setofkeys json
 )
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE public.keysdelivery  OWNER TO visible;
+WITH ( OIDS=FALSE );
+ALTER TABLE public.keysdelivery  OWNER TO knet;
 
 --
--- Name: keysrequest; Type: TABLE; Schema: public; Owner: visible; Tablespace: 
+-- Name: keysrequest; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
 --
 
 -- Table: public.keysrequest
@@ -283,10 +273,8 @@ CREATE TABLE public.keysrequest
   sender uuid,
   receiver uuid
 )
-WITH (
-  OIDS=FALSE
-);
-ALTER TABLE public.keysrequest  OWNER TO visible;
+WITH ( OIDS=FALSE );
+ALTER TABLE public.keysrequest  OWNER TO knet;
 
 
 
