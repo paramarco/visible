@@ -885,7 +885,14 @@ GUI.prototype.bindDOMevents = function(){
 			gui.indexOfImages4Gallery = 0;			
 			gui.onProfileUpdate();
 			$.mobile.silentScroll(0);
-	    }    
+			if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+				document.removeEventListener('backbutton',  gui.onBackButton , false);
+			}else{
+		        document.addEventListener('backbutton',  gui.onBackButton , false);
+		    }
+		}else{
+			document.addEventListener('backbutton',  gui.onBackButton , false);
+		}
 	    if (ui.options.target == "#map-page"){		
 			gui.loadMaps();				 
 	    }
@@ -1759,17 +1766,12 @@ GUI.prototype.onBackButton = function() {
 				}					
 			}
 			break;
-		case /chat-page/.test(page):
-			
-			
-		
+		case /chat-page/.test(page):		
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
 			}else {				
 				$('body').pagecontainer('change', '#MainPage', { transition : "none" });
-			}
-			
-						
+			}						
 			break;
 		case /emoticons/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
@@ -3553,6 +3555,13 @@ Application.prototype.onDeviceReady = function() {
 	try{
 		app.devicePlatform  = device.platform;
 		app.deviceVersion = device.version;
+		
+		if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
+			document.removeEventListener('backbutton',  gui.onBackButton , false);
+		}else{
+	        document.addEventListener('backbutton',  gui.onBackButton , false);
+	    }
+		
 		app.events.deviceReady.resolve();		
 
 	}catch(e){
@@ -5403,7 +5412,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 //	window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************

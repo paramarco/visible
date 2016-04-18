@@ -484,6 +484,7 @@ function BrokerOfVisibles(_io, _logger) {
 				
 		if (BrokerOfVisibles.prototype.isValidIP(ip) == false) return d.resolve(false); 	
 			
+
 		var query2send = squel.select()	    						
 							    .from("dbip_lookup")
 							    .where("ip_start <= '" + ip + "'")
@@ -492,20 +493,25 @@ function BrokerOfVisibles(_io, _logger) {
 		
 		clientOfDB.query(query2send, function(err, result) {
 	
-			if(err) 
-				logger.error('updateClientsLocation :::error running query', err);	
-						
+			if(err){
+				logger.error('updateClientsLocation :::error running query', err);
+				return  d.resolve(false);
+			} 
+									
 		    if (typeof result == "undefined"){
 				logger.error('updateClientsLocation ::: could not resolve location by IP');
 				return  d.resolve(false);
 			}
-				    
-			var entry = result.rows[0];
-			
-			var discoveredLocation = {
-				lat : entry.latitude,
-				lon : entry.longitude
-			};
+			try{	    
+				var entry = result.rows[0];				
+				var discoveredLocation = {
+					lat : entry.latitude,
+					lon : entry.longitude
+				};
+			}catch(e){
+				logger.error('updateClientsLocation ::: unexpected error', e);
+				return  d.resolve(false);
+			}
 			
 			var query2send = squel.update()
 							    .table("client")
@@ -518,15 +524,11 @@ function BrokerOfVisibles(_io, _logger) {
 				if(err) {
 					logger.error('updateClientsLocation :::error running query', err);	
 				}
-	
 				d.resolve(true);
-	
-			});			
-
-		});		
-		
+			});
+			
+		});	
 		return d.promise;
-	
 	};
 	
 	this.updatePushRegistry = function( client ) {
