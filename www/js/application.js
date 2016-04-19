@@ -2678,6 +2678,46 @@ GUI.prototype.showReportAbuse = function() {
 	
 };
 
+GUI.prototype.showTermsAndConditions = function() {	
+	var html = '';
+	html += '<div id="block-confirm" role="main" class="ui-content">';
+	html += "<h1>Terms and Conditions (\"Terms\")<\/h1>";
+	html += "<p>Please read these Terms and Conditions carefully before using either the knet mobile app or the http:\/\/www.instaltic.com\/knet website (the \"Service\") operated by InstalTIC S.L. (\"us\", \"we\", or \"our\").<\/p>";
+	html += "<p>Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users and others who access or use the Service.<\/p>";
+	html += "<p>By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the terms then you may not access the Service.<\/p>";
+	html += "<p><strong> privacy policy <\/strong><\/p>";
+	html += "<p>We do not request any personal data from you. Your identity is just a random number for us. However you can always set your details in your profile if you want to share them with other users. <\/p>";
+	html += "<p>We do not collect your messages. The only message data stored on our servers is the data that is currently in transit, and even this data is encrypted with end-to-end encryption, we can’t read it. <\/p>";
+	html += "<p>We do not any financial data of yours. <\/p>";
+	html += "<p>There are some data knet uses in order to provide the service: <\/p>";
+	html += "<p>your IP-address, or the IP-Address of a router when you are in a network using NAT,<\/p>";
+	html += "<p>your public keys, <\/p>";
+	html += "<p>your client identifier, which is a random number, <\/p>";
+	html += "<p>your chosen nickname, avatar, telephone and email, if and only is you decided to put it into your profile. <\/p>";
+	html += "<p><strong>Accounts<\/strong><\/p>";
+	html += "<p>We may terminate your account, without previous warning if you breach the Terms. We will immediately block your account if we detect an inappropriate use of the service. <\/p>";
+	html += "<p><strong>Links To Other Web Sites<\/strong><\/p>";
+	html += "<p>Our Service may contain links to third-party web sites or services that are not owned or controlled by knet.<\/p>";
+	html += "<p>knet has no control over, and assumes no responsibility for, the content, privacy policies, or practices of any third party web sites or services. You further acknowledge and agree that knet shall not be responsible or liable, directly or indirectly, for any damage or loss caused or alleged to be caused by or in connection with use of or reliance on any such content, goods or services available on or through any such web sites or services.<\/p>";
+	html += "<p>We strongly advise you to read the terms and conditions and privacy policies of any third-party web sites or services that you visit.<\/p>";
+	html += "<p><strong>Termination<\/strong><\/p>";
+	html += "<p>We may terminate or suspend access to our Service immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.<\/p>";
+	html += "<p>All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability.<\/p>";
+	html += "<p>We may terminate or suspend your account immediately, without prior notice or liability, for any reason whatsoever, including without limitation if you breach the Terms.<\/p>";
+	html += "<p>Upon termination, your right to use the Service will immediately cease. If you wish to terminate your account, you may simply discontinue using the Service.<\/p>";
+	html += "<p>All provisions of the Terms which by their nature should survive termination shall survive termination, including, without limitation, ownership provisions, warranty disclaimers, indemnity and limitations of liability.<\/p>";
+	html += "<p><strong>Governing Law<\/strong><\/p>";
+	html += "<p>These Terms shall be governed and construed in accordance with the laws of Spain, without regard to its conflict of law provisions.<\/p>";
+	html += "<p>Our failure to enforce any right or provision of these Terms will not be considered a waiver of those rights. If any provision of these Terms is held to be invalid or unenforceable by a court, the remaining provisions of these Terms will remain in effect. These Terms constitute the entire agreement between us regarding our Service, and supersede and replace any prior agreements we might have between us regarding the Service.<\/p>";
+	html += "<p><strong>Changes<\/strong><\/p>";
+	html += "<p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 15 days notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.<\/p>";
+	html += "<p>By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.<\/p>";
+	html += "<p><strong>Contact Us<\/strong><\/p>";
+	html += "<p>If you have any questions about these Terms, please contact us. The easiest way to contact us is to email us to support@instaltic.com<\/p>";	
+	html += '</div>';
+	gui.showDialog( html );	
+};
+
 GUI.prototype.showUnblockSomebodyPrompt = function( obj) {
 	
 	var html = '';
@@ -3677,6 +3717,7 @@ Application.prototype.userRegistration = function( data ){
 		var request = store.add( user );
 
 		$.mobile.loading('hide');
+		gui.showTermsAndConditions();
 		app.events.userSettingsLoaded.resolve(); 		
  	}			
 };
