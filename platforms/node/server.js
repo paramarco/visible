@@ -170,11 +170,32 @@ app.get('/cancelPayment', function (req, res) {
 	});
 });
 
+app.get('/privacyPolicy', function (req, res) {
+	
+	var options = {
+		root: __dirname + '/public/'
+	};
+
+	var fileName = 'privacyPolicy.html';
+	
+	res.sendFile(fileName, options, function (err) {
+	    if (err) {
+	      logger.error(err);
+	      res.status(err.status).end();
+	    }
+	});
+});
+
 app.locals.notifyNeighbours = function (client, online){
 	
 	brokerOfVisibles.getListOfPeopleAround(client, online).then(function(listOfPeople){ 
 		
 		postMan.send("notificationOfNewContact", { list : listOfPeople }, client);
+		
+		if (client.visibility == 'off'){
+			logger.info("notifyNeighbours  ::: client.visibility == 'off' ");
+			return;
+		} 
 		
 		if (online){
 			var visible = {
@@ -182,7 +203,7 @@ app.locals.notifyNeighbours = function (client, online){
 				location : client.location,
 				nickName : client.nickName,
 	  			commentary : client.commentary,
-	  			rsamodulus : client.rsamodulus
+	  			rsamodulus : client.rsamodulus	
 			}; 
 			var list2send = [];
 			list2send.push(visible);
@@ -246,11 +267,6 @@ app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 	
 	var client = socket.visibleClient;
 	
-	if (client.visibility == 'off'){
-		logger.info("onRequestOfListOfPeopleAround  ::: client.visibility == 'off' ");
-		return;
-	} 
-	
 	if (client.nickName == null){
 		logger.info("onRequestOfListOfPeopleAround  ::: slowly....");
 		return;
@@ -309,6 +325,9 @@ app.locals.onProfileUpdate = function(input , socket) {
 	client.email = parameters.email;		
 	client.lastProfileUpdate = new Date().getTime();
 	client.visibility = parameters.visibility;
+	
+	logger.debug("onProfileUpdate  ::: parameters.visibility", parameters.visibility);
+	logger.debug("onProfileUpdate  ::: client.visibility", client.visibility);
 	
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
@@ -655,6 +674,10 @@ if ( conf.useTLS ){
 		
 		brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
 
+			
+			logger.info('io.use ::: client.visibility : ', client.visibility);
+			
+			
 			if (client == null){
 				logger.info('io.use ::: I dont find this freaking client in the DB');
 				return null;

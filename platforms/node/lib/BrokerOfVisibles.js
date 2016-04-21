@@ -47,6 +47,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("rsamodulus")
+	    						.field("visibility")
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
 							    .where("socketid IS NOT NULL")
@@ -61,6 +62,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("rsamodulus")
+	    						.field("visibility")
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
 							    .where("visibility = 'on'")
@@ -129,6 +131,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
 	    						.field("rsamodulus")
+	    						.field("visibility")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
@@ -181,6 +184,8 @@ function BrokerOfVisibles(_io, _logger) {
 			    client.lastProfileUpdate = entry.lastprofileupdate;
 			    client.rsamodulus = entry.rsamodulus;
 
+			    client.visibility = entry.visibility;
+
 			    
 			    return  d.resolve(client);
 			    
@@ -213,6 +218,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
 	    						.field("rsamodulus")
+	    						.field("visibility")
 							    .from("client")
 							    .where("handshaketoken = '" + handshakeToken + "'")							    
 							    .toString();
@@ -264,6 +270,8 @@ function BrokerOfVisibles(_io, _logger) {
 			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
 			    client.lastProfileUpdate = entry.lastprofileupdate;
 			    client.rsamodulus = entry.rsamodulus;
+			    
+			    client.visibility = entry.visibility;
 			    	
 	    
 			    return  d.resolve(client);

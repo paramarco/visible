@@ -4,11 +4,11 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.instaltic.knet"
-        version   = "0.3.8">
+        version   = "0.4.0">
 
     <name>knet</name>
     <description>
-		Knet is a chat without email address nor telephone numbers, it simply makes your Identity anonymous, it lets you get in touch with people around you and have them as a Contact, furthermore it keeps you away from Security Agencies and Marketing Agencies, since your communications with "knet" are encrypted and deleted just upon reception, giving no chance for those Agencies to track your profile, control you, and influence you to make you buy that product they are willing to sell you. Knet is free of adverts. Knet lets you share messages, images and videos securely and confidentially.
+		Share messages, images and videos securely and confidentially. with knet you can get in touch with people around you, without necessarily exchange emails or telephone numbers, you could knet to your neighbors, school mates and new people. Knet uses end-to-end encryption giving no chance for any agency to track your profile.	
     </description>
     <author email="support@instaltic.com" href="http://www.instaltic.com">
         instalTIC S.L.
@@ -93,7 +93,7 @@
     <gap:splash src="res/screen/windows-phone/screen-portrait.jpg"      gap:platform="winphone" /> 
 
     <gap:config-file platform="ios" parent="CFBundleShortVersionString">
-    <string>0.3.8</string>
+    <string>0.4.0</string>
     </gap:config-file>
 
     <!--
