@@ -2679,15 +2679,14 @@ GUI.prototype.showReportAbuse = function() {
 };
 
 GUI.prototype.showTermsAndConditions = function() {	
-	var html = '';
-	html += '<div id="block-confirm" role="main" class="ui-content">';
+	var html = '';	
 	html += "<h1>Terms and Conditions (\"Terms\")<\/h1>";
 	html += "<p>Please read these Terms and Conditions carefully before using either the knet mobile app or the http:\/\/www.instaltic.com\/knet website (the \"Service\") operated by InstalTIC S.L. (\"us\", \"we\", or \"our\").<\/p>";
 	html += "<p>Your access to and use of the Service is conditioned on your acceptance of and compliance with these Terms. These Terms apply to all visitors, users and others who access or use the Service.<\/p>";
 	html += "<p>By accessing or using the Service you agree to be bound by these Terms. If you disagree with any part of the terms then you may not access the Service.<\/p>";
 	html += "<p><strong> privacy policy <\/strong><\/p>";
 	html += "<p>We do not request any personal data from you. Your identity is just a random number for us. However you can always set your details in your profile if you want to share them with other users. <\/p>";
-	html += "<p>We do not collect your messages. The only message data stored on our servers is the data that is currently in transit, and even this data is encrypted with end-to-end encryption, we can’t read it. <\/p>";
+	html += "<p>We do not collect your messages. The only message data stored on our servers is the data that is currently in transit, and even this data is encrypted with end-to-end encryption, we can not read it. <\/p>";
 	html += "<p>We do not any financial data of yours. <\/p>";
 	html += "<p>There are some data knet uses in order to provide the service: <\/p>";
 	html += "<p>your IP-address, or the IP-Address of a router when you are in a network using NAT,<\/p>";
@@ -2714,8 +2713,16 @@ GUI.prototype.showTermsAndConditions = function() {
 	html += "<p>By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.<\/p>";
 	html += "<p><strong>Contact Us<\/strong><\/p>";
 	html += "<p>If you have any questions about these Terms, please contact us. The easiest way to contact us is to email us to support@instaltic.com<\/p>";	
-	html += '</div>';
-	gui.showDialog( html );	
+	html += "<p><strong><\/strong><\/p>";
+	html += "<p><strong><br><\/strong><\/p>";
+	html += '<a id="label_59" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_59+'</a>';
+	html += "<p><strong><br><\/strong><\/p>";
+	
+	gui.showDialog( html );
+	$("#label_59").click(function(){
+		$("#popupDiv").popup( "close" );
+		$("#popupDiv").remove();
+	});
 };
 
 GUI.prototype.showUnblockSomebodyPrompt = function( obj) {
@@ -4355,6 +4362,7 @@ function Dictionary(){
 		label_51 : "Do you want to block this person?",
 		label_52 : "Blocked people",
 		label_58 : "reported",
+		label_59 : "start!",		
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4543,6 +4551,7 @@ function Dictionary(){
 		label_51 : "Wollen Sie diesen Benutzer blockieren?",
 		label_52 : "Blockierte Personen",
 		label_58 : "berichtet",
+		label_59 : "start!",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -4731,6 +4740,7 @@ function Dictionary(){
 		label_51 : "Vuoi bloccare questa persona?",
 		label_52 : "persone bloccate",
 		label_58 : "segnalati",
+		label_59 : "start!",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -4920,6 +4930,7 @@ function Dictionary(){
 		label_51 : "\u00BFQuieres bloquear a esta persona?",
 		label_52 : "personas bloqueadas",
 		label_58 : "reportado",
+		label_59 : "start!",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5108,6 +5119,7 @@ function Dictionary(){
 		label_51 : "Voulez-vous bloquer cette personne?",
 		label_52 : "personnes bloqu&eacute;es",
 		label_58 : "signal\u00e9",
+		label_59 : "start!",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5296,6 +5308,7 @@ function Dictionary(){
 		label_51 : "Voc&ecirc; deseja bloquear esta pessoa?",
 		label_52 : "pessoas bloqueadas",
 		label_58 : "relatado",
+		label_59 : "start!",
 		CLDR : {
 			  "main": {
 			    "pt": {
