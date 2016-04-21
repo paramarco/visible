@@ -849,9 +849,8 @@ GUI.prototype._testUrlForMedia = function(url) {
 GUI.prototype.bindButtonsOnMainPage = function() {
 	
 	if ( app.isMobile && app.devicePlatform.indexOf('iOS') > -1 || 
-		$.browser.ipad || 
-		$.browser.iphone || 
-		$.browser.ipod ){
+		$.browser.ipad || $.browser.iphone || $.browser.ipod || 
+		app.isMobile && (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") ){
 		$('#link2activateAccount').remove().trigger( "updatelayout" );
 		$('#link2manageVisibles').remove().trigger( "updatelayout" );		
 		$('#mypanel-list').listview().listview('refresh');
@@ -1079,8 +1078,10 @@ GUI.prototype.bindDOMevents = function(){
 	    e.stopPropagation();
 	});
 	
-
-
+	$("#label_60").on("click",function() {
+		gui.showTermsAndConditions();
+	});
+	
 };
 
 GUI.prototype.bindPagination = function( newerDate ){
@@ -1363,6 +1364,13 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<\/select>";	
 	strVar += "												<\/div>";	
 	strVar += "											<\/div>";	
+
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-6\">";
+	strVar += "													<a><h2 id=\"label_60\"> Privacy Policy<\/h2><\/a>";	
+	strVar += "												<\/div>";	
+	strVar += "											<\/div>";	
+	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -2009,6 +2017,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_37").innerHTML = dictionary.Literals.label_37;
 	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
 	document.getElementById("label_52").innerHTML = dictionary.Literals.label_52;
+	document.getElementById("label_60").innerHTML = dictionary.Literals.label_60;
 
 };
 
@@ -4362,7 +4371,8 @@ function Dictionary(){
 		label_51 : "Do you want to block this person?",
 		label_52 : "Blocked people",
 		label_58 : "reported",
-		label_59 : "start!",		
+		label_59 : "agree",
+		label_60 : "Privacy policy",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4551,7 +4561,8 @@ function Dictionary(){
 		label_51 : "Wollen Sie diesen Benutzer blockieren?",
 		label_52 : "Blockierte Personen",
 		label_58 : "berichtet",
-		label_59 : "start!",
+		label_59 : "zustimmen",
+		label_60 : "Datenschutzerkl&auml;rung",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -4740,7 +4751,8 @@ function Dictionary(){
 		label_51 : "Vuoi bloccare questa persona?",
 		label_52 : "persone bloccate",
 		label_58 : "segnalati",
-		label_59 : "start!",
+		label_59 : "concordare",
+		label_60 : "Politica sulla riservatezza",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -4930,7 +4942,8 @@ function Dictionary(){
 		label_51 : "\u00BFQuieres bloquear a esta persona?",
 		label_52 : "personas bloqueadas",
 		label_58 : "reportado",
-		label_59 : "start!",
+		label_59 : "de acuerdo",
+		label_60 : "Pol&iacute;tica de privacidad",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5119,7 +5132,8 @@ function Dictionary(){
 		label_51 : "Voulez-vous bloquer cette personne?",
 		label_52 : "personnes bloqu&eacute;es",
 		label_58 : "signal\u00e9",
-		label_59 : "start!",
+		label_59 : "d'accord",
+		label_60 : "Politique de confidentialit&eacute;",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5308,7 +5322,8 @@ function Dictionary(){
 		label_51 : "Voc&ecirc; deseja bloquear esta pessoa?",
 		label_52 : "pessoas bloqueadas",
 		label_58 : "relatado",
-		label_59 : "start!",
+		label_59 : "concordar",
+		label_60 : "Pol&iacute;tica de Privacidade",
 		CLDR : {
 			  "main": {
 			    "pt": {

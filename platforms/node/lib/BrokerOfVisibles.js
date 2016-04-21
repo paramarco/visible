@@ -50,6 +50,7 @@ function BrokerOfVisibles(_io, _logger) {
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
 							    .where("socketid IS NOT NULL")
+							    .where("visibility = 'on'")
 							    .limit(config.MAX_PROFILES_QUERY)
 							    .toString();			
 		}else{
@@ -62,6 +63,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("rsamodulus")
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
+							    .where("visibility = 'on'")
 							    .limit(config.MAX_PROFILES_QUERY_ONLINE)
 							    .toString();			
 		}

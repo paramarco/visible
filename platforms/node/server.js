@@ -246,6 +246,11 @@ app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 	
 	var client = socket.visibleClient;
 	
+	if (client.visibility == 'off'){
+		logger.info("onRequestOfListOfPeopleAround  ::: client.visibility == 'off' ");
+		return;
+	} 
+	
 	if (client.nickName == null){
 		logger.info("onRequestOfListOfPeopleAround  ::: slowly....");
 		return;
