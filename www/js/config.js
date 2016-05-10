@@ -1,9 +1,9 @@
 function Config ()  {  
 
-	this.ipServerAuth = "217.127.199.47";
+	this.ipServerAuth = "167.114.231.50";
 	this.portServerAuth	= "443";		
 
-	this.ipServerSockets = "217.127.199.47";
+	this.ipServerSockets = "167.114.231.50";
 	this.portServerSockets	= "80";
 		
 	this.MAX_HEIGHT_IMG = 500;

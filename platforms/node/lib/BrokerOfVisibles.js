@@ -426,6 +426,7 @@ function BrokerOfVisibles(_io, _logger) {
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("lastprofileupdate", newClient.lastProfileUpdate)
 							    .set("rsamodulus", newClient.RSAmodulus)
+							    .set("visibility", newClient.visibility)
 							    .toString() ;
 			query2send += " ; " ;
 			query2send += squel.insert()

@@ -33,7 +33,7 @@ function Client(RSAmodulus) {
   //newer than 2015
   this.lastProfileUpdate = 1420070401000;
   this.RSAmodulus = RSAmodulus;
-  
+  this.visibility = "on";
 
 };
 
