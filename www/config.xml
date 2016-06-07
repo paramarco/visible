@@ -4,7 +4,7 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.instaltic.knet"
-        version   = "0.4.1">
+        version   = "0.4.2">
 
     <name>knet</name>
     <description>
@@ -39,13 +39,15 @@
     <preference name="android-windowSoftInputMode" value="adjustResize"/>
     <preference name="deployment-target" value="5.1.1" />
     <!--  Define a specific version of PhoneGap to build into your app.-->
-    <preference name="phonegap-version"       value="3.7.0" />  
+    <preference name="phonegap-version"       value="cli-5.2.0" />  
 
     <!-- Plugins -->
     <!-- Core plugins -->
 
 <!--	<plugin name="cordova-plugin-whitelist" spec="1.2.0" />-->
-	<plugin name="de.appplant.cordova.plugin.local-notification" source="pgb" spec="0.8.1" />
+<!-- NEEDS GRANDLE....   <plugin name="de.appplant.cordova.plugin.local-notification" source="npm" spec="0.8.4" />-->
+    <gap:plugin name="de.appplant.cordova.plugin.local-notification" version="0.7.0" />
+<!--	<plugin name="de.appplant.cordova.plugin.local-notification" source="npm" spec="0.8.1" />-->
 	<plugin name="org.apache.cordova.camera" source="pgb" spec="0.3.2" />
 <!-- <plugin name="org.apache.cordova.console" source="pgb" spec="0.2.11" />
 	<plugin name="org.apache.cordova.contacts" source="pgb" spec="0.2.13" /> -->
@@ -54,7 +56,7 @@
 	<plugin name="org.apache.cordova.file-transfer" source="pgb" spec="0.4.6" /> -->
 	<plugin name="org.apache.cordova.geolocation" source="pgb" spec="0.3.10" />
 	<plugin name="org.apache.cordova.globalization" source="pgb" spec="0.3.1" />
-	<plugin name="org.apache.cordova.inappbrowser" source="pgb" spec="0.5.2" />
+	<plugin name="org.apache.cordova.inappbrowser" source="npm" spec="1.4.0" />
 	<plugin name="org.apache.cordova.network-information" source="pgb" spec="0.2.12" />
 	<plugin name="org.apache.cordova.vibration" source="pgb" spec="0.3.11" />
     <plugin name="cordova-plugin-device" spec="1.0.1" source="pgb" />
@@ -93,7 +95,7 @@
     <gap:splash src="res/screen/windows-phone/screen-portrait.jpg"      gap:platform="winphone" /> 
 
     <gap:config-file platform="ios" parent="CFBundleShortVersionString">
-    <string>0.4.1</string>
+    <string>0.4.2</string>
     </gap:config-file>
 
     <!--
