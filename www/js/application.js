@@ -658,10 +658,11 @@ Postman.prototype.onMsgFromClient = function ( input ){
 			gui.refreshCounterOfChat( obj );  		  			
 		}  		  		
 		obj.timeLastSMS = msg.timestamp;
+		gui.setTimeLastSMS( obj );
+		
 		abstractHandler.setOnList( obj );
 		abstractHandler.setOnDB( obj );
-		
-		gui.setTimeLastSMS( obj );  				
+				  				
 		gui._sortChats();				
 		gui.showLocalNotification( msg );
 	
@@ -935,6 +936,9 @@ GUI.prototype.bindDOMevents = function(){
 		$("#profileTelephone").val(user.myTelephone);
 		$("#profileEmail").val(user.myEmail);
 		$("#flip-visible").val(user.visibility).slider("refresh");
+		//$("#label_id_profile").html("&#x1f511" + user.publicClientID);
+		$("#label_id_profile").html("&#x1F511; " + user.publicClientID);
+		
 	});
 
 	$("#chat-input")
@@ -1369,8 +1373,13 @@ GUI.prototype.loadBody = function() {
 	strVar += "												<div class=\"col-md-6\">";
 	strVar += "													<a><h2 id=\"label_60\"> Privacy Policy<\/h2><\/a>";	
 	strVar += "												<\/div>";	
-	strVar += "											<\/div>";	
+
+	strVar += "						          				<div class=\"col-md-12\">";
+	strVar += "					    	      					<abbr title=\"id\" id=\"label_id_profile\">  <\/abbr> ";
+	strVar += "					        	  				<\/div>";
 	
+	strVar += "											<\/div>";
+		
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -2617,24 +2626,25 @@ GUI.prototype.showProfile = function() {
 	strVar += "					          			<h1>Contact Info<\/h1>";
 	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
 	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
-	strVar += "					          				<div class=\"col-md-6\">";
+	strVar += "					          				<div class=\"col-md-12\">";
 	strVar += "					          					<address>";
 	strVar += "												  	<strong>" + obj.nickName  + "<\/strong><br>";
-	strVar += "											  		<abbr title=\"Phone\"> &#9742 <\/abbr>" + obj.telephone;
+	strVar += "											  		<abbr title=\"Phone\"> &#9742 &nbsp;"  + obj.telephone + "<\/abbr>";
 	strVar += "												<\/address>";
 	strVar += "												<email>";
-	strVar += "												  	<abbr title=\"email\"> &#9993 <\/abbr>" + obj.email;
+	strVar += "												  	<abbr title=\"email\"> &#9993; &nbsp;" + obj.email + "<\/abbr>";
 	strVar += "												<\/email>";
+	strVar += "												<address>";
+	strVar += "												  	<abbr title=\"id\"> &#x1f511; &nbsp;" + obj.publicClientID + "<\/abbr>";
+	strVar += "												<\/address>";
 	strVar += "						          			<\/div>";
-	strVar += "						          			<div class=\"col-md-6\">";
-	strVar += "					    	      				<p><\/p>";
+	strVar += "						          			<div class=\"col-md-12\"><br>";
 	strVar += "					        	  			<\/div>";
 	strVar += "					          			<\/div>";
 	strVar += "					          			<div class=\"col-md-12\">";
 	strVar += "					          				<div id=\"mapProfile\">";
 	strVar += "					          				<\/div>";
 	strVar += "					          			<\/div>";
-
 	strVar += "										<div class=\"col-md-12\">";
 	strVar += "					          			<h1 id=\"label_49\">"+dictionary.Literals.label_49+"<\/h1>";
 	strVar += "					          			<h1><\/h1>";
@@ -2782,6 +2792,30 @@ GUI.prototype.showWelcomeMessage = function(text2show){
 	}
 	
 };
+
+/**
+ * @param publicClientID := uuid 
+ */
+GUI.prototype.showPeerIsTyping = function ( publicClientID )	{
+
+	var obj = abstractHandler.getObjById( publicClientID ); 
+	if (typeof obj == "undefined" || obj == null) return;  		
+
+	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
+	
+	if ( tag.data("typing") != "on" ){
+		
+		tag.html( "&#9000;" );
+		tag.data("typing","on");
+		tag.fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500, function(){
+			tag.html( obj.commentary );
+			tag.data("typing","off");
+			//showLastMsgTruncatedInMainMenu
+		});		
+	}	
+};
+
+
 
 
 /**
@@ -5517,7 +5551,8 @@ $.when( app.events.documentReady,
 
 	app.initialized = true;	
 	gui.bindButtonsOnMainPage();	
-	app.sendLogin();	
+	app.sendLogin();
+
 });
 
 $(document).ready(function() {
