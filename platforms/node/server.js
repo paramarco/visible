@@ -366,6 +366,25 @@ app.locals.onPushRegistration = function( input , socket) {
 	
 };
 
+app.locals.onWhoIsWriting = function( input , socket) {	
+
+	var client = socket.visibleClient;	
+	var ping = postMan.getWhoIsWriting( input, client);		
+	if (ping == null) return;
+
+	var pong = { 
+		idWhoIsWriting: ping.idWhoIsWriting, 
+		toWhoIsWriting : ping.toWhoIsWriting	
+	};
+	
+	ping.listOfReceivers.map(function( receiver ){
+		brokerOfVisibles.isClientOnline(receiver).then(function( clientReceiver ){	
+			if ( clientReceiver != null ){			
+				postMan.send("WhoIsWriting",  pong, clientReceiver );
+	 		}			
+		});
+	});
+};
 
 app.locals.onMessageDeliveryACK = function(input, socket) {		
 	
@@ -745,6 +764,9 @@ if ( conf.useTLS ){
 		
 		//XEP-0357: Push Notifications
 		socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
+		
+		//XEP-XXXX: currentlz writing
+		socket.on("WhoIsWriting", function (msg){ app.locals.onWhoIsWriting ( msg , socket) } );
 		
 	});	
 }

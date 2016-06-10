@@ -620,6 +620,25 @@ Postman.prototype.getMessageFromClient = function( input ) {
 	}
 };
 
+Postman.prototype.getWhoIsWriting = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype._isUUID(input.idWhoIsWriting) == false  ||
+			Postman.prototype._isUUID(input.toWhoIsWriting) == false  ||
+			Object.keys(input).length != 2 ) {	
+			log.debug("Postman.prototype.getWhoIsWriting - type check", input); 
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		log.debug("Postman.prototype.getWhoIsWriting - type check", ex); 
+		return null;
+	}	
+};
+
 Postman.prototype.onMsgFromClient = function ( input ){
 	
 	var msg = postman.getMessageFromClient( input ); 
@@ -961,7 +980,32 @@ GUI.prototype.bindDOMevents = function(){
 		.keyup(function( event ) {
 			if (event.keyCode == 13){
 				gui.onChatInput();
-			}	
+			}
+			var currentTime = new Date().getTime();
+			var lastkeyup = parseInt( $( event.target ).data("lastkeyup") );
+
+			if ( (currentTime - 15000) > lastkeyup ){
+				$( event.target ).data("lastkeyup", currentTime);
+
+				var list = [];		
+				var membersOfGroup = groupsHandler.getMembersOfGroup( app.currentChatWith );
+				
+				if ( membersOfGroup.length > 0 ){			
+				    membersOfGroup.map(function( memberPublicId ){
+				    	if ( user.publicClientID == memberPublicId ) return; 
+				    	list.push( memberPublicId );		    	
+				    });
+				}else{
+					list.push( app.currentChatWith );
+				}
+					
+				var ping = {	
+		  			idWhoIsWriting: user.publicClientID, 
+		  			toWhoIsWriting : app.currentChatWith,
+		  			listOfReceivers : list	  			
+			  	};					
+				postman.send("WhoIsWriting", ping );
+			}
 		})
 		.focus(function() {
 			$('#chat-multimedia-image').attr("src", "img/smile_50x37.png");
@@ -1433,7 +1477,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "					<a data-role=\"button\" ><img id=\"chat-multimedia-image\" src=\"img\/multimedia_50x37.png\"> <\/a>";
 	strVar += "				 <\/div>";
 	strVar += "				<div class=\"ui-block-80percent\">							";
-	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
+	strVar += "					<textarea data-role=\"none\" id=\"chat-input\" data-lastkeyup=\"0\" class=\"textarea-chat ui-input-text ui-body-inherit ui-textinput-autogrow\"> <\/textarea> 				   								";
 	strVar += "				<\/div>";
 	//strVar += "			   <button id=\"chat-input-button\" type=\"submit\" data-theme=\"a\">send<\/button>			";
 	strVar += "			<\/div><!-- \/footer -->";
@@ -2796,9 +2840,9 @@ GUI.prototype.showWelcomeMessage = function(text2show){
 /**
  * @param publicClientID := uuid 
  */
-GUI.prototype.showPeerIsTyping = function ( publicClientID )	{
+GUI.prototype.showPeerIsTyping = function ( ping )	{
 
-	var obj = abstractHandler.getObjById( publicClientID ); 
+	var obj = abstractHandler.getObjById( ping.toWhoIsWriting ); 
 	if (typeof obj == "undefined" || obj == null) return;  		
 
 	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
@@ -2810,7 +2854,7 @@ GUI.prototype.showPeerIsTyping = function ( publicClientID )	{
 		tag.fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500, function(){
 			tag.html( obj.commentary );
 			tag.data("typing","off");
-			//showLastMsgTruncatedInMainMenu
+			//TODO showLastMsgTruncatedInMainMenu
 		});		
 	}	
 };
@@ -3378,6 +3422,19 @@ Application.prototype.connect2server = function(result){
 	socket.on("MessageFromClient", function (input){
 		postman.onMsgFromClient( input );	
 	});//END MessageFromClient event
+	
+	socket.on("WhoIsWriting", function (input){
+		var ping = postman.getWhoIsWriting(input); 
+		if (ping == null) { return;	}
+	
+		//		idWhoIsWriting: ping.idWhoIsWriting, 
+		//		toWhoIsWriting : ping.toWhoIsWriting
+		
+		gui.showPeerIsTyping( ping );
+		
+	});//END WhoIsWriting event
+
+	
 	
 	
 	

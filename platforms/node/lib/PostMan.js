@@ -1196,6 +1196,26 @@ PostMan.prototype.getReconnectNotification = function( encrypted, client) {
 	}	
 };
 
+PostMan.prototype.getWhoIsWriting = function( encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID( input.idWhoIsWriting ) == false ||
+			PostMan.prototype.isUUID( input.toWhoIsWriting ) == false ||		
+			typeof input.listOfReceivers == "object" ||
+			Object.keys(input).length != 2 ) {	
+			console.error("getWhoIsWriting ::: format check failed: " + input );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.error("getWhoIsWriting ::: format check failed, ex: " + ex );
+		return null;
+	}	
+};
+
 
 
 
