@@ -79,6 +79,22 @@ Message.prototype.getMsgID = function(){
 	return this.msgID;
 };
 
+/**
+ * @param msg := Message
+ * @return truncated := String
+ */
+Message.prototype.getTruncatedMsg = function() {
+
+	var truncated = "";
+	if ( this.messageBody.messageType == "multimedia"){
+		//truncated = "\uD83D";		
+		truncated = "&#x1f4f7;";		
+	} else if ( this.messageBody.messageType == "text"){
+		truncated =	decodeURI(gui._sanitize( this.messageBody.text) ).substring(0, config.MAX_LENGTH_TRUNCATED_SMS);
+	}
+	return truncated; 
+};
+
 Message.prototype.setChatWith = function( publicClientID ){
 	this.chatWith = publicClientID;
 };
@@ -677,13 +693,16 @@ Postman.prototype.onMsgFromClient = function ( input ){
 			gui.refreshCounterOfChat( obj );  		  			
 		}  		  		
 		obj.timeLastSMS = msg.timestamp;
+		obj.lastMsgTruncated = msg.getTruncatedMsg();
 		gui.setTimeLastSMS( obj );
+		
 		
 		abstractHandler.setOnList( obj );
 		abstractHandler.setOnDB( obj );
 				  				
 		gui._sortChats();				
 		gui.showLocalNotification( msg );
+		gui.showLastMsgTruncated( obj );
 	
 	}else if( msg.messageBody.messageType == "groupUpdate" ) {
 	  
@@ -2323,6 +2342,7 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	}	
 	gui._sortChats();
+	gui.showLastMsgTruncated( obj );
 };
 
 GUI.prototype.showGallery = function(index) {	
@@ -2415,6 +2435,18 @@ GUI.prototype.showImagePic = function() {
 	
 };
 
+/**
+ * @param obj := ContactOnKnet | Group
+ */
+
+GUI.prototype.showLastMsgTruncated = function( obj ){
+
+	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
+	
+	tag.html( decodeURIComponent( obj.lastMsgTruncated ) + "..."); 
+	
+};
+
 GUI.prototype.showListOfBlocked = function() {
 	
 	$('#listOfBlocked').empty();
@@ -2469,7 +2501,7 @@ GUI.prototype.showLocalNotification = function(msg) {
 		if ( msg.messageBody.messageType == "multimedia" ){
 			text2show = "multimedia";
 		}else if ( msg.messageBody.messageType == "text" ){
-			text2show = decodeURI(gui._sanitize( msg.messageBody.text )).substring(0, 20);
+			text2show = decodeURI(gui._sanitize( msg.messageBody.text )).substring(0, config.MAX_LENGTH_TRUNCATED_SMS);
 		}
 		
 		var options = {
@@ -2838,7 +2870,7 @@ GUI.prototype.showWelcomeMessage = function(text2show){
 };
 
 /**
- * @param publicClientID := uuid 
+ * @param ping := { idWhoIsWriting := uuid, toWhoIsWriting := uuid} 
  */
 GUI.prototype.showPeerIsTyping = function ( ping )	{
 
@@ -2854,7 +2886,9 @@ GUI.prototype.showPeerIsTyping = function ( ping )	{
 		tag.fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500, function(){
 			tag.html( obj.commentary );
 			tag.data("typing","off");
-			//TODO showLastMsgTruncatedInMainMenu
+			
+			var newObj = abstractHandler.getObjById( ping.toWhoIsWriting ); 
+			gui.showLastMsgTruncated( newObj );
 		});		
 	}	
 };
@@ -3426,9 +3460,6 @@ Application.prototype.connect2server = function(result){
 	socket.on("WhoIsWriting", function (input){
 		var ping = postman.getWhoIsWriting(input); 
 		if (ping == null) { return;	}
-	
-		//		idWhoIsWriting: ping.idWhoIsWriting, 
-		//		toWhoIsWriting : ping.toWhoIsWriting
 		
 		gui.showPeerIsTyping( ping );
 		
@@ -4096,6 +4127,7 @@ function ContactOnKnet( c ) {
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
 	this.isAccepted = (c.isAccepted) ? c.isAccepted : false;
 	this.isBlocked = (c.isBlocked) ? c.isBlocked : false;
+	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? "" : c.lastMsgTruncated;
 };
 
 ContactOnKnet.prototype.set = function( c ) {
@@ -4112,6 +4144,7 @@ ContactOnKnet.prototype.set = function( c ) {
 	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
 	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
+	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? "" : c.lastMsgTruncated;
 };
 
 
@@ -4295,6 +4328,7 @@ function Group( g ) {
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : [] ;
 	this.isAccepted = (g.isAccepted) ? g.isAccepted : false;
 	this.isBlocked = (g.isBlocked) ? g.isBlocked : false;
+	this.lastMsgTruncated = (typeof g.lastMsgTruncated == 'undefined' || g.lastMsgTruncated == null) ? "" : g.lastMsgTruncated;	
 };
 
 Group.prototype.addMember = function( contact  ) {
@@ -4341,6 +4375,7 @@ Group.prototype.set = function( g ) {
 	this.telephone = (g.telephone) ? g.telephone : this.telephone;
 	this.email = (g.email) ? g.email : this.email;
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : this.listOfMembers;
+	this.lastMsgTruncated = (typeof g.lastMsgTruncated == 'undefined' || g.lastMsgTruncated == null) ? "" : g.lastMsgTruncated;	
 };
 
 function GroupsHandler() {
@@ -5609,6 +5644,8 @@ $.when( app.events.documentReady,
 	app.initialized = true;	
 	gui.bindButtonsOnMainPage();	
 	app.sendLogin();
+	
+	//gui.showPeerIsTyping({ idWhoIsWriting : "82809360-15bf-4c34-82af-a8ca15fc9386", toWhoIsWriting : "82809360-15bf-4c34-82af-a8ca15fc9386"});
 
 });
 
