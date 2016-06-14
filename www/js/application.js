@@ -699,6 +699,7 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		
 		abstractHandler.setOnList( obj );
 		abstractHandler.setOnDB( obj );
+		
 				  				
 		gui._sortChats();				
 		gui.showLocalNotification( msg );
@@ -756,6 +757,15 @@ Postman.prototype.sendMsg = function( msg ) {
 			mailBox.removeMessage( msg );
 			return;
 		}
+		var obj = abstractHandler.getObjById( msg.chatWith );
+		obj.timeLastSMS = msg.timestamp;
+		obj.lastMsgTruncated = msg.getTruncatedMsg();
+		gui.setTimeLastSMS( obj );		
+		abstractHandler.setOnList( obj );
+		abstractHandler.setOnDB( obj );				  				
+		gui._sortChats();				
+		gui.showLastMsgTruncated( obj );
+		
 		
 		var listOfMsg2send = [];		
 		var membersOfGroup = groupsHandler.getMembersOfGroup( msg.chatWith );
@@ -776,7 +786,7 @@ Postman.prototype.sendMsg = function( msg ) {
 			if (typeof socket != "undefined" && socket.connected == true){
 				socket.emit("message2client", m );
 			}			
-		});		
+		});
 				
 	}catch(e){
 		log.debug("Postman.prototype.sendMsg", e);
@@ -1024,6 +1034,7 @@ GUI.prototype.bindDOMevents = function(){
 		  			listOfReceivers : list	  			
 			  	};					
 				postman.send("WhoIsWriting", ping );
+				console.dir(ping);
 			}
 		})
 		.focus(function() {
@@ -2443,7 +2454,7 @@ GUI.prototype.showLastMsgTruncated = function( obj ){
 
 	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
 	
-	tag.html( decodeURIComponent( obj.lastMsgTruncated ) + "..."); 
+	tag.html( decodeURIComponent( obj.lastMsgTruncated ) + " ..."); 
 	
 };
 
@@ -2874,7 +2885,7 @@ GUI.prototype.showWelcomeMessage = function(text2show){
  */
 GUI.prototype.showPeerIsTyping = function ( ping )	{
 
-	var obj = abstractHandler.getObjById( ping.toWhoIsWriting ); 
+	var obj = abstractHandler.getObjById( ping.idWhoIsWriting ); 
 	if (typeof obj == "undefined" || obj == null) return;  		
 
 	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
@@ -2887,7 +2898,7 @@ GUI.prototype.showPeerIsTyping = function ( ping )	{
 			tag.html( obj.commentary );
 			tag.data("typing","off");
 			
-			var newObj = abstractHandler.getObjById( ping.toWhoIsWriting ); 
+			var newObj = abstractHandler.getObjById( ping.idWhoIsWriting ); 
 			gui.showLastMsgTruncated( newObj );
 		});		
 	}	
@@ -4127,7 +4138,7 @@ function ContactOnKnet( c ) {
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
 	this.isAccepted = (c.isAccepted) ? c.isAccepted : false;
 	this.isBlocked = (c.isBlocked) ? c.isBlocked : false;
-	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? "" : c.lastMsgTruncated;
+	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? "" : c.lastMsgTruncated ;
 };
 
 ContactOnKnet.prototype.set = function( c ) {
@@ -4144,7 +4155,7 @@ ContactOnKnet.prototype.set = function( c ) {
 	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
 	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
-	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? "" : c.lastMsgTruncated;
+	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? this.lastMsgTruncated : c.lastMsgTruncated;
 };
 
 
@@ -4267,7 +4278,7 @@ ContactsHandler.prototype.setContactOnDB = function(contact) {
 		store.openCursor(singleKeyRange).onsuccess = function(e) {
 			var cursor = e.target.result;
 			if (cursor) {
-	     		cursor.update( contact );     		
+				cursor.update( contact );     		
 	     	}else{
 	     		store.add( contact );
 	     	}     	 
@@ -4375,7 +4386,7 @@ Group.prototype.set = function( g ) {
 	this.telephone = (g.telephone) ? g.telephone : this.telephone;
 	this.email = (g.email) ? g.email : this.email;
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : this.listOfMembers;
-	this.lastMsgTruncated = (typeof g.lastMsgTruncated == 'undefined' || g.lastMsgTruncated == null) ? "" : g.lastMsgTruncated;	
+	this.lastMsgTruncated = (typeof g.lastMsgTruncated == 'undefined' || g.lastMsgTruncated == null) ? this.lastMsgTruncated : g.lastMsgTruncated;
 };
 
 function GroupsHandler() {
@@ -4415,7 +4426,7 @@ GroupsHandler.prototype.setGroupOnDB = function( group ) {
 		store.openCursor(singleKeyRange).onsuccess = function(e) {
 			var cursor = e.target.result;
 			if (cursor) {
-	     		cursor.update( group );     		
+				cursor.update( group );     		
 	     	}else{
 	     		store.add( group );
 	     	}     	 

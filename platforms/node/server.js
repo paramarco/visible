@@ -381,6 +381,7 @@ app.locals.onWhoIsWriting = function( input , socket) {
 		brokerOfVisibles.isClientOnline(receiver).then(function( clientReceiver ){	
 			if ( clientReceiver != null ){			
 				postMan.send("WhoIsWriting",  pong, clientReceiver );
+				logger.debug('WhoIsWriting ::: ',pong );	  
 	 		}			
 		});
 	});

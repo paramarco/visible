@@ -1203,9 +1203,8 @@ PostMan.prototype.getWhoIsWriting = function( encrypted, client) {
 		if (input == null ||
 			PostMan.prototype.isUUID( input.idWhoIsWriting ) == false ||
 			PostMan.prototype.isUUID( input.toWhoIsWriting ) == false ||		
-			typeof input.listOfReceivers == "object" ||
-			Object.keys(input).length != 2 ) {	
-			console.error("getWhoIsWriting ::: format check failed: " + input );
+			Object.keys(input).length != 3 ) {	
+			console.error("getWhoIsWriting ::: format check failed: " );
 			return null;
 		}		
 		return input; 
