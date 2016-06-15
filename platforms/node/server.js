@@ -366,6 +366,30 @@ app.locals.onPushRegistration = function( input , socket) {
 	
 };
 
+app.locals.onWhoIsOnline = function( input , socket) {	
+
+	var client = socket.visibleClient;	
+	var ping = postMan.getWhoIsOnline( input, client);		
+	if (ping == null) return;
+
+	
+	var pong = { 
+		idWhoIsOnline: ping.idWhoIsOnline			
+	};
+	
+	logger.debug('WhoIsonline ::: ', pong );
+	
+	
+	ping.listOfReceivers.map(function( receiver ){
+		brokerOfVisibles.isClientOnline(receiver).then(function( clientReceiver ){	
+			if ( clientReceiver != null ){			
+				postMan.send("WhoIsOnline",  pong, clientReceiver );
+				logger.debug('WhoIsonline ::: ', pong );	  
+	 		}			
+		});
+	});
+};
+
 app.locals.onWhoIsWriting = function( input , socket) {	
 
 	var client = socket.visibleClient;	
@@ -768,6 +792,9 @@ if ( conf.useTLS ){
 		
 		//XEP-XXXX: currentlz writing
 		socket.on("WhoIsWriting", function (msg){ app.locals.onWhoIsWriting ( msg , socket) } );
+		
+		//XEP-XXXX: currently online
+		socket.on("WhoIsOnline", function (msg){ app.locals.onWhoIsOnline ( msg , socket) } );
 		
 	});	
 }

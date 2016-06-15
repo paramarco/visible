@@ -1196,6 +1196,26 @@ PostMan.prototype.getReconnectNotification = function( encrypted, client) {
 	}	
 };
 
+
+PostMan.prototype.getWhoIsOnline = function( encrypted, client) {	
+	try {    
+		var input = PostMan.prototype.decrypt(encrypted, client);
+		
+		if (input == null ||
+			PostMan.prototype.isUUID( input.idWhoIsOnline ) == false ||
+			Object.keys(input).length != 2 ) {	
+			console.error("getWhoIsOnline ::: format check failed: " );
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		console.error("getWhoIsOnline ::: format check failed, ex: " + ex );
+		return null;
+	}	
+};
+
+
 PostMan.prototype.getWhoIsWriting = function( encrypted, client) {	
 	try {    
 		var input = PostMan.prototype.decrypt(encrypted, client);

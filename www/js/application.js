@@ -636,6 +636,24 @@ Postman.prototype.getMessageFromClient = function( input ) {
 	}
 };
 
+Postman.prototype.getWhoIsOnline = function(encrypted) {	
+	try {    
+		var input = Postman.prototype.decrypt(encrypted);
+		
+		if (input == null ||
+			Postman.prototype._isUUID(input.idWhoIsOnline) == false  ||
+			Object.keys(input).length != 1 ) {	
+			log.debug("Postman.prototype.getWhoIsOnline - type check", input); 
+			return null;
+		}		
+		return input; 
+	}
+	catch (ex) {
+		log.debug("Postman.prototype.getWhoIsOnline - type check", ex); 
+		return null;
+	}	
+};
+
 Postman.prototype.getWhoIsWriting = function(encrypted) {	
 	try {    
 		var input = Postman.prototype.decrypt(encrypted);
@@ -984,7 +1002,6 @@ GUI.prototype.bindDOMevents = function(){
 		$("#profileTelephone").val(user.myTelephone);
 		$("#profileEmail").val(user.myEmail);
 		$("#flip-visible").val(user.visibility).slider("refresh");
-		//$("#label_id_profile").html("&#x1f511" + user.publicClientID);
 		$("#label_id_profile").html("&#x1F511; " + user.publicClientID);
 		
 	});
@@ -1013,7 +1030,7 @@ GUI.prototype.bindDOMevents = function(){
 			var currentTime = new Date().getTime();
 			var lastkeyup = parseInt( $( event.target ).data("lastkeyup") );
 
-			if ( (currentTime - 15000) > lastkeyup ){
+			if ( (currentTime - config.TIME_FADE_WRITING * 5 ) > lastkeyup ){
 				$( event.target ).data("lastkeyup", currentTime);
 
 				var list = [];		
@@ -1034,7 +1051,6 @@ GUI.prototype.bindDOMevents = function(){
 		  			listOfReceivers : list	  			
 			  	};					
 				postman.send("WhoIsWriting", ping );
-				console.dir(ping);
 			}
 		})
 		.focus(function() {
@@ -2137,6 +2153,7 @@ GUI.prototype.showBlockSomebodyPrompt = function() {
 			' 	<a data-role=\"none\" class="ui-btn">'+ 
 			'  	 <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
 			'  	 <h2>'+ obj.nickName   + '</h2> '+
+			'  	 <p>'+ obj.commentary   + '</p> '+
 			'   </a>'+
 			'  </li>';
 	html += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
@@ -2230,6 +2247,7 @@ GUI.prototype.showContactsOnGroupMenu = function() {
 		' <a>'+ 
 		'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
 		'  <h2>'+ obj.nickName   + '</h2> '+
+		'  <p>' + obj.commentary + '</p>'+
 		' </a>'+
 		' <a id="buttonAddContact2Group'+obj.publicClientID + '" data-role="button" class="icon-list" data-inline="true">'+
 		' </a>' +
@@ -2394,6 +2412,7 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 		' <a>'+ 
 		'  <img src="' + group.imgsrc + '" class="imgInMainPage"/>'+
 		'  <h2>'+ group.nickName   + '</h2> '+
+		'  <p>' + group.commentary + '</p>'+
 		' </a>'+
 		'</li>';
 					
@@ -2452,10 +2471,17 @@ GUI.prototype.showImagePic = function() {
 
 GUI.prototype.showLastMsgTruncated = function( obj ){
 
-	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
+	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p");
 	
-	tag.html( decodeURIComponent( obj.lastMsgTruncated ) + " ..."); 
-	
+	if ( obj.lastMsgTruncated != ""){
+		var ellipsis = "";
+		if ( config.MAX_LENGTH_TRUNCATED_SMS - 4 < obj.lastMsgTruncated.length ){
+			ellipsis = " ...";
+		}
+		tag.html( decodeURIComponent( obj.lastMsgTruncated ) + ellipsis);	
+	}else{
+		tag.html( decodeURIComponent( obj.commentary ) );
+	}	
 };
 
 GUI.prototype.showListOfBlocked = function() {
@@ -2476,6 +2502,7 @@ GUI.prototype.showListOfBlocked = function() {
 			' <a>'+ 
 			'  <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
 			'  <h2>'+ obj.nickName   + '</h2> '+
+			'  <p>' + obj.commentary + '</p>'+
 			' </a>'+
 			' <a id="buttonUnblock'+obj.publicClientID + '" data-role="button" class="icon-list ui-icon-forbidden" data-inline="true">'+
 			' </a>' +
@@ -2630,7 +2657,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'		<span class="user">'+ authorOfMessage   +'</span>'+
 		'		<span class="content">'+ htmlOfContent + htmlOfVideoPreview +'</span>'+
 		'	</div>' +
-		'</div>		' ;
+		'</div>' ;
 	
 	var $newMsg = $(html2insert);	
 	$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
@@ -2841,6 +2868,7 @@ GUI.prototype.showUnblockSomebodyPrompt = function( obj) {
 			' 	<a data-role=\"none\" class="ui-btn">'+ 
 			'  	 <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
 			'  	 <h2>'+ obj.nickName   + '</h2> '+
+			'  	 <p>'+ obj.commentary   + '</p> '+
 			'   </a>'+
 			'  </li>';
 	html += ' <a id="label_46" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
@@ -2880,6 +2908,31 @@ GUI.prototype.showWelcomeMessage = function(text2show){
 	
 };
 
+
+/**
+ * @param ping := { idWhoIsOnline := uuid } 
+ */
+GUI.prototype.showPeerIsOnline = function ( ping )	{
+
+	var obj = abstractHandler.getObjById( ping.idWhoIsOnline ); 
+	if (typeof obj == "undefined" || obj == null) return;  		
+
+	var tag = $( "#link2go2ChatWith_" + obj.publicClientID).children().closest("p"); 		
+	
+	if ( tag.data("typing") != "on" ){
+		
+		tag.html( "online" );		
+		tag.fadeOut(config.TIME_FADE_WRITING)
+			.fadeIn(config.TIME_FADE_WRITING)
+			.fadeOut(config.TIME_FADE_WRITING)
+			.fadeIn(config.TIME_FADE_WRITING, function(){
+									
+			var newObj = abstractHandler.getObjById( ping.idWhoIsOnline ); 
+			gui.showLastMsgTruncated( newObj );
+		});		
+	}	
+};
+
 /**
  * @param ping := { idWhoIsWriting := uuid, toWhoIsWriting := uuid} 
  */
@@ -2894,17 +2947,17 @@ GUI.prototype.showPeerIsTyping = function ( ping )	{
 		
 		tag.html( "&#9000;" );
 		tag.data("typing","on");
-		tag.fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500).fadeOut(2500).fadeIn(2500, function(){
-			tag.html( obj.commentary );
-			tag.data("typing","off");
+		tag.fadeOut(config.TIME_FADE_WRITING)
+			.fadeIn(config.TIME_FADE_WRITING)
+			.fadeOut(config.TIME_FADE_WRITING)
+			.fadeIn(config.TIME_FADE_WRITING, function(){
 			
+			tag.data("typing","off");			
 			var newObj = abstractHandler.getObjById( ping.idWhoIsWriting ); 
 			gui.showLastMsgTruncated( newObj );
 		});		
 	}	
 };
-
-
 
 
 /**
@@ -3270,6 +3323,16 @@ Application.prototype.connect2server = function(result){
 			app.bindPushEvents();
 		}
 		
+		var awarenessList = [];
+		contactsHandler.listOfContacts.map( function( e ){
+			awarenessList.push( e.publicClientID ); 
+		});
+		var ping = { 
+			idWhoIsOnline : user.publicClientID,
+			listOfReceivers : awarenessList
+		};
+  		postman.send("WhoIsOnline",  ping );
+  		
 	});
 	
 	socket.on('disconnect', function () {
@@ -3468,6 +3531,14 @@ Application.prototype.connect2server = function(result){
 		postman.onMsgFromClient( input );	
 	});//END MessageFromClient event
 	
+	socket.on("WhoIsOnline", function (input){
+		var ping = postman.getWhoIsOnline(input); 
+		if (ping == null) { return;	}
+		
+		gui.showPeerIsOnline( ping );
+		
+	});//END WhoIsWriting event
+	
 	socket.on("WhoIsWriting", function (input){
 		var ping = postman.getWhoIsWriting(input); 
 		if (ping == null) { return;	}
@@ -3475,6 +3546,8 @@ Application.prototype.connect2server = function(result){
 		gui.showPeerIsTyping( ping );
 		
 	});//END WhoIsWriting event
+	
+	
 
 	
 	
@@ -5655,8 +5728,6 @@ $.when( app.events.documentReady,
 	app.initialized = true;	
 	gui.bindButtonsOnMainPage();	
 	app.sendLogin();
-	
-	//gui.showPeerIsTyping({ idWhoIsWriting : "82809360-15bf-4c34-82af-a8ca15fc9386", toWhoIsWriting : "82809360-15bf-4c34-82af-a8ca15fc9386"});
 
 });
 

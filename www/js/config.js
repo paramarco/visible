@@ -18,6 +18,7 @@ function Config ()  {
 	this.MIN_HEIGHT_IMG_PROFILE = 170;
 
 	this.TIME_FADE_ACK = 6000;
+	this.TIME_FADE_WRITING = 2500;
 	this.TIME_SILENT_SCROLL = 330;
 	this.TIME_LOAD_EMOJI = 3000;
 	this.TIME_LOAD_SPINNER = 200;
