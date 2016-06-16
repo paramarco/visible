@@ -2945,7 +2945,7 @@ GUI.prototype.showPeerIsTyping = function ( ping )	{
 	
 	if ( tag.data("typing") != "on" ){
 		
-		tag.html( "&#9000;" );
+		tag.html( dictionary.Literals.label_61 + " ..." );
 		tag.data("typing","on");
 		tag.fadeOut(config.TIME_FADE_WRITING)
 			.fadeIn(config.TIME_FADE_WRITING)
@@ -3683,6 +3683,8 @@ Application.prototype.init = function() {
 	app.detectPosition();
 	app.detectLanguage();
 	app.loadPersistentData();
+	app.loadContactsBook();
+	app.loadMyNumber();
 
 };
 
@@ -3712,6 +3714,14 @@ Application.prototype.loadContacts = function() {
 	};	
 };
 
+Application.prototype.loadContactsBook = function() {
+	if ( ! (typeof cordova == "undefined" || cordova == null) ){
+		$.when( app.events.deviceReady , app.events.documentReady).done(function(){
+						
+		});		
+	}	
+};
+
 Application.prototype.loadGroups = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
 	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
@@ -3724,6 +3734,26 @@ Application.prototype.loadGroups = function() {
      	}
 	};	
 };
+
+Application.prototype.loadMyNumber = function() {
+	if ( ! (typeof cordova == "undefined" || cordova == null) ){
+		$.when( app.events.deviceReady , app.events.documentReady).done(function(){
+			window.plugins.sim.getSimInfo(app.loadMyNumberSuccess, app.loadMyNumberError);
+		});		
+	}	
+};
+
+Application.prototype.loadMyNumberError = function( result ) {
+};
+
+Application.prototype.loadMyNumberSuccess = function( result ) {
+	if( user.myTelephone == "" || user.myTelephone == null ){
+		var obj = JSON.parse(result);
+		user.myTelephone = "" + obj.mcc + obj.mnc ;
+		user.updateUserSettings();
+	}
+};
+
 
 Application.prototype.loadPersistentData = function() {
 	if (typeof cordova == "undefined" || cordova == null ){
@@ -4583,6 +4613,7 @@ function Dictionary(){
 		label_58 : "reported",
 		label_59 : "agree",
 		label_60 : "Privacy policy",
+		label_61 : "typing",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4773,6 +4804,7 @@ function Dictionary(){
 		label_58 : "berichtet",
 		label_59 : "zustimmen",
 		label_60 : "Datenschutzerkl&auml;rung",
+		label_61 : "schreiben",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -4963,6 +4995,7 @@ function Dictionary(){
 		label_58 : "segnalati",
 		label_59 : "concordare",
 		label_60 : "Politica sulla riservatezza",
+		label_61 : "digitando",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -5154,6 +5187,7 @@ function Dictionary(){
 		label_58 : "reportado",
 		label_59 : "de acuerdo",
 		label_60 : "Pol&iacute;tica de privacidad",
+		label_61 : "escribiendo",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5344,6 +5378,7 @@ function Dictionary(){
 		label_58 : "signal\u00e9",
 		label_59 : "d'accord",
 		label_60 : "Politique de confidentialit&eacute;",
+		label_61 : "&eacute;crit maintenant",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5534,6 +5569,7 @@ function Dictionary(){
 		label_58 : "relatado",
 		label_59 : "concordar",
 		label_60 : "Pol&iacute;tica de Privacidade",
+		label_61 : "digitando",
 		CLDR : {
 			  "main": {
 			    "pt": {
