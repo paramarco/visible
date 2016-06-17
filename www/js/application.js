@@ -1784,7 +1784,10 @@ GUI.prototype.loadMaps = function(){
 GUI.prototype.loadMapOnProfileOfContact = function(){
 
 	var contact = contactsHandler.getContactById(app.currentChatWith); 
-	if (typeof contact == "undefined") return;
+	if (typeof contact == "undefined") {
+		$('#mapProfile').remove();
+		return;
+	}
 	
 	gui.mapOfContact = null ;
 	gui.mapOfContact = L.map('mapProfile');
@@ -2694,7 +2697,12 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 GUI.prototype.showProfile = function() {	
 	
 	var obj = abstractHandler.getObjById( app.currentChatWith ); 
-	if (typeof obj == "undefined") return;	
+	if (typeof obj == "undefined") return;
+	
+	var isGroup = true;
+	if ( obj instanceof ContactOnKnet ){
+		isGroup = false;	
+	}
 		
 	$("#ProfileOfContact-page").remove();
 	
@@ -2734,25 +2742,53 @@ GUI.prototype.showProfile = function() {
 	strVar += "						<\/div>";
 	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
 	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\"> ";
-	
+	strVar += "								<div class=\"main-content\"> ";	
 	strVar += "					          		<div class=\"timeline-panel\">";
 	strVar += "					          			<h1>Contact Info<\/h1>";
 	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
 	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
 	strVar += "					          				<div class=\"col-md-12\">";
+	strVar += "												<strong>" + obj.nickName  + "<\/strong><br>";
+	
+	if (!isGroup){
 	strVar += "					          					<address>";
-	strVar += "												  	<strong>" + obj.nickName  + "<\/strong><br>";
 	strVar += "											  		<abbr title=\"Phone\"> &#9742 &nbsp;"  + obj.telephone + "<\/abbr>";
 	strVar += "												<\/address>";
 	strVar += "												<email>";
 	strVar += "												  	<abbr title=\"email\"> &#9993; &nbsp;" + obj.email + "<\/abbr>";
 	strVar += "												<\/email>";
+	}
+	
 	strVar += "												<address>";
 	strVar += "												  	<abbr title=\"id\"> &#x1f511; &nbsp;" + obj.publicClientID + "<\/abbr>";
 	strVar += "												<\/address>";
 	strVar += "						          			<\/div>";
-	strVar += "						          			<div class=\"col-md-12\"><br>";
+	strVar += "						          			<div class=\"col-md-12\"><br>";	
+
+	if (isGroup){
+		strVar += '<ul id="contacts4Profile">';
+		var list = [];
+		obj.listOfMembers.map(function( id ){
+			var contact2list = contactsHandler.getContactById( id );
+			if ( typeof contact2list != "undefined" || contact2list != null ){
+				list.push( contact2list );	
+			}			
+		});
+		list.map( function( e ){
+			strVar += '<li id="contact4Profile_'+ e.publicClientID + '">';
+			strVar += ' <a>';
+			strVar += '  <img src="' + e.imgsrc + '" class="imgInMainPage"/>';
+			strVar += '  <h2>'+ e.nickName   + '</h2> ';
+			strVar += '  <p>' + e.commentary + '</p>';
+			strVar += ' </a>';
+			strVar += ' <a id="buttonAddContact2Group'+e.publicClientID + '" data-role="button" class="icon-list" data-inline="true">';
+			strVar += ' </a>';
+			strVar += '</li>';			
+		});
+		strVar += '</ul>';
+	}
+	
+	
 	strVar += "					        	  			<\/div>";
 	strVar += "					          			<\/div>";
 	strVar += "					          			<div class=\"col-md-12\">";
@@ -2775,6 +2811,16 @@ GUI.prototype.showProfile = function() {
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
 	$("body").append(strVar);
+	$('#contacts4Profile')
+		.listview().listview('refresh')
+		.find('[id^="contact4Profile_"]').on("click", function( e ){
+			var id = $(this).attr('id');
+			var idTruncated = id.substring(16, id.length);
+			var contact2show = contactsHandler.getContactById( idTruncated );
+			if ( typeof contact2show == "undefined" || contact2show == null ) return;
+			gui.showConversation( contact2show );
+		});
+	
 	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
 	$(".backButton").unbind("click").bind("click",function() {
 		gui.onBackButton();
