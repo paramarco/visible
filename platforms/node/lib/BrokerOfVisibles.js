@@ -406,10 +406,6 @@ function BrokerOfVisibles(_io, _logger) {
 		var newClient = new Client (RSAmodulus);		
 		var d = when.defer();	
 		
-		for (i = 0; i < newClient.myArrayOfKeys.length; i++) { 
-			newClient.myArrayOfKeys[i] = newClient.myArrayOfKeys[i].replace(/\'/g, "Z");
-		}
-		
 		var query2send = squel.insert()
 							    .into("client")
 							    .set("publicclientid", newClient.publicClientID )
