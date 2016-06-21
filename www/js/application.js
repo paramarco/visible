@@ -1203,8 +1203,12 @@ GUI.prototype.bindPagination = function( newerDate ){
 GUI.prototype.forwardMsg = function( contact ){
 	
   	mailBox.getMessageByID( app.msg2forward ).done(function ( msg ){
-  		if (!msg ){	return; }  		
-  		app.forwardMsg( msg , contact);  		
+  		if ( typeof msg == "undefined" || msg == null ){	
+  			console.log ("GUI.prototype.forwardMsg  is not finding the msg");
+  			return;
+  		}
+  		var msg2fw = new Message( msg );
+  		app.forwardMsg( msg2fw , contact);  		
   	});
 	$('body').pagecontainer('change', '#chat-page', { transition : "none" });
 	$("#forwardMenu").empty();
@@ -2639,7 +2643,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'  <img class="image-embed" src="' + message.messageBody.src +'" data-index="'+gui.indexOfImages4Gallery+'">' +
 //		'  <img class="lazy"  data-src="' + message.messageBody.src +'">' +		
 		' </a>' +			 
-		' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
+		' <div class="tool-bar"> <div id="msgFwd_' + message.msgID + '" data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
 		'</div>' ;
 		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
@@ -2663,8 +2667,10 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'</div>' ;
 	
 	var $newMsg = $(html2insert);	
-	$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
-		app.msg2forward = message.msgID;
+	$newMsg.find('#msgFwd_'+ message.msgID).unbind("click").on("click", function( e ){		
+		var id = $(this).attr('id');
+		var idTruncated = id.substring(7, id.length);
+		app.msg2forward = idTruncated;			
 		$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
 	});
 	$newMsg.find(".image-embed").unbind("click").on("click", function(evt){
@@ -3675,6 +3681,7 @@ Application.prototype.forwardMsg = function( message2send, receiver ) {
 	
 	var msg2store = new Message( message2send );
 	msg2store.msgID = msg2store.assignId();
+	message2send.msgID = msg2store.msgID;
 	mailBox.storeMessage( msg2store );
 	
 	gui.showMsgInConversation( msg2store, { isReverse : false, withFX : true });					
