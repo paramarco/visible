@@ -19,6 +19,7 @@ function Config ()  {
 
 	this.TIME_FADE_ACK = 6000;
 	this.TIME_FADE_WRITING = 2500;
+	this.TIME_FADE_ONLINE_NOTICE = 4500;
 	this.TIME_SILENT_SCROLL = 330;
 	this.TIME_LOAD_EMOJI = 3000;
 	this.TIME_LOAD_SPINNER = 200;

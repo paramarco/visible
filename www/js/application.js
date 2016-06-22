@@ -975,7 +975,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadGroupMenu();
 	    }
 	    if (ui.options.target == "#forwardMenu"){		
-			gui.loadContactsOnForwardMenu();
+			gui.loadTargetsOnForwardMenu();
 	    }        
 	    gui.hideLoadingSpinner();
 	    
@@ -1200,14 +1200,19 @@ GUI.prototype.bindPagination = function( newerDate ){
 	});
 };
 
+/**
+ * @param contact := ContactOnKnet | Group
+ */
 GUI.prototype.forwardMsg = function( contact ){
 	
   	mailBox.getMessageByID( app.msg2forward ).done(function ( msg ){
-  		if (!msg ){	return; }  		
+  		if (typeof msg == "undefined" || msg == null){
+  			logger.debug("GUI.prototype.forwardMsg - ", msg);
+  			return;
+  		}  		
   		app.forwardMsg( msg , contact);  		
   	});
 	$('body').pagecontainer('change', '#chat-page', { transition : "none" });
-	$("#forwardMenu").empty();
 
 };
 
@@ -1236,7 +1241,7 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 
 	var strVar="";
 	strVar += "<div data-role=\"panel\" id=\"mypanel\" data-display=\"overlay\">";
-	strVar += "    <ul id=\"mypanel-list\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "  <ul id=\"mypanel-list\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "		<li id=\"link2profile\" data-icon=\"false\">";
 	strVar += "			<a>";
 	strVar += "				<img src=\"img\/profile_black_195x195.png\" >";
@@ -1261,7 +1266,7 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "				<h2 id=\"label_4\">Account<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>";		
-	strVar += "	<\/ul>";
+	strVar += "  <\/ul>";
 	strVar += "<\/div><!-- \/panel -->"; 
 		
 	$("#MainPage").append(strVar);
@@ -1572,28 +1577,30 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<\/div><!-- \/page emoticons-->";
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"forwardMenu\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a> 		    		";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header --> 	";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">";
+	strVar += "				<div class=\"container\" id=\"forwardMenuContainer\">";
+	strVar += "				<\/div><!-- \/container-->";
+	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page forwardMenu-->";	
 			
 	$("body").append(strVar); 
 	
 };
 
-GUI.prototype.loadContactsOnForwardMenu = function() {
-	
-	$("#forwardMenu").empty();
-	var html = "<ul id=\"listOfContactsInForwardMenu\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\"> ";	
-	$("#forwardMenu").append( html );
-	$("#forwardMenu").trigger("create");
-	
-	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
-	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
-		var cursor = e.target.result;
-     	if (cursor) { 
-        	gui.showContactOnForwardMenu(cursor.value);
-         	cursor.continue(); 
-     	}
-	};	
-};
+
 
 GUI.prototype.loadContactsOnMapPage = function() {
 	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
@@ -1808,7 +1815,33 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		
 };
 
-
+GUI.prototype.loadTargetsOnForwardMenu = function() {
+	
+	$("#forwardMenuContainer").empty();
+	var html = "<ul id=\"listOfContactsInForwardMenu\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"> </ul>";	
+	$("#forwardMenuContainer").append( html );
+	$("#forwardMenuContainer").trigger("create");
+	
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["contacts"], "readonly").objectStore("contacts").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) { 
+        	gui.showTargetOnForwardMenu(cursor.value);
+         	cursor.continue(); 
+     	}
+	};
+	
+	var singleKeyRange = IDBKeyRange.only("publicClientID"); 
+	db.transaction(["groups"], "readonly").objectStore("groups").openCursor(null, "nextunique").onsuccess = function(e) {
+		var cursor = e.target.result;
+     	if (cursor) {
+     		var group = new Group( cursor.value );
+     		gui.showTargetOnForwardMenu( group );
+     		cursor.continue(); 
+     	}
+	};	
+	
+};
 
 GUI.prototype.onAddContact2Group = function( contact ) {
 	
@@ -2264,26 +2297,6 @@ GUI.prototype.showContactsOnGroupMenu = function() {
 			gui.showRemoveContactFromGroup( obj );
 		}		
 	});	
-};
-
-GUI.prototype.showContactOnForwardMenu = function( contact ) {
-	
-	var html2insert = 	
-		'<li id="' + contact.publicClientID + '-inForwardMenu">'+
-		' <a>  '+
-		'  <img id="profilePhoto' + contact.publicClientID +'" src="'+ contact.imgsrc + '" class="imgInMainPage"/>'+
-		'  <h2>'+ contact.nickName + '</h2> '+
-		'  <p>' + contact.commentary + '</p></a>'+
-		' <a></a>'+
-		'</li>';
-		
-	$("#listOfContactsInForwardMenu")
-		.append(html2insert)
-		.listview().listview('refresh')
-		.find('#' + contact.publicClientID + "-inForwardMenu").first().on("click", function(){
-			gui.forwardMsg( contact );
-		});
-	
 };
 
 GUI.prototype.showContactOnMapPage = function( contact ) {
@@ -2744,7 +2757,13 @@ GUI.prototype.showProfile = function() {
 	strVar += "							<div id=\"content\">";
 	strVar += "								<div class=\"main-content\"> ";	
 	strVar += "					          		<div class=\"timeline-panel\">";
-	strVar += "					          			<h1>Contact Info<\/h1>";
+	
+	if (isGroup){
+		strVar += "					        		<h1>Group Info<\/h1>";	
+	}else{
+		strVar += "					        		<h1>Contact Info<\/h1>";
+	}
+	
 	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
 	strVar += "					        	  		<div class=\"row\" id=\"contact\">";
 	strVar += "					          				<div class=\"col-md-12\">";
@@ -2857,6 +2876,29 @@ GUI.prototype.showReportAbuse = function() {
 	
 };
 
+/** 
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.showTargetOnForwardMenu = function( obj ) {
+	
+	var html2insert = 	
+		'<li id="' + obj.publicClientID + '-inForwardMenu">'+
+		' <a>  '+
+		'  <img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
+		'  <h2>'+ obj.nickName + '</h2> '+
+		'  <p>' + obj.commentary + '</p></a>'+
+		' <a></a>'+
+		'</li>';
+		
+	$("#listOfContactsInForwardMenu")
+		.append(html2insert)
+		.listview().listview('refresh')
+		.find('#' + obj.publicClientID + "-inForwardMenu").first().on("click", function(){
+			gui.forwardMsg( obj );
+		});
+	
+};
+
 GUI.prototype.showTermsAndConditions = function() {	
 	var html = '';	
 	html += "<h1>Terms and Conditions (\"Terms\")<\/h1>";
@@ -2917,8 +2959,9 @@ GUI.prototype.showUnblockSomebodyPrompt = function( obj) {
 			'  	 <p>'+ obj.commentary   + '</p> '+
 			'   </a>'+
 			'  </li>';
-	html += ' <a id="label_46" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
-	html += ' <a id="label_47" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+	html += '  <a id="label_46" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+	html += '  <a id="label_47" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+	html += ' </ul>';
 	html += '</div>';
 	gui.showDialog( html );
 	gui.loadGroupMenu();
@@ -2967,11 +3010,12 @@ GUI.prototype.showPeerIsOnline = function ( ping )	{
 	
 	if ( tag.data("typing") != "on" ){
 		
-		tag.html( "online" );		
-		tag.fadeOut(config.TIME_FADE_WRITING)
-			.fadeIn(config.TIME_FADE_WRITING)
-			.fadeOut(config.TIME_FADE_WRITING)
-			.fadeIn(config.TIME_FADE_WRITING, function(){
+		tag.html( '<font color="orange"><b> ' + 'online' + '</b></font>' );
+		tag.delay(config.TIME_FADE_ONLINE_NOTICE)
+			.fadeOut(config.TIME_FADE_ONLINE_NOTICE)
+			.fadeIn(config.TIME_FADE_ONLINE_NOTICE)
+			.fadeOut(config.TIME_FADE_ONLINE_NOTICE)
+			.fadeIn(config.TIME_FADE_ONLINE_NOTICE, function(){
 									
 			var newObj = abstractHandler.getObjById( ping.idWhoIsOnline ); 
 			gui.showLastMsgTruncated( newObj );
@@ -2991,9 +3035,10 @@ GUI.prototype.showPeerIsTyping = function ( ping )	{
 	
 	if ( tag.data("typing") != "on" ){
 		
-		tag.html( dictionary.Literals.label_61 + " ..." );
+		tag.html( '<font color="orange"><b> ' + dictionary.Literals.label_61 + ' ... </b></font>' );
 		tag.data("typing","on");
-		tag.fadeOut(config.TIME_FADE_WRITING)
+		tag.delay(config.TIME_FADE_WRITING)
+			.fadeOut(config.TIME_FADE_WRITING)
 			.fadeIn(config.TIME_FADE_WRITING)
 			.fadeOut(config.TIME_FADE_WRITING)
 			.fadeIn(config.TIME_FADE_WRITING, function(){
@@ -3059,11 +3104,6 @@ GUI.prototype.refreshPurchasePrice = function() {
 };
 
 
-
-
-
-
-
 function MailBox() {
 };
 
@@ -3088,6 +3128,10 @@ MailBox.prototype.getAllMessagesOf = function( id , olderDate, newerDate) {
 	return deferred.promise();
 };
 
+/**
+ * @param msgID := uuid
+ * @returns newMsg := Message | "undefined"
+ */
 MailBox.prototype.getMessageByID = function(msgID) {
 	var singleKeyRange = IDBKeyRange.only(msgID);  
 	var deferredGetMessageByID = $.Deferred();
@@ -3097,8 +3141,9 @@ MailBox.prototype.getMessageByID = function(msgID) {
 		var message;
      	if (cursor) {
      		message = cursor.value;
+         	var newMsg = new Message(message);
+         	deferredGetMessageByID.resolve(newMsg); 
      	}
-     	deferredGetMessageByID.resolve(message); 
 	};
 	
 	return deferredGetMessageByID.promise();
@@ -3413,7 +3458,7 @@ Application.prototype.connect2server = function(result){
   		
   		setTimeout(function (){
 	  	  	mailBox.getMessageByID(deliveryReceipt.msgID).done(function (message){
-	  	  		if (!message){
+	  	  		if (typeof msg == "undefined" || msg == null){
 	  	  			//it could perfectly be a Message.messageBody.type == groupUpdate	  	  			
 	  	  			return;
 	  	  		}
@@ -3666,15 +3711,20 @@ Application.prototype.detectPosition = function(){
     }
 };
 
+/**
+ * @param message2send := Message
+ * @param receiver := ContactOnKnet | Group  
+ */
 Application.prototype.forwardMsg = function( message2send, receiver ) {
 
 	message2send.from = user.publicClientID;
 	message2send.to = receiver.publicClientID;
 	message2send.chatWith = receiver.publicClientID;
 	message2send.timestamp = new Date().getTime();	
+	message2send.msgID = message2send.assignId();
 	
 	var msg2store = new Message( message2send );
-	msg2store.msgID = msg2store.assignId();
+	msg2store.msgID = message2send.msgID;
 	mailBox.storeMessage( msg2store );
 	
 	gui.showMsgInConversation( msg2store, { isReverse : false, withFX : true });					
