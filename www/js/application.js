@@ -2759,9 +2759,9 @@ GUI.prototype.showProfile = function() {
 	strVar += "					          		<div class=\"timeline-panel\">";
 	
 	if (isGroup){
-		strVar += "					        		<h1>Group Info<\/h1>";	
+		strVar += "					        		<h1>" + dictionary.Literals.label_62 + "<\/h1>";	
 	}else{
-		strVar += "					        		<h1>Contact Info<\/h1>";
+		strVar += "					        		<h1>" + dictionary.Literals.label_63 + "<\/h1>";
 	}
 	
 	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
@@ -3107,6 +3107,12 @@ GUI.prototype.refreshPurchasePrice = function() {
 function MailBox() {
 };
 
+/**
+ * @param id := uuid
+ * @param olderDate := Date().getTime()
+ * @param newerDate := Date().getTime()
+ * @returns listOfMessages := [ Message ]
+ */
 MailBox.prototype.getAllMessagesOf = function( id , olderDate, newerDate) {
 
 	var range = IDBKeyRange.bound( olderDate, newerDate );		
@@ -3117,7 +3123,8 @@ MailBox.prototype.getAllMessagesOf = function( id , olderDate, newerDate) {
 		var cursor = e.target.result;
      	if (cursor) {
      		if ( cursor.value.chatWith == id ){
-     			listOfMessages.push( cursor.value );	
+     			var newMsg = new Message( cursor.value );
+     			listOfMessages.push( newMsg );	
      		}        	
          	cursor.continue(); 
      	}else{			
@@ -3149,7 +3156,11 @@ MailBox.prototype.getMessageByID = function(msgID) {
 	return deferredGetMessageByID.promise();
 };
 
-
+/**
+ * @param olderDate := Date().getTime()
+ * @param newerDate := Date().getTime()
+ * @returns listOfMessages := [ Message ]
+ */
 MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
 
 	var range = IDBKeyRange.bound(olderDate,newerDate);		
@@ -3160,7 +3171,8 @@ MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
 		var cursor = e.target.result;
      	if (cursor) {
      		if (cursor.value.ACKfromServer == false ){
-     			listOfMessages.push(cursor.value);	
+     			var newMsg = new Message( cursor.value );
+     			listOfMessages.push( newMsg );	
      		}        	
          	cursor.continue(); 
      	}else{			
@@ -3174,6 +3186,7 @@ MailBox.prototype.getMessagesSentOffline = function(olderDate, newerDate) {
 /**
  * @param id := uuid
  * @param newerDate := Date().getTime()
+ * @returns listOfMessages := [ Message ]
  */
 MailBox.prototype.retrieveMessages = function( id , newerDate) {
 	
@@ -3190,7 +3203,8 @@ MailBox.prototype.retrieveMessages = function( id , newerDate) {
 		var cursor = e.target.result;
      	if (cursor && counter < config.MAX_SMS_RETRIEVAL) {
      		if ( cursor.value.chatWith == id ){
-     			listOfMessages.push( cursor.value );
+     			var newMsg = new Message( cursor.value );
+     			listOfMessages.push( newMsg );
      			counter = counter + 1;
      		}        	
          	cursor.continue(); 
@@ -3202,7 +3216,11 @@ MailBox.prototype.retrieveMessages = function( id , newerDate) {
 	return deferred.promise();
 };
 
-
+/**
+ * @param olderDate := Date().getTime()
+ * @param newerDate := Date().getTime()
+ * @param listOfMessages := [ Message ]
+ */
 MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMessages) {
 	
 	mailBox.getMessagesSentOffline(olderDate, newerDate).done(function(list){
@@ -3223,6 +3241,9 @@ MailBox.prototype.sendOfflineMessages = function( olderDate, newerDate, listOfMe
 	
 };
 
+/**
+ * @param msg2Store := Message
+ */
 MailBox.prototype.storeMessage = function( msg2Store ) {
 
 	try {
@@ -3244,6 +3265,9 @@ MailBox.prototype.storeMessage = function( msg2Store ) {
  		
 };
 
+/**
+ * @param msg2Store := Message
+ */
 MailBox.prototype.removeMessage = function( msg2remove ) {
 
 	try {
@@ -3327,7 +3351,6 @@ Application.prototype.bindPushEvents = function() {
        app.sendPushRegistrationId( data.registrationId );
 	});
 	push.on('notification', function(data){
-		console.log("DEBUG ::: notification: "+ JSON.stringify(data) );
 	   // data.message, 
 	   // data.title, 
 	   // data.count, 
@@ -3336,7 +3359,7 @@ Application.prototype.bindPushEvents = function() {
 	   // data.additionalData 
 	});
 	push.on('error', function(e) {
-		console.log("DEBUG ::: bindPushEvents e.message: "+ e.message);
+		console.log("Application.prototype.bindPushEvents - error");
 	});
 	  
 };
@@ -3458,8 +3481,8 @@ Application.prototype.connect2server = function(result){
   		
   		setTimeout(function (){
 	  	  	mailBox.getMessageByID(deliveryReceipt.msgID).done(function (message){
-	  	  		if (typeof msg == "undefined" || msg == null){
-	  	  			//it could perfectly be a Message.messageBody.type == groupUpdate	  	  			
+	  	  		if (typeof message == "undefined" || message == null){
+	  	  			//it could perfectly be a Message.messageBody.type == groupUpdate
 	  	  			return;
 	  	  		}
 	  	  		if (deliveryReceipt.typeOfACK == "ACKfromServer" && message.ACKfromServer == false) {
@@ -3960,9 +3983,7 @@ Application.prototype.onDeviceReady = function() {
 Application.prototype.onNativeCameraInit = function( sourceType , callback) {
 
 	app.setMultimediaAsOpen();
-	
-	console.log("DEBUG ::: Application.prototype.onNativeCameraInit");
-	
+
 	var options = {
 		quality : 50,
 		encodingType : Camera.EncodingType.JPEG
@@ -4710,6 +4731,8 @@ function Dictionary(){
 		label_59 : "agree",
 		label_60 : "Privacy policy",
 		label_61 : "typing",
+		label_62 : "Group Info",
+		label_63 : "Contact Info",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4901,6 +4924,8 @@ function Dictionary(){
 		label_59 : "zustimmen",
 		label_60 : "Datenschutzerkl&auml;rung",
 		label_61 : "schreiben",
+		label_62 : "Gruppeninformationen",
+		label_63 : "Kontaktinfos",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -5092,6 +5117,8 @@ function Dictionary(){
 		label_59 : "concordare",
 		label_60 : "Politica sulla riservatezza",
 		label_61 : "digitando",
+		label_62 : "Info di gruppo",
+		label_63 : "Info di contatto",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -5284,6 +5311,8 @@ function Dictionary(){
 		label_59 : "de acuerdo",
 		label_60 : "Pol&iacute;tica de privacidad",
 		label_61 : "escribiendo",
+		label_62 : "Info de grupo",
+		label_63 : "Info de contacto",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5475,6 +5504,8 @@ function Dictionary(){
 		label_59 : "d'accord",
 		label_60 : "Politique de confidentialit&eacute;",
 		label_61 : "&eacute;crit maintenant",
+		label_62 : "Info du groupe",
+		label_63 : "Info de contact",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5666,6 +5697,8 @@ function Dictionary(){
 		label_59 : "concordar",
 		label_60 : "Pol&iacute;tica de Privacidade",
 		label_61 : "digitando",
+		label_62 : "Info do grupo",
+		label_63 : "Info de contato",
 		CLDR : {
 			  "main": {
 			    "pt": {
