@@ -4,7 +4,7 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.instaltic.knet"
-        version   = "0.4.2">
+        version   = "0.4.6">
 
     <name>knet</name>
     <description>
@@ -98,7 +98,7 @@
     <gap:splash src="res/screen/windows-phone/screen-portrait.jpg"      gap:platform="winphone" /> 
 
     <gap:config-file platform="ios" parent="CFBundleShortVersionString">
-    <string>0.4.2</string>
+    <string>0.4.6</string>
     </gap:config-file>
 
     <!--

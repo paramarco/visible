@@ -1661,7 +1661,8 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "        <\/div>";
 	strVar += "    <\/div>";
 	
-	$("#chat-page-content").append(strVar);
+	var activePage = $.mobile.activePage.attr("id");
+	$("#"+activePage).append(strVar);	
 
 	$('#button--share').on("click",  function(e) {
 		
@@ -1919,8 +1920,9 @@ GUI.prototype.onBackButton = function() {
 		case /emoticons/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
 			break;
-		case /ProfileOfContact/.test(page):
+		case /ProfileOfContact/.test(page):			
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			gui.removeImgFromGallery( gui.indexOfImages4Gallery );
 			break;
 		case /forwardMenu/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
@@ -2097,6 +2099,11 @@ GUI.prototype.printOldMessagesOf = function(publicClientID, olderDate, newerDate
 	});	
 };
 
+GUI.prototype.removeImgFromGallery = function( index ) {		
+	gui.listOfImages4Gallery.splice(  parseInt(index) - 1 , 1);
+	gui.indexOfImages4Gallery = gui.indexOfImages4Gallery - 1;	
+};
+
 GUI.prototype.setImgIntoGallery = function(index, src, msgId) {
 
 	var img = new Image();
@@ -2111,6 +2118,8 @@ GUI.prototype.setImgIntoGallery = function(index, src, msgId) {
 		    msgId : msgId
 		};
 	}
+	
+	gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
 	
 };
 
@@ -2656,7 +2665,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'</div>' ;
 		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
-		gui.indexOfImages4Gallery = gui.indexOfImages4Gallery + 1;
+		
 			
 	}	
 	
@@ -2742,7 +2751,7 @@ GUI.prototype.showProfile = function() {
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
 	strVar += "									<div class=\"text-center\">";
-	strVar += "										<img src=\"" + obj.imgsrc + "\" class=\"img-circle\">";
+	strVar += "										<img src=\"" + obj.imgsrc + "\" class=\"img-circle\" data-index='" + gui.indexOfImages4Gallery + "'>";	
 	strVar += "									<\/div>";
 	strVar += "									<div class=\"user-head\">";
 	strVar += "										<h1>" + obj.nickName  + "<\/h1>";
@@ -2829,7 +2838,11 @@ GUI.prototype.showProfile = function() {
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/ ProfileOfContact-page-->";
 	
-	$("body").append(strVar);
+	$("body")
+	  .append(strVar)
+	  .find(".img-circle").unbind("click").on("click", function(evt){
+			gui.showGallery( $(evt.target).data('index') );
+	  });
 	$('#contacts4Profile')
 		.listview().listview('refresh')
 		.find('[id^="contact4Profile_"]').on("click", function( e ){
@@ -2841,6 +2854,10 @@ GUI.prototype.showProfile = function() {
 		});
 	
 	$('body').pagecontainer('change', '#ProfileOfContact-page', { transition : "none" });
+	
+	gui.setImgIntoGallery(gui.indexOfImages4Gallery , obj.imgsrc, "");
+	
+	
 	$(".backButton").unbind("click").bind("click",function() {
 		gui.onBackButton();
 	});	
