@@ -1632,7 +1632,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "				<div data-role=\"none\" class=\"pswp__top-bar\">";
 	strVar += "					<div data-role=\"none\" class=\"pswp__counter\"><\/div>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"><\/button>";
-	strVar += "				<button id=\"button--share\" data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
+//	strVar += "				<button id=\"button--share\" data-role=\"none\" class=\"pswp__button pswp__button--share\" title=\"Share\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"><\/button>";
 	strVar += "				<button data-role=\"none\" class=\"pswp__button pswp__button--zoom\" title=\"Zoom in\/out\"><\/button>";
 	strVar += "				<div class=\"pswp__preloader\">";
@@ -1643,13 +1643,13 @@ GUI.prototype.loadGalleryInDOM = function() {
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";
 	strVar += "            <\/div>	<div class=\"pswp__loading-indicator\"><div class=\"pswp__loading-indicator__line\"><\/div><\/div> ";
-	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
-	strVar += "	            <div class=\"pswp__share-tooltip\">";
-	strVar += "				<!--<a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
-	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
-	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
-	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
-	strVar += "	            <\/div>";
+//	strVar += "            <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">";
+//	strVar += "	            <div class=\"pswp__share-tooltip\">";
+//	strVar += "				<!--<a href=\"#\" class=\"pswp__share--facebook\"><\/a>";
+//	strVar += "					<a href=\"#\" class=\"pswp__share--twitter\"><\/a>";
+//	strVar += "					<a href=\"#\" class=\"pswp__share--pinterest\"><\/a>";
+//	strVar += "					<a href=\"#\" download class=\"pswp__share--download\"><\/a> -->";
+//	strVar += "	            <\/div>";
 	strVar += "	        <\/div>";
 	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\"><\/button>";
 	strVar += "            <button data-role=\"none\" class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\"><\/button>";
@@ -1664,7 +1664,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 	var activePage = $.mobile.activePage.attr("id");
 	$("#"+activePage).append(strVar);	
 
-	$('#button--share').on("click",  function(e) {
+/*	$('#button--share').on("click",  function(e) {
 		
 		app.msg2forward = gui.photoGallery.currItem.msgId;
 		
@@ -1677,7 +1677,7 @@ GUI.prototype.loadGalleryInDOM = function() {
 		gui.photoGallery.close();
 	
 	});
-
+*/
 };
 
 GUI.prototype.loadProfile = function() {
