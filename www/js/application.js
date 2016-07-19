@@ -832,6 +832,7 @@ function GUI() {
 	this.photoGalleryClosed = true;
 	this.groupOnMenu = null;
 	this.formatter = function(){};
+	this.searchMap = null; 
 };
 
 GUI.prototype._parseLinks = function(htmlOfContent) {
@@ -919,7 +920,7 @@ GUI.prototype.bindButtonsOnMainPage = function() {
 		$.browser.ipad || $.browser.iphone || $.browser.ipod || 
 		app.isMobile && (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") ){
 		$('#link2activateAccount').remove().trigger( "updatelayout" );
-		$('#link2manageVisibles').remove().trigger( "updatelayout" );		
+		$('#link2searchPage').remove().trigger( "updatelayout" );		
 		$('#mypanel-list').listview().listview('refresh');
 		$( "#mypanel" ).trigger( "updatelayout" );
 	}
@@ -976,7 +977,10 @@ GUI.prototype.bindDOMevents = function(){
 	    }
 	    if (ui.options.target == "#forwardMenu"){		
 			gui.loadTargetsOnForwardMenu();
-	    }        
+	    }
+	    if (ui.options.target == "#searchPage"){
+			gui.loadSearchMap();				 
+	    }
 	    gui.hideLoadingSpinner();
 	    
 	});	
@@ -1254,7 +1258,7 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	strVar += "				<h2 id=\"label_2\" >Groups<\/h2>";
 	strVar += "			<\/a>";
 	strVar += "		<\/li>"; 
-	strVar += "		<li id=\"link2manageVisibles\" data-icon=\"false\">";
+	strVar += "		<li id=\"link2searchPage\" data-icon=\"false\">";
 	strVar += "			<a>";
 	strVar += "				<img src=\"img\/visibles_black_195x195.png\" >";
 	strVar += "				<h2 id=\"label_3\">Search<\/h2>";
@@ -1277,8 +1281,8 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	$("#link2createGroup").click(function(){ 
 		$('body').pagecontainer('change', '#createGroup', { transition : "none" });
 	});
-	$("#link2manageVisibles").click(function(){ 
-		$('body').pagecontainer('change', '#manageVisibles', { transition : "none" });
+	$("#link2searchPage").click(function(){ 
+		$('body').pagecontainer('change', '#searchPage', { transition : "none" });
 	});
 	$("#link2activateAccount").click(function(){ 
 		$('body').pagecontainer('change', '#activateAccount', { transition : "none" });
@@ -1291,8 +1295,8 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 GUI.prototype.loadBody = function() { 
 	
 	var strVar="";
-	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"manageVisibles\">";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += " 	<div data-role=\"page\" data-theme=\"a\" id=\"searchPage\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
 	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
@@ -1304,7 +1308,31 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    <div class=\"ui-block-d\"><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
-	strVar += "			<\/div><!-- \/header -->		";
+	strVar += "			<\/div><!-- \/header -->";
+
+	strVar += "			<div role=\"main\" id=\"searchMap\" >";
+	strVar += "		        	<!-- map loads here...  -->";
+	strVar += "		  	<\/div>";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">";
+	strVar += "				<ul id=\"alisttt\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "				<\/ul>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page searchPage-->";
+	
+	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"searchPageResult\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a>";
+	strVar += "	    		<\/div>";
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
 	strVar += "			<div data-role=\"content\" data-theme=\"b\">";	
 	strVar += "				<div class=\"container\" id=\"main\">";
 	strVar += "					<div class=\"row\">";
@@ -1316,7 +1344,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "						<\/div>";
 	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
 	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\">						";
+	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
 	strVar += "										<h1 id=\"label_6\">Not implemented yet<\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
@@ -1326,11 +1354,12 @@ GUI.prototype.loadBody = function() {
 	strVar += "						<\/div>";
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";
-	strVar += "			<\/div><!-- \/content -->			";
-	strVar += "		<\/div><!-- \/page manageVisibles-->";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page searchPageResult-->";	
+	
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
 	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
@@ -1398,20 +1427,20 @@ GUI.prototype.loadBody = function() {
 	strVar += "		<\/div><!-- \/page createGroup-->";
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"profile\">";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">							";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
 	strVar += "			  <div class=\"ui-grid-d\" >";
 	strVar += "			    <div class=\"ui-block-a\">";
 	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
 	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
-	strVar += "		    		<\/a> 		    		";
+	strVar += "		    		<\/a>";
 	strVar += "	    		<\/div>";
 	strVar += "			    <div class=\"ui-block-b\"><\/div>";
 	strVar += "			    <div class=\"ui-block-c\"><\/div>";
 	strVar += "			    <div class=\"ui-block-d\"><\/div>";
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
-	strVar += "			<\/div><!-- \/header --> 	";
-	strVar += "			<div data-role=\"content\" data-theme=\"a\">			";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">";
 	strVar += "				<div class=\"container\" id=\"main\">";
 	strVar += "					<div class=\"row\">";
 	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
@@ -1788,7 +1817,6 @@ GUI.prototype.loadMaps = function(){
 	
 };
 
-
 GUI.prototype.loadMapOnProfileOfContact = function(){
 
 	var contact = contactsHandler.getContactById(app.currentChatWith); 
@@ -1814,6 +1842,41 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(contact.nickName);	
 	L.circle(latlng, 200).addTo(gui.mapOfContact); 	
 		
+};
+
+GUI.prototype.loadSearchMap = function(){
+	
+	if ( gui.searchMap != null ) {
+		gui.searchMap.remove();
+		//$("#listOfContactsInMapPage").empty();
+	}
+	gui.searchMap = null;
+	gui.searchMap = L.map('searchMap');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		maxZoom: 18,
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
+		trackResize : true
+	}).addTo(gui.searchMap);
+
+	gui.searchMap.setView([app.myPosition.coords.latitude.toString(), app.myPosition.coords.longitude.toString()], 11);  
+	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
+	
+	
+	var currentMarker = new L.marker(latlng).addTo(gui.searchMap).bindPopup(dictionary.Literals.label_11).openPopup();
+	var currentCircle = new L.circle(latlng, 5000).addTo(gui.searchMap); 
+
+	
+	gui.searchMap.on('click', function(e){
+		gui.searchMap.removeLayer(currentMarker);
+		gui.searchMap.removeLayer(currentCircle);
+		currentMarker = new L.marker(e.latlng).addTo(gui.searchMap);
+		currentCircle = new L.circle(e.latlng, 5000).addTo(gui.searchMap);
+     });
+	
 };
 
 GUI.prototype.loadTargetsOnForwardMenu = function() {
@@ -5873,7 +5936,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 //	window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(false);
+log4javascript.setEnabled(true);
 
 /***********************************************************************************************
  * *********************************************************************************************
