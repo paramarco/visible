@@ -1179,6 +1179,13 @@ GUI.prototype.bindDOMevents = function(){
 	$("#label_60").on("click",function() {
 		gui.showTermsAndConditions();
 	});
+	$("#label_65").unbind( "click" ).bind("click", function(){			 
+		$('body').pagecontainer('change', '#createPlanPage', { transition : "none" });
+	});
+	$("#label_66").unbind( "click" ).bind("click", function(){			 
+		$('body').pagecontainer('change', '#joinPlanPage', { transition : "none" });
+	});
+	
 	
 };
 
@@ -1281,8 +1288,10 @@ GUI.prototype.loadAsideMenuMainPage = function() {
 	$("#link2createGroup").click(function(){ 
 		$('body').pagecontainer('change', '#createGroup', { transition : "none" });
 	});
-	$("#link2searchPage").click(function(){ 
-		$('body').pagecontainer('change', '#searchPage', { transition : "none" });
+	$("#link2searchPage").click(function(){		
+		if ( app.myPosition.coords.latitude != "" ){
+			$('body').pagecontainer('change', '#searchPage', { transition : "none" });
+		}		
 	});
 	$("#link2activateAccount").click(function(){ 
 		$('body').pagecontainer('change', '#activateAccount', { transition : "none" });
@@ -1309,53 +1318,18 @@ GUI.prototype.loadBody = function() {
 	strVar += "			    <div class=\"ui-block-e\"><\/div>";
 	strVar += "			  <\/div>";
 	strVar += "			<\/div><!-- \/header -->";
-
 	strVar += "			<div role=\"main\" id=\"searchMap\" >";
 	strVar += "		        	<!-- map loads here...  -->";
 	strVar += "		  	<\/div>";
-	strVar += "			<div data-role=\"content\" data-theme=\"a\">";
-	strVar += "				<ul id=\"alisttt\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
-	strVar += "				<\/ul>";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\">";	
+	strVar += ' 			<a id="label_65" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_65+'</a>';
+	strVar += ' 			<a id="label_66" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_66+'</a>';	
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page searchPage-->";
 	
-	strVar += " 		<div data-role=\"page\" data-theme=\"a\" id=\"searchPageResult\">";
-	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
-	strVar += "			  <div class=\"ui-grid-d\" >";
-	strVar += "			    <div class=\"ui-block-a\">";
-	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
-	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
-	strVar += "		    		<\/a>";
-	strVar += "	    		<\/div>";
-	strVar += "			    <div class=\"ui-block-b\"><\/div>";
-	strVar += "			    <div class=\"ui-block-c\"><\/div>";
-	strVar += "			    <div class=\"ui-block-d\"><\/div>";
-	strVar += "			    <div class=\"ui-block-e\"><\/div>";
-	strVar += "			  <\/div>";
-	strVar += "			<\/div><!-- \/header -->";
-	strVar += "			<div data-role=\"content\" data-theme=\"b\">";	
-	strVar += "				<div class=\"container\" id=\"main\">";
-	strVar += "					<div class=\"row\">";
-	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
-	strVar += "							<div id=\"sidebar\">";
-	strVar += "								<div class=\"user\">";
-	strVar += "								<\/div>";
-	strVar += "							<\/div>";
-	strVar += "						<\/div>";
-	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
-	strVar += "							<div id=\"content\">";
-	strVar += "								<div class=\"main-content\">";
-	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<h1 id=\"label_6\">Not implemented yet<\/h1>";
-	strVar += "										<div class=\"hr-left\"><\/div>";
-	strVar += "									<\/div>";
-	strVar += "								<\/div>";
-	strVar += "							<\/div>";
-	strVar += "						<\/div>";
-	strVar += "					<\/div>";
-	strVar += "				<\/div>";
-	strVar += "			<\/div><!-- \/content -->";
-	strVar += "		<\/div><!-- \/page searchPageResult-->";	
+	strVar += " 	<div data-role=\"page\" data-theme=\"a\" id=\"createPlanPage\">";
+
+	strVar += "		<\/div><!-- \/page createPlanPage-->";	
 	
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
@@ -1848,7 +1822,6 @@ GUI.prototype.loadSearchMap = function(){
 	
 	if ( gui.searchMap != null ) {
 		gui.searchMap.remove();
-		//$("#listOfContactsInMapPage").empty();
 	}
 	gui.searchMap = null;
 	gui.searchMap = L.map('searchMap');
@@ -1866,16 +1839,16 @@ GUI.prototype.loadSearchMap = function(){
 	var latlng = L.latLng(app.myPosition.coords.latitude, app.myPosition.coords.longitude);
 	
 	
-	var currentMarker = new L.marker(latlng).addTo(gui.searchMap).bindPopup(dictionary.Literals.label_11).openPopup();
-	var currentCircle = new L.circle(latlng, 5000).addTo(gui.searchMap); 
+	gui.searchMap.currentMarker = new L.marker(latlng).addTo(gui.searchMap).bindPopup(dictionary.Literals.label_64).openPopup();
+	gui.searchMap.currentCircle = new L.circle(latlng, 5000).addTo(gui.searchMap); 
 
 	
 	gui.searchMap.on('click', function(e){
-		gui.searchMap.removeLayer(currentMarker);
-		gui.searchMap.removeLayer(currentCircle);
-		currentMarker = new L.marker(e.latlng).addTo(gui.searchMap);
-		currentCircle = new L.circle(e.latlng, 5000).addTo(gui.searchMap);
-     });
+		gui.searchMap.removeLayer( gui.searchMap.currentMarker);
+		gui.searchMap.removeLayer( gui.searchMap.currentCircle);
+		gui.searchMap.currentMarker = new L.marker(e.latlng).addTo(gui.searchMap).bindPopup(dictionary.Literals.label_64).openPopup();
+		gui.searchMap.currentCircle = new L.circle(e.latlng, 5000).addTo(gui.searchMap);
+	});
 	
 };
 
@@ -4813,6 +4786,9 @@ function Dictionary(){
 		label_61 : "typing",
 		label_62 : "Group Info",
 		label_63 : "Contact Info",
+		label_64 : "A plan around this area",
+		label_65 : "create a new plan",
+		label_66 : "join a plan",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5006,6 +4982,9 @@ function Dictionary(){
 		label_61 : "schreiben",
 		label_62 : "Gruppeninformationen",
 		label_63 : "Kontaktinfos",
+		label_64 : "Ein Plan, um dieses Gebiet",
+		label_65 : "einen neuen Plan erstellen",
+		label_66 : "einen Plan beitreten",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -5199,6 +5178,9 @@ function Dictionary(){
 		label_61 : "digitando",
 		label_62 : "Info di gruppo",
 		label_63 : "Info di contatto",
+		label_64 : "Un piano intorno a questa zona",
+		label_65 : "creare un nuovo piano",
+		label_66 : "aderire a un piano di",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -5393,6 +5375,9 @@ function Dictionary(){
 		label_61 : "escribiendo",
 		label_62 : "Info de grupo",
 		label_63 : "Info de contacto",
+		label_64 : "Un plan en esta zona",
+		label_65 : "crear un plan nuevo",
+		label_66 : "unirse a un plan",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5586,6 +5571,9 @@ function Dictionary(){
 		label_61 : "&eacute;crit maintenant",
 		label_62 : "Info du groupe",
 		label_63 : "Info de contact",
+		label_64 : "Un plan autour de cette zone",
+		label_65 : "cr&eacute;er un nouveau plan",
+		label_66 : "participer &agrave; un plan",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5779,6 +5767,9 @@ function Dictionary(){
 		label_61 : "digitando",
 		label_62 : "Info do grupo",
 		label_63 : "Info de contato",
+		label_64 : "Um plano em torno desta &aacute;rea",
+		label_65 : "criar um novo plano",
+		label_66 : "aderir a um plano",
 		CLDR : {
 			  "main": {
 			    "pt": {
