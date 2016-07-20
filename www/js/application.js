@@ -979,7 +979,19 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadTargetsOnForwardMenu();
 	    }
 	    if (ui.options.target == "#searchPage"){
-			gui.loadSearchMap();				 
+			gui.loadMapSearch();				 
+	    }
+	    if (ui.options.target == "#createPlanPage"){
+			gui.groupOnMenu = new Group({});
+			gui.groupOnMenu.addMember( user );
+			
+			$("#commentaryPlanField").val( gui.groupOnMenu.commentary );
+			$("#commentaryPlan").text( gui.groupOnMenu.commentary );
+			$("#nickNamePlanField").val(gui.groupOnMenu.nickName);
+			$("#nickNamePlan").text( gui.groupOnMenu.nickName );
+			
+			gui.loadMapPlanPage();
+			gui.loadImgPkrInPlanPage();
 	    }
 	    gui.hideLoadingSpinner();
 	    
@@ -1129,6 +1141,37 @@ GUI.prototype.bindDOMevents = function(){
 			}		
 		});	
 	
+	
+	$("#nickNamePlan").on("click",function() {
+		$("#nickNamePlanField").focus();
+	});	
+	$("#nickNamePlanField")
+		.on("input", function() {
+			gui.groupOnMenu.nickName = $("#nickNamePlanField").val();
+			$("#nickNamePlan").text( gui.groupOnMenu.nickName );	
+		})
+		.on("focus", function() {
+			if (dictionary.Literals.label_23 == $("#nickNamePlanField").val() ){
+				$("#nickNamePlan").html("");
+				$("#nickNamePlanField").val("");
+			}		
+		});
+	$("#commentaryPlan").on("click",function() {
+		$("#commentaryPlanField").focus();
+	});	
+	$("#commentaryPlanField")
+		.on("input", function() {
+		gui.groupOnMenu.commentary = $("#commentaryPlanField").val();
+		$("#commentaryPlan").text( gui.groupOnMenu.commentary );	
+		})
+		.on("focus", function() {
+			if (dictionary.Literals.label_12 == $("#commentaryPlanField").val() ){
+				$("#commentaryPlan").html("");
+				$("#commentaryPlanField").val("");
+			}		
+		});	
+	
+		
 	$("#profileTelephone").on("input", function() {
 		user.myTelephone = $("#profileTelephone").val();	
 		app.profileIsChanged = true;
@@ -1183,7 +1226,7 @@ GUI.prototype.bindDOMevents = function(){
 		$('body').pagecontainer('change', '#createPlanPage', { transition : "none" });
 	});
 	$("#label_66").unbind( "click" ).bind("click", function(){			 
-		$('body').pagecontainer('change', '#joinPlanPage', { transition : "none" });
+		$('body').pagecontainer('change', '#searchResultsPage', { transition : "none" });
 	});
 	
 	
@@ -1322,15 +1365,76 @@ GUI.prototype.loadBody = function() {
 	strVar += "		        	<!-- map loads here...  -->";
 	strVar += "		  	<\/div>";
 	strVar += "			<div data-role=\"content\" data-theme=\"a\">";	
-	strVar += ' 			<a id="label_65" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_65+'</a>';
-	strVar += ' 			<a id="label_66" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_66+'</a>';	
+	strVar += ' 			<a id="label_65" class="ui-btn ui-corner-all ui-shadow ui-btn-b" > create a plan</a>';
+	strVar += ' 			<a id="label_66" class="ui-btn ui-corner-all ui-shadow ui-btn-b" > find people or join a plan </a>';	
 	strVar += "			<\/div><!-- \/content -->";
 	strVar += "		<\/div><!-- \/page searchPage-->";
 	
 	strVar += " 	<div data-role=\"page\" data-theme=\"a\" id=\"createPlanPage\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a>";
+	strVar += "		    	<\/div>";	
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "									<div id=\"imagePlanContainer\" class=\"text-center\" data-role=\"none\" >";
+	strVar += "										<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"image4Plan\" class=\"picedit_box\">";
+	strVar += "									<\/div>";
+	strVar += "									<div class=\"user-head\">";
+	strVar += "										<h1  id=\"nickNamePlan\" ><\/h1>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "										<h5 id=\"commentaryPlan\" ><\/h5>";
+	strVar += "										<div class=\"hr-center\"><\/div>";
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<h1 id=\"label_XXX\"> meeting details <\/h1>";
+	strVar += "										<div class=\"hr-left\"><\/div>";
+	strVar += "										<p><\/p>";
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-12\">";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"nickNamePlanField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
+	strVar += "													<\/div>";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "													<\/div>";
+	strVar += "													<button id=\"groupsButton\">create<\/button>";
+	strVar += "												<\/div>";
+	
+	strVar += "					          					<div class=\"col-md-12\">";
+	strVar += "					          						<div id=\"mapPlanPage\">";
+	strVar += "					          						<\/div>";
+	strVar += "					          					<\/div>";	
+	strVar += "											<\/div>";
+	
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";	
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
+	strVar += "			<\/div><!-- \/content -->";
 
 	strVar += "		<\/div><!-- \/page createPlanPage-->";	
-	
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
@@ -1683,6 +1787,30 @@ GUI.prototype.loadGalleryInDOM = function() {
 */
 };
 
+
+GUI.prototype.loadImgPkrInPlanPage = function() {
+	
+	var html = 
+	"<input data-role=\"none\" type=\"file\" accept=\"image\/*;capture=camera\" name=\"image\" id=\"image4Plan\" class=\"picedit_box\">";
+	$('#imagePlanContainer').empty().append(html);
+		
+	$('#image4Plan').picEdit({
+ 		maxWidth : config.MAX_WIDTH_IMG_PROFILE ,
+		maxHeight : config.MAX_HEIGHT_IMG_PROFILE ,
+		minWidth: config.MIN_WIDTH_IMG_PROFILE ,
+		minHeight: config.MIN_HEIGHT_IMG_PROFILE ,
+		navToolsEnabled : true,
+		isMobile : app.isMobile,
+		defaultImage: gui.groupOnMenu.imgsrc,
+		imageUpdated: function(img){			
+			//gui.groupOnMenu.imgsrc = img.src;
+		},
+		onNativeCameraInit : app.onNativeCameraInit
+	});	
+};
+
+
+
 GUI.prototype.loadProfile = function() {
 
 	var defaultImage = user.myPhotoPath;
@@ -1818,7 +1946,34 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		
 };
 
-GUI.prototype.loadSearchMap = function(){
+GUI.prototype.loadMapPlanPage = function() {
+	
+	var previousMaker = gui.searchMap.currentMarker;
+	var latlng = previousMaker.getLatLng();
+	
+	if ( gui.searchMap != null ) {
+		gui.searchMap.remove();
+	}
+	gui.searchMap = null;
+	gui.searchMap = L.map('mapPlanPage');
+	
+	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		maxZoom: 18,
+		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
+						' &copy; <a href="http://mapbox.com">Mapbox</a>',
+		id: 'instaltic.lbgoad0c',
+		accessToken : 'pk.eyJ1IjoiaW5zdGFsdGljIiwiYSI6IlJVZDVjMU0ifQ.8UXq-7cwuk4i7-Ri2HI3xg',
+		trackResize : true
+	}).addTo(gui.searchMap);
+
+	gui.searchMap.setView( latlng , 14);	
+	gui.searchMap.currentMarker = new L.marker(latlng).addTo(gui.searchMap).bindPopup(dictionary.Literals.label_64).openPopup();
+	gui.searchMap.currentCircle = new L.circle(latlng, 1000).addTo(gui.searchMap);	
+	
+};
+
+
+GUI.prototype.loadMapSearch = function(){
 	
 	if ( gui.searchMap != null ) {
 		gui.searchMap.remove();
@@ -2165,7 +2320,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_3").innerHTML = dictionary.Literals.label_3;
 	document.getElementById("label_4").innerHTML = dictionary.Literals.label_4;
 	//document.getElementById("label_5").innerHTML = dictionary.Literals.label_5;
-	document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
+	//document.getElementById("label_6").innerHTML = dictionary.Literals.label_6;
 	//document.getElementById("chat-input-button").innerHTML = dictionary.Literals.label_7;
 	document.getElementById("label_8").innerHTML = dictionary.Literals.label_8;
 	document.getElementById("label_9").innerHTML = dictionary.Literals.label_9;
@@ -2198,6 +2353,10 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("groupsButton").innerHTML = dictionary.Literals.label_38;
 	document.getElementById("label_52").innerHTML = dictionary.Literals.label_52;
 	document.getElementById("label_60").innerHTML = dictionary.Literals.label_60;
+	
+	document.getElementById("label_65").innerHTML = dictionary.Literals.label_65;
+	document.getElementById("label_66").innerHTML = dictionary.Literals.label_66;
+
 
 };
 
@@ -4786,9 +4945,9 @@ function Dictionary(){
 		label_61 : "typing",
 		label_62 : "Group Info",
 		label_63 : "Contact Info",
-		label_64 : "A plan around this area",
+		label_64 : "around this area",
 		label_65 : "create a new plan",
-		label_66 : "join a plan",
+		label_66 : "search people or join a plan",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -4982,9 +5141,9 @@ function Dictionary(){
 		label_61 : "schreiben",
 		label_62 : "Gruppeninformationen",
 		label_63 : "Kontaktinfos",
-		label_64 : "Ein Plan, um dieses Gebiet",
+		label_64 : "um dieses Gebiet",
 		label_65 : "einen neuen Plan erstellen",
-		label_66 : "einen Plan beitreten",
+		label_66 : "Leute suchen oder einen Plan beitreten",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -5178,9 +5337,9 @@ function Dictionary(){
 		label_61 : "digitando",
 		label_62 : "Info di gruppo",
 		label_63 : "Info di contatto",
-		label_64 : "Un piano intorno a questa zona",
+		label_64 : "intorno a questa zona",
 		label_65 : "creare un nuovo piano",
-		label_66 : "aderire a un piano di",
+		label_66 : "ricerca gente o aderire a un piano",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -5375,9 +5534,9 @@ function Dictionary(){
 		label_61 : "escribiendo",
 		label_62 : "Info de grupo",
 		label_63 : "Info de contacto",
-		label_64 : "Un plan en esta zona",
+		label_64 : "en esta zona",
 		label_65 : "crear un plan nuevo",
-		label_66 : "unirse a un plan",
+		label_66 : "buscar gente o unirse a un plan",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -5571,9 +5730,9 @@ function Dictionary(){
 		label_61 : "&eacute;crit maintenant",
 		label_62 : "Info du groupe",
 		label_63 : "Info de contact",
-		label_64 : "Un plan autour de cette zone",
+		label_64 : "autour de cette zone",
 		label_65 : "cr&eacute;er un nouveau plan",
-		label_66 : "participer &agrave; un plan",
+		label_66 : "recherche de personnes ou de se joindre &agrave; un plan",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -5767,9 +5926,9 @@ function Dictionary(){
 		label_61 : "digitando",
 		label_62 : "Info do grupo",
 		label_63 : "Info de contato",
-		label_64 : "Um plano em torno desta &aacute;rea",
+		label_64 : "em torno desta &aacute;rea",
 		label_65 : "criar um novo plano",
-		label_66 : "aderir a um plano",
+		label_66 : "busca de pessoas ou aderir a um plano",
 		CLDR : {
 			  "main": {
 			    "pt": {
