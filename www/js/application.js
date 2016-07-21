@@ -1415,16 +1415,27 @@ GUI.prototype.loadBody = function() {
 	strVar += "														<input id=\"nickNamePlanField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
 	strVar += "													<\/div>";
 	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "														<textarea id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Commentary...\"> <\/textarea>";
 	strVar += "													<\/div>";
-	strVar += "													<button id=\"groupsButton\">create<\/button>";
-	strVar += "												<\/div>";
-	
+	strVar += "												<\/div>";	
 	strVar += "					          					<div class=\"col-md-12\">";
 	strVar += "					          						<div id=\"mapPlanPage\">";
 	strVar += "					          						<\/div>";
 	strVar += "					          					<\/div>";	
+	strVar += "											<\/div>";	
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-12\">";
+	strVar += "													<div class=\"form-group\">";
+	strVar += "														<input id=\"fffffff\" data-role=\"none\"  class=\"form-control input-lg myDatePicker\" placeholder=\"dom., 24 jul. 2016\"> ";
+	strVar += "														<input id=\"eeeeeee\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"12:34 PM\"> ";
+	strVar += "													<\/div>";
+	strVar += "												<\/div>";
 	strVar += "											<\/div>";
+
+	strVar += "											<div class=\"row\">";
+	strVar += "												<div class=\"col-md-12\">";
+	strVar += "													<button id=\"planCreatButton\">create<\/button>";
+	strVar += "												<\/div>";	
 	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
@@ -2117,6 +2128,9 @@ GUI.prototype.onBackButton = function() {
 			break;
 		case /forwardMenu/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			break;
+		case /createPlanPage/.test(page):
+			$('body').pagecontainer('change', '#searchPage', { transition : "none" });
 			break;	
 		default:
 			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
