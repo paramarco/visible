@@ -1436,7 +1436,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "												<div class=\"col-md-12\">";
 	strVar += "													<button id=\"planCreatButton\">create<\/button>";
 	strVar += "												<\/div>";	
-	
+	strVar += "											<\/div>";
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
