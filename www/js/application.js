@@ -990,8 +990,9 @@ GUI.prototype.bindDOMevents = function(){
 			$("#nickNamePlanField").val(gui.groupOnMenu.nickName);
 			$("#nickNamePlan").text( gui.groupOnMenu.nickName );
 			
-
-			//AQUI
+			gui.loadImgPkrInPlanPage();
+			gui.loadMapPlanPage();
+			
 		    var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
 
 		    var monthsWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.wide;
@@ -1009,22 +1010,39 @@ GUI.prototype.bindDOMevents = function(){
 			    close: dictionary.Literals.label_69 ,
 			    firstDay: 1,
 			    //format: 'dddd d !de mmmm !de yyyy',
-			    formatSubmit: 'yyyy/mm/dd'
+			    formatSubmit: 'yyyy/mm/dd',
+			    onOpen: function() {
+			    	$("#imagePlanContainer").css('visibility','hidden');
+			    	$("#planCreateButton").css('visibility','hidden');
+			    	
+			    },
+			    onClose: function() {
+			    	$("#imagePlanContainer").css('visibility','visible');
+			    	$("#planCreateButton").css('visibility','visible');
+			    }
 			};
-			log.debug("TESTING:: " , pickDataSettings );
-
-			
+		
 			var $dateInput = $(".myDatePicker").pickadate( pickDataSettings );
 			var picker = $dateInput.pickadate('picker');
 			picker.set('select', new Date());
 			
-			var $dateInput2 = $("#label_71").pickatime({ clear: dictionary.Literals.label_68 });
+			var $dateInput2 = $("#label_71").pickatime({
+				clear: dictionary.Literals.label_68,
+			    onOpen: function() {
+			    	$("#imagePlanContainer").css('visibility','hidden');
+			    	$("#planCreateButton").css('visibility','hidden');
+			    	
+			    },
+			    onClose: function() {
+			    	$("#imagePlanContainer").css('visibility','visible');
+			    	$("#planCreateButton").css('visibility','visible');
+			    }
+		    });		
 			
 			var picker = $dateInput2.pickatime('picker');
 			picker.set('select', new Date());
 			
-			gui.loadMapPlanPage();
-			gui.loadImgPkrInPlanPage();
+
 	    }
 	    gui.hideLoadingSpinner();
 	    
@@ -1467,7 +1485,7 @@ GUI.prototype.loadBody = function() {
 
 	strVar += "											<div class=\"row\">";
 	strVar += "												<div class=\"col-md-12\">";
-	strVar += "													<button id=\"planCreatButton\">create<\/button>";
+	strVar += "													<button id=\"planCreateButton\">create<\/button>";
 	strVar += "												<\/div>";	
 	strVar += "											<\/div>";
 	strVar += "									<\/div>";
