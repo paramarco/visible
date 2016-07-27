@@ -990,6 +990,39 @@ GUI.prototype.bindDOMevents = function(){
 			$("#nickNamePlanField").val(gui.groupOnMenu.nickName);
 			$("#nickNamePlan").text( gui.groupOnMenu.nickName );
 			
+
+			//AQUI
+		    var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
+
+		    var monthsWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.wide;
+			var monthsShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.abbreviated;
+			var weekWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.wide;
+			var weekShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.abbreviated;
+			
+			var pickDataSettings = {
+			    monthsFull: [ monthsWide["1"], monthsWide["2"],monthsWide["3"],monthsWide["4"],monthsWide["5"],monthsWide["6"],monthsWide["7"],monthsWide["8"],monthsWide["9"],monthsWide["10"],monthsWide["11"],monthsWide["12"] ],
+			    monthsShort: [ monthsShort["1"], monthsShort["2"],monthsShort["3"],monthsShort["4"],monthsShort["5"],monthsShort["6"],monthsShort["7"],monthsShort["8"],monthsShort["9"],monthsShort["10"],monthsShort["11"],monthsShort["12"] ],
+			    weekdaysFull: [ weekWide["sun"], weekWide["mon"], weekWide["tue"], weekWide["wed"], weekWide["thu"], weekWide["fri"], weekWide["sat"] ],
+			    weekdaysShort: [ weekShort["sun"], weekShort["mon"], weekShort["tue"], weekShort["wed"], weekShort["thu"], weekShort["fri"], weekShort["sat"]  ],		    
+			    today: dictionary.Literals.label_67 ,
+			    clear: dictionary.Literals.label_68 ,
+			    close: dictionary.Literals.label_69 ,
+			    firstDay: 1,
+			    //format: 'dddd d !de mmmm !de yyyy',
+			    formatSubmit: 'yyyy/mm/dd'
+			};
+			log.debug("TESTING:: " , pickDataSettings );
+
+			
+			var $dateInput = $(".myDatePicker").pickadate( pickDataSettings );
+			var picker = $dateInput.pickadate('picker');
+			picker.set('select', new Date());
+			
+			var $dateInput2 = $("#label_71").pickatime({ clear: dictionary.Literals.label_68 });
+			
+			var picker = $dateInput2.pickatime('picker');
+			picker.set('select', new Date());
+			
 			gui.loadMapPlanPage();
 			gui.loadImgPkrInPlanPage();
 	    }
@@ -1228,8 +1261,8 @@ GUI.prototype.bindDOMevents = function(){
 	$("#label_66").unbind( "click" ).bind("click", function(){			 
 		$('body').pagecontainer('change', '#searchResultsPage', { transition : "none" });
 	});
-	
-	
+
+
 };
 
 GUI.prototype.bindPagination = function( newerDate ){
@@ -1426,8 +1459,8 @@ GUI.prototype.loadBody = function() {
 	strVar += "											<div class=\"row\">";
 	strVar += "												<div class=\"col-md-12\">";
 	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"fffffff\" data-role=\"none\"  class=\"form-control input-lg myDatePicker\" placeholder=\"dom., 24 jul. 2016\"> ";
-	strVar += "														<input id=\"eeeeeee\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"12:34 PM\"> ";
+	strVar += "														<input id=\"label_70\" data-role=\"none\"  class=\"myDatePicker form-control input-lg \" placeholder=\"\"> ";
+	strVar += "														<input id=\"label_71\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"\"> ";
 	strVar += "													<\/div>";
 	strVar += "												<\/div>";
 	strVar += "											<\/div>";
@@ -3904,28 +3937,6 @@ Application.prototype.detectLanguage = function() {
 		language.detected = 
 		 navigator.languages ? navigator.languages[0] : (navigator.language || navigator.userLanguage);
 		app.setLanguage(language);
-		//AQUI
-        var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
-
-        var monthsWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.wide;
-		var monthsShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.abbreviated;
-		var weekWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.wide;
-		var weekShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.abbreviated;
-		
-		var pickDataSettings = {
-		    monthsFull: [ monthsWide["1"], monthsWide["2"],monthsWide["3"],monthsWide["4"],monthsWide["5"],monthsWide["6"],monthsWide["7"],monthsWide["8"],monthsWide["9"],monthsWide["10"],monthsWide["11"],monthsWide["12"] ],
-		    monthsShort: [ monthsShort["1"], monthsShort["2"],monthsShort["3"],monthsShort["4"],monthsShort["5"],monthsShort["6"],monthsShort["7"],monthsShort["8"],monthsShort["9"],monthsShort["10"],monthsShort["11"],monthsShort["12"] ],
-		    weekdaysFull: [ weekWide["sun"], weekWide["mon"], weekWide["tue"], weekWide["wed"], weekWide["thu"], weekWide["fri"], weekWide["sat"] ],
-		    weekdaysShort: [ weekShort["sun"], weekShort["mon"], weekShort["tue"], weekShort["wed"], weekShort["thu"], weekShort["fri"], weekShort["sat"]  ],
-		    today: 'hoy',
-		    clear: 'borrar',
-		    close: 'cerrar',
-		    firstDay: 1,
-		    format: 'dddd d !de mmmm !de yyyy',
-		    formatSubmit: 'yyyy/mm/dd'
-		};
-		log.debug("TESTING:: " , pickDataSettings );
-		
 		
 	}else{
 		
@@ -4984,6 +4995,9 @@ function Dictionary(){
 		label_64 : "around this area",
 		label_65 : "create a new plan",
 		label_66 : "search people or join a plan",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5310,6 +5324,9 @@ function Dictionary(){
 		label_64 : "um dieses Gebiet",
 		label_65 : "einen neuen Plan erstellen",
 		label_66 : "Leute suchen oder einen Plan beitreten",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -5331,7 +5348,7 @@ function Dictionary(){
 		                    "abbreviated": {
 		                      "1": "Jan.",
 		                      "2": "Feb.",
-		                      "3": "März",
+		                      "3": "M\u00E4rz",
 		                      "4": "Apr.",
 		                      "5": "Mai",
 		                      "6": "Juni",
@@ -5359,7 +5376,7 @@ function Dictionary(){
 		                    "wide": {
 		                      "1": "Januar",
 		                      "2": "Februar",
-		                      "3": "März",
+		                      "3": "M\u00E4rz",
 		                      "4": "April",
 		                      "5": "Mai",
 		                      "6": "Juni",
@@ -5375,7 +5392,7 @@ function Dictionary(){
 		                    "abbreviated": {
 		                      "1": "Jan",
 		                      "2": "Feb",
-		                      "3": "Mär",
+		                      "3": "M\u00E4r",
 		                      "4": "Apr",
 		                      "5": "Mai",
 		                      "6": "Jun",
@@ -5403,7 +5420,7 @@ function Dictionary(){
 		                    "wide": {
 		                      "1": "Januar",
 		                      "2": "Februar",
-		                      "3": "März",
+		                      "3": "M\u00E4rz",
 		                      "4": "April",
 		                      "5": "Mai",
 		                      "6": "Juni",
@@ -5656,6 +5673,9 @@ function Dictionary(){
 		label_64 : "intorno a questa zona",
 		label_65 : "creare un nuovo piano",
 		label_66 : "ricerca gente o aderire a un piano",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -5677,7 +5697,7 @@ function Dictionary(){
 			                    "abbreviated": {
 			                      "1": "Jan.",
 			                      "2": "Feb.",
-			                      "3": "März",
+			                      "3": "M\u00E4rz",
 			                      "4": "Apr.",
 			                      "5": "Mai",
 			                      "6": "Juni",
@@ -5705,7 +5725,7 @@ function Dictionary(){
 			                    "wide": {
 			                      "1": "Januar",
 			                      "2": "Februar",
-			                      "3": "März",
+			                      "3": "M\u00E4rz",
 			                      "4": "April",
 			                      "5": "Mai",
 			                      "6": "Juni",
@@ -5721,7 +5741,7 @@ function Dictionary(){
 			                    "abbreviated": {
 			                      "1": "Jan",
 			                      "2": "Feb",
-			                      "3": "Mär",
+			                      "3": "M\u00E4r",
 			                      "4": "Apr",
 			                      "5": "Mai",
 			                      "6": "Jun",
@@ -5749,7 +5769,7 @@ function Dictionary(){
 			                    "wide": {
 			                      "1": "Januar",
 			                      "2": "Februar",
-			                      "3": "März",
+			                      "3": "M\u00E4rz",
 			                      "4": "April",
 			                      "5": "Mai",
 			                      "6": "Juni",
@@ -6003,6 +6023,9 @@ function Dictionary(){
 		label_64 : "en esta zona",
 		label_65 : "crear un plan nuevo",
 		label_66 : "buscar gente o unirse a un plan",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6087,10 +6110,10 @@ function Dictionary(){
 			                      "sun": "dom.",
 			                      "mon": "lun.",
 			                      "tue": "mar.",
-			                      "wed": "mié.",
+			                      "wed": "mi\u00E9.",
 			                      "thu": "jue.",
 			                      "fri": "vie.",
-			                      "sat": "sáb."
+			                      "sat": "s\u00E1b."
 			                    },
 			                    "short": {
 			                      "sun": "DO",
@@ -6105,10 +6128,10 @@ function Dictionary(){
 			                      "sun": "domingo",
 			                      "mon": "lunes",
 			                      "tue": "martes",
-			                      "wed": "miércoles",
+			                      "wed": "mi\u00E9rcoles",
 			                      "thu": "jueves",
 			                      "fri": "viernes",
-			                      "sat": "sábado"
+			                      "sat": "s\u00E1bado"
 			                    }
 			                  },
 			                  "stand-alone": {
@@ -6116,10 +6139,10 @@ function Dictionary(){
 			                      "sun": "dom.",
 			                      "mon": "lun.",
 			                      "tue": "mar.",
-			                      "wed": "mié.",
+			                      "wed": "mi\u00E9.",
 			                      "thu": "jue.",
 			                      "fri": "vie.",
-			                      "sat": "sáb."
+			                      "sat": "s\u00E1b."
 			                    },
 			                    "narrow": {
 			                      "sun": "D",
@@ -6143,10 +6166,10 @@ function Dictionary(){
 			                      "sun": "domingo",
 			                      "mon": "lunes",
 			                      "tue": "martes",
-			                      "wed": "miércoles",
+			                      "wed": "mi\u00E9rcoles",
 			                      "thu": "jueves",
 			                      "fri": "viernes",
-			                      "sat": "sábado"
+			                      "sat": "s\u00E1bado"
 			                    }
 			                  }
 			                },
@@ -6312,6 +6335,9 @@ function Dictionary(){
 		label_64 : "autour de cette zone",
 		label_65 : "cr&eacute;er un nouveau plan",
 		label_66 : "recherche de personnes ou de se joindre &agrave; un plan",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -6332,17 +6358,17 @@ function Dictionary(){
 			                  "format": {
 			                    "abbreviated": {
 			                      "1": "janv.",
-			                      "2": "févr.",
+			                      "2": "f\u00E9vr.",
 			                      "3": "mars",
 			                      "4": "avr.",
 			                      "5": "mai",
 			                      "6": "juin",
 			                      "7": "juil.",
-			                      "8": "août",
+			                      "8": "ao\u00FBt",
 			                      "9": "sept.",
 			                      "10": "oct.",
 			                      "11": "nov.",
-			                      "12": "déc."
+			                      "12": "d\u00E9c."
 			                    },
 			                    "narrow": {
 			                      "1": "J",
@@ -6360,33 +6386,33 @@ function Dictionary(){
 			                    },
 			                    "wide": {
 			                      "1": "janvier",
-			                      "2": "février",
+			                      "2": "f\u00E9vrier",
 			                      "3": "mars",
 			                      "4": "avril",
 			                      "5": "mai",
 			                      "6": "juin",
 			                      "7": "juillet",
-			                      "8": "août",
+			                      "8": "ao\u00FBt",
 			                      "9": "septembre",
 			                      "10": "octobre",
 			                      "11": "novembre",
-			                      "12": "décembre"
+			                      "12": "d\u00E9cembre"
 			                    }
 			                  },
 			                  "stand-alone": {
 			                    "abbreviated": {
 			                      "1": "janv.",
-			                      "2": "févr.",
+			                      "2": "f\u00E9vr.",
 			                      "3": "mars",
 			                      "4": "avr.",
 			                      "5": "mai",
 			                      "6": "juin",
 			                      "7": "juil.",
-			                      "8": "août",
+			                      "8": "ao\u00FBt",
 			                      "9": "sept.",
 			                      "10": "oct.",
 			                      "11": "nov.",
-			                      "12": "déc."
+			                      "12": "d\u00E9c."
 			                    },
 			                    "narrow": {
 			                      "1": "J",
@@ -6404,17 +6430,17 @@ function Dictionary(){
 			                    },
 			                    "wide": {
 			                      "1": "janvier",
-			                      "2": "février",
+			                      "2": "f\u00E9vrier",
 			                      "3": "mars",
 			                      "4": "avril",
 			                      "5": "mai",
 			                      "6": "juin",
 			                      "7": "juillet",
-			                      "8": "août",
+			                      "8": "ao\u00FBt",
 			                      "9": "septembre",
 			                      "10": "octobre",
 			                      "11": "novembre",
-			                      "12": "décembre"
+			                      "12": "d\u00E9cembre"
 			                    }
 			                  }
 			                },
@@ -6658,6 +6684,9 @@ function Dictionary(){
 		label_64 : "em torno desta &aacute;rea",
 		label_65 : "criar um novo plano",
 		label_66 : "busca de pessoas ou aderir a um plano",
+		label_67 : "today",
+		label_68 : "clear",
+		label_69 : "close",
 		CLDR : {
 			  "main": {
 			    "pt": {
