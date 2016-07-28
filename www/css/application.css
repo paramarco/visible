@@ -965,25 +965,17 @@
 	z-index: 1;
 }
 
-#mapProfile { 
-	width: 100%; 
-	height: 100%; 	
-	padding: 0px; 
-	margin:	0px;
-	z-index: 1;
-	min-height: 220px;
-	min-width: 220px;
-}
 
-#mapPlanPage { 
+.mapPlanPage { 
     width: 100%; 
     height: 100%;   
     padding: 0px; 
-    margin: 3px 3px 12px 3px;
+  	margin:	0px;
     z-index: 1;
     min-height: 220px;
     min-width: 220px;
 }
+
 
 #searchPage {width: 100%; height: 60%; padding: 0; }
 #searchMap { 

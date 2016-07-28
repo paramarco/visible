@@ -981,6 +981,9 @@ GUI.prototype.bindDOMevents = function(){
 	    if (ui.options.target == "#searchPage"){
 			gui.loadMapSearch();				 
 	    }
+	    if (ui.options.target == "#searchResultsPage"){
+			gui.loadMapPlanPage('mapResultPage');
+	    }
 	    if (ui.options.target == "#createPlanPage"){
 			gui.groupOnMenu = new Group({});
 			gui.groupOnMenu.addMember( user );
@@ -991,7 +994,7 @@ GUI.prototype.bindDOMevents = function(){
 			$("#nickNamePlan").text( gui.groupOnMenu.nickName );
 			
 			gui.loadImgPkrInPlanPage();
-			gui.loadMapPlanPage();
+			gui.loadMapPlanPage('mapPlanPage');
 			
 		    var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
 
@@ -1470,8 +1473,9 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<\/div>";
 	strVar += "												<\/div>";	
 	strVar += "					          					<div class=\"col-md-12\">";
-	strVar += "					          						<div id=\"mapPlanPage\">";
+	strVar += "					          						<div id=\"mapPlanPage\" class=\"mapPlanPage\">";
 	strVar += "					          						<\/div>";
+	strVar += "													<p><\/p>";
 	strVar += "					          					<\/div>";	
 	strVar += "											<\/div>";	
 	strVar += "											<div class=\"row\">";
@@ -1482,7 +1486,6 @@ GUI.prototype.loadBody = function() {
 	strVar += "													<\/div>";
 	strVar += "												<\/div>";
 	strVar += "											<\/div>";
-
 	strVar += "											<div class=\"row\">";
 	strVar += "												<div class=\"col-md-12\">";
 	strVar += "													<button id=\"planCreateButton\">create<\/button>";
@@ -1495,8 +1498,48 @@ GUI.prototype.loadBody = function() {
 	strVar += "					<\/div>";
 	strVar += "				<\/div>";
 	strVar += "			<\/div><!-- \/content -->";
-
 	strVar += "		<\/div><!-- \/page createPlanPage-->";	
+	
+	
+	strVar += " 	<div data-role=\"page\" data-theme=\"a\" id=\"searchResultsPage\">";
+	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
+	strVar += "			  <div class=\"ui-grid-d\" >";
+	strVar += "			    <div class=\"ui-block-a\">";
+	strVar += "			    	<a data-role=\"button\" class=\"backButton ui-nodisc-icon icon-list\">";
+	strVar += "			    		<img src=\"img\/arrow-left_22x36.png\" alt=\"lists\" class=\"button ui-li-icon ui-corner-none \">";
+	strVar += "		    		<\/a>";
+	strVar += "		    	<\/div>";	
+	strVar += "			    <div class=\"ui-block-b\"><\/div>";
+	strVar += "			    <div class=\"ui-block-c\"><\/div>";
+	strVar += "			    <div class=\"ui-block-d\"><\/div>";
+	strVar += "			    <div class=\"ui-block-e\"><\/div>";
+	strVar += "			  <\/div>";
+	strVar += "			<\/div><!-- \/header -->";
+	strVar += "			<div data-role=\"content\" data-theme=\"a\"> ";
+	strVar += "				<div class=\"container\" id=\"main\">";
+	strVar += "					<div class=\"row\">";
+	strVar += "						<div class=\"col-lg-3 col-md-3 col-sm-4 col-xs-12\">";
+	strVar += "							<div id=\"sidebar\">";
+	strVar += "								<div class=\"user\">";
+	strVar += "					          		<div id=\"mapResultPage\" class=\"mapPlanPage\">";
+	strVar += "					          		<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";
+	strVar += "						<\/div>";
+	strVar += "						<div class=\"col-lg-9 col-md-9 col-sm-8 col-xs-12\">";
+	strVar += "							<div id=\"content\">";
+	strVar += "								<div class=\"main-content\">";
+	strVar += "									<div class=\"timeline-panel\">";
+	strVar += "										<ul id=\"listOfResults\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "										<\/ul>";	
+	strVar += "									<\/div>";
+	strVar += "								<\/div>";
+	strVar += "							<\/div>";	
+	strVar += "						<\/div>";
+	strVar += "					<\/div>";
+	strVar += "				<\/div>";
+	strVar += "			<\/div><!-- \/content -->";
+	strVar += "		<\/div><!-- \/page searchResultsPage-->";	
 	
 	strVar += "		<div data-role=\"page\" data-theme=\"a\" id=\"createGroup\">";
 	strVar += "			<div data-role=\"header\" data-position=\"fixed\">";
@@ -2008,7 +2051,7 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		
 };
 
-GUI.prototype.loadMapPlanPage = function() {
+GUI.prototype.loadMapPlanPage = function( tagId ) {
 	
 	var previousMaker = gui.searchMap.currentMarker;
 	var latlng = previousMaker.getLatLng();
@@ -2017,8 +2060,8 @@ GUI.prototype.loadMapPlanPage = function() {
 		gui.searchMap.remove();
 	}
 	gui.searchMap = null;
-	gui.searchMap = L.map('mapPlanPage');
-	
+	gui.searchMap = L.map( tagId );
+	log.debug("processing : " + tagId );
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
 		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
@@ -2163,7 +2206,10 @@ GUI.prototype.onBackButton = function() {
 				}					
 			}
 			break;
-		case /chat-page/.test(page):		
+		case /chat-page/.test(page):
+			if ( gui.photoGallery != null ){
+				gui.photoGallery.close();
+			}
 			if ( $(".ui-popup-active").length > 0){
 		     	$("#popupDivMultimedia").popup( "close" );
 			}else {				
@@ -2182,7 +2228,10 @@ GUI.prototype.onBackButton = function() {
 			break;
 		case /createPlanPage/.test(page):
 			$('body').pagecontainer('change', '#searchPage', { transition : "none" });
-			break;	
+			break;
+		case /searchResultsPage/.test(page):
+			$('body').pagecontainer('change', '#searchPage', { transition : "none" });
+			break;
 		default:
 			$('body').pagecontainer('change', '#MainPage', { transition : "none" });
 			break;	
@@ -3080,7 +3129,7 @@ GUI.prototype.showProfile = function() {
 	strVar += "					        	  			<\/div>";
 	strVar += "					          			<\/div>";
 	strVar += "					          			<div class=\"col-md-12\">";
-	strVar += "					          				<div id=\"mapProfile\">";
+	strVar += "					          				<div id=\"mapProfile\" class=\"mapPlanPage\">";
 	strVar += "					          				<\/div>";
 	strVar += "					          			<\/div>";
 	strVar += "										<div class=\"col-md-12\">";
