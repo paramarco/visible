@@ -847,6 +847,36 @@ PostMan.prototype.getMessageRetrieval = function(encryptedInput , client) {
 };
 
 
+PostMan.prototype.getPlanParams = function( encryptedInput , client ) {
+	var parameters = null;
+	try {    	
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
+
+		if (parameters == null ||
+			PostMan.prototype.isUUID(parameters.planId) == false  || 
+			PostMan.prototype.isUUID(parameters.organizer) == false  || 
+			PostMan.prototype.lengthTest(parameters.imgsrc , config.MAX_SIZE_IMG ) == false ||
+			PostMan.prototype.lengthTest(parameters.nickName , config.MAX_SIZE_NICKNAME ) == false ||
+			PostMan.prototype.lengthTest(parameters.commentary , config.MAX_SIZE_COMMENTARY ) == false ||
+			typeof parameters.location.lat  !== 'string' ||
+			typeof parameters.location.lon  !== 'string' ||
+			Object.keys(parameters.location).length != 2 ||			
+			! (typeof parameters.meetingInitDate == 'number' ||  parameters.meetingInitDate == null ) ||
+			typeof parameters.meetingInitTime.hour  !== 'string' ||
+			typeof parameters.meetingInitTime.mins  !== 'string' ||
+			Object.keys(parameters.meetingInitTime).length != 2 ) {
+			
+			console.error("getPlanParams  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return parameters;
+	} 
+	catch (ex) {
+		console.error("getPlanParams  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
+};
+
 
 PostMan.prototype.getProfileResponseParameters = function(encryptedInput , client) {
 	var parameters = null;

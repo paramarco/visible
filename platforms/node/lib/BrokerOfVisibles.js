@@ -450,6 +450,39 @@ function BrokerOfVisibles(_io, _logger) {
 
 	};
 	
+	this.createNewPlan = function( client, params ) {
+		
+		if ( client.publicClientID != params.organizer){
+			logger.error('createNewPlan ::: params error: publicClientID != params.organizer ');	
+			return;
+		}
+		
+		var query2send = squel.insert()
+		    .into("plan")
+		    .set("planid", params.planId )
+		    .set("organizer", params.organizer )		
+		    .set("nickname", params.nickName )
+		    .set("commentary", params.commentary )
+		    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + params.location.lon  + " " + params.location.lat + ")')" , {dontQuote: true} )
+		    .set("meetinginitdate", params.meetingInitDate)
+		    .set("meetinginittime", JSON.stringify( params.meetingInitTime ) ).toString();
+		
+		query2send += " ; " + squel.insert()
+		    .into("profilesphoto")
+		    .set("publicclientid", params.planId )								
+		    .set("photo", params.imgsrc).toString() ;
+		
+		
+		clientOfDB.query(query2send, function(err, result) {		     
+			//clientOfDB.done();		    
+		    if(err) {
+		    	logger.error('createNewPlan :::error running query', err);	
+		    	logger.error('createNewPlan ::: query error: ', query2send);	
+		    }		    
+		});			
+
+	};	
+	
 	this.updateClientsHandshake = function(client) {
 			
 		var d = when.defer();
@@ -536,6 +569,43 @@ function BrokerOfVisibles(_io, _logger) {
 			
 		});	
 		return d.promise;
+	};
+	
+	this.updatePlan = function( client, params ) {
+		
+		if ( client.publicClientID != params.organizer){
+			logger.error('createNewPlan ::: params error: publicClientID != params.organizer ');	
+			return;
+		}
+		
+		if ( params.commentary != null )
+			params.commentary = BrokerOfVisibles.prototype.sanitize(params.commentary);
+		if ( params.nickName != null )
+			params.nickName = BrokerOfVisibles.prototype.sanitize(params.nickName);
+		
+		var query2send = squel.update()
+		    .table("plan")
+		    .set("planid", params.planId )
+		    .set("organizer", params.organizer )		
+		    .set("nickname", params.nickName )
+		    .set("commentary", params.commentary )
+		    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + params.location.lon  + " " + params.location.lat + ")')" , {dontQuote: true} )
+		    .set("meetinginitdate", params.meetingInitDate)
+		    .set("meetinginittime", JSON.stringify( params.meetingInitTime ) )
+		    .where("planid = '" + params.planId + "'").toString();
+		
+			query2send += " ; " + squel.update()
+		    .table("profilesphoto")
+		    .set("photo", params.imgsrc )
+		    .where("publicclientid = '" + params.planId + "'").toString();
+		
+		clientOfDB.query(query2send, function(err, result) {		     
+			//clientOfDB.done();		    
+		    if(err) {
+		    	logger.error('updatePlan ::: error running query', err);	
+		    	logger.error('updatePlan ::: query error: ', query2send);	
+		    }		    
+		});
 	};
 	
 	this.updatePushRegistry = function( client ) {

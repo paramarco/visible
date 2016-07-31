@@ -982,70 +982,19 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMapSearch();				 
 	    }
 	    if (ui.options.target == "#searchResultsPage"){
+	    	$("#listOfContactsInResultsPage").empty();
+	    	var previousMaker = gui.searchMap.currentMarker;
+	    	var latlng = previousMaker.getLatLng();
+	    	app.sendRequest4Neighbours( latlng );
 			gui.loadMapPlanPage('mapResultPage');
 	    }
 	    if (ui.options.target == "#createPlanPage"){
-			gui.groupOnMenu = new Group({});
-			gui.groupOnMenu.addMember( user );
-			
-			$("#commentaryPlanField").val( gui.groupOnMenu.commentary );
-			$("#commentaryPlan").text( gui.groupOnMenu.commentary );
-			$("#nickNamePlanField").val(gui.groupOnMenu.nickName);
-			$("#nickNamePlan").text( gui.groupOnMenu.nickName );
-			
+
+	    	gui.loadGroupInPlanPage();
 			gui.loadImgPkrInPlanPage();
 			gui.loadMapPlanPage('mapPlanPage');
+			gui.loadDatePkrInPlanPage();
 			
-		    var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
-
-		    var monthsWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.wide;
-			var monthsShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.abbreviated;
-			var weekWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.wide;
-			var weekShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.abbreviated;
-			
-			var pickDataSettings = {
-			    monthsFull: [ monthsWide["1"], monthsWide["2"],monthsWide["3"],monthsWide["4"],monthsWide["5"],monthsWide["6"],monthsWide["7"],monthsWide["8"],monthsWide["9"],monthsWide["10"],monthsWide["11"],monthsWide["12"] ],
-			    monthsShort: [ monthsShort["1"], monthsShort["2"],monthsShort["3"],monthsShort["4"],monthsShort["5"],monthsShort["6"],monthsShort["7"],monthsShort["8"],monthsShort["9"],monthsShort["10"],monthsShort["11"],monthsShort["12"] ],
-			    weekdaysFull: [ weekWide["sun"], weekWide["mon"], weekWide["tue"], weekWide["wed"], weekWide["thu"], weekWide["fri"], weekWide["sat"] ],
-			    weekdaysShort: [ weekShort["sun"], weekShort["mon"], weekShort["tue"], weekShort["wed"], weekShort["thu"], weekShort["fri"], weekShort["sat"]  ],		    
-			    today: dictionary.Literals.label_67 ,
-			    clear: dictionary.Literals.label_68 ,
-			    close: dictionary.Literals.label_69 ,
-			    firstDay: 1,
-			    //format: 'dddd d !de mmmm !de yyyy',
-			    formatSubmit: 'yyyy/mm/dd',
-			    onOpen: function() {
-			    	$("#imagePlanContainer").css('visibility','hidden');
-			    	$("#planCreateButton").css('visibility','hidden');
-			    	
-			    },
-			    onClose: function() {
-			    	$("#imagePlanContainer").css('visibility','visible');
-			    	$("#planCreateButton").css('visibility','visible');
-			    }
-			};
-		
-			var $dateInput = $(".myDatePicker").pickadate( pickDataSettings );
-			var picker = $dateInput.pickadate('picker');
-			picker.set('select', new Date());
-			
-			var $dateInput2 = $("#label_71").pickatime({
-				clear: dictionary.Literals.label_68,
-			    onOpen: function() {
-			    	$("#imagePlanContainer").css('visibility','hidden');
-			    	$("#planCreateButton").css('visibility','hidden');
-			    	
-			    },
-			    onClose: function() {
-			    	$("#imagePlanContainer").css('visibility','visible');
-			    	$("#planCreateButton").css('visibility','visible');
-			    }
-		    });		
-			
-			var picker = $dateInput2.pickatime('picker');
-			picker.set('select', new Date());
-			
-
 	    }
 	    gui.hideLoadingSpinner();
 	    
@@ -1251,7 +1200,6 @@ GUI.prototype.bindDOMevents = function(){
 	$("#FSIdonation").on("change", gui.refreshPurchasePrice );
 //	$("#Backup").on("change", gui.refreshPurchasePrice );
 	
-	
 	$("#groupsButton")
 	 .on("click", gui.onGroupsButton )
 	 .text( dictionary.Literals.label_38 )
@@ -1282,6 +1230,18 @@ GUI.prototype.bindDOMevents = function(){
 	$("#label_66").unbind( "click" ).bind("click", function(){			 
 		$('body').pagecontainer('change', '#searchResultsPage', { transition : "none" });
 	});
+		
+/*	$("#label_70").on("change", function() {
+		gui.groupOnMenu.meetingInitDate = $("#label_70").val();	
+	});
+	$("#label_71").on("change", function() {
+		gui.groupOnMenu.meetingInitTime = $("#label_71").val();	
+	});
+*/	
+	$("#planSubmitButton")
+	 .on("click", gui.onPlanSubmit )
+	 .text( dictionary.Literals.label_38 )
+	 .data( 'action', 'create' );
 
 
 };
@@ -1460,7 +1420,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "							<div id=\"content\">";
 	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<h1 id=\"label_XXX\"> meeting details <\/h1>";
+	strVar += "										<h1 id=\"label_72\"> Plan <\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
 	strVar += "										<p><\/p>";
 	strVar += "											<div class=\"row\">";
@@ -1469,7 +1429,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "														<input id=\"nickNamePlanField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
 	strVar += "													<\/div>";
 	strVar += "													<div class=\"form-group\">";
-	strVar += "														<textarea id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Commentary...\"> <\/textarea>";
+	strVar += "														<textarea id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Description...\"> <\/textarea>";
 	strVar += "													<\/div>";
 	strVar += "												<\/div>";	
 	strVar += "					          					<div class=\"col-md-12\">";
@@ -1488,7 +1448,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "											<\/div>";
 	strVar += "											<div class=\"row\">";
 	strVar += "												<div class=\"col-md-12\">";
-	strVar += "													<button id=\"planCreateButton\">create<\/button>";
+	strVar += "													<button id=\"planSubmitButton\">create<\/button>";
 	strVar += "												<\/div>";	
 	strVar += "											<\/div>";
 	strVar += "									<\/div>";
@@ -1530,7 +1490,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "							<div id=\"content\">";
 	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<ul id=\"listOfResults\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "										<ul id=\"listOfContactsInResultsPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "										<\/ul>";	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
@@ -1825,6 +1785,59 @@ GUI.prototype.loadContactsOnMapPage = function() {
 	};	
 };
 
+GUI.prototype.loadDatePkrInPlanPage = function() {
+	
+    var countryKey = Object.keys(dictionary.Literals.CLDR.main)[0];
+
+    var monthsWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.wide;
+	var monthsShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.months.format.abbreviated;
+	var weekWide = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.wide;
+	var weekShort = dictionary.Literals.CLDR.main[countryKey].dates.calendars.gregorian.days.format.abbreviated;
+	
+	var pickDataSettings = {
+	    monthsFull: [ monthsWide["1"], monthsWide["2"],monthsWide["3"],monthsWide["4"],monthsWide["5"],monthsWide["6"],monthsWide["7"],monthsWide["8"],monthsWide["9"],monthsWide["10"],monthsWide["11"],monthsWide["12"] ],
+	    monthsShort: [ monthsShort["1"], monthsShort["2"],monthsShort["3"],monthsShort["4"],monthsShort["5"],monthsShort["6"],monthsShort["7"],monthsShort["8"],monthsShort["9"],monthsShort["10"],monthsShort["11"],monthsShort["12"] ],
+	    weekdaysFull: [ weekWide["sun"], weekWide["mon"], weekWide["tue"], weekWide["wed"], weekWide["thu"], weekWide["fri"], weekWide["sat"] ],
+	    weekdaysShort: [ weekShort["sun"], weekShort["mon"], weekShort["tue"], weekShort["wed"], weekShort["thu"], weekShort["fri"], weekShort["sat"]  ],		    
+	    today: dictionary.Literals.label_67 ,
+	    clear: dictionary.Literals.label_68 ,
+	    close: dictionary.Literals.label_69 ,
+	    firstDay: 1,
+	    //format: 'dddd d !de mmmm !de yyyy',
+	    formatSubmit: 'yyyy/mm/dd',
+	    onOpen: function() {
+	    	$("#imagePlanContainer").css('visibility','hidden');
+	    	$("#planSubmitButton").css('visibility','hidden');
+	    	
+	    },
+	    onClose: function() {
+	    	$("#imagePlanContainer").css('visibility','visible');
+	    	$("#planSubmitButton").css('visibility','visible');
+	    }
+	};
+
+	var $dateInput = $(".myDatePicker").pickadate( pickDataSettings );
+	var picker = $dateInput.pickadate('picker');
+	picker.set('select', new Date());
+	
+	var $dateInput2 = $("#label_71").pickatime({
+		clear: dictionary.Literals.label_68,
+	    onOpen: function() {
+	    	$("#imagePlanContainer").css('visibility','hidden');
+	    	$("#planSubmitButton").css('visibility','hidden');
+	    	
+	    },
+	    onClose: function() {
+	    	$("#imagePlanContainer").css('visibility','visible');
+	    	$("#planSubmitButton").css('visibility','visible');
+	    }
+    });		
+	
+	var picker = $dateInput2.pickatime('picker');
+	picker.set('select', new Date());
+	
+};
+
 GUI.prototype.loadGalleryInDOM = function() {
 
     if (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") {
@@ -1892,6 +1905,28 @@ GUI.prototype.loadGalleryInDOM = function() {
 */
 };
 
+GUI.prototype.loadGroupInPlanPage = function() {
+	
+	gui.groupOnMenu = new Group({});
+	gui.groupOnMenu.addMember( user );
+	
+	var previousMaker = gui.searchMap.currentMarker;
+	var latlng = previousMaker.getLatLng();
+	gui.groupOnMenu.location.lat = latlng.lat.toString();
+	gui.groupOnMenu.location.lon = latlng.lng.toString();
+	
+	$("#commentaryPlanField").val( gui.groupOnMenu.commentary );
+	$("#commentaryPlan").text( gui.groupOnMenu.commentary );
+	$("#nickNamePlanField").val(gui.groupOnMenu.nickName);
+	$("#nickNamePlan").text( gui.groupOnMenu.nickName );
+	
+	$("#planSubmitButton")
+	 .on("click", gui.onPlanSubmit )
+	 .text( dictionary.Literals.label_38 )
+	 .data( 'action', 'create' );
+	
+};
+
 
 GUI.prototype.loadImgPkrInPlanPage = function() {
 	
@@ -1908,7 +1943,7 @@ GUI.prototype.loadImgPkrInPlanPage = function() {
 		isMobile : app.isMobile,
 		defaultImage: gui.groupOnMenu.imgsrc,
 		imageUpdated: function(img){			
-			//gui.groupOnMenu.imgsrc = img.src;
+			gui.groupOnMenu.imgsrc = img.src;
 		},
 		onNativeCameraInit : app.onNativeCameraInit
 	});	
@@ -2061,7 +2096,6 @@ GUI.prototype.loadMapPlanPage = function( tagId ) {
 	}
 	gui.searchMap = null;
 	gui.searchMap = L.map( tagId );
-	log.debug("processing : " + tagId );
 	L.tileLayer('https://{s}.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
 		maxZoom: 18,
 		attribution: 	'&copy; <a href="http://openstreetmap.org">OpenStreetMap</a>' +
@@ -2319,6 +2353,77 @@ GUI.prototype.onGroupsButton = function() {
 	}
 };
 
+GUI.prototype.onPlanSubmit = function() {
+	
+    gui.showLoadingSpinner();			
+
+	var action = $("#planSubmitButton").data( 'action' );
+	var inputNickName = $("#nickNamePlanField").val();
+	if ( inputNickName == "" || inputNickName == dictionary.Literals.label_23 ){
+		var html = '';
+		html += '<div role="main" class="ui-content">';
+		html += ' <h1 class="ui-title" role="heading" aria-level="1"> oops!</h1><p> </p>';	
+		html += '	<h1> </h1><h2> remember to set a name for the Plan</h2><h1> </h1>';
+		html += '</div>';
+		
+		gui.showDialog( html );
+		gui.hideLoadingSpinner();
+		return;
+	}
+	
+	var $dateInput = $(".myDatePicker");
+	var pickerDate = $dateInput.pickadate('picker');
+	
+	var $dateInput2 = $("#label_71");	
+	var pickerTime = $dateInput2.pickatime('picker');
+	
+	var dateInMiliseconds = pickerDate.get('select').pick;	
+	var timeObj = {
+		hour : pickerTime.get('select').hour.toString(),
+		mins : pickerTime.get('select').mins.toString()
+	};
+	
+	gui.groupOnMenu.meetingInitDate = dateInMiliseconds;
+	gui.groupOnMenu.meetingInitTime = timeObj;
+	
+	var group = gui.groupOnMenu;
+	
+	var plan = {
+		planId : group.publicClientID ,		
+		organizer : user.publicClientID ,
+		imgsrc : ( group.imgsrc == "./img/group_black_195x195.png" )? "" : group.imgsrc ,
+		nickName : group.nickName ,
+		commentary : group.commentary ,
+		location : group.location, 
+		meetingInitDate : group.meetingInitDate , 
+		meetingInitTime : group.meetingInitTime
+	};
+	
+	var html = '';
+	html += '<div role="main" class="ui-content">';
+	html += ' <h1 class="ui-title" role="heading" aria-level="1"> done yeah!</h1><p> </p>';	
+	html += '</div>';
+	
+	if ( action == "create" ){
+		
+		postman.send("PlanCreation", plan );
+		
+		$("#planSubmitButton")
+		 .data( 'action', 'modify' )
+		 .text( dictionary.Literals.label_39 );		
+
+	}else{	
+		postman.send("PlanModification", plan );
+	}
+	
+	groupsHandler.setGroupOnList( group );
+	groupsHandler.setGroupOnDB ( group );
+	
+	gui.showDialog( html );
+	gui.hideLoadingSpinner();
+	
+};
+
 GUI.prototype.onProfileUpdate = function() {
 	
 	if (app.profileIsChanged){
@@ -2471,6 +2576,7 @@ GUI.prototype.setLocalLabels = function() {
 	document.getElementById("label_65").innerHTML = dictionary.Literals.label_65;
 	document.getElementById("label_66").innerHTML = dictionary.Literals.label_66;
 
+	document.getElementById("label_72").innerHTML = dictionary.Literals.label_72;
 
 };
 
@@ -2707,6 +2813,49 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 	gui._sortChats();
 	gui.showLastMsgTruncated( obj );
 };
+
+/** 
+ * @param obj := ContactOnKnet | Group
+ */
+GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
+
+	var a = $("#listOfContactsInResultsPage").find('#'+obj.publicClientID);
+    if (a.length != 0) {
+    	return;
+    }
+	
+	if( obj.isBlocked ) return;	
+	
+	var attributesOfLink = "" ;		
+	if (isNewContact){
+		attributesOfLink += ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+	}	
+		
+	var html2insert = 	
+		'<li id="' + obj.publicClientID + '" >'+
+		'	<a id="link2go2ChatWith_'+ obj.publicClientID  + '">'+ 
+		'		<img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
+		'		<h2>'+ obj.nickName   + '</h2> '+
+		'		<p>' + obj.commentary + '</p>'+
+		' 	</a>'+
+		'	<a id="linkAddNewContact' + obj.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
+		'</li>';
+				
+	$("#listOfContactsInResultsPage")
+		.prepend(html2insert)
+		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
+	
+	if (isNewContact){
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
+	}else{
+		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
+	}
+	
+	$('#listOfContactsInResultsPage').listview().listview('refresh');
+	
+};
+
+
 
 GUI.prototype.showGallery = function(index) {	
 	
@@ -4514,20 +4663,22 @@ Application.prototype.sendPushRegistrationId = function( token ) {
 
 
 
-Application.prototype.sendRequest4Neighbours = function(){	
+Application.prototype.sendRequest4Neighbours = function( selectedPosition ){
 	
-	if(app.myPosition.coords.latitude != ""){
-		var whoIsAround = { 
-			location : { 
-	  			lat : app.myPosition.coords.latitude.toString() , 
-				lon : app.myPosition.coords.longitude.toString()
-		  	}
-		};
-		
-		gui.showLoadingSpinner();
-		postman.send("RequestOfListOfPeopleAround", whoIsAround );
+	var whoIsAround = { location : { lat : null , lon : null} };
+	
+	if ( selectedPosition ){
+		whoIsAround.location.lat = selectedPosition.lat.toString();
+		whoIsAround.location.lon = selectedPosition.lng.toString();
+	}else if( app.myPosition.coords.latitude != "" ){
+		whoIsAround.location.lat = app.myPosition.coords.latitude.toString()
+		whoIsAround.location.lon = app.myPosition.coords.longitude.toString();
 	}
-		
+	
+	if ( whoIsAround.location.lat != null ){
+		gui.showLoadingSpinner();
+		postman.send("RequestOfListOfPeopleAround", whoIsAround );				
+	}		
 };
 
 
@@ -4750,6 +4901,8 @@ ContactsHandler.prototype.processNewContacts = function( input ) {
 	gui.hideLoadingSpinner();
 	var list = postman.getProcessNewContacts(input);
 	if (list == null ) { return;}
+	
+	var page = $.mobile.activePage.attr( "id" );	
 
 	list.map(function(c){
 
@@ -4759,12 +4912,17 @@ ContactsHandler.prototype.processNewContacts = function( input ) {
 		}else{			
 			contact = new ContactOnKnet( c );
 			contactsHandler.setContactOnList( contact );
-			gui.showEntryOnMainPage( contact , true);			
+			gui.showEntryOnMainPage( contact , true);
+						
+		}
+		if (/searchResultsPage/.test(page)){
+			gui.showEntryOnResultsPage( contact , true);
 		}
 		contactsHandler.updateContactOnDB (contact );
 		contactsHandler.sendProfileRequest( contact );
 			
-	});
+	});		
+	
 };
 
 ContactsHandler.prototype.sendKeys = function(contact) {
@@ -4842,7 +5000,6 @@ ContactsHandler.prototype.setEncryptionKeys = function(toContact) {
 };
 
 
-
 ContactsHandler.prototype.sendProfileRequest = function( contact ) {
 
 	var profileRetrievalObject = {	
@@ -4871,13 +5028,13 @@ ContactsHandler.prototype.updateContactOnDB = function( contact ) {
 };
 	
 
-
 function Group( g ) {
 	this.publicClientID = (g.publicClientID) ? g.publicClientID : this.assignId();
 	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? "./img/group_black_195x195.png" : g.imgsrc ;
 	this.nickName = (g.nickName) ? g.nickName : dictionary.Literals.label_23;
 	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? dictionary.Literals.label_12 : g.commentary;
 	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : config.TIME_UNIX_2015;
+	this.location = (g.location) ? g.location : { lat : "", lon : "" };
 	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : 0;
 	this.timeLastSMS = (g.timeLastSMS) ? parseInt(g.timeLastSMS) : 0 ;
 	this.telephone = (g.telephone) ? g.telephone : "";
@@ -4899,8 +5056,6 @@ Group.prototype.addMember = function( contact  ) {
 		this.listOfMembers.push( contact.publicClientID );
 	}			
 };
-
-
 
 Group.prototype.assignId = function () {
     var s = [];
@@ -4926,12 +5081,15 @@ Group.prototype.set = function( g ) {
 	this.imgsrc = (typeof g.imgsrc == 'undefined' || g.imgsrc == "" || g.imgsrc == null ) ? this.imgsrc : g.imgsrc ;
 	this.nickName = (g.nickName) ? g.nickName : this.nickName;
 	this.commentary = (typeof g.commentary == 'undefined' || g.commentary == "") ? this.commentary : g.commentary;
+	this.location = (g.location) ? g.location : this.location;
 	this.lastProfileUpdate = (g.lastProfileUpdate) ? parseInt(g.lastProfileUpdate) : this.lastProfileUpdate;
 	this.counterOfUnreadSMS = (g.counterOfUnreadSMS) ? g.counterOfUnreadSMS : this.counterOfUnreadSMS;
 	this.timeLastSMS = (g.timeLastSMS) ? parseInt(g.timeLastSMS) : this.timeLastSMS ;
 	this.telephone = (g.telephone) ? g.telephone : this.telephone;
 	this.email = (g.email) ? g.email : this.email;
 	this.listOfMembers = ( g.listOfMembers instanceof Array ) ? g.listOfMembers : this.listOfMembers;
+	this.isAccepted = (typeof g.isAccepted == 'boolean' ) ? g.isAccepted : this.isAccepted;
+	this.isBlocked = (typeof g.isBlocked == 'boolean' ) ? g.isBlocked : this.isBlocked;
 	this.lastMsgTruncated = (typeof g.lastMsgTruncated == 'undefined' || g.lastMsgTruncated == null) ? this.lastMsgTruncated : g.lastMsgTruncated;
 };
 
@@ -5009,7 +5167,7 @@ function Dictionary(){
 		label_4: "Account",
 		label_5: "my nick Name:",
 		label_6: "coming soon",
-		label_7: "send",
+		label_72: "send",
 		label_8: "who can see me...",
 		label_9: "Anybody",
 		label_10: "should you switch this off, then only your contacts would see you online, is not that boring?",
@@ -5065,6 +5223,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "plan",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5394,6 +5553,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "plan",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -5743,6 +5903,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "piano",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6093,6 +6254,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "plan",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6405,6 +6567,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "plan",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -6754,6 +6917,7 @@ function Dictionary(){
 		label_67 : "today",
 		label_68 : "clear",
 		label_69 : "close",
+		label_72 : "plan",
 		CLDR : {
 			  "main": {
 			    "pt": {

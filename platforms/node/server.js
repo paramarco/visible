@@ -291,6 +291,33 @@ app.locals.onRequestOfListOfPeopleAround = function (input, socket) {
 	app.locals.notifyNeighbours(client, online);
 };
 
+app.locals.onPlanCreation = function (input, socket) {
+	
+	var client = socket.visibleClient;
+	
+	var params = postMan.getPlanParams( input, client );
+	if ( params == null) {
+		logger.info("onPlanCreation  ::: upsss parameters == null ");
+		return;
+	}
+	brokerOfVisibles.createNewPlan( client, params );	  				  			
+
+};
+
+app.locals.onPlanModification = function (input, socket) {
+	
+	var client = socket.visibleClient;
+	
+	var params = postMan.getPlanParams( input, client );
+	if ( params == null) {
+		logger.info("onPlanModification  ::: upsss parameters == null ");
+		return;
+	}
+	brokerOfVisibles.updatePlan( client, params );	  				  			
+
+};
+
+
 app.locals.onProfileRetrieval = function(input , socket) {
 	
 	var client = socket.visibleClient;
@@ -790,11 +817,17 @@ if ( conf.useTLS ){
 		//XEP-0357: Push Notifications
 		socket.on("PushRegistration", function (msg){ app.locals.onPushRegistration ( msg , socket) } ); 
 		
-		//XEP-XXXX: currentlz writing
+		//XEP-XXXX: currently writing
 		socket.on("WhoIsWriting", function (msg){ app.locals.onWhoIsWriting ( msg , socket) } );
 		
 		//XEP-XXXX: currently online
 		socket.on("WhoIsOnline", function (msg){ app.locals.onWhoIsOnline ( msg , socket) } );
+		
+		//XEP-XXXX: plan creation
+		socket.on("PlanCreation", function (msg){ app.locals.onPlanCreation ( msg , socket) } );
+		
+		//XEP-XXXX: plan modification
+		socket.on("PlanModification", function (msg){ app.locals.onPlanModification ( msg , socket) } );
 		
 	});	
 }

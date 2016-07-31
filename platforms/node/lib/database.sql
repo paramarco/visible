@@ -277,5 +277,28 @@ WITH ( OIDS=FALSE );
 ALTER TABLE public.keysrequest  OWNER TO knet;
 
 
+--
+-- Name: plan; Type: TABLE; Schema: public; Owner: knet; Tablespace: 
+--
+
+-- Table: public.plan
+
+-- DROP TABLE public.plan;
+
+CREATE TABLE public.plan
+(
+  planid uuid NOT NULL,
+  organizer uuid NOT NULL,
+  nickname text,
+  commentary text,
+  location geography(Point,4326),
+  meetinginitdate bigint,
+  meetinginittime json
+)
+WITH ( OIDS=FALSE );
+ALTER TABLE public.plan OWNER TO knet;
+GRANT ALL ON TABLE public.plan TO knet;
+
+
 
 
