@@ -393,6 +393,30 @@ app.locals.onPushRegistration = function( input , socket) {
 	
 };
 
+app.locals.onRequest4Plans = function(input , socket) {
+	
+	var client = socket.visibleClient;	
+	var params = postMan.getRequest4Plans(input, client);		
+	if (params == null) return;	
+	
+	brokerOfVisibles.getListOfPlansAround( params ).then(function(listOfPlans){		
+		postMan.send("PlansAround", { list : listOfPlans }, client);
+	});
+	
+};
+
+app.locals.onReqPlanImg = function(input , socket) {
+	
+	var client = socket.visibleClient;	
+	var params = postMan.getReqPlanImg(input, client);		
+	if (params == null) return;	
+	
+	brokerOfVisibles.getImgOfPlan( params ).then(function( res ){		
+		postMan.send("ImgOfPLanFromServer", res , client);
+	});
+	
+};
+
 app.locals.onWhoIsOnline = function( input , socket) {	
 
 	var client = socket.visibleClient;	
@@ -828,6 +852,14 @@ if ( conf.useTLS ){
 		
 		//XEP-XXXX: plan modification
 		socket.on("PlanModification", function (msg){ app.locals.onPlanModification ( msg , socket) } );
+		
+		//XEP-XXXX: plan retreival
+		socket.on("Request4Plans", function (msg){ app.locals.onRequest4Plans ( msg , socket) } );
+	
+		//XEP-XXXX: plan img retreival
+		socket.on("ReqPlanImg", function (msg){ app.locals.onReqPlanImg ( msg , socket) } );
+		
+		
 		
 	});	
 }

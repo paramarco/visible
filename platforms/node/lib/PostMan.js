@@ -878,6 +878,27 @@ PostMan.prototype.getPlanParams = function( encryptedInput , client ) {
 };
 
 
+PostMan.prototype.getReqPlanImg = function( encryptedInput , client ) {
+	var parameters = null;
+	try {    	
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
+
+		if (parameters == null ||
+			PostMan.prototype.isUUID(parameters.planId) == false  ||
+			Object.keys( parameters ).length != 1 ) {
+			
+			console.error("getReqPlanImg  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return parameters;
+	} 
+	catch (ex) {
+		console.error("getReqPlanImg  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
+};
+
+
 PostMan.prototype.getProfileResponseParameters = function(encryptedInput , client) {
 	var parameters = null;
 	try {    	
@@ -922,6 +943,29 @@ PostMan.prototype.getProfileRetrievalParameters = function(encryptedInput , clie
 	} 
 	catch (ex) {
 		console.error("getProfileRetrievalParameters  :::  exceptrion thrown " + ex  );
+		return null;	
+	}
+};
+
+
+PostMan.prototype.getRequest4Plans = function( encryptedInput , client ) {
+	var parameters = null;
+	try {    	
+		parameters = PostMan.prototype.decrypt(encryptedInput, client );	
+
+		if (parameters == null ||
+			typeof parameters.location.lat  !== 'string' ||
+			typeof parameters.location.lon  !== 'string' ||
+			Object.keys(parameters.location).length != 2 ||			
+			Object.keys(parameters).length != 1 ) {
+			
+			console.error("getRequest4Plans  :::  didn't pass the format check "   );
+			retrievalParameters = null; 
+		}
+		return parameters;
+	} 
+	catch (ex) {
+		console.error("getRequest4Plans  :::  exceptrion thrown " + ex  );
 		return null;	
 	}
 };

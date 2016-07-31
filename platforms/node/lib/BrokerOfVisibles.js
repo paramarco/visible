@@ -30,6 +30,102 @@ function BrokerOfVisibles(_io, _logger) {
 			return d.resolve(true);
 		});	
 		return d.promise;	
+	};
+	
+	
+	//XEP-XXXX: image of a plan
+	this.getImgOfPlan = function( params ) {
+		
+		var d = when.defer();
+
+		var query2send = squel.select()
+		.field("photo")
+	    .from("profilesphoto")				    	
+    	.where("publicclientid = '" + params.planId + "'").toString();
+
+		clientOfDB.query(query2send, function(err, result) {
+     
+			if(err) { logger.error('getImgOfPlan ::: error running query', err); }
+			
+			if (typeof result.rows[0] == "undefined"){
+		    	logger.error('getImgOfPlan ::: I dont know any publicClientID like this');
+		    	return  d.resolve(null);
+		    }    		
+			var res = { 
+				planId : params.planId, 
+				imgsrc : result.rows[0].photo  
+			};
+			return d.resolve(res);
+
+		});				    	
+		
+		return d.promise;
+		
+	};	
+	
+	//XEP-0080: plans Location
+	this.getListOfPlansAround = function( params) {
+		
+		var d = when.defer();
+
+		var today = new Date().getTime();
+		var yesterday = today - 86400000 ;
+		
+		var query2send = squel.select()
+			.field("planid")
+			.field("organizer")
+			.field("nickname")
+			.field("commentary")
+			.field("ST_X(location::geometry)", "lon")
+			.field("ST_Y(location::geometry)", "lat")
+			.field("meetinginitdate")
+			.field("meetinginittime")
+		    .from("plan")							    				    
+		    .order("location::geometry <-> 'SRID=4326;POINT(" + params.location.lon + " " + params.location.lat + ")'::geometry" )
+		    .where("meetinginitdate > " + yesterday )
+		    .limit(config.MAX_PROFILES_QUERY).toString();
+							 							        
+		clientOfDB.query(query2send, function(err, result) {
+		    
+		    if(err) {
+		    	logger.error('getListOfPlansAround ::: error running query', err);	
+		    	return d.resolve(err);
+		    }		    
+		    try {
+		    	
+			    if (typeof result.rows[0] == "undefined"){
+			    	logger.error('getListOfPlansAround ::: upss no plans around');
+			    	return  d.resolve([]);
+			    }		    
+			    
+				var listOfPlans = [];
+				result.rows.map(function(r){
+					
+					var plan = {
+						planId : r.planid ,		
+						organizer : r.organizer ,
+						imgsrc : "" ,
+						nickName : r.nickname ,
+						commentary : (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary,
+						location : { lat : r.lat.toString() , lon : r.lon.toString() }, 
+						meetingInitDate : r.meetinginitdate.toString() , 
+						meetingInitTime : r.meetinginittime
+					};
+					  
+					listOfPlans.push( plan );					
+				});			   		
+			    
+			    return  d.resolve(listOfPlans);
+			    
+		    }catch (ex) {
+				logger.error("getListOfPlansAround  :::  exceptrion thrown " + ex  );
+				return  d.resolve(null);	
+			}
+		    
+		  });
+		
+		return d.promise;
+		
 	};	
 	
 	//XEP-0080: User Location:: distribute its Location to its "Visible"s	
@@ -112,6 +208,8 @@ function BrokerOfVisibles(_io, _logger) {
 		return d.promise;
 		
 	};
+	
+
 	
 	this.getClientById = function(publicClientID) {
 		

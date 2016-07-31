@@ -452,6 +452,60 @@ Postman.prototype.getListOfHeaders = function(encryptedList) {
 	}	
 };
 
+Postman.prototype.getPlanImgFromServer = function(input) {	
+	try {    
+
+		var parameters = Postman.prototype.decrypt(input);
+		
+		if (parameters == null ||
+			Postman.prototype._isUUID( parameters.planId) == false	|| 
+			typeof parameters.imgsrc !== 'string' ||			
+			Object.keys(parameters).length != 2  ) {
+			log.debug("getPlanImgFromServer - type check", parameters); 
+			return null;
+		}
+		
+		return parameters; 
+	}
+	catch (ex) {	
+		log.debug("getPlanImgFromServer - type check", ex); 
+		return null;
+	}
+};
+
+
+
+Postman.prototype.getPlansAround = function(encryptedList) {	
+	try {		
+		var listOfPlans = Postman.prototype.decrypt(encryptedList).list;
+		if (Array.isArray(listOfPlans) == false) { return null;}
+
+		for (var i = 0; i < listOfPlans.length; i++){
+			if (
+				Postman.prototype._isUUID(listOfPlans[i].planId) == false  || 
+				Postman.prototype._isUUID(listOfPlans[i].organizer) == false  || 
+				typeof listOfPlans[i].nickName !== 'string' || 
+				typeof listOfPlans[i].commentary !== 'string' || 				
+				typeof listOfPlans[i].location.lat  !== 'string' ||
+				typeof listOfPlans[i].location.lon  !== 'string' ||
+				Object.keys(listOfPlans[i].location).length != 2 ||		
+				//! (typeof listOfPlans[i].meetingInitDate == 'number' ||  listOfPlans[i].meetingInitDate == null ) 
+				typeof listOfPlans[i].meetingInitDate  !== 'string' ||
+				typeof listOfPlans[i].meetingInitTime.hour  !== 'string' ||
+				typeof listOfPlans[i].meetingInitTime.mins  !== 'string' ||
+				Object.keys( listOfPlans[i].meetingInitTime).length != 2 ) {	
+				log.debug( listOfPlans[i] );
+				return null;				
+			}
+		}		
+		return listOfPlans; 
+	}
+	catch (ex) {	
+		return null;
+	}	
+};
+
+
 Postman.prototype.getProcessNewContacts = function(encryptedList) {	
 	try {    
 		
@@ -833,6 +887,7 @@ function GUI() {
 	this.groupOnMenu = null;
 	this.formatter = function(){};
 	this.searchMap = null; 
+	this.listOfPlans = null;
 };
 
 GUI.prototype._parseLinks = function(htmlOfContent) {
@@ -964,7 +1019,7 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMaps();				 
 	    }
 	    if (ui.options.target == "#ProfileOfContact-page"){		
-			gui.loadMapOnProfileOfContact();				 
+						 
 	    }
 	    if (ui.options.target == "#chat-page"){	
 			$("#ProfileOfContact-page").remove();			
@@ -982,10 +1037,11 @@ GUI.prototype.bindDOMevents = function(){
 			gui.loadMapSearch();				 
 	    }
 	    if (ui.options.target == "#searchResultsPage"){
-	    	$("#listOfContactsInResultsPage").empty();
+	    	$("#listInResultsPage").empty();
 	    	var previousMaker = gui.searchMap.currentMarker;
 	    	var latlng = previousMaker.getLatLng();
 	    	app.sendRequest4Neighbours( latlng );
+	    	app.sendRequest4Plans( latlng )
 			gui.loadMapPlanPage('mapResultPage');
 	    }
 	    if (ui.options.target == "#createPlanPage"){
@@ -1212,7 +1268,7 @@ GUI.prototype.bindDOMevents = function(){
 			.css( { "width": $(window).width() * 0.70 , "height" : 54 } ) 
 			.emojiPicker("reset"); 
 	});	
-	$("#link2profileOfContact").bind("click", gui.showProfile );	
+	$("#link2profileOfContact").bind("click", function(){ gui.showProfile(); } );	
 
 	app.events.documentReady.resolve();
 		
@@ -1423,34 +1479,26 @@ GUI.prototype.loadBody = function() {
 	strVar += "										<h1 id=\"label_72\"> Plan <\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
 	strVar += "										<p><\/p>";
-	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-12\">";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"nickNamePlanField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
-	strVar += "													<\/div>";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<textarea id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Description...\"> <\/textarea>";
-	strVar += "													<\/div>";
-	strVar += "												<\/div>";	
-	strVar += "					          					<div class=\"col-md-12\">";
-	strVar += "					          						<div id=\"mapPlanPage\" class=\"mapPlanPage\">";
-	strVar += "					          						<\/div>";
-	strVar += "													<p><\/p>";
-	strVar += "					          					<\/div>";	
-	strVar += "											<\/div>";	
-	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-12\">";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"label_70\" data-role=\"none\"  class=\"myDatePicker form-control input-lg \" placeholder=\"\"> ";
-	strVar += "														<input id=\"label_71\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"\"> ";
-	strVar += "													<\/div>";
-	strVar += "												<\/div>";
+	strVar += "										<div class=\"row\">";
+	strVar += "											<div class=\"form-group\">";
+	strVar += "												<input id=\"nickNamePlanField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
 	strVar += "											<\/div>";
-	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-12\">";
-	strVar += "													<button id=\"planSubmitButton\">create<\/button>";
-	strVar += "												<\/div>";	
+	strVar += "											<div class=\"form-group\">";
+	strVar += "												<textarea id=\"commentaryPlanField\" class=\"form-control input-lg\" placeholder=\"Description...\"> <\/textarea>";
 	strVar += "											<\/div>";
+	strVar += "					          				<div id=\"mapPlanPage\" class=\"mapPlanPage\">";
+	strVar += "					          				<\/div>";
+	strVar += "											<p><\/p>";
+	strVar += "										<\/div>";	
+	strVar += "										<div class=\"row\">";
+	strVar += "											<div class=\"form-group\">";
+	strVar += "												<input id=\"label_70\" data-role=\"none\"  class=\"myDatePicker form-control input-lg \" placeholder=\"\"> ";
+	strVar += "												<input id=\"label_71\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"\"> ";
+	strVar += "											<\/div>";
+	strVar += "										<\/div>";
+	strVar += "										<div class=\"row\">";
+	strVar += "											<button id=\"planSubmitButton\">create<\/button>";
+	strVar += "										<\/div>";
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -1490,7 +1538,7 @@ GUI.prototype.loadBody = function() {
 	strVar += "							<div id=\"content\">";
 	strVar += "								<div class=\"main-content\">";
 	strVar += "									<div class=\"timeline-panel\">";
-	strVar += "										<ul id=\"listOfContactsInResultsPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
+	strVar += "										<ul id=\"listInResultsPage\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"b\">";
 	strVar += "										<\/ul>";	
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
@@ -1540,26 +1588,22 @@ GUI.prototype.loadBody = function() {
 	strVar += "										<h1 id=\"label_21\">New Group<\/h1>";
 	strVar += "										<div class=\"hr-left\"><\/div>";
 	strVar += "										<p><\/p>";
-	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-6\">";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"nickNameGroupField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
-	strVar += "													<\/div>";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"commentaryGroupField\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
-	strVar += "													<\/div>";
-	strVar += "													<button id=\"groupsButton\">create<\/button>";
-	strVar += "												<\/div>";
+	strVar += "										<div class=\"row\">";
+	strVar += "											<div class=\"form-group\">";
+	strVar += "												<input id=\"nickNameGroupField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
 	strVar += "											<\/div>";
-	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-6\">";
-	strVar += "													<ul id=\"contacts4Group\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
-	strVar += "													<h1 id=\"label_37\">My Groups<\/h1>";
-	strVar += "													<ul id=\"listOfGroups\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";	
-	strVar += "													<h1 id=\"label_52\">Blocked people<\/h1>";
-	strVar += "													<ul id=\"listOfBlocked\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
-	strVar += "												<\/div>";	
+	strVar += "											<div class=\"form-group\">";
+	strVar += "												<input id=\"commentaryGroupField\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
 	strVar += "											<\/div>";
+	strVar += "											<button id=\"groupsButton\">create<\/button>";
+	strVar += "										<\/div>";
+	strVar += "										<div class=\"row\">";
+	strVar += "											<ul id=\"contacts4Group\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
+	strVar += "											<h1 id=\"label_37\">My Groups<\/h1>";
+	strVar += "											<ul id=\"listOfGroups\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";	
+	strVar += "											<h1 id=\"label_52\">Blocked people<\/h1>";
+	strVar += "											<ul id=\"listOfBlocked\" data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\"><\/ul>";
+	strVar += "										<\/div>";
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -1609,44 +1653,35 @@ GUI.prototype.loadBody = function() {
 	strVar += "										<div class=\"hr-left\"><\/div>";
 	strVar += "										<p><\/p>";
 	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-6\">";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"profileNameField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
-	strVar += "													<\/div>";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"profileCommentary\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
-	strVar += "													<\/div>";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"profileTelephone\" class=\"form-control input-lg\" placeholder=\"telephone...\">";
-	strVar += "													<\/div>";
-	strVar += "													<div class=\"form-group\">";
-	strVar += "														<input id=\"profileEmail\" class=\"form-control input-lg\" placeholder=\"e-mail...\">";
-	strVar += "													<\/div>";
+	strVar += "												<div class=\"form-group\">";
+	strVar += "													<input id=\"profileNameField\" class=\"form-control input-lg\" placeholder=\"Name...\"> ";
+	strVar += "												<\/div>";
+	strVar += "												<div class=\"form-group\">";
+	strVar += "													<input id=\"profileCommentary\" class=\"form-control input-lg\" placeholder=\"Commentary...\">";
+	strVar += "												<\/div>";
+	strVar += "												<div class=\"form-group\">";
+	strVar += "													<input id=\"profileTelephone\" class=\"form-control input-lg\" placeholder=\"telephone...\">";
+	strVar += "												<\/div>";
+	strVar += "												<div class=\"form-group\">";
+	strVar += "													<input id=\"profileEmail\" class=\"form-control input-lg\" placeholder=\"e-mail...\">";
 	strVar += "												<\/div>";
 	strVar += "											<\/div>";
 	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-6\">";
-	strVar += "													<h2 id=\"label_8\"> you visible for...<\/h2>";	
-	strVar += "													<h3 id=\"label_9\">Anybody<\/h3>";
-	strVar += "													<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
-	strVar += "													<select name=\"flip-visible\" id=\"flip-visible\" data-role=\"slider\" >";
-	strVar += "														<option value=\"on\">on<\/option>";
-	strVar += "														<option value=\"off\">off<\/option>";
-	strVar += "													<\/select>";	
-	strVar += "												<\/div>";	
+	strVar += "												<h2 id=\"label_8\"> you visible for...<\/h2>";	
+	strVar += "												<h3 id=\"label_9\">Anybody<\/h3>";
+	strVar += "												<p id=\"label_10\">should you switch this off, then only your contacts would see you online, is not that boring?<\/p>	";
+	strVar += "												<select name=\"flip-visible\" id=\"flip-visible\" data-role=\"slider\" >";
+	strVar += "													<option value=\"on\">on<\/option>";
+	strVar += "													<option value=\"off\">off<\/option>";
+	strVar += "												<\/select>";	
 	strVar += "											<\/div>";	
-
 	strVar += "											<div class=\"row\">";
-	strVar += "												<div class=\"col-md-6\">";
-	strVar += "													<a><h2 id=\"label_60\"> Privacy Policy<\/h2><\/a>";	
-	strVar += "												<\/div>";	
-
-	strVar += "						          				<div class=\"col-md-12\">";
-	strVar += "					    	      					<abbr title=\"id\" id=\"label_id_profile\">  <\/abbr> ";
-	strVar += "					        	  				<\/div>";
-	
+	strVar += "												<a><h2 id=\"label_60\"> Privacy Policy<\/h2><\/a>";	
 	strVar += "											<\/div>";
-		
+	strVar += "						          			<div class=\"col-md-12\">";
+	strVar += "					    	      				<abbr title=\"id\" id=\"label_id_profile\">  <\/abbr> ";
+	strVar += "					        	  			<\/div>";	
+	strVar += "										<\/div>";		
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";	
@@ -2059,10 +2094,15 @@ GUI.prototype.loadMaps = function(){
 	
 };
 
-GUI.prototype.loadMapOnProfileOfContact = function(){
-
-	var contact = contactsHandler.getContactById(app.currentChatWith); 
-	if (typeof contact == "undefined") {
+GUI.prototype.loadMapOnProfile = function( input){
+	
+	var obj;
+	if ( input ){
+		obj = input;
+	}else{
+		obj = contactsHandler.getContactById(app.currentChatWith); 
+	}
+	if (typeof obj == "undefined") {
 		$('#mapProfile').remove();
 		return;
 	}
@@ -2079,9 +2119,9 @@ GUI.prototype.loadMapOnProfileOfContact = function(){
 		trackResize : true
 	}).addTo(gui.mapOfContact);
 	
-	gui.mapOfContact.setView([contact.location.lat, contact.location.lon], 14);  
-	var latlng = L.latLng(contact.location.lat, contact.location.lon);
-	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(contact.nickName);	
+	gui.mapOfContact.setView([obj.location.lat, obj.location.lon], 14);  
+	var latlng = L.latLng(obj.location.lat, obj.location.lon);
+	L.marker(latlng).addTo(gui.mapOfContact).bindPopup(obj.nickName);	
 	L.circle(latlng, 200).addTo(gui.mapOfContact); 	
 		
 };
@@ -2421,6 +2461,8 @@ GUI.prototype.onPlanSubmit = function() {
 	
 	gui.showDialog( html );
 	gui.hideLoadingSpinner();
+	
+	gui.showEntryOnMainPage( group ,false);
 	
 };
 
@@ -2819,7 +2861,7 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
  */
 GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 
-	var a = $("#listOfContactsInResultsPage").find('#'+obj.publicClientID);
+	var a = $("#listInResultsPage").find('#'+obj.publicClientID);
     if (a.length != 0) {
     	return;
     }
@@ -2841,7 +2883,7 @@ GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 		'	<a id="linkAddNewContact' + obj.publicClientID + '" ' + attributesOfLink   + ' ></a>'+
 		'</li>';
 				
-	$("#listOfContactsInResultsPage")
+	$("#listInResultsPage")
 		.prepend(html2insert)
 		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	
@@ -2851,7 +2893,7 @@ GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	}
 	
-	$('#listOfContactsInResultsPage').listview().listview('refresh');
+	$('#listInResultsPage').listview().listview('refresh');
 	
 };
 
@@ -3170,20 +3212,69 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 
 };
 
+GUI.prototype.showPlanImgInResultsPage = function( params ) {
+	if ( params.imgsrc != ""){
+		$("#profilePhotoResults_"+ params.planId).attr( "src", params.imgsrc );	
+	}
+};
+
+
+GUI.prototype.showPlansInResultsPage = function( list ) {
+	
+	list.map( function( obj ){
+		
+		var a = $("#listInResultsPage").find('#'+obj.planId);
+	    if (a.length != 0) {
+	    	return;
+	    }
+		var attributesOfLink = ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
+			
+		var html2insert = 	
+			'<li id="' + obj.planId + '" >'+
+			'	<a id="link2go2ChatWith_'+ obj.planId  + '">'+ 
+			'		<img id="profilePhotoResults_' + obj.planId +'" src="./img/group_black_195x195.png" class="imgInMainPage"/>'+
+			'		<h2>'+ obj.nickName   + '</h2> '+
+			'		<p>' + obj.commentary + '</p>'+
+			' 	</a>'+
+			'	<a id="linkAddNewContact' + obj.planId + '" ' + attributesOfLink   + ' ></a>'+
+			'</li>';
+					
+		$("#listInResultsPage")
+			.prepend(html2insert)
+			.find("#link2go2ChatWith_"+ obj.planId).on("click", function(){ gui.showProfile( obj ) } )
+			.find("#linkAddNewContact"+ obj.planId).on("click", function(){ gui.showProfile( obj ) } );
+	
+		$('#listInResultsPage').listview().listview('refresh');	
+		
+  		postman.send("ReqPlanImg", {  planId : obj.planId } );
+
+	});	
+};
+
+
 
 /**
- * @param obj := ContactOnKnet | Group
+ * @param obj := ContactOnKnet | Group | Plan
  */
-GUI.prototype.showProfile = function() {	
+GUI.prototype.showProfile = function( input ) {
 	
-	var obj = abstractHandler.getObjById( app.currentChatWith ); 
-	if (typeof obj == "undefined") return;
-	
-	var isGroup = true;
-	if ( obj instanceof ContactOnKnet ){
-		isGroup = false;	
+	var isGroup = false;
+	var isContact = false;
+	var isPlan = false;
+	var obj;
+	if ( input ){
+		obj = input;
+		isPlan = true;
+	}else{
+		obj = abstractHandler.getObjById( app.currentChatWith ); 
+		if (typeof obj == "undefined") return;
+		if ( obj instanceof ContactOnKnet ){
+			isContact = true;
+		}else{
+			isGroup = true;
+		}
 	}
-		
+	
 	$("#ProfileOfContact-page").remove();
 	
 	var strVar = "";
@@ -3225,10 +3316,10 @@ GUI.prototype.showProfile = function() {
 	strVar += "								<div class=\"main-content\"> ";	
 	strVar += "					          		<div class=\"timeline-panel\">";
 	
-	if (isGroup){
-		strVar += "					        		<h1>" + dictionary.Literals.label_62 + "<\/h1>";	
-	}else{
-		strVar += "					        		<h1>" + dictionary.Literals.label_63 + "<\/h1>";
+	if (isContact){
+		strVar += "					        		<h1>" + dictionary.Literals.label_63 + "<\/h1>";	
+	}else{	
+		strVar += "					        		<h1>" + dictionary.Literals.label_62 + "<\/h1>";
 	}
 	
 	strVar += "					    	      		<div class=\"hr-left\"><\/div>";
@@ -3236,7 +3327,7 @@ GUI.prototype.showProfile = function() {
 	strVar += "					          				<div class=\"col-md-12\">";
 	strVar += "												<strong>" + obj.nickName  + "<\/strong><br>";
 	
-	if (!isGroup){
+	if ( isContact ){
 	strVar += "					          					<address>";
 	strVar += "											  		<abbr title=\"Phone\"> &#9742 &nbsp;"  + obj.telephone + "<\/abbr>";
 	strVar += "												<\/address>";
@@ -3277,16 +3368,18 @@ GUI.prototype.showProfile = function() {
 	
 	strVar += "					        	  			<\/div>";
 	strVar += "					          			<\/div>";
-	strVar += "					          			<div class=\"col-md-12\">";
-	strVar += "					          				<div id=\"mapProfile\" class=\"mapPlanPage\">";
-	strVar += "					          				<\/div>";
+	strVar += "					          			<div id=\"mapProfile\" class=\"mapPlanPage\">";
 	strVar += "					          			<\/div>";
+	
+	if ( isGroup || isContact ){
 	strVar += "										<div class=\"col-md-12\">";
-	strVar += "					          			<h1 id=\"label_49\">"+dictionary.Literals.label_49+"<\/h1>";
-	strVar += "					          			<h1><\/h1>";
+	strVar += "					          				<h1 id=\"label_49\">"+dictionary.Literals.label_49+"<\/h1>";
+	strVar += "					          				<h1><\/h1>";
 	strVar += "											<button id=\"label_54\">"+dictionary.Literals.label_43+"<\/button>";
 	strVar += "											<button id=\"label_55\">"+dictionary.Literals.label_48+"<\/button>";
-	strVar += "										<\/div>";
+	strVar += "					          			<\/div>";
+	}
+	
 	strVar += "					    	      	<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";
@@ -3325,6 +3418,12 @@ GUI.prototype.showProfile = function() {
 	$("#label_55").unbind( "click" ).bind("click", function(){			 
 		gui.onReportAbuse();
 	});
+	if (isPlan){
+		gui.loadMapOnProfile(obj);	
+	}else{
+		gui.loadMapOnProfile();
+	}
+	
 
 };
 
@@ -4136,11 +4235,25 @@ Application.prototype.connect2server = function(result){
 		
 	});//END WhoIsWriting event
 	
+	socket.on("PlansAround", function (input){
+		var list = postman.getPlansAround(input); 
+		if (list == null) { return;	}
+		gui.listOfPlans = list;
+		gui.showPlansInResultsPage( list );
+		
+	});//END PlansAround event
 	
-
-	
-	
-	
+	socket.on("ImgOfPLanFromServer", function (input){
+		var params = postman.getPlanImgFromServer(input); 
+		if (params == null) { return;	}
+		gui.listOfPlans.map(function(e){
+			if (e.planId == params.planId){
+				e.imgsrc = params.imgsrc;
+			}
+		});
+		gui.showPlanImgInResultsPage( params );
+		
+	});//END PlansAround event
 	
 };//END of connect2server
 
@@ -4661,6 +4774,18 @@ Application.prototype.sendPushRegistrationId = function( token ) {
 		
 };
 
+Application.prototype.sendRequest4Plans = function( selectedPosition ){
+	
+	var whatsAround = { location : { lat : null , lon : null} };
+	
+	if ( selectedPosition ){
+		whatsAround.location.lat = selectedPosition.lat.toString();
+		whatsAround.location.lon = selectedPosition.lng.toString();
+	}	
+	if ( whatsAround.location.lat != null ){		
+		postman.send("Request4Plans", whatsAround );				
+	}		
+};
 
 
 Application.prototype.sendRequest4Neighbours = function( selectedPosition ){
