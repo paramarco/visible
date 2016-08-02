@@ -293,7 +293,8 @@ CREATE TABLE public.plan
   commentary text,
   location geography(Point,4326),
   meetinginitdate bigint,
-  meetinginittime json
+  meetinginittime json,
+  organizerobj json
 )
 WITH ( OIDS=FALSE );
 ALTER TABLE public.plan OWNER TO knet;

@@ -2443,7 +2443,17 @@ GUI.prototype.onPlanSubmit = function() {
 		commentary : group.commentary ,
 		location : group.location, 
 		meetingInitDate : group.meetingInitDate , 
-		meetingInitTime : group.meetingInitTime
+		meetingInitTime : group.meetingInitTime,
+		organizerObj : {
+			publicClientID : user.publicClientID,
+			nickName : user.myCurrentNick ,
+			commentary : user.myCommentary ,
+			location : { 
+				lat : app.myPosition.coords.latitude.toString(),
+				lon : app.myPosition.coords.longitude
+			},
+			rsamodulus : forge.pki.publicKeyFromPem ( user.keys.publicKey ).n.toString(32)
+		}
 	};
 	
 	var html = '';

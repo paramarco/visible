@@ -80,6 +80,7 @@ function BrokerOfVisibles(_io, _logger) {
 			.field("ST_Y(location::geometry)", "lat")
 			.field("meetinginitdate")
 			.field("meetinginittime")
+			.field("organizerobj")
 		    .from("plan")							    				    
 		    .order("location::geometry <-> 'SRID=4326;POINT(" + params.location.lon + " " + params.location.lat + ")'::geometry" )
 		    .where("meetinginitdate > " + yesterday )
@@ -109,7 +110,8 @@ function BrokerOfVisibles(_io, _logger) {
 						commentary : (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary,
 						location : { lat : r.lat.toString() , lon : r.lon.toString() }, 
 						meetingInitDate : r.meetinginitdate.toString() , 
-						meetingInitTime : r.meetinginittime
+						meetingInitTime : r.meetinginittime,
+						organizerObj : r.organizerobj
 					};
 					  
 					listOfPlans.push( plan );					
@@ -563,7 +565,8 @@ function BrokerOfVisibles(_io, _logger) {
 		    .set("commentary", params.commentary )
 		    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + params.location.lon  + " " + params.location.lat + ")')" , {dontQuote: true} )
 		    .set("meetinginitdate", params.meetingInitDate)
-		    .set("meetinginittime", JSON.stringify( params.meetingInitTime ) ).toString();
+		    .set("meetinginittime", JSON.stringify( params.meetingInitTime ) )
+		    .set("organizerobj", JSON.stringify( params.organizerObj ) ).toString();
 		
 		query2send += " ; " + squel.insert()
 		    .into("profilesphoto")
@@ -690,6 +693,7 @@ function BrokerOfVisibles(_io, _logger) {
 		    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + params.location.lon  + " " + params.location.lat + ")')" , {dontQuote: true} )
 		    .set("meetinginitdate", params.meetingInitDate)
 		    .set("meetinginittime", JSON.stringify( params.meetingInitTime ) )
+		    .set("organizerobj", JSON.stringify(params.organizerObj) )
 		    .where("planid = '" + params.planId + "'").toString();
 		
 			query2send += " ; " + squel.update()
