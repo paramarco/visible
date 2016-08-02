@@ -888,6 +888,7 @@ function GUI() {
 	this.formatter = function(){};
 	this.searchMap = null; 
 	this.listOfPlans = null;
+	this.isPlanDisplayed = false;
 };
 
 GUI.prototype._parseLinks = function(htmlOfContent) {
@@ -2293,8 +2294,14 @@ GUI.prototype.onBackButton = function() {
 		case /emoticons/.test(page):
 			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
 			break;
-		case /ProfileOfContact/.test(page):			
-			$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+		case /ProfileOfContact/.test(page):	
+
+			if ( gui.isPlanDisplayed ){
+				$('body').pagecontainer('change', '#searchResultsPage', { transition : "none" });
+				gui.isPlanDisplayed = false;
+			}else{
+				$('body').pagecontainer('change', '#chat-page', { transition : "none" });
+			}
 			gui.removeImgFromGallery( gui.indexOfImages4Gallery );
 			break;
 		case /forwardMenu/.test(page):
@@ -2952,6 +2959,39 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 	});
 };
 
+
+GUI.prototype.showJoinPlanPrompt = function( organizerId) {
+	
+	var obj = abstractHandler.getObjById( organizerId ); 
+
+	var html = '';
+	html += '<div id="block-confirm" role="main" class="ui-content">';
+	html += ' <h1 id="label_51" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_51+'</h1><p> </p>';	
+	html += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
+			'  <li>'+
+			' 	<a data-role=\"none\" class="ui-btn">'+ 
+			'  	 <img src="' + obj.imgsrc + '" class="imgInMainPage"/>'+
+			'  	 <h2>'+ obj.nickName   + '</h2> '+
+			'  	 <p>'+ obj.commentary   + '</p> '+
+			'   </a>'+
+			'  </li>';
+	html += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+	html += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+	html += '</div>';
+	gui.showDialog( html );
+	
+	$("#label_56").unbind("click").on("click", function(){ 
+		gui.onReportBlock();
+		$("#popupDiv").remove();
+	});
+	$("#label_57").unbind("click").on("click", function(){ 
+		$("#popupDiv").remove();
+	});
+	
+};
+
+
+
 GUI.prototype.showImagePic = function() {	
 	
 	var prompt2show = 	
@@ -3265,6 +3305,7 @@ GUI.prototype.showProfile = function( input ) {
 	if ( input ){
 		obj = input;
 		isPlan = true;
+		gui.isPlanDisplayed = true;
 	}else{
 		obj = abstractHandler.getObjById( app.currentChatWith ); 
 		if (typeof obj == "undefined") return;
@@ -3300,13 +3341,21 @@ GUI.prototype.showProfile = function( input ) {
 	strVar += "							<div id=\"sidebar\">";
 	strVar += "								<div class=\"user\">";
 	strVar += "									<div class=\"text-center\">";
+	
+	
+	if ( obj.imgsrc == "" && isPlan){
+		obj.imgsrc = "./img/group_black_195x195.png"
+	}	
+	
 	strVar += "										<img src=\"" + obj.imgsrc + "\" class=\"img-circle\" data-index='" + gui.indexOfImages4Gallery + "'>";	
 	strVar += "									<\/div>";
 	strVar += "									<div class=\"user-head\">";
 	strVar += "										<h1>" + obj.nickName  + "<\/h1>";
 	strVar += "										<div class=\"hr-center\"><\/div>";
+	if ( isGroup || isContact ){
 	strVar += "										<h5>" + obj.commentary  + "<\/h5>";
 	strVar += "										<div class=\"hr-center\"><\/div>";
+	}
 	strVar += "									<\/div>";
 	strVar += "								<\/div>";
 	strVar += "							<\/div>";
@@ -3327,6 +3376,13 @@ GUI.prototype.showProfile = function( input ) {
 	strVar += "					          				<div class=\"col-md-12\">";
 	strVar += "												<strong>" + obj.nickName  + "<\/strong><br>";
 	
+	if ( isPlan){
+		strVar += "											<p>" + obj.commentary  + "<\/p>";		
+		strVar += "											<div class=\"form-group\">";
+		strVar += "												<input id=\"label_73\" data-role=\"none\"  class=\"myDatePicker form-control input-lg \" placeholder=\"\" readonly> ";
+		strVar += "												<input id=\"label_74\" data-role=\"none\"  class=\"form-control input-lg myTimePicker\" placeholder=\"\" readonly> ";
+		strVar += "											<\/div>";
+	}
 	if ( isContact ){
 	strVar += "					          					<address>";
 	strVar += "											  		<abbr title=\"Phone\"> &#9742 &nbsp;"  + obj.telephone + "<\/abbr>";
@@ -3335,13 +3391,13 @@ GUI.prototype.showProfile = function( input ) {
 	strVar += "												  	<abbr title=\"email\"> &#9993; &nbsp;" + obj.email + "<\/abbr>";
 	strVar += "												<\/email>";
 	}
-	
+	if ( isGroup || isContact ){
 	strVar += "												<address>";
 	strVar += "												  	<abbr title=\"id\"> &#x1f511; &nbsp;" + obj.publicClientID + "<\/abbr>";
 	strVar += "												<\/address>";
 	strVar += "						          			<\/div>";
 	strVar += "						          			<div class=\"col-md-12\"><br>";	
-
+	}
 	if (isGroup){
 		strVar += '<ul id="contacts4Profile">';
 		var list = [];
@@ -3379,6 +3435,11 @@ GUI.prototype.showProfile = function( input ) {
 	strVar += "											<button id=\"label_55\">"+dictionary.Literals.label_48+"<\/button>";
 	strVar += "					          			<\/div>";
 	}
+	if ( isPlan ){
+	strVar += "					          				<h1><\/h1>";
+	strVar += "											<button id=\"label_75\">"+dictionary.Literals.label_75+"<\/button>";
+	strVar += "					          			<\/div>";	
+	}
 	
 	strVar += "					    	      	<\/div>";
 	strVar += "								<\/div>";
@@ -3408,7 +3469,6 @@ GUI.prototype.showProfile = function( input ) {
 	
 	gui.setImgIntoGallery(gui.indexOfImages4Gallery , obj.imgsrc, "");
 	
-	
 	$(".backButton").unbind("click").bind("click",function() {
 		gui.onBackButton();
 	});	
@@ -3419,10 +3479,26 @@ GUI.prototype.showProfile = function( input ) {
 		gui.onReportAbuse();
 	});
 	if (isPlan){
-		gui.loadMapOnProfile(obj);	
+		gui.loadMapOnProfile(obj);
+		
+		var date2display = new Date( parseInt(obj.meetingInitDate) );
+		date2display = gui.formatter.formatDate (  date2display , { datetime: "medium" } );
+		date2display = date2display.substring( 0, date2display.length-5 );
+		$('#label_73').val( date2display );
+		
+		var time2display = gui.formatter.formatDate (  
+			new Date(2000,10,10,obj.meetingInitTime.hour, obj.meetingInitTime.mins) , 
+			{ time: "medium" } 
+		);		
+		$('#label_74').val( time2display );
+		
+		$("#label_75").unbind( "click" ).bind("click", function(){	
+			gui.showJoinPlanPrompt();
+		});
 	}else{
 		gui.loadMapOnProfile();
 	}
+	
 	
 
 };
@@ -5292,7 +5368,7 @@ function Dictionary(){
 		label_4: "Account",
 		label_5: "my nick Name:",
 		label_6: "coming soon",
-		label_72: "send",
+		label_7: "send",
 		label_8: "who can see me...",
 		label_9: "Anybody",
 		label_10: "should you switch this off, then only your contacts would see you online, is not that boring?",
@@ -5349,6 +5425,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "plan",
+		label_75 : "join",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5679,6 +5756,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "plan",
+		label_75 : "join",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -6029,6 +6107,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "piano",
+		label_75 : "join",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6380,6 +6459,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "plan",
+		label_75 : "join",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6693,6 +6773,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "plan",
+		label_75 : "join",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -7043,6 +7124,7 @@ function Dictionary(){
 		label_68 : "clear",
 		label_69 : "close",
 		label_72 : "plan",
+		label_75 : "join",
 		CLDR : {
 			  "main": {
 			    "pt": {
