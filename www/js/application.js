@@ -789,7 +789,7 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		group.listOfMembers.map( function( publicClientID ){
 			if ( user.publicClientID == publicClientID ) return;
 			var contact = contactsHandler.getContactById( publicClientID ); 
-	  		if (!contact){
+	  		if ( typeof contact == 'undefined' || contact == null ){
 				contact = new ContactOnKnet({ publicClientID : publicClientID });
 				contactsHandler.setContactOnList( contact );												
 				contactsHandler.setContactOnDB( contact );
@@ -2970,13 +2970,13 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 };
 
 
-GUI.prototype.showJoinPlanPrompt = function( organizerId) {
+GUI.prototype.showJoinPlanPrompt = function( organizer ) {
 	
-	var obj = abstractHandler.getObjById( organizerId ); 
+	var obj = abstractHandler.getObjById( organizer.publicClientID ); 
 
 	var html = '';
 	html += '<div id="block-confirm" role="main" class="ui-content">';
-	html += ' <h1 id="label_51" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_51+'</h1><p> </p>';	
+	html += ' <h1 id="label_76" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_76+'</h1><p> </p>';	
 	html += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
 			'  <li>'+
 			' 	<a data-role=\"none\" class="ui-btn">'+ 
@@ -2991,7 +2991,7 @@ GUI.prototype.showJoinPlanPrompt = function( organizerId) {
 	gui.showDialog( html );
 	
 	$("#label_56").unbind("click").on("click", function(){ 
-		gui.onReportBlock();
+		//gui.on();
 		$("#popupDiv").remove();
 	});
 	$("#label_57").unbind("click").on("click", function(){ 
@@ -3299,6 +3299,19 @@ GUI.prototype.showPlansInResultsPage = function( list ) {
   		postman.send("ReqPlanImg", {  planId : obj.planId } );
 
 	});	
+	
+	list.map( function( obj ){
+		
+		var contact = contactsHandler.getContactById( obj.organizerObj.publicClientID ); 		
+		if (typeof contact == 'undefined' || contact == null){
+			contact = new ContactOnKnet( obj.organizerObj );
+			contactsHandler.setContactOnList( contact );												
+			contactsHandler.sendProfileRequest( contact );
+  		} 
+		
+	});
+
+	
 };
 
 
@@ -3503,7 +3516,7 @@ GUI.prototype.showProfile = function( input ) {
 		$('#label_74').val( time2display );
 		
 		$("#label_75").unbind( "click" ).bind("click", function(){	
-			gui.showJoinPlanPrompt();
+			gui.showJoinPlanPrompt( obj.organizerObj );
 		});
 	}else{
 		gui.loadMapOnProfile();
@@ -5436,6 +5449,7 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "plan",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5767,6 +5781,7 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "plan",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -6118,6 +6133,7 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "piano",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6470,6 +6486,7 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "plan",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6784,6 +6801,7 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "plan",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -7135,6 +7153,8 @@ function Dictionary(){
 		label_69 : "close",
 		label_72 : "plan",
 		label_75 : "join",
+		label_76 : "Ask the organizer?",
+
 		CLDR : {
 			  "main": {
 			    "pt": {
