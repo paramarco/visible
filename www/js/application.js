@@ -741,7 +741,8 @@ Postman.prototype.onMsgFromClient = function ( input ){
 	postman.send("MessageDeliveryACK", messageACK );	
 	
 	if (msg.messageBody.messageType == "multimedia" || 
-		msg.messageBody.messageType == "text"){
+		msg.messageBody.messageType == "text" ||
+		msg.messageBody.messageType == "inclusionRequest" ){
 			
 		var publicClientID;
 		if ( msg.to != msg.chatWith ){
@@ -2718,7 +2719,7 @@ GUI.prototype.showConsentMenu = function() {
 /**
  * @param obj := ContactOnKnet | Group
  */
-GUI.prototype.showConversation = function( obj ) {
+GUI.prototype.showConversation = function( obj , callback ) {
 
 	gui.listOfImages4Gallery = null;
 	gui.listOfImages4Gallery = [];
@@ -2741,6 +2742,7 @@ GUI.prototype.showConversation = function( obj ) {
 		if( ! obj.isAccepted ){
 			gui.showConsentMenu();	
 		}
+		if ( callback ){ callback(); }
 	});
 	
 	if ( obj.counterOfUnreadSMS > 0 ){
@@ -2970,9 +2972,10 @@ GUI.prototype.showGroupsOnGroupMenu = function() {
 };
 
 
-GUI.prototype.showJoinPlanPrompt = function( organizer ) {
+GUI.prototype.showJoinPlanPrompt = function( plan ) {
 	
-	var obj = abstractHandler.getObjById( organizer.publicClientID ); 
+	var obj = abstractHandler.getObjById( plan.organizerObj.publicClientID ); 
+	if (typeof obj == "undefined" || obj == null) return;  		
 
 	var html = '';
 	html += '<div id="block-confirm" role="main" class="ui-content">';
@@ -2990,8 +2993,17 @@ GUI.prototype.showJoinPlanPrompt = function( organizer ) {
 	html += '</div>';
 	gui.showDialog( html );
 	
-	$("#label_56").unbind("click").on("click", function(){ 
-		//gui.on();
+	$("#label_56").unbind("click").on("click", function(){		
+		gui.showConversation( obj , function(){
+			
+			var message2send = new Message({ 	
+				to : obj.publicClientID, 
+				from : user.publicClientID , 
+				messageBody : { messageType : "inclusionRequest", text : gui._sanitize( "cuocou" ) }
+			});	
+			log.debug("forwardMsg " , message2send , obj.publicClientID );
+			app.forwardMsg ( message2send, obj );			
+		});			
 		$("#popupDiv").remove();
 	});
 	$("#label_57").unbind("click").on("click", function(){ 
@@ -3215,8 +3227,22 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'</div>' ;
 		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
+	}else if ( message.messageBody.messageType == "inclusionRequest"){
 		
-			
+		htmlOfContent = '';
+		htmlOfContent += '<div id="block-confirm" role="main" class="ui-content">';
+		htmlOfContent += ' <h1 id="label_51" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_51+'</h1><p> </p>';	
+		htmlOfContent += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
+				'  <li>'+
+				' 	<a data-role=\"none\" class="ui-btn">'+ 
+				'  	 <img src="" class="imgInMainPage"/>'+
+				'  	 <h2>'+ "obj.nickName"   + '</h2> '+
+				'  	 <p>'+ "obj.commentary"   + '</p> '+
+				'   </a>'+
+				'  </li>';
+		htmlOfContent += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+		htmlOfContent += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+		htmlOfContent += '</div>';
 	}	
 	
 	var timeStampOfMessage = new Date(message.timestamp);
@@ -3459,9 +3485,13 @@ GUI.prototype.showProfile = function( input ) {
 	strVar += "					          			<\/div>";
 	}
 	if ( isPlan ){
-	strVar += "					          				<h1><\/h1>";
-	strVar += "											<button id=\"label_75\">"+dictionary.Literals.label_75+"<\/button>";
-	strVar += "					          			<\/div>";	
+		if ( obj.organizerObj.publicClientID != user.publicClientID ){
+			strVar += "					          	<h1><\/h1>";
+			strVar += "								<button id=\"label_75\">"+dictionary.Literals.label_75+"<\/button>";
+		}else{
+			$('body').pagecontainer('change', '#createPlanPage', { transition : "none" });
+			return;
+		}
 	}
 	
 	strVar += "					    	      	<\/div>";
@@ -3516,14 +3546,12 @@ GUI.prototype.showProfile = function( input ) {
 		$('#label_74').val( time2display );
 		
 		$("#label_75").unbind( "click" ).bind("click", function(){	
-			gui.showJoinPlanPrompt( obj.organizerObj );
+			gui.showJoinPlanPrompt( obj );
 		});
 	}else{
 		gui.loadMapOnProfile();
 	}
 	
-	
-
 };
 
 GUI.prototype.showRemoveContactFromGroup = function( contact ) {
@@ -5776,12 +5804,12 @@ function Dictionary(){
 		label_64 : "um dieses Gebiet",
 		label_65 : "einen neuen Plan erstellen",
 		label_66 : "Leute suchen oder einen Plan beitreten",
-		label_67 : "today",
-		label_68 : "clear",
-		label_69 : "close",
+		label_67 : "heute",
+		label_68 : "r&uuml;cksetzen",
+		label_69 : "schlie&szlig;en",
 		label_72 : "plan",
-		label_75 : "join",
-		label_76 : "Ask the organizer?",
+		label_75 : "teilnehmen",
+		label_76 : "Fragen Sie den Veranstalter?",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -6128,12 +6156,12 @@ function Dictionary(){
 		label_64 : "intorno a questa zona",
 		label_65 : "creare un nuovo piano",
 		label_66 : "ricerca gente o aderire a un piano",
-		label_67 : "today",
-		label_68 : "clear",
-		label_69 : "close",
+		label_67 : "oggi",
+		label_68 : "reset",
+		label_69 : "chiudere",
 		label_72 : "piano",
-		label_75 : "join",
-		label_76 : "Ask the organizer?",
+		label_75 : "partecipare",
+		label_76 : "Chiedi l'organizzatore?",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6481,12 +6509,12 @@ function Dictionary(){
 		label_64 : "en esta zona",
 		label_65 : "crear un plan nuevo",
 		label_66 : "buscar gente o unirse a un plan",
-		label_67 : "today",
-		label_68 : "clear",
-		label_69 : "close",
+		label_67 : "hoy",
+		label_68 : "reiniciar",
+		label_69 : "cerrar",
 		label_72 : "plan",
-		label_75 : "join",
-		label_76 : "Ask the organizer?",
+		label_75 : "unirse",
+		label_76 : "Preguntar al organizador?",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6796,12 +6824,12 @@ function Dictionary(){
 		label_64 : "autour de cette zone",
 		label_65 : "cr&eacute;er un nouveau plan",
 		label_66 : "recherche de personnes ou de se joindre &agrave; un plan",
-		label_67 : "today",
-		label_68 : "clear",
-		label_69 : "close",
+		label_67 : "aujourd'hui",
+		label_68 : "r&eacute;initialiser",
+		label_69 : "fermer",
 		label_72 : "plan",
-		label_75 : "join",
-		label_76 : "Ask the organizer?",
+		label_75 : "joindre",
+		label_76 : "Demandez &agrave; l'organisateur?",
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -7148,12 +7176,12 @@ function Dictionary(){
 		label_64 : "em torno desta &aacute;rea",
 		label_65 : "criar um novo plano",
 		label_66 : "busca de pessoas ou aderir a um plano",
-		label_67 : "today",
-		label_68 : "clear",
-		label_69 : "close",
+		label_67 : "hoje",
+		label_68 : "restabelecer",
+		label_69 : "fechar",
 		label_72 : "plan",
-		label_75 : "join",
-		label_76 : "Ask the organizer?",
+		label_75 : "juntar-se",
+		label_76 : "Pe&ccedil;a o organizador?",
 
 		CLDR : {
 			  "main": {
