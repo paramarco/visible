@@ -2999,9 +2999,9 @@ GUI.prototype.showJoinPlanPrompt = function( plan ) {
 			var message2send = new Message({ 	
 				to : obj.publicClientID, 
 				from : user.publicClientID , 
-				messageBody : { messageType : "inclusionRequest", text : gui._sanitize( "cuocou" ) }
+				messageBody : { messageType : "inclusionRequest", planId : plan.planId }
 			});	
-			log.debug("forwardMsg " , message2send , obj.publicClientID );
+			log.debug("forwardMsg " , message2send , plan );
 			app.forwardMsg ( message2send, obj );			
 		});			
 		$("#popupDiv").remove();
@@ -3224,20 +3224,27 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 //		'  <img class="lazy"  data-src="' + message.messageBody.src +'">' +		
 		' </a>' +			 
 		' <div class="tool-bar"> <div data-role="none" class="pswp__button pswp__button--share" ></div> </div>' +
-		'</div>' ;
-		
+		'</div>' ;		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
+		
 	}else if ( message.messageBody.messageType == "inclusionRequest"){
 		
+		var contact = contactsHandler.getContactById( message.from ); 		
+		var contactName = (typeof contact == 'undefined' || contact == null ) ? message.from : contact.nickName;
+		var contactPhoto = (typeof contact == 'undefined' || contact == null ) ? "./img/new_contact_added_195x195.png" : contact.imgsrc;
+		
+		var group = groupsHandler.getGroupById( message.messageBody.planId ); 		
+		var groupName = (typeof group == 'undefined' || group == null ) ? message.messageBody.planId : group.nickName;
+			
 		htmlOfContent = '';
 		htmlOfContent += '<div id="block-confirm" role="main" class="ui-content">';
-		htmlOfContent += ' <h1 id="label_51" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_51+'</h1><p> </p>';	
+		htmlOfContent += ' <h1 id="label_77" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_77+'</h1><p> </p>';	
 		htmlOfContent += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
 				'  <li>'+
 				' 	<a data-role=\"none\" class="ui-btn">'+ 
-				'  	 <img src="" class="imgInMainPage"/>'+
-				'  	 <h2>'+ "obj.nickName"   + '</h2> '+
-				'  	 <p>'+ "obj.commentary"   + '</p> '+
+				'  	 <img src="' + contactPhoto + '" class="imgInMainPage"/>'+
+				'  	 <h2>'+contactName+ '</h2> '+
+				'  	 <h2>'+dictionary.Literals.label_40+groupName+ '</h2> '+
 				'   </a>'+
 				'  </li>';
 		htmlOfContent += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
@@ -3261,13 +3268,32 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'</div>' ;
 	
 	var $newMsg = $(html2insert);	
-	$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
-		app.msg2forward = message.msgID;
-		$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
-	});
-	$newMsg.find(".image-embed").unbind("click").on("click", function(evt){
-		gui.showGallery( $(evt.target).data('index') );
-	});
+	if (message.messageBody.messageType == "multimedia"){		 
+		$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
+			app.msg2forward = message.msgID;
+			$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
+		});
+		$newMsg.find(".image-embed").unbind("click").on("click", function(evt){
+			gui.showGallery( $(evt.target).data('index') );
+		});
+	 }else if ( message.messageBody.messageType == "inclusionRequest"){
+		$newMsg.find("#label_56").unbind("click").on("click", function(evt){
+			
+			var contact = contactsHandler.getContactById( message.from ); 
+			var group = groupsHandler.getGroupById( message.messageBody.planId ); 
+			group.addMember( contact );
+			groupsHandler.setGroupOnList( group );
+			groupsHandler.setGroupOnDB( group );
+			groupsHandler.sendGroupUpdate( group );
+			
+			var html = '';
+			html += '<div role="main" class="ui-content">';
+			html += ' <h1 class="ui-title" role="heading" aria-level="1"> done yeah!</h1><p> </p>';	
+			html += '</div>';
+			gui.showDialog( html );
+
+		});	
+	}	
 	
 	if (message.from != user.publicClientID){
 		$newMsg.css("background", "#FFFFE0"); 
@@ -5455,7 +5481,7 @@ function Dictionary(){
 		label_42 : "please enable your internet connection",
 		label_43 : "block",
 		label_44 : "report abuse",
-		label_45 : "add contact",
+		label_45 : "add contact ",
 		label_46 : "yes",
 		label_47 : "no",
 		label_48 : "report abuse",
@@ -5478,6 +5504,8 @@ function Dictionary(){
 		label_72 : "plan",
 		label_75 : "join",
 		label_76 : "Ask the organizer?",
+		label_77 : "Do you want to add this member into your group?",
+		
 		CLDR : {
 			  "main": {
 			    "en": {
@@ -5787,7 +5815,7 @@ function Dictionary(){
 		label_42 : "Bitte aktivieren Sie Ihre Internetverbindung",
 		label_43 : "blockieren",
 		label_44 : "missbrauch melden",
-		label_45 : "Kontakt hinzuf&uuml;gen",
+		label_45 : "Kontakt hinzuf&uuml;gen ",
 		label_46 : "ja",
 		label_47 : "nein",
 		label_48 : "missbrauch melden",
@@ -5810,6 +5838,8 @@ function Dictionary(){
 		label_72 : "plan",
 		label_75 : "teilnehmen",
 		label_76 : "Fragen Sie den Veranstalter?",
+		label_77 : "Do you want to add this member into your group?",
+
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -6139,7 +6169,7 @@ function Dictionary(){
 		label_42 : "si prega di abilitare la connessione a internet",
 		label_43 : "bloccare",
 		label_44 : "notifica di abuso",
-		label_45 : "Aggiungi contatto",
+		label_45 : "Aggiungi contatto ",
 		label_46 : "certo",
 		label_47 : "no",
 		label_48 : "notifica di abuso",
@@ -6162,6 +6192,8 @@ function Dictionary(){
 		label_72 : "piano",
 		label_75 : "partecipare",
 		label_76 : "Chiedi l'organizzatore?",
+		label_77 : "Do you want to add this member into your group?",
+
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6492,7 +6524,7 @@ function Dictionary(){
 		label_42 : "Habilite la conexi\u00f3n a Internet por favor",
 		label_43 : "bloquear",
 		label_44 : "Denunciar abuso",
-		label_45 : "guardar contacto",
+		label_45 : "guardar contacto ",
 		label_46 : "si",
 		label_47 : "no",
 		label_48 : "Denunciar abuso",
@@ -6515,6 +6547,8 @@ function Dictionary(){
 		label_72 : "plan",
 		label_75 : "unirse",
 		label_76 : "Preguntar al organizador?",
+		label_77 : "Do you want to add this member into your group?",
+
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6807,7 +6841,7 @@ function Dictionary(){
 		label_42 : "s'il vous plait activez votre connexion Internet",
 		label_43 : "bloquer",
 		label_44 : "signaler un abus",
-		label_45 : "ajouter le contact",
+		label_45 : "ajouter le contact ",
 		label_46 : "Oui",
 		label_47 : "non",
 		label_48 : "signaler un abus",
@@ -6830,6 +6864,8 @@ function Dictionary(){
 		label_72 : "plan",
 		label_75 : "joindre",
 		label_76 : "Demandez &agrave; l'organisateur?",
+		label_77 : "Do you want to add this member into your group?",
+
 		CLDR : {
 			  "main": {
 			    "fr": {
@@ -7159,7 +7195,7 @@ function Dictionary(){
 		label_42 : "Por favor, ative sua conex\u00E3o de internet",
 		label_43 : "bloquear",
 		label_44 : "Denunciar abuso",
-		label_45 : "adicionar contato",
+		label_45 : "adicionar contato ",
 		label_46 : "sim",
 		label_47 : "n&atilde;o",
 		label_48 : "Denunciar abuso",
@@ -7182,6 +7218,8 @@ function Dictionary(){
 		label_72 : "plan",
 		label_75 : "juntar-se",
 		label_76 : "Pe&ccedil;a o organizador?",
+		label_77 : "Do you want to add this member into your group?",
+
 
 		CLDR : {
 			  "main": {
