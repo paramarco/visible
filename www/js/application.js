@@ -773,8 +773,8 @@ Postman.prototype.onMsgFromClient = function ( input ){
 		abstractHandler.setOnList( obj );
 		abstractHandler.setOnDB( obj );
 		
+		gui.showEntryOnMainPage( obj ,false);
 				  				
-		gui._sortChats();				
 		gui.showLocalNotification( msg );
 		gui.showLastMsgTruncated( obj );
 	
@@ -836,7 +836,7 @@ Postman.prototype.sendMsg = function( msg ) {
 		gui.setTimeLastSMS( obj );		
 		abstractHandler.setOnList( obj );
 		abstractHandler.setOnDB( obj );				  				
-		gui._sortChats();				
+		gui.showEntryOnMainPage( obj ,false);
 		gui.showLastMsgTruncated( obj );
 		
 		
@@ -2526,6 +2526,63 @@ GUI.prototype.onReportBlock = function() {
 	
 };
 
+GUI.prototype.orderEntriesOnMainPage = function() {
+
+/*	$("#listOfContactsInMainPage").find("li").each(function(){
+		var i = $(this);		
+		
+		$("#listOfContactsInMainPage").find("li").each(function(){
+			var j = $(this);
+			if ( parseInt( j.data('sortby') ) < parseInt( i.data('sortby') ) ){
+			    var other = j;
+			    i.after(other.clone());
+			    other.after(i).remove();	
+			}
+			
+		});		
+		
+	});
+*/
+    $('#listOfContactsInMainPage').listview().listview('refresh');
+
+	
+/*
+	list.map(function(i){
+	
+		var exchangeWith = new ContactOnKnet (i);		
+		list.map(function(j){		
+			if ( j.timeLastSMS > exchangeWith.timeLastSMS ){
+				exchangeWith = new ContactOnKnet (j);
+			}			
+		});
+		
+		if ( exchangeWith.timeLastSMS != i.timeLastSMS ){
+			
+		    var other = $("#"+exchangeWith.publicClientID);
+		    $("#"+i.publicClientID).after(other.clone());
+		    other.after($("#"+i.publicClientID)).remove();	    
+		    
+		}	
+		
+	});
+	 $('#listOfContactsInMainPage').listview().listview('refresh');
+	
+	
+
+	 * 	var ul = $('ul#listOfContactsInMainPage'),
+	    li = ul.children('li');
+	    
+	    li.detach().sort(function(a,b) {
+	        return ( parseInt($(a).data('sortby')) < parseInt($(b).data('sortby')) ) ;  
+	    });
+	    ul.empty();	    
+	    ul.append(li);
+	 * 
+	 * 
+	 */
+	
+
+};
 
 //stop when there is more than config.limitBackwardMessages SMS in the list and searching for newer than 2015
 GUI.prototype.printMessagesOf = function(publicClientID, olderDate, newerDate, listOfMessages) {
@@ -2832,6 +2889,8 @@ GUI.prototype.showEmojis = function() {
 GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 
 	if ( $('#'+obj.publicClientID).length ){
+		$('#listOfContactsInMainPage').prepend( $('#'+obj.publicClientID) );
+		$('#listOfContactsInMainPage').listview().listview('refresh');
 		gui.refreshProfileInfo(obj);
 		return;
 	} 
@@ -2871,7 +2930,8 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
 	}else{
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	}	
-	gui._sortChats();
+
+	$('#listOfContactsInMainPage').listview().listview('refresh');
 	gui.showLastMsgTruncated( obj );
 };
 
@@ -3227,29 +3287,47 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'</div>' ;		
 		gui.setImgIntoGallery(gui.indexOfImages4Gallery , message.messageBody.src, message.msgID);
 		
-	}else if ( message.messageBody.messageType == "inclusionRequest"){
-		
-		var contact = contactsHandler.getContactById( message.from ); 		
-		var contactName = (typeof contact == 'undefined' || contact == null ) ? message.from : contact.nickName;
-		var contactPhoto = (typeof contact == 'undefined' || contact == null ) ? "./img/new_contact_added_195x195.png" : contact.imgsrc;
+	}else if ( message.messageBody.messageType == "inclusionRequest"){		
 		
 		var group = groupsHandler.getGroupById( message.messageBody.planId ); 		
 		var groupName = (typeof group == 'undefined' || group == null ) ? message.messageBody.planId : group.nickName;
+		var groupPhoto = (typeof group == 'undefined' || group == null ) ? "./img/new_contact_added_195x195.png" : group.imgsrc;
+		
+		var photo = "";
+		var name = "";
+		var contact = null;
+		var header = "";
 			
+		if ( message.from == user.publicClientID ){
+			
+			photo = groupPhoto;
+			header = dictionary.Literals.label_78;
+		}else{
+			
+			var contact = contactsHandler.getContactById( message.from ); 		
+			name = (typeof contact == 'undefined' || contact == null ) ? message.from : contact.nickName;
+			photo = (typeof contact == 'undefined' || contact == null ) ? "./img/new_contact_added_195x195.png" : contact.imgsrc;
+			header = dictionary.Literals.label_77;
+		}
+		
 		htmlOfContent = '';
 		htmlOfContent += '<div id="block-confirm" role="main" class="ui-content">';
-		htmlOfContent += ' <h1 id="label_77" class="ui-title" role="heading" aria-level="1">'+dictionary.Literals.label_77+'</h1><p> </p>';	
+		htmlOfContent += ' <h1 id="label_77" class="ui-title" role="heading" aria-level="1">'+header+'</h1><p> </p>';	
 		htmlOfContent += ' <ul data-role=\"listview\" data-inset=\"true\" data-divider-theme=\"a\">' + 	
 				'  <li>'+
 				' 	<a data-role=\"none\" class="ui-btn">'+ 
-				'  	 <img src="' + contactPhoto + '" class="imgInMainPage"/>'+
-				'  	 <h2>'+contactName+ '</h2> '+
+				'  	 <img src="' + photo + '" class="imgInMainPage"/>'+
+				'  	 <h2>'+name+ '</h2> '+
 				'  	 <h2>'+dictionary.Literals.label_40+groupName+ '</h2> '+
 				'   </a>'+
 				'  </li>';
-		htmlOfContent += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
-		htmlOfContent += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
-		htmlOfContent += '</div>';
+		
+		if ( message.from != user.publicClientID ){
+			htmlOfContent += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
+			htmlOfContent += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
+			htmlOfContent += '</div>';	
+		}
+		
 	}	
 	
 	var timeStampOfMessage = new Date(message.timestamp);
@@ -3267,8 +3345,10 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		'	</div>' +
 		'</div>' ;
 	
-	var $newMsg = $(html2insert);	
-	if (message.messageBody.messageType == "multimedia"){		 
+	var $newMsg = $(html2insert);
+	
+	if (message.messageBody.messageType == "multimedia"){
+		
 		$newMsg.find(".pswp__button").unbind("click").on("click", function(){ 
 			app.msg2forward = message.msgID;
 			$('body').pagecontainer( 'change', '#forwardMenu', { transition : "none" });
@@ -3276,7 +3356,9 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		$newMsg.find(".image-embed").unbind("click").on("click", function(evt){
 			gui.showGallery( $(evt.target).data('index') );
 		});
-	 }else if ( message.messageBody.messageType == "inclusionRequest"){
+	 
+	}else if ( message.messageBody.messageType == "inclusionRequest"){
+	
 		$newMsg.find("#label_56").unbind("click").on("click", function(evt){
 			
 			var contact = contactsHandler.getContactById( message.from ); 
@@ -4569,6 +4651,7 @@ Application.prototype.loadContacts = function() {
         	gui.showEntryOnMainPage( contact , false);
          	cursor.continue(); 
      	}else{
+     		gui.orderEntriesOnMainPage();
      	    app.events.contactsLoaded.resolve();
      	}
 	};	
@@ -4656,9 +4739,10 @@ Application.prototype.loadStoredData = function() {
 		
 		db = event.target.result;					
 
-		app.loadUserSettings();				
-		app.loadContacts();
+		app.loadUserSettings();
 		app.loadGroups();
+		app.loadContacts();
+		
 	
 	};
 	
@@ -5505,6 +5589,7 @@ function Dictionary(){
 		label_75 : "join",
 		label_76 : "Ask the organizer?",
 		label_77 : "Do you want to add this member into your group?",
+		label_78 : "Request sent",
 		
 		CLDR : {
 			  "main": {
@@ -5839,7 +5924,7 @@ function Dictionary(){
 		label_75 : "teilnehmen",
 		label_76 : "Fragen Sie den Veranstalter?",
 		label_77 : "Do you want to add this member into your group?",
-
+		label_78 : "Request sent",
 		CLDR : {
 		  "main": {
 		    "de": {
@@ -6193,7 +6278,7 @@ function Dictionary(){
 		label_75 : "partecipare",
 		label_76 : "Chiedi l'organizzatore?",
 		label_77 : "Do you want to add this member into your group?",
-
+		label_78 : "Request sent",
 		CLDR : {
 			  "main": {
 			    "it": {
@@ -6548,7 +6633,7 @@ function Dictionary(){
 		label_75 : "unirse",
 		label_76 : "Preguntar al organizador?",
 		label_77 : "Do you want to add this member into your group?",
-
+		label_78 : "Request sent",
 		CLDR : {
 			  "main": {
 			    "es": {
@@ -6865,7 +6950,7 @@ function Dictionary(){
 		label_75 : "joindre",
 		label_76 : "Demandez &agrave; l'organisateur?",
 		label_77 : "Do you want to add this member into your group?",
-
+		label_78 : "Request sent",
 		CLDR : {
 			  "main": {
 			    "fr": {
