@@ -203,7 +203,7 @@ app.locals.notifyNeighbours = function (client, online){
 				location : client.location,
 				nickName : client.nickName,
 	  			commentary : client.commentary,
-	  			rsamodulus : client.rsamodulus	
+	  			pubKeyPEM : client.pubKeyPEM
 			}; 
 			var list2send = [];
 			list2send.push(visible);
@@ -676,10 +676,7 @@ if ( conf.useTLS ){
 	app.locals.onRegistryRequest = function (socket , input) {
 		logger.debug("app.locals.onRegistryRequest ::: do something...", input);
 		
-		var clientPublicKey = forge.pki.publicKeyFromPem ( input.clientPEMpublicKey );
-		var modulusRSA = clientPublicKey.n.toString(32);
-		brokerOfVisibles.createNewClient( modulusRSA ).then(function (newClient){		
-					
+		brokerOfVisibles.createNewClient( input.clientPEMpublicKey ).then(function (newClient){			
 			var answer = {
 				event : "registration",
 				data : {

@@ -520,7 +520,7 @@ Postman.prototype.getProcessNewContacts = function(encryptedList) {
 				!(typeof listOfNewContacts[i].nickName == 'string' ||  listOfNewContacts[i].nickName == null ) ||				
 				!(typeof listOfNewContacts[i].commentary == 'string' || listOfNewContacts[i].commentary == null ) ||
 				typeof listOfNewContacts[i].location !== 'object'||
-				typeof listOfNewContacts[i].rsamodulus !== 'string' ||
+				typeof listOfNewContacts[i].pubKeyPEM !== 'string' ||
 				Object.keys(listOfNewContacts[i]).length != 5  ) {	
 				log.debug("Postman.prototype.getProcessNewContacts - type check 2", listOfNewContacts);  
 				return null;
@@ -2453,7 +2453,7 @@ GUI.prototype.onPlanSubmit = function() {
 				lat : app.myPosition.coords.latitude.toString(),
 				lon : app.myPosition.coords.longitude
 			},
-			rsamodulus : forge.pki.publicKeyFromPem ( user.keys.publicKey ).n.toString(32)
+			pubKeyPEM : user.keys.publicKey
 		}
 	};
 	
@@ -2953,8 +2953,8 @@ GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 	}	
 		
 	var html2insert = 	
-		'<li id="' + obj.publicClientID + '" >'+
-		'	<a id="link2go2ChatWith_'+ obj.publicClientID  + '">'+ 
+		'<li id="results_' + obj.publicClientID + '" >'+
+		'	<a id="resultGo2Chat_'+ obj.publicClientID  + '">'+ 
 		'		<img id="profilePhoto' + obj.publicClientID +'" src="'+ obj.imgsrc + '" class="imgInMainPage"/>'+
 		'		<h2>'+ obj.nickName   + '</h2> '+
 		'		<p>' + obj.commentary + '</p>'+
@@ -2964,7 +2964,7 @@ GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 				
 	$("#listInResultsPage")
 		.prepend(html2insert)
-		.find("#link2go2ChatWith_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
+		.find("#resultGo2Chat_"+ obj.publicClientID).on("click", function(){ gui.showConversation( obj ); } );
 	
 	if (isNewContact){
 		$("#linkAddNewContact"+ obj.publicClientID).on("click", function(){ contactsHandler.addNewContactOnDB( obj ); } );
@@ -3297,6 +3297,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 		var name = "";
 		var contact = null;
 		var header = "";
+		var requestChecked = false;
 			
 		if ( message.from == user.publicClientID ){
 			
@@ -3308,6 +3309,13 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 			name = (typeof contact == 'undefined' || contact == null ) ? message.from : contact.nickName;
 			photo = (typeof contact == 'undefined' || contact == null ) ? "./img/new_contact_added_195x195.png" : contact.imgsrc;
 			header = dictionary.Literals.label_77;
+			
+			group.listOfMembers.map(function(id){
+				if ( id == contact.publicClientID){
+					requestChecked = true;
+				}
+			});
+			
 		}
 		
 		htmlOfContent = '';
@@ -3322,7 +3330,7 @@ GUI.prototype.showMsgInConversation = function( message, options ) {
 				'   </a>'+
 				'  </li>';
 		
-		if ( message.from != user.publicClientID ){
+		if ( message.from != user.publicClientID && requestChecked == false ){
 			htmlOfContent += ' <a id="label_56" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_46+'</a>';
 			htmlOfContent += ' <a id="label_57" class="ui-btn ui-corner-all ui-shadow ui-btn-b" >'+dictionary.Literals.label_47+'</a>';
 			htmlOfContent += '</div>';	
@@ -3407,15 +3415,15 @@ GUI.prototype.showPlansInResultsPage = function( list ) {
 	
 	list.map( function( obj ){
 		
-		var a = $("#listInResultsPage").find('#'+obj.planId);
+		var a = $("#listInResultsPage").find('#results_'+obj.planId);
 	    if (a.length != 0) {
 	    	return;
 	    }
 		var attributesOfLink = ' data-role="button" class="icon-list" data-icon="plus" data-iconpos="notext" data-inline="true" '; 
 			
 		var html2insert = 	
-			'<li id="' + obj.planId + '" >'+
-			'	<a id="link2go2ChatWith_'+ obj.planId  + '">'+ 
+			'<li id="results_' + obj.planId + '" >'+
+			'	<a id="resultsGo2Chat_'+ obj.planId  + '">'+ 
 			'		<img id="profilePhotoResults_' + obj.planId +'" src="./img/group_black_195x195.png" class="imgInMainPage"/>'+
 			'		<h2>'+ obj.nickName   + '</h2> '+
 			'		<p>' + obj.commentary + '</p>'+
@@ -3425,7 +3433,7 @@ GUI.prototype.showPlansInResultsPage = function( list ) {
 					
 		$("#listInResultsPage")
 			.prepend(html2insert)
-			.find("#link2go2ChatWith_"+ obj.planId).on("click", function(){ gui.showProfile( obj ) } )
+			.find("#resultsGo2Chat_"+ obj.planId).on("click", function(){ gui.showProfile( obj ) } )
 			.find("#linkAddNewContact"+ obj.planId).on("click", function(){ gui.showProfile( obj ) } );
 	
 		$('#listInResultsPage').listview().listview('refresh');	
@@ -3560,7 +3568,7 @@ GUI.prototype.showProfile = function( input ) {
 		var list = [];
 		obj.listOfMembers.map(function( id ){
 			var contact2list = contactsHandler.getContactById( id );
-			if ( typeof contact2list != "undefined" || contact2list != null ){
+			if ( typeof contact2list != "undefined" || contact2list != null && contact2list.publicClientID != user.publicClientID ){
 				list.push( contact2list );	
 			}			
 		});
@@ -5192,7 +5200,7 @@ function ContactOnKnet( c ) {
 	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : 0 ;
 	this.telephone = (c.telephone) ? c.telephone : "";
 	this.email = (c.email) ? c.email : "";
-	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : null;
+	this.pubKeyPEM = (c.pubKeyPEM) ? c.pubKeyPEM : null;
 	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : null;
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : null;
 	this.isAccepted = (c.isAccepted) ? c.isAccepted : false;
@@ -5211,7 +5219,7 @@ ContactOnKnet.prototype.set = function( c ) {
 	this.timeLastSMS = (c.timeLastSMS) ? parseInt(c.timeLastSMS) : this.timeLastSMS ;
 	this.telephone = (c.telephone) ? c.telephone : this.telephone ;
 	this.email = (c.email) ? c.email : this.email;
-	this.rsamodulus = (c.rsamodulus) ? c.rsamodulus : this.rsamodulus;
+	this.pubKeyPEM = (c.pubKeyPEM) ? c.pubKeyPEM : this.pubKeyPEM;
 	this.encryptionKeys = (c.encryptionKeys) ? c.encryptionKeys : this.encryptionKeys;
 	this.decryptionKeys = (c.decryptionKeys) ? c.decryptionKeys : this.decryptionKeys;
 	this.lastMsgTruncated = (typeof c.lastMsgTruncated == 'undefined' || c.lastMsgTruncated == null) ? this.lastMsgTruncated : c.lastMsgTruncated;
@@ -5292,12 +5300,9 @@ ContactsHandler.prototype.sendKeys = function(contact) {
 	var setOfSymKeys = { setOfSymKeys : contact.encryptionKeys };
 	
 	var masterKey = forge.random.getBytesSync(32).replace(/['"]/g,'J');
-	var iv2use = forge.random.getBytesSync(32).replace(/['"]/g,'K');
-	
-	var publicKeyClient = forge.pki.rsa.setPublicKey( 
-		new forge.jsbn.BigInteger(contact.rsamodulus , 32) , 
-		new forge.jsbn.BigInteger("2001" , 32) 
-	);
+	var iv2use = forge.random.getBytesSync(32).replace(/['"]/g,'K');	
+
+	var publicKeyClient = forge.pki.publicKeyFromPem( contact.pubKeyPEM );	
 	
 	var masterKeyEncrypted = publicKeyClient.encrypt( masterKey , 'RSA-OAEP');	
 

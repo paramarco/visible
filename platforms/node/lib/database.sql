@@ -124,7 +124,7 @@ CREATE TABLE public.client
   telephone text,
   email text,
   visibility text,
-  rsamodulus text,
+  pubkeypem text,
   pushtoken text
 
 )

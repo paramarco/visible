@@ -144,7 +144,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("commentary")
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
-	    						.field("rsamodulus")
+	    						.field("pubkeypem")
 	    						.field("visibility")
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
@@ -159,7 +159,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("commentary")
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
-	    						.field("rsamodulus")
+	    						.field("pubkeypem")
 	    						.field("visibility")
 							    .from("client")							    				    
 							    .order("location::geometry <-> 'SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")'::geometry" )
@@ -192,7 +192,7 @@ function BrokerOfVisibles(_io, _logger) {
 							location : { lat : r.lat.toString() , lon : r.lon.toString() } ,
 							nickName : r.nickname,
 				  			commentary :  (typeof r.commentary == "undefined" || r.commentary == null ) ? "" : r.commentary,
-				  			rsamodulus : r.rsamodulus
+				  			pubKeyPEM : r.pubkeypem
 				  		}; 
 						listOfVisibles.push(visible);
 					}
@@ -230,7 +230,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
-	    						.field("rsamodulus")
+	    						.field("pubkeypem")	    						
 	    						.field("visibility")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
@@ -282,10 +282,8 @@ function BrokerOfVisibles(_io, _logger) {
 			    
 			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
 			    client.lastProfileUpdate = entry.lastprofileupdate;
-			    client.rsamodulus = entry.rsamodulus;
-
+			    client.pubKeyPEM = entry.pubkeypem;			    
 			    client.visibility = entry.visibility;
-
 			    
 			    return  d.resolve(client);
 			    
@@ -317,7 +315,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("ST_X(location::geometry)", "lon")
 	    						.field("ST_Y(location::geometry)", "lat")
 	    						.field("lastprofileupdate")
-	    						.field("rsamodulus")
+							    .field("pubkeypem")
 	    						.field("visibility")
 							    .from("client")
 							    .where("handshaketoken = '" + handshakeToken + "'")							    
@@ -369,8 +367,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    
 			    client.myArrayOfKeys = JSON.parse( entry.myarrayofkeys );
 			    client.lastProfileUpdate = entry.lastprofileupdate;
-			    client.rsamodulus = entry.rsamodulus;
-			    
+			    client.pubKeyPEM = entry.pubkeypem;			    
 			    client.visibility = entry.visibility;
 			    	
 	    
@@ -386,7 +383,7 @@ function BrokerOfVisibles(_io, _logger) {
 		return d.promise;
 		
 	};
-	//TODO it should also return the rsamodulus
+	//TODO it should also return the PEM
 	this.getProfileByID = function( publicClientID ) {	
 		
 		var d = when.defer();
@@ -501,9 +498,9 @@ function BrokerOfVisibles(_io, _logger) {
 
 	};
 	
-	this.createNewClient = function(RSAmodulus) {
+	this.createNewClient = function( pubKeyPEM ) {
 		
-		var newClient = new Client (RSAmodulus);		
+		var newClient = new Client ( pubKeyPEM );		
 		var d = when.defer();	
 		
 		var query2send = squel.insert()
@@ -521,7 +518,7 @@ function BrokerOfVisibles(_io, _logger) {
 							    .set("myarrayofkeys", JSON.stringify(newClient.myArrayOfKeys ) )
 							    .set("handshaketoken", newClient.handshakeToken)
 							    .set("lastprofileupdate", newClient.lastProfileUpdate)
-							    .set("rsamodulus", newClient.RSAmodulus)
+							    .set("pubkeypem", newClient.pubKeyPEM)
 							    .set("visibility", newClient.visibility)
 							    .toString() ;
 			query2send += " ; " ;

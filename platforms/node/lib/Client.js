@@ -1,7 +1,7 @@
 var	uuid	= require('node-uuid');
 var forge = require('node-forge')({disableNativeCode: true});
 
-function Client(RSAmodulus) {
+function Client( pubKeyPEM ) {
   this.indexOfCurrentKey = 1;
   this.currentChallenge = uuid.v4();
   this.publicClientID = uuid.v4();
@@ -41,7 +41,7 @@ function Client(RSAmodulus) {
   this.handshakeToken = uuid.v4();
   //newer than 2015
   this.lastProfileUpdate = 1420070401000;
-  this.RSAmodulus = RSAmodulus;
+  this.pubKeyPEM = pubKeyPEM;
   this.visibility = "on";
 
 };
