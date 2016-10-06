@@ -1302,6 +1302,11 @@ GUI.prototype.bindDOMevents = function(){
 	 .data( 'action', 'create' );
 
 
+	history.pushState(null, null, null);
+	window.addEventListener('popstate', function (event) {
+	    history.pushState(null, null, null);
+	});
+
 };
 
 GUI.prototype.bindPagination = function( newerDate ){
@@ -7662,5 +7667,9 @@ $(document).ready(function() {
 	FastClick.attach(document.body);		
 	app.init();	
 	app.initializeDevice();
+	
+    function disableBack() { window.history.forward() }
 
+    window.onload = disableBack();
+    window.onpageshow = function(evt) { if (evt.persisted) disableBack() }
 });
