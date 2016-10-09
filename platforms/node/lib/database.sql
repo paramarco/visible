@@ -125,8 +125,8 @@ CREATE TABLE public.client
   email text,
   visibility text,
   pubkeypem text,
-  pushtoken text
-
+  pushtoken text,
+  version text
 )
 WITH ( OIDS=FALSE );
 ALTER TABLE public.client OWNER TO knet;

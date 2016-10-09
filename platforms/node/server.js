@@ -355,6 +355,8 @@ app.locals.onProfileUpdate = function(input , socket) {
 	
 	logger.debug("onProfileUpdate  ::: parameters.visibility", parameters.visibility);
 	logger.debug("onProfileUpdate  ::: client.visibility", client.visibility);
+	logger.debug("onProfileUpdate  ::: client.version", client.version);
+
 	
 	brokerOfVisibles.updateClientsProfile( client );
 	brokerOfVisibles.updateClientsPhoto( client, parameters.img );
@@ -412,7 +414,7 @@ app.locals.onReqPlanImg = function(input , socket) {
 	if (params == null) return;	
 	
 	brokerOfVisibles.getImgOfPlan( params ).then(function( res ){		
-		postMan.send("ImgOfPLanFromServer", res , client);
+		postMan.send("ImgOfPlanFromServer", res , client);
 	});
 	
 };
@@ -757,16 +759,17 @@ if ( conf.useTLS ){
 
 	io.use(function(socket, next){
 		
-		var token = socket.handshake.query.token;
+		var token = socket.handshake.query.token;		
+		var version = socket.handshake.query.version;
 		
-		var decodedToken = postMan.decodeHandshake(token);
-		
+		var decodedToken = postMan.decodeHandshake(token);		
 		var joinServerParameters = postMan.getJoinServerParameters(decodedToken);	
 		if ( joinServerParameters == null ){ return;}  	
 		
 		brokerOfVisibles.getClientByHandshakeToken ( joinServerParameters.handshakeToken ).then(function(client){
 
-			
+			client.version = version;
+			logger.debug('io.use ::: client.version : ', client.version);
 			logger.info('io.use ::: client.visibility : ', client.visibility);
 			
 			

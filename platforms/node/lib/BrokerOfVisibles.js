@@ -232,6 +232,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("lastprofileupdate")
 	    						.field("pubkeypem")	    						
 	    						.field("visibility")
+	    						.field("version")
 							    .from("client")
 							    .where("publicclientid = '" + publicClientID + "'")							    
 							    .toString();
@@ -284,6 +285,7 @@ function BrokerOfVisibles(_io, _logger) {
 			    client.lastProfileUpdate = entry.lastprofileupdate;
 			    client.pubKeyPEM = entry.pubkeypem;			    
 			    client.visibility = entry.visibility;
+			    client.version = entry.version;
 			    
 			    return  d.resolve(client);
 			    
@@ -317,6 +319,7 @@ function BrokerOfVisibles(_io, _logger) {
 	    						.field("lastprofileupdate")
 							    .field("pubkeypem")
 	    						.field("visibility")
+	    						.field("version")
 							    .from("client")
 							    .where("handshaketoken = '" + handshakeToken + "'")							    
 							    .toString();
@@ -369,7 +372,8 @@ function BrokerOfVisibles(_io, _logger) {
 			    client.lastProfileUpdate = entry.lastprofileupdate;
 			    client.pubKeyPEM = entry.pubkeypem;			    
 			    client.visibility = entry.visibility;
-			    	
+			    client.version = entry.version;
+   	
 	    
 			    return  d.resolve(client);
 			    
@@ -586,11 +590,11 @@ function BrokerOfVisibles(_io, _logger) {
 		var d = when.defer();
 		
 		 var query2send = squel.update()
-								    .table("client")
-								    .set("indexofcurrentkey", client.indexOfCurrentKey)
-								    .set("currentchallenge", client.currentChallenge)
-								    .where("publicclientid = '" + client.publicClientID + "'")
-								    .toString();
+							    .table("client")
+							    .set("indexofcurrentkey", client.indexOfCurrentKey)
+							    .set("currentchallenge", client.currentChallenge)
+							    .where("publicclientid = '" + client.publicClientID + "'")
+							    .toString();
 		
 		clientOfDB.query(query2send, function(err, result) {
 		     
@@ -748,19 +752,22 @@ function BrokerOfVisibles(_io, _logger) {
 		
 		if ( typeof client.visibility == "undefined" || client.visibility == null )
 			client.visibility = "on";
+		if ( typeof client.version == "undefined" || client.version == null )
+			client.version = "0.0.1";
 		
 		var query2send = squel.update()
-							    .table("client")
-							    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")')" , {dontQuote: true} )
-							    .set("socketid", client.socketid)
-							    .set("nickname", client.nickName)
-							    .set("commentary", client.commentary)
-							    .set("lastprofileupdate", client.lastProfileUpdate)
-							    .set("telephone", client.telephone)
-							    .set("email", client.email)
-							    .set("visibility", client.visibility)	
-							    .where("publicclientid = '" + client.publicClientID + "'")
-							    .toString();
+						    .table("client")
+						    .set("location", "ST_GeographyFromText('SRID=4326;POINT(" + client.location.lon + " " + client.location.lat + ")')" , {dontQuote: true} )
+						    .set("socketid", client.socketid)
+						    .set("nickname", client.nickName)
+						    .set("commentary", client.commentary)
+						    .set("lastprofileupdate", client.lastProfileUpdate)
+						    .set("telephone", client.telephone)
+						    .set("email", client.email)
+						    .set("visibility", client.visibility)
+						    .set("version", client.version)	
+						    .where("publicclientid = '" + client.publicClientID + "'")
+						    .toString();
 			query2send = "BEGIN; " + query2send + "; COMMIT;";				  
 		
 		clientOfDB.query(query2send, function(err, result) {		     

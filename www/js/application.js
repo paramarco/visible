@@ -977,7 +977,7 @@ GUI.prototype.bindButtonsOnMainPage = function() {
 		$.browser.ipad || $.browser.iphone || $.browser.ipod || 
 		app.isMobile && (app.devicePlatform == "WinCE" || app.devicePlatform == "Win32NT") ){
 		$('#link2activateAccount').remove().trigger( "updatelayout" );
-		$('#link2searchPage').remove().trigger( "updatelayout" );		
+		//$('#link2searchPage').remove().trigger( "updatelayout" );		
 		$('#mypanel-list').listview().listview('refresh');
 		$( "#mypanel" ).trigger( "updatelayout" );
 	}
@@ -1949,9 +1949,10 @@ GUI.prototype.loadGalleryInDOM = function() {
 
 GUI.prototype.loadGroupInPlanPage = function() {
 	
-	gui.groupOnMenu = new Group({});
-	gui.groupOnMenu.addMember( user );
-	
+	if ( gui.groupOnMenu == null ){
+		gui.groupOnMenu = new Group({});
+		gui.groupOnMenu.addMember( user );
+	}	
 	var previousMaker = gui.searchMap.currentMarker;
 	var latlng = previousMaker.getLatLng();
 	gui.groupOnMenu.location.lat = latlng.lat.toString();
@@ -2945,7 +2946,7 @@ GUI.prototype.showEntryOnMainPage = function( obj, isNewContact) {
  */
 GUI.prototype.showEntryOnResultsPage = function( obj, isNewContact ) {
 
-	var a = $("#listInResultsPage").find('#'+obj.publicClientID);
+	var a = $("#listInResultsPage").find('#results_'+obj.publicClientID);
     if (a.length != 0) {
     	return;
     }
@@ -3449,6 +3450,8 @@ GUI.prototype.showPlansInResultsPage = function( list ) {
 	
 	list.map( function( obj ){
 		
+		if ( obj.organizerObj.publicClientID == user.publicClientID ) return;
+		
 		var contact = contactsHandler.getContactById( obj.organizerObj.publicClientID ); 		
 		if (typeof contact == 'undefined' || contact == null){
 			contact = new ContactOnKnet( obj.organizerObj );
@@ -3610,7 +3613,15 @@ GUI.prototype.showProfile = function( input ) {
 			strVar += "					          	<h1><\/h1>";
 			strVar += "								<button id=\"label_75\">"+dictionary.Literals.label_75+"<\/button>";
 		}else{
+			gui.groupOnMenu = new Group(obj);
+			gui.groupOnMenu.publicClientID = obj.planId;
+			
 			$('body').pagecontainer('change', '#createPlanPage', { transition : "none" });
+			
+			$("#planSubmitButton")
+			 .delay( config.TIME_SILENT_SCROLL )
+			 .data( 'action', 'modify' )
+			 .text( dictionary.Literals.label_39 );
 			return;
 		}
 	}
@@ -4241,7 +4252,7 @@ Application.prototype.connect2server = function(result){
 		forceNew : true,
 		secure : true, 
 		reconnection : true,
-		query : 'token=' + app.tokenSigned	
+		query : 'token=' + app.tokenSigned + '&version=' + config.SW_VERSION	
 	};
   	socket = io.connect( url, options );
 	
@@ -4491,7 +4502,7 @@ Application.prototype.connect2server = function(result){
 		
 	});//END PlansAround event
 	
-	socket.on("ImgOfPLanFromServer", function (input){
+	socket.on("ImgOfPlanFromServer", function (input){
 		var params = postman.getPlanImgFromServer(input); 
 		if (params == null) { return;	}
 		gui.listOfPlans.map(function(e){
@@ -5281,14 +5292,15 @@ ContactsHandler.prototype.processNewContacts = function( input ) {
 
 	list.map(function(c){
 
+		if (c.publicClientID == user.publicClientID) return;
+		
 		var contact = contactsHandler.getContactById(c.publicClientID); 
 		if (contact){
 			contactsHandler.setContactOnList( c );			
 		}else{			
 			contact = new ContactOnKnet( c );
 			contactsHandler.setContactOnList( contact );
-			gui.showEntryOnMainPage( contact , true);
-						
+			gui.showEntryOnMainPage( contact , true);						
 		}
 		if (/searchResultsPage/.test(page)){
 			gui.showEntryOnResultsPage( contact , true);
@@ -7623,7 +7635,7 @@ function Dictionary(){
  * *********************************************************************************************/
 
 //	window.shimIndexedDB.__debug(false);
-log4javascript.setEnabled(true);
+log4javascript.setEnabled(false);
 
 /***********************************************************************************************
  * *********************************************************************************************
