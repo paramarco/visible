@@ -4,8 +4,8 @@
 <widget xmlns     = "http://www.w3.org/ns/widgets"
         xmlns:gap = "http://phonegap.com/ns/1.0"
         id        = "com.instaltic.knet"
-        version   = "0.5.0"
-        versionCode = "2661" >
+        version   = "0.5.1"
+        versionCode = "2662" >
 
     <name>knet</name>
     <description>
@@ -64,7 +64,7 @@
     </plugin>
 	<plugin name="cordova-plugin-sim" spec="1.2.1" source="npm" />
 	<plugin name="cordova-plugin-contacts" spec="2.1.0" source="npm" />
-	
+	<plugin name="cordova-plugin-indexeddb-async" spec="2.2.1" source="npm" />
 
 
     <!-- Define app icon for each platform. -->

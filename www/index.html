@@ -80,11 +80,14 @@
 			var head = document.getElementsByTagName('head')[0];
 			var js = document.createElement("script");			
 			js.type = "text/javascript";			
-			if ( $.browser.msedge || $.browser["windows phone"] ){
-			    js.src = "js/IndexedDBShim.old.js";
-			}else {
-			    js.src = "js/indexeddbshim.min-2.2.1.js";
-			}			
+//			if ( $.browser.msedge || $.browser["windows phone"] || $.browser.msie || $.browser.win ){
+//			    js.src = "js/IndexedDBShim.old.js";
+//			}else {
+//			    js.src = "js/indexeddbshim.min-2.2.1.js";
+//			}
+            if ( $.browser.msedge || $.browser.msie ){
+                js.src = "js/indexeddbshim.min-2.2.1.js";
+            }		
 			head.appendChild(js);
 			
 		</script>
